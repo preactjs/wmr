@@ -1,0 +1,17 @@
+html, body {
+  margin: 0;
+  min-height: 100%;
+  font-family: system-ui, sans-serif;
+}
+
+header {
+  display: flex;
+  padding: 10px;
+  background: #ddd;
+}
+header > nav { flex: 1; }
+header > nav > a { padding: 10px; color: green; }
+header > section { display: flex; }
+header input { border: 1px solid; border-radius: 3px; padding: 2px 5px; }
+
+.app > section { padding: 20px; }

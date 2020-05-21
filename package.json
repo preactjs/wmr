@@ -1,0 +1,35 @@
+{
+  "name": "wmr",
+  "bin": "wmr.js",
+  "type": "module",
+  "scripts": {
+    "demo": "cd demo && node --experimental-modules ../src/index.js",
+    "build": "microbundle src/index.js -f cjs --target node --compress --external fsevents --no-sourcemap wmr.js"
+  },
+  "eslintConfig": {
+    "extends": "developit"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^12.0.0",
+    "@rollup/plugin-json": "^4.0.3",
+    "@rollup/plugin-node-resolve": "^8.0.0",
+    "acorn-jsx": "^5.2.0",
+    "acorn-jsx-walk": "^2.0.0",
+    "acorn-walk": "^7.1.1",
+    "ast-types": "^0.13.3",
+    "async-disk-cache": "^2.0.0",
+    "compression": "^1.7.4",
+    "eslint": "^7.0.0",
+    "eslint-config-developit": "^1.2.0",
+    "magic-string": "^0.25.7",
+    "node-fetch": "^2.6.0",
+    "polka": "^0.5.2",
+    "rollup": "^2.10.5",
+    "sirv": "^0.4.2",
+    "sockette": "^2.0.5",
+    "source-map": "^0.7.3",
+    "terser": "^4.7.0",
+    "tiny-glob": "^0.2.6",
+    "wss": "^3.3.4"
+  }
+}
