@@ -23,8 +23,6 @@ export default function bundler({ cwd = '', out, sourcemap = false, onError, onB
 
 	const changedFiles = new Set();
 
-	console.log(cwd, './' + join(cwd, 'index.js'));
-
 	const watcher = rollup.watch({
 		input: './' + join(cwd, 'index.js'),
 		output: {
