@@ -2,6 +2,12 @@ import * as acornWalk from 'acorn-walk';
 import * as jsxWalk from 'acorn-jsx-walk';
 import MagicString from 'magic-string';
 
+/**
+ * @fileoverview
+ * This is an attempt to implement Babel's APIs on top of Acorn.
+ * You're probably looking for transform().
+ */
+
 const cjsDefault = m => ('default' in m ? m.default : m);
 
 const walk = cjsDefault(acornWalk);
@@ -140,9 +146,6 @@ class Path {
 		return this.ctx.code.substring(this.node.start, this.node.end);
 	}
 }
-// def(Path.prototype, 'ancestors');
-// def(Path.prototype, 'ctx');
-// def(Path.prototype, 'shouldStop');
 
 const types = new Proxy(
 	{
@@ -271,6 +274,18 @@ const DEFAULTS = {
 	sourceMaps: false
 };
 
+/**
+ * Implements Babel's `transform()` API on top of Acorn, including transforms, plugins and presets.
+ * @param {string} code
+ * @param {object} [options]
+ * @param {any[]} [options.presets]
+ * @param {any[]} [options.plugins]
+ * @param {typeof DEFAULTS.parse} [options.parse]
+ * @param {string} [options.filename]
+ * @param {boolean} [options.ast = false]
+ * @param {typeof DEFAULTS.sourceMaps} [options.sourceMaps]
+ * @param {string} [options.sourceFileName]
+ */
 export function transform(code, { presets, plugins, parse, filename, ast, sourceMaps, sourceFileName } = DEFAULTS) {
 	const out = new MagicString(code);
 	const { types, template, visit } = createContext({ code, out, parse });
