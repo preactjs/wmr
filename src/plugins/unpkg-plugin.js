@@ -2,6 +2,8 @@ import path from 'path';
 import fetch from 'node-fetch';
 import Cache from 'async-disk-cache';
 
+const PREFIX = '\0npm/';
+
 /**
  * Progressively load and cache individual dependency modules from unpkg.com
  * @param {object} [options]
@@ -11,24 +13,32 @@ export default function unpkgPlugin({} = {}) {
 	return {
 		name: 'unpkg-plugin',
 		async resolveId(s, from) {
-			if (s.startsWith('\0npm/')) s = s.substring(5);
+			if (s.startsWith(PREFIX)) s = s.substring(PREFIX.length);
 
-			if (from && from.startsWith('\0npm/')) from = from.substring(5);
+			if (from && from.startsWith(PREFIX)) from = from.substring(PREFIX.length);
 
-			if (s.match(/^\.\.?\//) && from && from.match(/^((?:@[^@/?]+\/)?[^@/?]+)(?:@[^/?]+)?(?:\/([^?]+))?(?:\?.*)?$/)) {
-				s = path.join(path.dirname(from), s);
+			const isRelativeToPackage = from && /^((?:@[^@/?]+\/)?[^@/?]+)(?:@[^/?]+)?(?:\/([^?]+))?(?:\?.*)?$/.test(from);
+			const isRelativeImport = /^\.?\.?(\/|$)/.test(s);
+
+			if (isRelativeImport) {
+				// resolve relative imports from within a package:
+				if (isRelativeToPackage) {
+					s = path.join(path.dirname(from), s);
+				} else {
+					// otherwise it's a locla import, don't process it:
+					return null;
+				}
 			}
-			if (s.match(/^\.?\//)) {
-				return null;
-			}
+
+			// strip unpkg URL prefix:
 			s = s.replace(/^https?:\/\/unpkg\.com\/((?:@[^@/?]+\/)?[^@/?]+)(@[^/?]+)?(\/[^?]+)?\?module/g, '$1$2$3');
+
 			const resolved = await unpkgResolve(s);
-			return '\0npm/' + resolved;
+			return PREFIX + resolved;
 		},
 		load(id) {
-			// if (id.match(/^\.?\//)) return;
-			if (id.startsWith('\0npm/')) {
-				return unpkg(id.substring(5));
+			if (id.startsWith(PREFIX)) {
+				return unpkg(id.substring(PREFIX.length));
 			}
 		}
 	};

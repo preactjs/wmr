@@ -1,24 +1,100 @@
 import { promises as fs } from 'fs';
-import { basename } from 'path';
+import { basename, dirname, relative, resolve } from 'path';
 
 /**
+ * Implements hot-reloading for stylesheets imported by JS.
  * @returns {import('rollup').Plugin}
  */
 export default function wmrStylesPlugin() {
+	const cwds = new Set();
+
 	return {
-		name: 'liveStylesPlugin',
+		name: 'wmr-styles',
+		options(opts) {
+			cwds.clear();
+			forEachInput(opts.input, input => {
+				const entry = resolve('.', input);
+				cwds.add(dirname(entry));
+			});
+			return opts;
+		},
+		// async transform(code, id) {
+		// 	if (!id.match(/\.css$/gi)) return;
+		// 	// console.log('transforming CSS', id);
+		// 	return code;
+		// },
+		// resolveFileUrl({ })
 		async load(id) {
-			if (id.match(/\.css$/)) {
-				const ref = this.emitFile({
-					type: 'asset',
-					name: basename(id),
-					source: await fs.readFile(id)
+			if (!id.match(/\.css$/)) return;
+			const idRelative = '/' + multiRelative(cwds, id);
+			// this.addWatchFile(id);
+			let source = await fs.readFile(id, 'utf-8');
+			let mappings = [];
+			if (id.match(/\.module\.css$/)) {
+				const suffix = '_' + hash(id);
+				source = source.replace(/\.([a-z0-9_-]+)/gi, (str, className) => {
+					const mapped = className + suffix;
+					const q = /^\d|[^a-z0-9_$]/gi.test(className) ? `'` : ``;
+					mappings.push(`${q + className + q}:'${mapped}'`);
+					return `.${mapped}`;
 				});
-				return `
-					import { style } from 'wmr';
-					style(import.meta.ROLLUP_FILE_URL_${ref});
-				`;
 			}
+
+			const ref = this.emitFile({
+				type: 'asset',
+				name: basename(id),
+				source
+			});
+
+			// import.meta.hot.accept((m) => {
+			// 	console.log({...styles}, {...m.default});
+			// 	for (let i in m.default) styles[i] = m.default[i];
+			// 	for (let i in styles) if (!(i in m.default)) delete[i];
+			// });
+
+			const code = `
+				import { style } from 'wmr';
+				style(import.meta.ROLLUP_FILE_URL_${ref}, ${JSON.stringify(idRelative)});
+				import.meta.hot.accept(({ module: { default: s } }) => {
+					for (let i in s) styles[i] = s[i];
+				});
+				const styles = {${mappings.join(',')}};
+				export default styles;
+			`.replace(/^\s+/gm, '');
+
+			return {
+				code,
+				moduleSideEffects: true,
+				syntheticNamedExports: true
+			};
 		}
 	};
+}
+
+function multiRelative(cwds, filename) {
+	let p;
+	cwds.forEach(cwd => {
+		const f = relative(cwd, filename);
+		if (!p || f.length < p.length) p = f;
+	});
+	return p;
+}
+
+function forEachInput(input, callback) {
+	if (typeof input === 'object') {
+		if (Array.isArray(input)) {
+			for (let i = 0; i < input.length; i++) {
+				forEachInput(input[i], callback);
+			}
+		}
+		for (let i in input) forEachInput(input[i], callback);
+	}
+	if (input) callback(input);
+}
+
+function hash(str) {
+	let hash = 5381,
+		i = str.length;
+	while (i) hash = (hash * 33) ^ str.charCodeAt(--i);
+	return (hash >>> 0).toString(36);
 }

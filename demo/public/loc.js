@@ -16,7 +16,7 @@ const UPDATE = (state, url, push) => {
 	return url;
 };
 
-export function Loc({ children }) {
+export function Loc(props) {
 	const [url, route] = useReducer(UPDATE, location.pathname);
 	const value = useMemo(() => ({ url, route }), [url]);
 	useEffect(() => {
@@ -27,12 +27,12 @@ export function Loc({ children }) {
 			removeEventListener('popstate', route);
 		};
 	});
-	return h(Loc.ctx.Provider, { value }, children);
+	return h(Loc.ctx.Provider, { value }, props.children);
 }
 
-export const Router = (Loc.Router = ({ children }) => {
+export const Router = (Loc.Router = props => {
 	const { url } = useLoc();
-	children = [].concat(...children);
+	const children = [].concat(...props.children);
 	let a = children.filter(c => c.props.path === url);
 	if (a.length == 0) a = children.filter(c => c.props.default);
 	return a;

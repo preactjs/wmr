@@ -6,13 +6,35 @@ function log(...args) {
 
 let errorCount = 0;
 
+function updateStyleSheet(url) {
+	const sheets = document.styleSheets;
+	for (let i = 0; i < sheets.length; i++) {
+		if (strip(sheets[i].href) === url) {
+			sheets[i].ownerNode.href = strip(url) + '?t=' + Date.now();
+			return true;
+		}
+	}
+}
+
 new Sockette(location.origin.replace('http', 'ws') + '/_hmr', {
 	onmessage(e) {
 		const data = JSON.parse(e.data);
 		switch (data.type) {
 			case 'update':
 				data.changes.forEach(url => {
-					url = new URL(url, location.origin).href;
+					url = resolve(url);
+
+					if (!mods.get(url)) {
+						const isCss = /\.css$/.test(url);
+						if (isCss && mods.has(url + '.js')) {
+							url += '.js';
+						} else if (isCss && updateStyleSheet(url)) {
+							return;
+						} else {
+							return location.reload();
+						}
+					}
+
 					// ignore already-pending updates (but not in-flight updates):
 					if (updateQueue.indexOf(url) < 1) {
 						updateQueue.push(url);
@@ -22,7 +44,7 @@ new Sockette(location.origin.replace('http', 'ws') + '/_hmr', {
 						dequeue().then(() => {
 							if (errorId === errorCount) {
 								try {
-									console.clear();
+									// console.clear();
 								} catch (e) {}
 							}
 						});
@@ -54,11 +76,15 @@ new Sockette(location.origin.replace('http', 'ws') + '/_hmr', {
 
 const strip = url => url.replace(/\?t=\d+/g, '');
 
+const resolve = url => new URL(url, location.origin).href;
+
 function update(url) {
 	const mod = getMod(url);
 	const dispose = Array.from(mod.dispose);
 	const accept = Array.from(mod.accept);
-	return import(url + '?t=' + Date.now()).then(m => {
+	const newUrl = url + '?t=' + Date.now();
+	const p = mod.import ? mod.import(newUrl) : import(newUrl);
+	return p.then(m => {
 		// accept.forEach(c => (c({ module: m }), mod.accept.delete(c)));
 		// dispose.forEach(c => (c(), mod.dispose.delete(c)));
 		accept.forEach(c => c({ module: m }));
@@ -76,16 +102,17 @@ function dequeue() {
 }
 
 const styles = new Map();
-export function style(filename) {
-	let node = styles.get(filename);
+export function style(filename, id) {
+	id = resolve(id || filename);
+	let node = styles.get(id);
 	if (node) {
-		node.href = strip(node.href) + '?t=' + Date.now();
+		node.href = filename;
 	} else {
-		node = document.createElement('link');
+		const node = document.createElement('link');
 		node.rel = 'stylesheet';
 		node.href = filename;
 		document.head.appendChild(node);
-		styles.set(filename, node);
+		styles.set(id, node);
 	}
 }
 
@@ -100,6 +127,11 @@ function getMod(url) {
 export function createHotContext(url) {
 	const mod = getMod(url);
 	return {
+		// accept(...args) {
+		// 	const fn = args.pop();
+		// 	if (args[0]) getMod(args[0]).accept.add(fn);
+		// 	else mod.accept.add(fn);
+		// },
 		accept(fn) {
 			mod.accept.add(fn);
 		},

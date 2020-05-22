@@ -20,14 +20,17 @@ export default function watcherPlugin({ cwd = '.', watchedFiles, onChange } = {}
 	return {
 		name: 'watcher-plugin',
 		async buildStart() {
+			watchedFiles = await watchedFiles;
+			// each time a build starts, re-register the files:
 			if (watchedFiles) {
-				for (const f of await watchedFiles) {
+				for (const f of watchedFiles) {
 					this.addWatchFile(f);
 				}
-				watchedFiles = null;
+				// watchedFiles = null;
 			}
 		},
 		watchChange(id) {
+			// console.log('watchChange', id);
 			const filename = '/' + relative(cwd, id.replace(/\.save\..*$/g, ''));
 			onChange(filename);
 		}

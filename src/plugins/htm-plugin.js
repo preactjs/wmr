@@ -21,6 +21,8 @@ export default function htmPlugin({ include } = {}) {
 		},
 
 		transform(code, filename) {
+			if (filename[0] === '\0') return;
+
 			if (include) {
 				const shouldTransform = typeof include === 'function' ? include(filename) : filename.match(include);
 				if (!shouldTransform) return;
@@ -39,7 +41,7 @@ export default function htmPlugin({ include } = {}) {
 
 			const end = Date.now();
 			if (end - start > 50) {
-				console.log(`transform(${filename}): ${end - start}ms`);
+				console.log(`[htm] transform(${filename}): ${end - start}ms`);
 			}
 			return out;
 		}

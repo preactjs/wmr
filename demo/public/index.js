@@ -1,8 +1,10 @@
-import { h, Component, render } from 'preact';
-import { Loc, Router, useLoc } from './loc.js';
+import { h, render } from 'preact';
+import { Loc, Router } from './loc.js';
 import Home from './pages/home.js';
-import About from './pages/about.js';
+import About from './pages/about/index.js';
 import NotFound from './pages/_404.js';
+import Header from './header.js';
+// import './style.css';
 
 function App() {
 	return (
@@ -16,23 +18,6 @@ function App() {
 				</Router>
 			</div>
 		</Loc>
-	);
-}
-
-function Header() {
-	const { url } = useLoc();
-	return (
-		<header>
-			<nav>
-				<a href="/">Home</a>
-				<a href="/about">About</a>
-				<a href="/error">Error</a>
-			</nav>
-			<section>
-				URL:
-				<input readonly value={url} />
-			</section>
-		</header>
 	);
 }
 

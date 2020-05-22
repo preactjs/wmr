@@ -1,13 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+		<link rel="icon" href="data:">
     <title>Warm Module Replacement</title>
     <link rel="stylesheet" href="/style.css">
   </head>
   <body>
-    <script type="module" src="/index.js"></script>
+		<script type="module" src="/index.js"></script>
 
     <!-- a little in-page console -->
-    <script type="module" src="https://not-rawgit.glitch.me/gist/developit/60b810cbcb55e1da198a634218adcc90/raw/tiny-console.js"></script>
+		<!-- <script type="module" src="https://not-rawgit.glitch.me/gist/developit/60b810cbcb55e1da198a634218adcc90/raw/tiny-console.js"></script> -->
+		
+		<!-- test: external stylesheets don't break style HMR -->
+		<!-- <link rel="stylesheet" href="https://unpkg.com/spectre.css/dist/spectre.min.css"> -->
   </body>
 </html>
