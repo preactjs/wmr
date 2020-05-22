@@ -1,10 +1,11 @@
-import walk from 'acorn-walk';
-import jsxWalk from 'acorn-jsx-walk';
+import * as acornWalk from 'acorn-walk';
+import * as jsxWalk from 'acorn-jsx-walk';
 import MagicString from 'magic-string';
 
-// @ts-ignore
-const jsxWalker = walk.base;
-jsxWalk.extend(jsxWalker);
+const cjsDefault = m => ('default' in m ? m.default : m);
+
+const walk = cjsDefault(acornWalk);
+cjsDefault(jsxWalk).extend(walk.base);
 
 export function generate(node) {
 	return codegen(node);
@@ -203,7 +204,7 @@ function visit(root, visitors, state) {
 				}
 			}
 		},
-		jsxWalker,
+		walk.base,
 		state
 	);
 	let after;
