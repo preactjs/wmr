@@ -1,99 +1,97 @@
 export default function transformJsxToHtm({ types: t, template }) {
-  const isIdent = name => /(^[A-Z]|[.$])/.test(name);
-  const isRootElement = path => !t.isJSXElement(path.parentPath.parent);
+	const isIdent = name => /(^[A-Z]|[.$])/.test(name);
+	const isRootElement = path => !t.isJSXElement(path.parentPath.parent);
 
-  return {
-    name: 'transform-jsx-to-htm',
-    visitor: {
-      Program: {
-        exit(path, state) {
-          // if there's JSX, import HTM:
-          if (state.jsx) {
-            const opts = state.opts || {};
-            const lib = opts.lib || 'htm/preact';
-            let imp = opts.import || 'html';
-            if (opts.importAs && opts.importAs !== imp) {
-              imp += ' as ' + opts.importAs;
-            }
-            path.get('body').prependString(
-              `import { ${imp} } from ${JSON.stringify(lib)};\n`
-            );
-          }
-        }
-      },
-      JSXOpeningElement(path, state) {
-        const { node } = path;
+	return {
+		name: 'transform-jsx-to-htm',
+		visitor: {
+			Program: {
+				exit(path, state) {
+					// if there's JSX, import HTM:
+					if (state.jsx) {
+						const opts = state.opts || {};
+						const lib = opts.lib || 'htm/preact';
+						let imp = opts.import || 'html';
+						if (opts.importAs && opts.importAs !== imp) {
+							imp += ' as ' + opts.importAs;
+						}
+						path.get('body').prependString(`import { ${imp} } from ${JSON.stringify(lib)};\n`);
+					}
+				}
+			},
+			JSXOpeningElement(path, state) {
+				const { node } = path;
 
-        state.jsx = true;
+				state.jsx = true;
 
-        let str = '<';
-        // This is basically `path.node.name.name`, except it could be any expression:
-        let name = path.get('name').getSource();
-        if (isIdent(name)) name = '${' + name + '}';
-        str += name;
-        
-        path.get('attributes').forEach(attr => {
-          str += ' ';
+				let str = '<';
+				// This is basically `path.node.name.name`, except it could be any expression:
+				let name = path.get('name').getSource();
+				if (isIdent(name)) name = '${' + name + '}';
+				str += name;
 
-          // another option here that is grosser but simpler:
-          //   return str += attr.getSource().replace('{', '${');
-          if (t.isJSXSpreadAttribute(attr)) {
-            str += '...';
-          }
+				path.get('attributes').forEach(attr => {
+					str += ' ';
 
-          str += attr.get('name').getSource();
+					// another option here that is grosser but simpler:
+					//   return str += attr.getSource().replace('{', '${');
+					if (t.isJSXSpreadAttribute(attr)) {
+						str += '...';
+					}
 
-          // We could do the whole clone()/serialize() thing here, but
-          // the only transform required is to prepend expressions with "$".
-          // We take a shortcut that works in Babel and Acorn (but is gross).
-          if (attr.node.value && attr.node.value.value !== true) {
-            str += '=';
-            const value = attr.get('value').getSource();
-            // if it's an ExpressionContainer, all we need to do is prepend "$"
-            if (!t.isLiteral(attr.node.value)) {
-              str += '$';
-            }
-            str += value;
-            // if (t.isLiteral(attr.node.value)) {
-            //   // can use original quotes here to get free escapement:
-            //   str += attr.get('value').getSource();
-            //   // str += JSON.stringify(attr.node.value.value);
-            // }
-            // else {
-            //   str += `\$${attr.get('value').getSource()}`;
-            // }
-          }
-        });
+					str += attr.get('name').getSource();
 
-        if (node.selfClosing) str += ' /';
-        str += '>';
+					// We could do the whole clone()/serialize() thing here, but
+					// the only transform required is to prepend expressions with "$".
+					// We take a shortcut that works in Babel and Acorn (but is gross).
+					if (attr.node.value && attr.node.value.value !== true) {
+						str += '=';
+						const value = attr.get('value').getSource();
+						// if it's an ExpressionContainer, all we need to do is prepend "$"
+						if (!t.isLiteral(attr.node.value)) {
+							str += '$';
+						}
+						str += value;
+						// if (t.isLiteral(attr.node.value)) {
+						//   // can use original quotes here to get free escapement:
+						//   str += attr.get('value').getSource();
+						//   // str += JSON.stringify(attr.node.value.value);
+						// }
+						// else {
+						//   str += `\$${attr.get('value').getSource()}`;
+						// }
+					}
+				});
 
-        if (isRootElement(path)) {
-          str = 'html`' + str;
+				if (node.selfClosing) str += ' /';
+				str += '>';
 
-          if (node.selfClosing) str += '`';
-        }
-        
-        path.replaceWithString(str);
-      },
-      JSXClosingElement(path) {
-        const { node } = path;
+				if (isRootElement(path)) {
+					str = 'html`' + str;
 
-        let name = node.name.name;
-        if (isIdent(name)) name = '/';
+					if (node.selfClosing) str += '`';
+				}
 
-        let str = `</${name}>`;
-        if (isRootElement(path)) str += '`';
+				path.replaceWithString(str);
+			},
+			JSXClosingElement(path) {
+				const { node } = path;
 
-        path.replaceWithString(str);
-      },
-      JSXExpressionContainer(path) {
-        // path.replaceWith(path.get('expression'));
-        path.prependString('$');
-      },
-      JSXText(path) {
-        path.replaceWithString(path.node.value);
-      }
-    }
-  }
+				let name = node.name.name;
+				if (isIdent(name)) name = '/';
+
+				let str = `</${name}>`;
+				if (isRootElement(path)) str += '`';
+
+				path.replaceWithString(str);
+			},
+			JSXExpressionContainer(path) {
+				// path.replaceWith(path.get('expression'));
+				path.prependString('$');
+			},
+			JSXText(path) {
+				path.replaceWithString(path.node.value);
+			}
+		}
+	};
 }

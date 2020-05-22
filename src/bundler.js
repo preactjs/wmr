@@ -1,82 +1,95 @@
-import { relative, resolve } from 'path';
+import { relative, resolve, join, normalize } from 'path';
 import * as rollup from 'rollup';
 import watcherPlugin from './plugins/watcher-plugin.js';
 import unpkgPlugin from './plugins/unpkg-plugin.js';
 import htmPlugin from './plugins/htm-plugin.js';
 import wmrPlugin from './plugins/wmr/plugin.js';
 import wmrStylesPlugin from './plugins/wmr/styles-plugin.js';
-import glob from 'tiny-glob';
 
-export default function bundler({ sourcemap = false, onError, onBuild }) {
-  const watchedFiles = glob('public/**/*.!({js,cjs,mjs,ts,tsx})', { filesOnly: true });
+/** @typedef BuildEvent @type {{ changes: string[] } & Extract<rollup.RollupWatcherEvent, { code: 'BUNDLE_END' }> }} */
+/** @typedef BuildError @type {rollup.RollupError & { clientMessage?: string }} */
 
-  const changedFiles = new Set();
-  let builtChanges = [];
+/**
+ * Start a watching bundler
+ * @param {object} options
+ * @param {string} [options.cwd]
+ * @param {boolean} [options.sourcemap]
+ * @param {(error: BuildError)=>void} [options.onError]
+ * @param {(error: BuildEvent)=>void} [options.onBuild]
+ */
+export default function bundler({ cwd = '', sourcemap = false, onError, onBuild }) {
+	cwd = normalize(cwd);
 
-  const watcher = rollup.watch({
-    input: './public/index.js',
-    output: {
-      sourcemap,
-      sourcemapPathTransform: p => 'source://' + resolve('.', p).replace(/\/public\//g,'/'),
-      preferConst: true,
-      dir: '.dist'
-    },
-    treeshake: false,
-    preserveModules: true,
-    watch: {
-      // chokidar: {
-      //   cwd: './public'
-      // }
-    },
-    plugins: [
-      watcherPlugin({
-        cwd: 'public',
-        watchedFiles,
-        onChange(filename) {
-          changedFiles.add(filename);
-        }
-      }),
-      wmrStylesPlugin(),
-      wmrPlugin(),
-      htmPlugin(),
-      unpkgPlugin()
-    ]
-  });
+	const changedFiles = new Set();
 
-  watcher.on('event', event => {
-    switch (event.code) {
-      case 'ERROR':
-        let { code, plugin, message } = event.error;
+	const watcher = rollup.watch({
+		input: './' + join(cwd, 'index.js'),
+		output: {
+			sourcemap,
+			sourcemapPathTransform: p => 'source://' + resolve('.', p).replace(/\/public\//g, '/'),
+			preferConst: true,
+			dir: '.dist'
+		},
+		treeshake: false,
+		preserveModules: true,
+		plugins: [
+			watcherPlugin({
+				cwd,
+				watchedFiles: '**/*.!({js,cjs,mjs,ts,tsx})',
+				onChange(filename) {
+					changedFiles.add(filename);
+				}
+			}),
+			wmrStylesPlugin(),
+			wmrPlugin(),
+			htmPlugin(),
+			unpkgPlugin()
+		]
+	});
 
-        let preamble = `Error(${code.replace('_ERROR','')}): `;
-        if (code === 'PLUGIN_ERROR') preamble = `Error(${plugin}): `;
-        let err = `${preamble}${message}`;
-        event.error.message = err;
+	/** @param {BuildError} error */
+	function handleError(error) {
+		let { code, plugin, message } = error;
 
-        // normalize source paths for use on the client
-        event.error.clientMessage = err.replace(/ \(([^(]+):(\d+):(\d+)\)/, (s, file, line, col) => {
-          let relativePath = '/' + relative('public', file);
-          // if sourcemaps are enabled, link to them in the client error:
-          if (sourcemap) relativePath = 'source://' + relativePath;
-          return ` (${relativePath}:${line}:${col})`;
-        });
+		let preamble = `Error(${code.replace('_ERROR', '')}): `;
+		if (code === 'PLUGIN_ERROR') preamble = `Error(${plugin}): `;
+		let err = `${preamble}${message}`;
 
-        if (onError) onError(event.error);
-        break;
-      case 'START':
-        builtChanges = [...changedFiles];
-        changedFiles.clear();
-        break;
-      case 'BUNDLE_END':
-        console.log('Bundled in ' + event.duration + 'ms');
-        if (onBuild) onBuild({ changes: builtChanges, ...event });
-        break;
-      case 'BUNDLE_START':
-        break;
-      case 'END':
-        break;
-    }
-  });
+		error.message = err;
 
-  return watcher;
+		// normalize source paths for use on the client
+		error.clientMessage = err.replace(/ \(([^(]+):(\d+):(\d+)\)/, (s, file, line, col) => {
+			let relativePath = '/' + relative('public', file);
+			// if sourcemaps are enabled, link to them in the client error:
+			if (sourcemap) relativePath = 'source://' + relativePath;
+			return ` (${relativePath}:${line}:${col})`;
+		});
+
+		if (onError) onError(error);
+	}
+
+	let builtChanges = [];
+	watcher.on('event', event => {
+		switch (event.code) {
+			case 'ERROR':
+				handleError(event.error);
+				break;
+
+			case 'START':
+				builtChanges = [...changedFiles];
+				changedFiles.clear();
+				break;
+
+			case 'BUNDLE_END':
+				console.info(`Bundled in ${event.duration}ms`);
+				if (onBuild)
+					onBuild({
+						changes: builtChanges,
+						...event
+					});
+				break;
+		}
+	});
+
+	return watcher;
 }
