@@ -20,6 +20,12 @@ if (import.meta.hot) {
 // @ts-ignore
 const __filename = import.meta.url;
 
+/**
+ * Implements Hot Module Replacement.
+ * Conforms to the {@link esm-hmr https://github.com/pikapkg/esm-hmr} spec.
+ * @param {object} options
+ * @returns {import('rollup').Plugin}
+ */
 export default function wmrPlugin({} = {}) {
 	const wmr = fs.readFile(new URL('./client.js', __filename), 'utf8');
 	return {
@@ -30,38 +36,39 @@ export default function wmrPlugin({} = {}) {
 		load(s) {
 			if (s == '\0wmr.js') return wmr;
 		},
-		resolveImportMeta(property, { moduleId }) {
+		resolveImportMeta(property) {
 			if (property === 'hot') {
 				return `$IMPORT_META_HOT$`;
 			}
 			return null;
 		},
 		transform(code, id) {
+			let hasHot = /(import\.meta\.hot|\$IMPORT_META_HOT\$)/.test(code);
+			let before = '';
+			let after = '';
+
+			// stub webpack-style `module.hot` using `import.meta.hot`:
+			if (code.match(/module\.hot/)) {
+				hasHot = true;
+				before += 'const module={hot:import.meta.hot};\n';
+			}
+
+			// detect JSX and inject prefresh: (@todo: move to separate plugin)
+			if (code.match(/<\/([a-z][a-z0-9.:-]*)?>/i)) {
+				hasHot = true;
+				after += '\n' + PREFRESH;
+			}
+
+			if (!hasHot) return null;
+
 			const s = new MagicString(code, {
 				filename: id,
 				indentExclusionRanges: undefined
 			});
-			let hasHot = false;
-			if (code.match(/module\.hot/)) {
-				// code = `const module={hot:import.meta.hot};\n${code}`;
-				hasHot = true;
-				s.prepend('const module={hot:import.meta.hot};\n');
-			}
-			if (code.match(/<\/([a-z][a-z0-9.:-]*)?>/i)) {
-				hasHot = true;
-				// code += '\n' + PREFRESH;
-				s.append('\n' + PREFRESH);
-			}
-			if (hasHot || code.match(/(import\.meta\.hot|\$IMPORT_META_HOT\$)/)) {
-				// code = `import { createHotContext as $createHotContext$ } from 'wmr';\nconst $IMPORT_META_HOT$ = $createHotContext$(import.meta.url);\n${code}`;
-				s.prepend(
-					`import { createHotContext as $createHotContext$ } from 'wmr';` +
-						`const $IMPORT_META_HOT$ = $createHotContext$(import.meta.url);`
-				);
-			}
-			//if (code.match(/import\.meta\.hot/)) {
-			//  code = `import { createHotContext as $createHotContext$ } from 'wmr';\nimport.meta.hot = $createHotContext$(import.meta.url);\n`;
-			//}
+			s.append(after);
+			s.prepend(
+				`import { createHotContext as $createHotContext$ } from 'wmr';const $IMPORT_META_HOT$ = $createHotContext$(import.meta.url);${before}`
+			);
 			return {
 				code: s.toString(),
 				map: s.generateMap({ includeContent: false })

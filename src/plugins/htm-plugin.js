@@ -6,20 +6,24 @@ import transformJsxToHtm from './transform-jsx-to-htm.js';
  * Convert JSX to HTM
  * @param {object} [options]
  * @param {RegExp | ((filename: string) => boolean)} [options.include]
+ * @returns {import('rollup').Plugin}
  */
 export default function htmPlugin({ include } = {}) {
 	return {
 		name: 'htm-plugin',
 
 		options(opts) {
-			opts.acornInjectPlugins = [...(opts.acornInjectPlugins || []), acornJsx()];
+			opts.acornInjectPlugins = [acornJsx()].concat(
+				// @ts-ignore
+				opts.acornInjectPlugins || []
+			);
 			return opts;
 		},
 
 		transform(code, filename) {
 			if (include) {
-				if (typeof include === 'function' && !include(filename)) return;
-				else if (!filename.match(include)) return;
+				const shouldTransform = typeof include === 'function' ? include(filename) : filename.match(include);
+				if (!shouldTransform) return;
 			}
 
 			const start = Date.now();
