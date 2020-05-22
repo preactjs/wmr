@@ -6,8 +6,7 @@
   "scripts": {
     "demo": "cd demo && node --experimental-modules ../src/index.js",
     "build": "rollup -c",
-    "test": "eslint",
-    "x-build": "microbundle src/index.js -f cjs --target node --compress --external fsevents --no-sourcemap wmr.cjs"
+    "test": "eslint"
   },
   "author": "Jason Miller <jason@developit.ca> (http://jasonformat.com)",
   "files": [
