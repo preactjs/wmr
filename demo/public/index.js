@@ -5,32 +5,35 @@ import About from './pages/about.js';
 import NotFound from './pages/_404.js';
 
 function App() {
-  return (
-    <Loc>
-      <div class="app">
-        <Header />
-        <Router>
-          <Home path="/" />
-          <About path="/about" />
-          <NotFound default />
-        </Router>
-      </div>
-    </Loc>
-  );
+	return (
+		<Loc>
+			<div class="app">
+				<Header />
+				<Router>
+					<Home path="/" />
+					<About path="/about" />
+					<NotFound default />
+				</Router>
+			</div>
+		</Loc>
+	);
 }
 
 function Header() {
-  const { url } = useLoc();
-  return (
-    <header>
-      <nav>
-          <a href="/">Home</a>
-          <a href="/about">About</a>
-          <a href="/error">Error</a>
-      </nav>
-      <section>URL:<input readonly value={url} /></section>
-    </header>
-  );
+	const { url } = useLoc();
+	return (
+		<header>
+			<nav>
+				<a href="/">Home</a>
+				<a href="/about">About</a>
+				<a href="/error">Error</a>
+			</nav>
+			<section>
+				URL:
+				<input readonly value={url} />
+			</section>
+		</header>
+	);
 }
 
 render(<App />, document.body);

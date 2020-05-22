@@ -1,5 +1,5 @@
-import * as walk from 'acorn-walk';
-import * as jsxWalk from 'acorn-jsx-walk';
+import walk from 'acorn-walk';
+import jsxWalk from 'acorn-jsx-walk';
 import MagicString from 'magic-string';
 
 // @ts-ignore
@@ -77,9 +77,9 @@ class Path {
 		this.ancestors = ancestors;
 		this.ctx = ctx;
 		this.shouldStop = false;
-		// def(this, 'ancestors', ancestors);
-		// def(this, 'ctx', ctx);
-		// def(this, 'shouldStop', false);
+		def(this, 'ancestors', ancestors);
+		def(this, 'ctx', ctx);
+		def(this, 'shouldStop', false);
 		this.key = this.parentKey = null;
 		const parent = this.parent;
 		for (const key in parent) {
@@ -139,9 +139,9 @@ class Path {
 		return this.ctx.code.substring(this.node.start, this.node.end);
 	}
 }
-def(Path.prototype, 'ancestors');
-def(Path.prototype, 'ctx');
-def(Path.prototype, 'shouldStop');
+// def(Path.prototype, 'ancestors');
+// def(Path.prototype, 'ctx');
+// def(Path.prototype, 'shouldStop');
 
 const types = new Proxy(
 	{

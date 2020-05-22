@@ -2,7 +2,12 @@ import acornJsx from 'acorn-jsx';
 import { transform } from './acorn-traverse.js';
 import transformJsxToHtm from './transform-jsx-to-htm.js';
 
-export default function htmPlugin({} = {}) {
+/**
+ * Convert JSX to HTM
+ * @param {object} [options]
+ * @param {RegExp | ((filename: string) => boolean)} [options.include]
+ */
+export default function htmPlugin({ include } = {}) {
 	return {
 		name: 'htm-plugin',
 
@@ -12,7 +17,11 @@ export default function htmPlugin({} = {}) {
 		},
 
 		transform(code, filename) {
-			if (!filename.match(/^\/app\/public\//)) return;
+			if (include) {
+				if (typeof include === 'function' && !include(filename)) return;
+				else if (!filename.match(include)) return;
+			}
+
 			const start = Date.now();
 
 			// const out = processJsx(this.parse(code), new MagicString(code));

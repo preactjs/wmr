@@ -4,7 +4,7 @@
   "bin": "wmr.cjs",
   "type": "module",
   "scripts": {
-    "demo": "cd demo && node --experimental-modules ../src/index.js",
+    "demo": "cd demo && node --experimental-modules ../src/cli.js",
     "build": "rollup -c",
     "test": "eslint"
   },

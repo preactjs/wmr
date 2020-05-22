@@ -12,15 +12,18 @@ import wmrStylesPlugin from './plugins/wmr/styles-plugin.js';
 /**
  * Start a watching bundler
  * @param {object} options
- * @param {string} [options.cwd]
+ * @param {string} [options.cwd = '']
+ * @param {string} [options.out = '.dist']
  * @param {boolean} [options.sourcemap]
  * @param {(error: BuildError)=>void} [options.onError]
  * @param {(error: BuildEvent)=>void} [options.onBuild]
  */
-export default function bundler({ cwd = '', sourcemap = false, onError, onBuild }) {
+export default function bundler({ cwd = '', out, sourcemap = false, onError, onBuild }) {
 	cwd = normalize(cwd);
 
 	const changedFiles = new Set();
+
+	console.log(cwd, './' + join(cwd, 'index.js'));
 
 	const watcher = rollup.watch({
 		input: './' + join(cwd, 'index.js'),
@@ -28,7 +31,7 @@ export default function bundler({ cwd = '', sourcemap = false, onError, onBuild 
 			sourcemap,
 			sourcemapPathTransform: p => 'source://' + resolve('.', p).replace(/\/public\//g, '/'),
 			preferConst: true,
-			dir: '.dist'
+			dir: out || '.dist'
 		},
 		treeshake: false,
 		preserveModules: true,
@@ -42,7 +45,9 @@ export default function bundler({ cwd = '', sourcemap = false, onError, onBuild 
 			}),
 			wmrStylesPlugin(),
 			wmrPlugin(),
-			htmPlugin(),
+			htmPlugin({
+				// include:
+			}),
 			unpkgPlugin()
 		]
 	});

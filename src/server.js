@@ -12,7 +12,7 @@ import compression from 'compression';
 
 /**
  * @param {object} [options]
- * @param {string} [options.cwd = 'public'] Directory to serve
+ * @param {string} [options.cwd = ''] Directory to serve
  * @param {string} [options.out = '.dist'] Directory to store generated files
  * @param {boolean|number} [options.compress = true] Compress responses? Pass a `number` to set the size threshold.
  */
@@ -50,7 +50,7 @@ export default function server({ cwd, out, compress } = {}) {
 
 	app.use(sirv(out || '.dist', { dev: true }));
 
-	const servePublic = sirv(cwd || 'public', { dev: true });
+	const servePublic = sirv(cwd || '', { dev: true });
 	app.use(servePublic);
 	// SPA nav fallback
 	app.use((req, res, next) => {
