@@ -6,7 +6,7 @@
 - [x] Hot Module Replacement for JavaScript modules
 - [x] `import "deps"` from npm without installation
 - [x] supports JSX with little/no overhead
-- [x] hot-reloading for CSS (both imported and `<link>)
+- [x] hot-reloading for CSS (both imported and `<link>`)
 - [x] import `*.module.css` for [CSS Modules](https://github.com/css-modules/css-modules)
 - [x] serves static files
 - [x] caches npm dependencies locally
