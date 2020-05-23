@@ -1,4 +1,4 @@
-import { h, createContext } from 'preact';
+import { h, createContext, cloneElement } from 'preact';
 import { useContext, useMemo, useReducer, useEffect } from 'preact/hooks';
 
 // console.log('hello 6');
@@ -10,15 +10,20 @@ const UPDATE = (state, url, push) => {
 		url.preventDefault();
 		push = true;
 		url = link.href.replace(location.origin, '');
-	} else if (typeof url !== 'string') url = location.pathname;
+	} else if (typeof url !== 'string') url = location.pathname + location.search;
 	if (push === true) history.pushState(null, null, url);
 	else if (push === false) history.replaceState(null, null, url);
 	return url;
 };
 
 export function Loc(props) {
-	const [url, route] = useReducer(UPDATE, location.pathname);
-	const value = useMemo(() => ({ url, route }), [url]);
+	const [url, route] = useReducer(UPDATE, location.pathname + location.search);
+	const value = useMemo(() => {
+		// const [, path, query] = url.match(/^([^?]+?)(\?.*)$/);
+		// return { url, path, query: Object.fromEntries(new URLSearchParams(query)), route };
+		const u = new URL(url, location.origin);
+		return { url, path: u.pathname, query: Object.fromEntries(u.searchParams), route };
+	}, [url]);
 	useEffect(() => {
 		addEventListener('click', route);
 		addEventListener('popstate', route);
@@ -31,11 +36,12 @@ export function Loc(props) {
 }
 
 export const Router = (Loc.Router = props => {
-	const { url } = useLoc();
+	const { path, query } = useLoc();
 	const children = [].concat(...props.children);
-	let a = children.filter(c => c.props.path === url);
+	let a = children.filter(c => c.props.path === path);
 	if (a.length == 0) a = children.filter(c => c.props.default);
-	return a;
+	// @TODO: this is probably unnecessary, since anyone can just use `useLoc().query`?
+	return a.map(p => cloneElement(p, { path, query }));
 });
 
 Loc.ctx = createContext();

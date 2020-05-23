@@ -11,7 +11,7 @@ export default function Header() {
 			</nav>
 			<section>
 				URL:
-				<input readonly value={url} />
+				<input readonly value={url} ref={c => c && (c.size = c.value.length)} />
 			</section>
 		</header>
 	);
