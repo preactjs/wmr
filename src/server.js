@@ -3,7 +3,7 @@ import { parse as parseUrl } from 'url';
 import ws from 'ws';
 import polka from 'polka';
 import sirv from 'sirv';
-import compression from 'compression';
+import compression from './lib/polkompress.js';
 
 /**
  * @typedef CustomServer
@@ -43,11 +43,9 @@ export default function server({ cwd, out, compress = true } = {}) {
 	});
 
 	if (compress) {
-		// @TODO: consider compressing only large responses, or only npm deps?
-		// could pre-compress and cache npm deps.
-		const threshold = compress === true ? 800 : compress;
-		// @ts-ignore (Express/Polka type mismatch)
-		app.use(compression({ threshold, level: 1 }));
+		// @TODO: consider moving to AOT+upgrade compression
+		const threshold = compress === true ? 1024 : compress;
+		app.use(compression({ threshold, level: -1 }));
 	}
 
 	app.use(sirv(out || '.dist', { dev: true }));
