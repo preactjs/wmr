@@ -1,11 +1,11 @@
 import acornJsx from 'acorn-jsx';
-import { transform } from './acorn-traverse.js';
+import { transform } from '../lib/acorn-traverse.js';
 import transformJsxToHtm from './transform-jsx-to-htm.js';
 
 /**
  * Convert JSX to HTM
  * @param {object} [options]
- * @param {RegExp | ((filename: string) => boolean)} [options.include]
+ * @param {RegExp | ((filename: string) => boolean)} [options.include] Controls whether files are processed to transform JSX.
  * @returns {import('rollup').Plugin}
  */
 export default function htmPlugin({ include } = {}) {
@@ -21,6 +21,7 @@ export default function htmPlugin({ include } = {}) {
 		},
 
 		transform(code, filename) {
+			// skip internal modules
 			if (filename[0] === '\0') return;
 
 			if (include) {
@@ -30,8 +31,6 @@ export default function htmPlugin({ include } = {}) {
 
 			const start = Date.now();
 
-			// const out = processJsx(this.parse(code), new MagicString(code));
-
 			const out = transform(code, {
 				plugins: [transformJsxToHtm],
 				filename,
@@ -40,9 +39,7 @@ export default function htmPlugin({ include } = {}) {
 			});
 
 			const end = Date.now();
-			if (end - start > 50) {
-				console.log(`[htm] transform(${filename}): ${end - start}ms`);
-			}
+			if (end - start > 50) this.warn(`${filename} took ${end - start}ms`);
 			return out;
 		}
 	};

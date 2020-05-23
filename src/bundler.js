@@ -18,10 +18,11 @@ import processGlobalPlugin from './plugins/process-global-plugin.js';
  * @param {string} [options.cwd = '']
  * @param {string} [options.out = '.dist']
  * @param {boolean} [options.sourcemap]
+ * @param {boolean} [options.profile] Enable bundler performance profiling
  * @param {(error: BuildError)=>void} [options.onError]
  * @param {(error: BuildEvent)=>void} [options.onBuild]
  */
-export default function bundler({ cwd = '', out, sourcemap = false, onError, onBuild }) {
+export default function bundler({ cwd = '', out, sourcemap = false, onError, onBuild, profile = false }) {
 	cwd = normalize(cwd);
 
 	const changedFiles = new Set();
@@ -37,6 +38,7 @@ export default function bundler({ cwd = '', out, sourcemap = false, onError, onB
 			entryFileNames: '[name].js',
 			chunkFileNames: '[name].js'
 		},
+		perf: !!profile,
 		treeshake: false,
 		manualChunks(filename) {
 			// Internal modules get an underscore prefix:
@@ -108,6 +110,9 @@ export default function bundler({ cwd = '', out, sourcemap = false, onError, onB
 
 			case 'BUNDLE_END':
 				console.info(`Bundled in ${event.duration}ms`);
+				if (profile) {
+					console.info('\n' + Object.entries(event.result.getTimings()).map(String).join('\n'));
+				}
 				if (onBuild)
 					onBuild({
 						changes: builtChanges,
