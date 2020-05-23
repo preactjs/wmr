@@ -32,6 +32,9 @@
       ]
     }
   },
+  "eslintIgnore": [
+    "wmr.cjs"
+  ],
   "prettier": {
     "singleQuote": true,
     "trailingComma": "none",

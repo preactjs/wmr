@@ -16,7 +16,7 @@ import compression from 'compression';
  * @param {string} [options.out = '.dist'] Directory to store generated files
  * @param {boolean|number} [options.compress = true] Compress responses? Pass a `number` to set the size threshold.
  */
-export default function server({ cwd, out, compress } = {}) {
+export default function server({ cwd, out, compress = true } = {}) {
 	/** @type {CustomServer} */
 	const app = polka();
 
@@ -43,9 +43,11 @@ export default function server({ cwd, out, compress } = {}) {
 	});
 
 	if (compress) {
-		const threshold = compress === true ? 500 : compress;
+		// @TODO: consider compressing only large responses, or only npm deps?
+		// could pre-compress and cache npm deps.
+		const threshold = compress === true ? 800 : compress;
 		// @ts-ignore (Express/Polka type mismatch)
-		app.use(compression({ threshold }));
+		app.use(compression({ threshold, level: 1 }));
 	}
 
 	app.use(sirv(out || '.dist', { dev: true }));
