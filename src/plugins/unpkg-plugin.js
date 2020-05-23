@@ -3,19 +3,36 @@ import fetch from 'node-fetch';
 import Cache from 'async-disk-cache';
 
 const PREFIX = '\0npm/';
+const PREFIX_INTERNAL = '\0npd/';
 
 /**
  * Progressively load and cache individual dependency modules from unpkg.com
  * @param {object} [options]
  * @returns {import('rollup').Plugin}
  */
-export default function unpkgPlugin({} = {}) {
+export default function unpkgPlugin({ resolutions = new Map(), publicPath = '@npm/' } = {}) {
+	const reverseResolutions = new Map();
+
+	function manualChunks(filename, { getModuleInfo }) {
+		// if this is a submodule of a package entry, merge it into the entry:
+		if (filename.startsWith(PREFIX_INTERNAL)) {
+			const info = getModuleInfo(filename);
+			filename = info.importers.find(p => p.startsWith('\0npm/')) || filename;
+		}
+
+		let root = filename.substring(5);
+		root = reverseResolutions.get(root) || root;
+		// return '@npm/' + filename.substring(5).match(/^((?:@[^@/?]+\/)?[^@/?]+)/)[0];
+		return publicPath + root.replace(/\//g, ':').replace(/\.([cm]js|[tj]sx?)$/, '');
+	}
+
 	return {
 		name: 'unpkg-plugin',
-		async resolveId(s, from) {
-			if (s.startsWith(PREFIX)) s = s.substring(PREFIX.length);
 
-			if (from && from.startsWith(PREFIX)) from = from.substring(PREFIX.length);
+		async resolveId(s, from) {
+			if (/^\0np[md]\//.test(s)) s = s.substring(5);
+
+			if (from && /^\0np[md]\//.test(from)) from = from.substring(5);
 
 			const isRelativeToPackage = from && /^((?:@[^@/?]+\/)?[^@/?]+)(?:@[^/?]+)?(?:\/([^?]+))?(?:\?.*)?$/.test(from);
 			const isRelativeImport = /^\.?\.?(\/|$)/.test(s);
@@ -25,7 +42,7 @@ export default function unpkgPlugin({} = {}) {
 				if (isRelativeToPackage) {
 					s = path.join(path.dirname(from), s);
 				} else {
-					// otherwise it's a locla import, don't process it:
+					// otherwise it's a local import, don't process it:
 					return null;
 				}
 			}
@@ -34,12 +51,50 @@ export default function unpkgPlugin({} = {}) {
 			s = s.replace(/^https?:\/\/unpkg\.com\/((?:@[^@/?]+\/)?[^@/?]+)(@[^/?]+)?(\/[^?]+)?\?module/g, '$1$2$3');
 
 			const resolved = await unpkgResolve(s);
+
+			resolutions.set(s, resolved);
+			reverseResolutions.set(resolved, s);
+
+			const isInternalImport = isRelativeImport && from && isRelativeToPackage;
+			if (isInternalImport) {
+				return PREFIX_INTERNAL + resolved;
+			}
+
 			return PREFIX + resolved;
 		},
+
 		load(id) {
-			if (id.startsWith(PREFIX)) {
-				return unpkg(id.substring(PREFIX.length));
+			if (/^\0np[md]\//.test(id)) {
+				return unpkg(id.substring(5));
 			}
+		},
+
+		options(options) {
+			let mc = options.manualChunks;
+			if (typeof mc === 'object') {
+				const mapping = mc;
+				// @TODO: this is probably not the same behavior as manualChunks:{}
+				// https://github.com/rollup/rollup/blob/07e0b205c93a3953ec860fc496d8d3d36524f24a/src/ModuleLoader.ts#L186
+				mc = filename => {
+					for (const alias in mapping) {
+						if (mapping[alias].includes(filename)) {
+							return alias;
+						}
+					}
+				};
+			}
+			return {
+				...options,
+				manualChunks(filename, ctx) {
+					if (/^\0np[md]\//.test(filename)) {
+						return manualChunks(filename, ctx);
+					}
+
+					if (typeof mc === 'function') {
+						return mc.apply(this, arguments);
+					}
+				}
+			};
 		}
 	};
 }

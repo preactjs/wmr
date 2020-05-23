@@ -1,10 +1,13 @@
 import { relative, resolve, join, normalize } from 'path';
 import * as rollup from 'rollup';
+import commonJs from '@rollup/plugin-commonjs';
+import json from '@rollup/plugin-json';
 import watcherPlugin from './plugins/watcher-plugin.js';
 import unpkgPlugin from './plugins/unpkg-plugin.js';
 import htmPlugin from './plugins/htm-plugin.js';
 import wmrPlugin from './plugins/wmr/plugin.js';
 import wmrStylesPlugin from './plugins/wmr/styles-plugin.js';
+import processGlobalPlugin from './plugins/process-global-plugin.js';
 
 /** @typedef BuildEvent @type {{ changes: string[] } & Extract<rollup.RollupWatcherEvent, { code: 'BUNDLE_END' }> }} */
 /** @typedef BuildError @type {rollup.RollupError & { clientMessage?: string }} */
@@ -29,10 +32,25 @@ export default function bundler({ cwd = '', out, sourcemap = false, onError, onB
 			sourcemap,
 			sourcemapPathTransform: p => 'source://' + resolve('.', p).replace(/\/public\//g, '/'),
 			preferConst: true,
-			dir: out || '.dist'
+			dir: out || '.dist',
+			assetFileNames: '[name].[ext]',
+			entryFileNames: '[name].js',
+			chunkFileNames: '[name].js'
 		},
 		treeshake: false,
-		preserveModules: true,
+		manualChunks(filename) {
+			// Internal modules get an underscore prefix:
+			if (filename[0] === '\0') {
+				filename = '_' + filename.substring(1);
+				// return '_' + stripExt(filename.substring(1));
+			} else {
+				filename = relative(cwd, filename);
+			}
+			// Source modules get normalized file extensions
+			// return stripExt(relative(cwd, filename).replace(/^[\\/]/gi, ''));
+
+			return filename.replace(/(^[\\/]|\.([cm]js|[tj]sx?)$)/gi, '');
+		},
 		plugins: [
 			watcherPlugin({
 				cwd,
@@ -43,9 +61,12 @@ export default function bundler({ cwd = '', out, sourcemap = false, onError, onB
 			}),
 			wmrStylesPlugin(),
 			wmrPlugin(),
-			htmPlugin({
-				// include:
+			htmPlugin(),
+			processGlobalPlugin(),
+			commonJs({
+				include: /^\0npm/
 			}),
+			json(),
 			unpkgPlugin()
 		]
 	});
@@ -54,8 +75,10 @@ export default function bundler({ cwd = '', out, sourcemap = false, onError, onB
 	function handleError(error) {
 		let { code, plugin, message } = error;
 
-		let preamble = `Error(${code.replace('_ERROR', '')}): `;
-		if (code === 'PLUGIN_ERROR') preamble = `Error(${plugin}): `;
+		let preamble = 'Error';
+		if (code === 'PLUGIN_ERROR') preamble += `(${plugin}): `;
+		else if (code) preamble += `(${code.replace('_ERROR', '')}): `;
+
 		let err = `${preamble}${message}`;
 
 		error.message = err;
