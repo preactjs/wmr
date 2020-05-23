@@ -6,7 +6,7 @@ import NotFound from './pages/_404.js';
 import Header from './header.js';
 // import './style.css';
 
-function App() {
+export function App() {
 	return (
 		<Loc>
 			<div class="app">
@@ -22,3 +22,6 @@ function App() {
 }
 
 render(<App />, document.body);
+
+// @ts-ignore
+if (module.hot) module.hot.accept(u => render(<u.module.App />, document.body));

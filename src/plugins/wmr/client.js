@@ -91,10 +91,10 @@ function update(url) {
 	const newUrl = url + '?t=' + Date.now();
 	const p = mod.import ? mod.import(newUrl) : import(newUrl);
 	return p.then(m => {
-		// accept.forEach(c => (c({ module: m }), mod.accept.delete(c)));
-		// dispose.forEach(c => (c(), mod.dispose.delete(c)));
-		accept.forEach(c => c({ module: m }));
-		dispose.forEach(c => c());
+		accept.forEach(c => (c({ module: m }), mod.accept.delete(c)));
+		dispose.forEach(c => (c(), mod.dispose.delete(c)));
+		// accept.forEach(c => c({ module: m }));
+		// dispose.forEach(c => c());
 	});
 }
 
