@@ -78,7 +78,6 @@
     "rollup-plugin-preserve-shebang": "^1.0.0",
     "sade": "^1.7.3",
     "sirv": "^0.4.2",
-    "sockette": "^2.0.5",
     "source-map": "^0.7.3",
     "terser": "^4.7.0",
     "tiny-glob": "^0.2.6",
