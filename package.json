@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "demo": "cd demo && node --experimental-modules ../src/cli.js",
-    "dev": "nodemon -w src --exec \"npm run -s demo\"",
+    "dev": "nodemon -w src --exec \"npm run -s demo -- --profile\"",
     "build": "rollup -c",
     "test": "eslint"
   },

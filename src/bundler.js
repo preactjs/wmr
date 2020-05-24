@@ -111,7 +111,11 @@ export default function bundler({ cwd = '', out, sourcemap = false, onError, onB
 			case 'BUNDLE_END':
 				console.info(`Bundled in ${event.duration}ms`);
 				if (profile) {
-					console.info('\n' + Object.entries(event.result.getTimings()).map(String).join('\n'));
+					console.info(
+						Object.entries(event.result.getTimings()).reduce((s, [k, v]) => {
+							return `${s}\n${k.replace(/^(#*)/g, s => ' '.repeat((s.length || 3) * 2 - 2))}: ${v[0] | 0}ms`;
+						}, '')
+					);
 				}
 				if (onBuild)
 					onBuild({

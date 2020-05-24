@@ -11,6 +11,7 @@ prog
 	.option('--host, -h', 'HTTP host to listen on (default: localhost)')
 	.option('--compress', 'Enable compression (default: enabled)')
 	.option('--sourcemap', 'Enable Source Maps')
+	.option('--profile', 'Generate build statistics')
 	.option('--cwd', 'Your web app root directory (default: ./public')
 	.option('--out', 'Where to store generated files (default: ./.dist')
 	.action(opts => {
