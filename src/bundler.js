@@ -66,6 +66,9 @@ export default function bundler({ cwd = '', out, sourcemap = false, onError, onB
 			htmPlugin(),
 			processGlobalPlugin(),
 			commonJs({
+				ignoreGlobal: true,
+				sourceMap: sourcemap,
+				transformMixedEsModules: false,
 				include: /^\0npm/
 			}),
 			json(),
