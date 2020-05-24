@@ -79,7 +79,7 @@
     "rollup": "^2.10.5",
     "rollup-plugin-preserve-shebang": "^1.0.0",
     "sade": "^1.7.3",
-    "sirv": "^0.4.2",
+    "sirv": "^0.4.6",
     "terser": "^4.7.0",
     "tiny-glob": "^0.2.6",
     "wss": "^3.3.4"
