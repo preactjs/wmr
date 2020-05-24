@@ -54,9 +54,11 @@ export default function compress({ threshold = 1024, level = -1, brotli = false,
 				on.call(res, 'drain', () => compress.resume());
 				compress.on('end', () => end.call(res));
 				// const start = Date.now();
-				// compress.on('end', () => console.log(`${encoding};q=${level};dur=${Date.now() - start}`));
+				// compress.on('end', () => {
+				// 	console.log(`${req.url}[${(size / 1000) | 0}kb]: ${encoding};dur=${Date.now() - start}`);
+				// });
 			}
-			// pendingListeners.forEach(p => on.apply(res, p));
+			pendingListeners.forEach(p => on.apply(res, p));
 			writeHead.apply(res, pendingHead);
 		}
 
@@ -80,13 +82,13 @@ export default function compress({ threshold = 1024, level = -1, brotli = false,
 			return compress.end(chunk, enc);
 		};
 		/** Not currently used. */
-		// let pendingListeners = [];
-		// res.on = function (type, listener) {
-		// 	if (!pendingListeners) on.call(this, type, listener);
-		// 	else if (compress) compress.on(type, listener);
-		// 	else pendingListeners.push([type, listener]);
-		// 	return this;
-		// };
+		let pendingListeners = [];
+		res.on = function (type, listener) {
+			if (!pendingListeners) on.call(this, type, listener);
+			else if (compress) compress.on(type, listener);
+			else pendingListeners.push([type, listener]);
+			return this;
+		};
 
 		next();
 	};

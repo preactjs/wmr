@@ -45,7 +45,7 @@ export default function server({ cwd, out, compress = true } = {}) {
 	if (compress) {
 		// @TODO: consider moving to AOT+upgrade compression
 		const threshold = compress === true ? 1024 : compress;
-		app.use(compression({ threshold, level: -1 }));
+		app.use(compression({ threshold, level: 4 }));
 	}
 
 	app.use(sirv(out || '.dist', { dev: true }));
