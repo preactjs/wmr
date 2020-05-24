@@ -31,7 +31,8 @@ export async function start(options = {}) {
 					error: err.clientMessage
 				});
 			} else {
-				console.error(err + '');
+				const message = /^Error/.test(err.message) ? err.message : err + '';
+				console.error(message);
 			}
 		},
 		onBuild({ changes, duration }) {
