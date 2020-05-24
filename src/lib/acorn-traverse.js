@@ -357,6 +357,8 @@ function buildError(err, code, filename) {
 	return `${text} (${position})${frame}`;
 }
 
+const normalize = str => str.replace(/^(\t+)/, (_, p1) => '  '.repeat(p1.length));
+
 function codeFrame(code, loc) {
 	const { line, column } = loc;
 	const lines = code.split('\n');
@@ -364,12 +366,14 @@ function codeFrame(code, loc) {
 	const pad = str => String(str).padStart(len);
 	let frame = '';
 	if (line > 1) {
-		frame += `\n${pad(line - 2)} | ${lines[line - 2]}`;
+		frame += `\n${pad(line - 2)} | ${normalize(lines[line - 2])}`;
 	}
-	frame += `\n${pad(line - 1)} | ${lines[line - 1]}`;
-	frame += `\n${'-'.repeat(len + 2 + column)}^`;
+	frame += `\n${pad(line - 1)} | ${normalize(lines[line - 1])}`;
+	// Add tab count to marker offset, because tabs are converted to 2 spaces.
+	const tabCount = (lines[line - 1].match(/^\t+/) || []).length;
+	frame += `\n${'-'.repeat(len + 3 + column + tabCount)}^`;
 	if (line < lines.length) {
-		frame += `\n${pad(line)} | ${lines[line]}`;
+		frame += `\n${pad(line)} | ${normalize(lines[line])}`;
 	}
 	return frame;
 }
