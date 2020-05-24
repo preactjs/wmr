@@ -1,6 +1,7 @@
 import * as acornWalk from 'acorn-walk';
 import * as jsxWalk from 'acorn-jsx-walk';
 import MagicString from 'magic-string';
+import path from 'path';
 
 /**
  * @fileoverview
@@ -352,7 +353,7 @@ export function transform(code, { presets, plugins, parse, filename, ast, source
 function buildError(err, code, filename) {
 	const { loc, message } = err;
 	const text = message.replace(/ \(\d+:\d+\)$/, '');
-	const position = `${filename}:${loc.line}:${loc.column + 1}`;
+	const position = `${path.relative(process.cwd(), filename)}:${loc.line}:${loc.column + 1}`;
 	const frame = codeFrame(code, loc);
 	return `${text} (${position})${frame}`;
 }
