@@ -1,13 +1,13 @@
 import { relative, resolve, join, normalize } from 'path';
 import * as rollup from 'rollup';
-import commonJs from '@rollup/plugin-commonjs';
+// import commonJs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import watcherPlugin from './plugins/watcher-plugin.js';
-import unpkgPlugin from './plugins/unpkg-plugin.js';
+// import unpkgPlugin from './plugins/unpkg-plugin.js';
 import htmPlugin from './plugins/htm-plugin.js';
 import wmrPlugin from './plugins/wmr/plugin.js';
 import wmrStylesPlugin from './plugins/wmr/styles-plugin.js';
-import processGlobalPlugin from './plugins/process-global-plugin.js';
+// import processGlobalPlugin from './plugins/process-global-plugin.js';
 import localNpmPlugin from './plugins/local-npm-plugin.js';
 
 /** @typedef BuildEvent @type {{ changes: string[] } & Extract<rollup.RollupWatcherEvent, { code: 'BUNDLE_END' }> }} */
@@ -65,16 +65,16 @@ export default function bundler({ cwd = '', out, sourcemap = false, onError, onB
 			wmrStylesPlugin(),
 			wmrPlugin(),
 			htmPlugin(),
-			processGlobalPlugin(),
-			commonJs({
-				ignoreGlobal: true,
-				sourceMap: sourcemap,
-				transformMixedEsModules: false,
-				include: /^\0npm/
-			}),
+			// processGlobalPlugin(),
+			// commonJs({
+			// 	ignoreGlobal: true,
+			// 	sourceMap: sourcemap,
+			// 	transformMixedEsModules: false,
+			// 	include: /^\0npm/
+			// }),
 			json(),
-			localNpmPlugin(),
-			unpkgPlugin()
+			localNpmPlugin()
+			// unpkgPlugin()
 		]
 	});
 
