@@ -8,6 +8,7 @@ import htmPlugin from './plugins/htm-plugin.js';
 import wmrPlugin from './plugins/wmr/plugin.js';
 import wmrStylesPlugin from './plugins/wmr/styles-plugin.js';
 import processGlobalPlugin from './plugins/process-global-plugin.js';
+import localNpmPlugin from './plugins/local-npm-plugin.js';
 
 /** @typedef BuildEvent @type {{ changes: string[] } & Extract<rollup.RollupWatcherEvent, { code: 'BUNDLE_END' }> }} */
 /** @typedef BuildError @type {rollup.RollupError & { clientMessage?: string }} */
@@ -72,6 +73,7 @@ export default function bundler({ cwd = '', out, sourcemap = false, onError, onB
 				include: /^\0npm/
 			}),
 			json(),
+			localNpmPlugin(),
 			unpkgPlugin()
 		]
 	});
