@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import net from 'net';
+import os from 'os';
 import server from './server.js';
 import bundler from './bundler.js';
 
@@ -83,4 +84,17 @@ export async function start(options = {}) {
 	let addr = app.server.address();
 	if (typeof addr !== 'string') addr = `http://${addr.address.replace('::', 'localhost')}:${addr.port}`;
 	console.log(`Listening on ${addr}`);
+
+	// Get network address
+	const ifaces = os.networkInterfaces();
+	const addresses = [];
+	Object.keys(ifaces).forEach(name => {
+		ifaces[name].forEach(iface => {
+			if (iface.family === 'IPv4' && !iface.internal) {
+				addresses.push(iface.address);
+			}
+		});
+	});
+
+	console.log(`Listening on ${addresses.map(x => `http://${x}:${port}`).join(', ')}`);
 }
