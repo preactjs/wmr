@@ -1,0 +1,13 @@
+{
+	"compileOnSave": false,
+	"compilerOptions": {
+		"allowJs": true,
+		"checkJs": true,
+		"noEmit": true,
+		"allowSyntheticDefaultImports": true,
+		"downlevelIteration": true
+	},
+	"typeAcquisition": {
+		"enable": true
+	}
+}
