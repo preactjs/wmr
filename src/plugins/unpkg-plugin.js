@@ -10,8 +10,9 @@ const PREFIX_INTERNAL = '\0npd/';
  * @param {object} [options]
  * @returns {import('rollup').Plugin}
  */
-export default function unpkgPlugin({ resolutions = new Map(), publicPath = '@npm/' } = {}) {
+export default function unpkgPlugin({ resolutions = new Map(), publicPath = '@npm/', perPackage = false } = {}) {
 	const reverseResolutions = new Map();
+	publicPath = publicPath.replace(/\/$/, '') + '/';
 
 	function manualChunks(filename, { getModuleInfo }) {
 		// if this is a submodule of a package entry, merge it into the entry:
@@ -58,6 +59,10 @@ export default function unpkgPlugin({ resolutions = new Map(), publicPath = '@np
 			const isInternalImport = isRelativeImport && from && isRelativeToPackage;
 			if (isInternalImport) {
 				return PREFIX_INTERNAL + resolved;
+			}
+
+			if (perPackage && from) {
+				return { id: publicPath + s, external: true };
 			}
 
 			return PREFIX + resolved;
@@ -169,7 +174,6 @@ const getPackageInfo = withCache(PACKAGE_CACHE, async id => {
  * @param {string} id
  */
 async function unpkgResolve(id) {
-	// return;
 	let [, name, path = ''] = id.match(/^((?:@[^@/?]+\/)?[^@/?]+)(?:@[^/?]+)?(?:\/([^?]+))?(?:\?.*)?$/);
 	const info = await getPackageInfo(name);
 
@@ -177,7 +181,6 @@ async function unpkgResolve(id) {
 		info.exports = EXPORTMAPS[name];
 	}
 
-	let sloppyPath;
 	if (info.exports) {
 		// export maps
 		const exp = ('./' + path.replace(/^\.?\//, '')).replace(/\/$/g, '');
@@ -189,14 +192,18 @@ async function unpkgResolve(id) {
 		} else if (!info.exports['./']) {
 			throw `No matching Export Map entry for ${exp}.`;
 		}
-	} else if (path) {
+	} else {
+		// bare imports route through package entry fields:
+		if (!path) {
+			path = info.esmodules || info.module || info['jsnext:main'] || info.browser || info.main;
+		}
+
 		if (!path.match(/\.([mc]js|[tj]sx?)$/g)) path += '.js';
-	} else if (!path && (sloppyPath = info.module || info['jsnext:main'] || info.browser || info.main)) {
-		path = sloppyPath;
-		if (!path.match(/\.([mc]js|[tj]sx?)$/g)) path += '.js';
-	} else if (!path) {
-		console.log('falling back to ?module lookup for ', id);
-		path += '?module';
+
+		// if (!path) {
+		// 	console.log('falling back to ?module lookup for ', id);
+		// 	path += '?module';
+		// }
 	}
 
 	return name + (path ? `/${path}` : '');

@@ -1,20 +1,31 @@
 import { promises as fs } from 'fs';
-// import zlib from 'zlib';
-// import terser from 'terser';
+import zlib from 'zlib';
+import terser from 'terser';
 import * as rollup from 'rollup';
 import { resolvePackageVersion } from '../plugins/npm-plugin/registry.js';
 import npmPlugin, { normalizeSpecifier } from '../plugins/npm-plugin/index.js';
 import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import { dirname } from 'path';
+import unpkgPlugin from '../plugins/unpkg-plugin.js';
 
 // 1 minute
 const CACHE_TTL = 60000;
 // const CACHE_TTL = 0;
 
+/**
+ * @typedef Meta
+ * @type {Parameters<resolvePackageVersion>[0]}
+ */
+
+/**
+ * @typedef Mem
+ * @type {{ module: string, path: string, version: string, brotli, upgrading: boolean, modified: number, code: string }}
+ */
+
+/** @type {Map<string, Mem>} */
 const BUNDLE_CACHE = new Map();
 
-/*
 const BROTLI_OPTS = {
 	//level: 11
 	params: {
@@ -24,216 +35,42 @@ const BROTLI_OPTS = {
 	}
 };
 
-function upgradeToBrotli(mem) {
-	mem.upgrading = true;
-
-	const result = terser.minify(mem.code, {
-		mangle: true,
-		compress: true,
-		module: true,
-		ecma: 9,
-		safari10: true,
-		sourceMap: false
-	});
-	if (result.warnings) {
-		console.warn(result.warnings.join('\n'));
-	}
-	if (result.error) {
-		console.error(result.error);
-	} else {
-		mem.code = result.code;
-	}
-
-	zlib.brotliCompress(mem.code, BROTLI_OPTS, (err, data) => {
-		mem.upgrading = false;
-		mem.brotli = data;
-	});
-}
-*/
-
-/** @returns {import('polka').Middleware} */
-export default function npmMiddleware() {
+/**
+ * @param {object} [options]
+ * @param {'npm'|'unpkg'} [options.source = 'npm'] How to fetch package files
+ * @returns {import('polka').Middleware}
+ */
+export default function npmMiddleware({ source = 'npm' } = {}) {
 	return async (req, res, next) => {
-		// const mod = req.url.replace(/\?.*$/g, '');
 		const mod = req.path.replace(/^\//, '');
 		try {
 			const meta = normalizeSpecifier(mod);
 			await resolvePackageVersion(meta);
-			// console.log('npm: ', meta.specifier);
 
-			const cacheKey = Buffer.from(`${meta.specifier}${meta.version}`).toString('base64');
-			// @TODO - flatten inner path and include version?
-			const cacheFile = `node_modules/${meta.module}/.cache/${cacheKey}.js`;
-
-			if (req.headers['if-none-match'] === cacheKey) {
-				res.writeHead(304);
-				res.end();
-				// if (BUNDLE_CACHE.has(cacheKey)) {
-				//   const mem = BUNDLE_CACHE.get(cacheKey);
-				//   if (++mem.uses >= 10 && !mem.brotli && !mem.upgrading) {
-				//     upgradeToBrotli(mem);
-				//   }
-				// }
-				return;
+			// The package name + path + version is a strong ETag since versions are immutable
+			const etag = Buffer.from(`${meta.specifier}${meta.version}`).toString('base64');
+			if (req.headers['if-none-match'] === etag) {
+				return res.writeHead(304).end();
 			}
+			res.setHeader('etag', etag);
+			res.setHeader('content-type', 'application/javascript');
 
-			// disable caching during development
-			let cached,
-				cacheStatus = 'MEMORY',
-				brotli;
-
-			if (BUNDLE_CACHE.has(cacheKey)) {
-				const mem = BUNDLE_CACHE.get(cacheKey);
-				if (Date.now() - mem.modified <= CACHE_TTL) {
-					cached = mem.code;
-					brotli = mem.brotli;
-					// if (++mem.uses >= 10 && !brotli && !mem.upgrading) {
-					// 	upgradeToBrotli(mem);
-					// }
-				}
-			} else {
-				let stat;
-				try {
-					stat = await fs.stat(cacheFile);
-				} catch (e) {}
-				if (stat && Date.now() - stat.mtimeMs <= CACHE_TTL) {
-					// cached = await fs.readFile(cacheFile, 'utf-8');
-					cached = await fs.readFile(cacheFile);
-					// ressurect the in-memory cache entry from disk:
-					BUNDLE_CACHE.set(cacheKey, {
-						uses: 1,
-						brotli: null,
-						upgrading: false,
-						modified: stat.mtimeMs,
-						code: cached
-					});
-					cacheStatus = 'DISK';
-				}
-			}
-
-			if (cached) {
-				const headers = {
-					'content-type': 'application/javascript',
-					etag: cacheKey,
-					'x-cache-status': cacheStatus
-				};
-				if (brotli && /\bbr\b/.test(req.headers['accept-encoding'] + '')) {
-					headers['content-encoding'] = 'br';
-					headers['content-length'] = brotli.byteLength;
-				} else {
-					brotli = null;
-				}
-				res.writeHead(200, headers);
-				res.end(brotli || cached);
-				return;
-			}
+			// serve from memory and disk caches:
+			const cached = await getCachedBundle(etag, meta);
+			if (cached) return sendCachedBundle(req, res, cached);
 
 			const start = Date.now();
-
-			const bundle = await rollup.rollup({
-				treeshake: false,
-				input: mod, //meta.specifier + '/' + meta.path,
-				// inlineDynamicImports: true,
-				// shimMissingExports: true,
-				plugins: [
-					npmPlugin({
-						publicPath: '/@npm'
-					}),
-					commonjs({
-						// ignoreGlobal: true,
-						// include: /^\0npm/
-						sourceMap: false,
-						transformMixedEsModules: false
-					}),
-					json(),
-					// localNpmPlugin(),
-					{
-						name: 'never-disk',
-						// resolveId(s) {
-						// 	return false;
-						// },
-						load(s) {
-							throw Error('local access not allowed');
-						}
-					}
-				]
-				// external(source, importer, isResolved) {
-				// 	console.log(source, importer, isResolved);
-				// }
-				// manualChunks(filename, { getModuleInfo }) {
-				// 	console.log('chunk: ', filename, getModuleInfo(filename));
-				// 	return filename.replace(/^\0npm\//, '@npm/');
-				// }
-			});
-
-			const { output } = await bundle.generate({
-				format: 'es',
-				// compact: true,
-				// freeze: false,
-				indent: false,
-				// strict: false,
-				// interop: false,
-				// esModule: false,
-				entryFileNames: '[name].js',
-				chunkFileNames: '[name].js',
-
-				// Don't transform paths at all:
-				paths(str) {
-					return str;
-				},
-
-				// libraries are generally already minified, this is a waste:
-				plugins: [
-					// {
-					// 	name: 'fast-minify',
-					// 	renderChunk(code, chunk) {
-					// 		const start = Date.now();
-					// 		const out = terser.minify(code, {
-					// 			mangle: true,
-					// 			compress: false,
-					// 			module: true,
-					// 			ecma: 9,
-					// 			safari10: true,
-					// 			// sourceMap: false,
-					// 			output: {
-					// 				comments: false
-					// 			}
-					// 		});
-					// 		if (out.error) {
-					// 			throw out.error;
-					// 		}
-					// 		if (out.warnings) {
-					// 			console.warn(out.warnings.join('\n'));
-					// 		}
-					// 		console.log('Terser took ' + (Date.now() - start) + 'ms');
-					// 		return out.code;
-					// 	}
-					// }
-				]
-			});
-
-			const code = output[0].code;
-
-			// console.log('middleware::done ', mod, code);
-
-			BUNDLE_CACHE.set(cacheKey, {
-				uses: 0,
-				brotli: null,
-				upgrading: false,
-				modified: Date.now(),
-				code
-			});
-
-			fwrite(cacheFile, code);
-
-			res.writeHead(200, {
-				'content-type': 'application/javascript',
-				'content-length': code.length,
-				etag: cacheKey
-			});
-			res.end(code);
-
+			const code = await bundleNpmModule(mod, { source });
 			console.log(`Bundle dep: ${mod}: ${Date.now() - start}ms`);
+
+			// send it!
+			res.writeHead(200, { 'content-length': code.length }).end(code);
+
+			// store the bundle in memory and disk caches
+			setCachedBundle(etag, code, meta);
+
+			// this is a new bundle, we'll compress it with terser and brotli shortly
+			enqueueCompress(etag);
 		} catch (e) {
 			console.error(`Error bundling ${mod}: `, e);
 			next(e);
@@ -241,8 +78,216 @@ export default function npmMiddleware() {
 	};
 }
 
+/**
+ * Bundle am npm module entry path into a single file
+ * @param {string} mod The module to bundle, including subpackage/path
+ * @param {{ source: 'npm'|'unpkg' }} opts
+ */
+async function bundleNpmModule(mod, { source }) {
+	const bundle = await rollup.rollup({
+		treeshake: false,
+		input: mod,
+		// inlineDynamicImports: true,
+		// shimMissingExports: true,
+		plugins: [
+			source === 'npm'
+				? npmPlugin({
+						publicPath: '/@npm'
+				  })
+				: unpkgPlugin({
+						publicPath: '/@npm',
+						perPackage: true
+				  }),
+			commonjs({
+				sourceMap: false,
+				transformMixedEsModules: false
+			}),
+			json(),
+			{
+				name: 'never-disk',
+				load(s) {
+					throw Error('local access not allowed');
+				}
+			}
+		]
+	});
+
+	const { output } = await bundle.generate({
+		format: 'es',
+		indent: false,
+		// entryFileNames: '[name].js',
+		// chunkFileNames: '[name].js',
+		// Don't transform paths at all:
+		paths: String
+	});
+
+	return output[0].code;
+}
+
+/**
+ * Create a minified+compressed version of a bundle in the in-memory and disk caches
+ * @param {Mem} mem
+ * @TODO move this into a Worker
+ */
+function upgradeToBrotli(mem) {
+	return new Promise((resolve, reject) => {
+		// console.log(`Upgrading ${mem.module}/${mem.path} to compressed version...`);
+		// const start = Date.now();
+		mem.upgrading = true;
+
+		const result = terser.minify(mem.code, {
+			mangle: true,
+			compress: true,
+			module: true,
+			ecma: 9,
+			safari10: true,
+			sourceMap: false
+		});
+		if (result.warnings) {
+			console.warn(result.warnings.join('\n'));
+		}
+		if (result.error) {
+			console.error(result.error);
+		} else {
+			mem.code = result.code;
+		}
+
+		const cacheFile = getCachePath(mem);
+		fs.writeFile(cacheFile, result.code);
+
+		zlib.brotliCompress(mem.code, BROTLI_OPTS, (err, data) => {
+			mem.upgrading = false;
+			if (err && result.error) {
+				return reject(Error(`Minification and Brotli compression failed for ${mem.module}/${mem.path}.`));
+			}
+			mem.brotli = data;
+			fs.writeFile(cacheFile + '.br', data);
+			// console.log(`  > ${mem.module}/${mem.path} upgraded in ${Date.now() - start}ms`);
+			resolve();
+		});
+	});
+}
+
+const compressionQueue = new Set();
+function enqueueCompress(cacheKey) {
+	compressionQueue.add(cacheKey);
+	if (compressionQueue.size === 1) {
+		setTimeout(compressBackground, 1000);
+	}
+}
+function compressBackground() {
+	const cacheKey = compressionQueue.values().next().value;
+	if (!cacheKey) return;
+	const entry = BUNDLE_CACHE.get(cacheKey);
+	upgradeToBrotli(entry).then(() => {
+		setTimeout(() => {
+			compressionQueue.delete(cacheKey);
+			compressBackground();
+		}, 1000);
+	});
+}
+
+/**
+ * Get cached code for a bundle from the in-memory or disk caches
+ * @param {string} etag the ETag is also used as the in-memory cache key
+ * @param {Meta} meta
+ */
+async function getCachedBundle(etag, { module, path, version }) {
+	if (BUNDLE_CACHE.has(etag)) {
+		const mem = BUNDLE_CACHE.get(etag);
+		if (Date.now() - mem.modified > CACHE_TTL) return;
+
+		return {
+			code: mem.code,
+			brotli: mem.brotli,
+			cacheStatus: 'MEMORY'
+		};
+	}
+
+	const cacheFile = getCachePath({ module, path, version });
+
+	const stat = await fs.stat(cacheFile).catch(() => null);
+	if (!stat || Date.now() - stat.mtimeMs > CACHE_TTL) return;
+
+	// cached = await fs.readFile(cacheFile, 'utf-8');
+	const [code, brotli] = await Promise.all([
+		fs.readFile(cacheFile, 'utf-8'),
+		fs.readFile(cacheFile + '.br').catch(() => null)
+	]);
+	// ressurect the in-memory cache entry from disk:
+	BUNDLE_CACHE.set(etag, {
+		module,
+		path,
+		version,
+		brotli,
+		upgrading: false,
+		modified: stat.mtimeMs,
+		code
+	});
+
+	return {
+		code,
+		brotli,
+		cacheStatus: 'DISK'
+	};
+}
+
+/**
+ * Store a generated bundle in the in-memory and disk caches
+ * @param {string} etag the ETag is also used as the in-memory cache key
+ * @param {string} code the generated bundle code
+ * @param {Meta} meta
+ */
+function setCachedBundle(etag, code, { module, path, version }) {
+	BUNDLE_CACHE.set(etag, {
+		module,
+		path,
+		version,
+		brotli: null,
+		upgrading: false,
+		modified: Date.now(),
+		code
+	});
+
+	const cacheFile = getCachePath({ module, path, version });
+	fwrite(cacheFile, code);
+}
+
+/**
+ * @param {import('http').IncomingMessage} req
+ * @param {import('http').ServerResponse} res
+ */
+function sendCachedBundle(req, res, { code, brotli, cacheStatus }) {
+	const headers = {
+		'content-length': code.length,
+		'x-cache-status': cacheStatus
+	};
+	if (brotli && /\bbr\b/.test(req.headers['accept-encoding'] + '')) {
+		headers['content-encoding'] = 'br';
+		headers['content-length'] = brotli.byteLength;
+		const etag = res.getHeader('etag');
+		if (etag) {
+			headers.etag = etag + '-br';
+		}
+	} else {
+		// this UA doesn't support brotli
+		brotli = null;
+	}
+	res.writeHead(200, headers);
+	res.end(brotli || code);
+}
+
 // @TODO: this is basically writeNpmFile from registry.js
 async function fwrite(filename, data) {
 	await fs.mkdir(dirname(filename), { recursive: true });
 	await fs.writeFile(filename, data);
+}
+
+/**
+ * Generate a human-readable cache path
+ * @param {Meta} meta
+ */
+function getCachePath({ module, version, path }) {
+	const tfPath = (path || '').replace(/\//g, '---');
+	return `node_modules/${module}/.cache/${version}--${tfPath}.js`;
 }

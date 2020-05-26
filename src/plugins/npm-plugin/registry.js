@@ -66,7 +66,6 @@ export async function resolvePackageVersion(info) {
 		}
 	}
 
-	// console.log(info.version);
 	try {
 		const pkg = JSON.parse(await fs.readFile(resolve(NODE_MODULES, info.module, 'package.json'), 'utf-8'));
 		DIST_TAG_CACHE.set(key, { time: Date.now(), version: pkg.version });
@@ -185,7 +184,7 @@ export async function loadPackageFile({ module, version, path = '' }) {
 		}
 	}
 
-	console.log(`${path} using tar stream strategy`);
+	// console.log(`${module}/${path} using tar stream strategy`);
 	// trigger package fetch, and resolve as soon as the file passes through the tar stream:
 	loadPackageFiles({ module, version });
 	return whenFile({ module, version, path });
@@ -197,16 +196,6 @@ export async function loadPackageFile({ module, version, path = '' }) {
 	// }
 	// return files.get(path);
 }
-
-// function tarballToCacheId(tarballUrl) {
-// 	return (
-// 		'tar-' +
-// 		tarballUrl
-// 			.replace(/^https?:\/\/[^/]+\//g, '')
-// 			.replace(/[/.]/g, '__')
-// 			.replace(/\.[a-z]+$/, '.json')
-// 	);
-// }
 
 /** @type {Map<string, Map<string, string>>} */
 const tarFiles = new Map();
@@ -220,18 +209,22 @@ const whenFiles = new Map();
  * @returns {Promise<string>}
  */
 function whenFile({ module, version, path }) {
+	// const f = module + '@' + version + ' :: ' + path;
 	const packageSpecifier = module + '/' + version;
 	let files = tarFiles.get(packageSpecifier);
 	let whens = whenFiles.get(packageSpecifier);
 	if (files) {
 		if (files.has(path)) {
+			// console.log(`when(${f}): already available`);
 			return Promise.resolve(files.get(path));
 		}
 		// we already have a completed files listing and this file wasn't in it.
 		if (!whens) {
+			// console.log(`when(${f}): confirmed missing`);
 			return Promise.reject('no such file');
 		}
 	}
+	// console.log(`when(${f}): pending (${files ? 'has' : 'no'} files, ${whens ? 'has' : 'no'} whens)`);
 	// whenFile() should never be called prior to getTarFiles() to avoid races.
 	if (!whens) {
 		whens = new Set();
@@ -249,31 +242,22 @@ const getTarFiles = memo(async (tarballUrl, packageName, version) => {
 	// const cacheDir = os.homedir()+'/.npm/_cacache'
 	// await cacache.get(cacheDir, "sri-hash")
 
-	// Old JSON cache
-	// const cacheId = tarballToCacheId(tarballUrl);
-	// const f = resolve('.cache', cacheId);
-	// let cached;
-	// try {
-	// 	cached = JSON.parse(await fs.readFile(f, 'utf-8'));
-	// } catch (e) {}
-	// if (cached) {
-	// 	console.log('using cached tarball ' + tarballUrl);
-	// 	return new Map(Object.entries(cached));
-	// }
-
 	// the existence of an entry in whenFiles indicates that we have an in-flight request
 	let whens = whenFiles.get(packageSpecifier);
 	if (!whens) whenFiles.set(packageSpecifier, (whens = new Set()));
 
+	// const start = Date.now();
+
 	// we should never reach here if there's an existing entry in tarFiles
+	// if (tarFiles.get(packageSpecifier)) throw Error('this should never happen');
 	/** @type {Map<string, string>} */
 	const files = new Map();
 	tarFiles.set(packageSpecifier, files);
 
-	console.log('streaming tarball ' + tarballUrl);
+	// console.log('streaming tarball for ' + packageName + '@' + version + ': ' + tarballUrl);
 	const tarStream = await getStream(tarballUrl);
 
-	console.log('getting files');
+	// console.log('getting files for ' + packageName);
 	await parseTarball(tarStream, async (name, stream) => {
 		// write the file to node_modules
 		// createWriteStream(resolve(NODE_MODULES, packageName, name));
@@ -293,7 +277,7 @@ const getTarFiles = memo(async (tarballUrl, packageName, version) => {
 		writeNpmFile(packageName, name, data);
 
 		files.set(name, data);
-		whens.forEach(when => {
+		Array.from(whens).forEach(when => {
 			if (when.path === name) {
 				when.resolve(data);
 				whens.delete(when);
@@ -301,19 +285,16 @@ const getTarFiles = memo(async (tarballUrl, packageName, version) => {
 		});
 	});
 
-	console.log('got files');
-	// const obj = {};
-	// for (const [k, v] of files) obj[k] = v;
-	// const json = JSON.stringify(obj);
-	// console.log('writing cache (' + json.length + 'b)');
-	// fs.writeFile(f, json);
-	// console.log('wrote cache');
+	// console.log('got files for ' + packageName, Array.from(whens));
 
 	// reject any remaining pending resolutions
-	whens.forEach(when => {
+	const remaining = Array.from(whens);
+	whenFiles.delete(packageSpecifier);
+	remaining.forEach(when => {
 		when.reject(Error(`Package ${packageName} does not contain file ${when.path}`));
 	});
-	whenFiles.delete(packageSpecifier);
+
+	// console.log(`Streamed ${packageName} in ${Date.now() - start}ms`);
 
 	return files;
 });
