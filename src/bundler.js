@@ -72,10 +72,10 @@ export default function bundler({ cwd = '', out, sourcemap = false, onError, onB
 			// 	transformMixedEsModules: false,
 			// 	include: /^\0npm/
 			// }),
+			// unpkgPlugin()
 			json(),
 			localNpmPlugin()
-			// unpkgPlugin()
-		]
+		].filter(Boolean)
 	});
 
 	/** @param {BuildError} error */
