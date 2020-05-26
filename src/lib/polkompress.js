@@ -37,7 +37,9 @@ export default function compress({ threshold = 1024, level = -1, brotli = false,
 			started = true;
 			// @ts-ignore
 			size = res.getHeader('Content-Length') | 0 || size;
-			if (mimes.test(res.getHeader('Content-Type') + '') && size >= threshold) {
+			const compressible = mimes.test(res.getHeader('Content-Type') + '');
+			const cleartext = !res.getHeader('Content-Encoding');
+			if (compressible && cleartext && size >= threshold) {
 				res.setHeader('Content-Encoding', encoding);
 				res.removeHeader('Content-Length');
 				if (encoding === 'br') {
