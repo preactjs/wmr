@@ -22,7 +22,7 @@ export async function start(options = {}) {
 		}
 	}
 
-	if (options.bundle) {
+	if (options.prebuild) {
 		options.overlayDir = '.dist';
 		bundler({
 			...options,
