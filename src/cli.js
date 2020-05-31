@@ -12,10 +12,12 @@ prog
 	.option('--compress', 'Enable compression (default: enabled)')
 	.option('--sourcemap', 'Enable Source Maps')
 	.option('--profile', 'Generate build statistics')
-	.option('--cwd', 'Your web app root directory (default: ./public')
-	.option('--out', 'Where to store generated files (default: ./.dist')
+	.option('--cwd', 'Your web app root directory (default: ./public)')
+	.option('--out', 'Where to store generated files (default: ./.dist)')
+	.option('--build', 'Build modules at startup using Rollup')
 	.action(opts => {
 		if (/true|false/.test(opts.compress)) opts.compress = opts.compress !== 'false';
+		if (/true/.test(process.env.PROFILE)) opts.profile = true;
 		start(opts);
 	});
 

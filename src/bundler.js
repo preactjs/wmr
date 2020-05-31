@@ -92,7 +92,7 @@ export default function bundler({ cwd = '', out, sourcemap = false, onError, onB
 
 		// normalize source paths for use on the client
 		error.clientMessage = err.replace(/ \(([^(]+):(\d+):(\d+)\)/, (s, file, line, col) => {
-			let relativePath = '/' + relative('public', file);
+			let relativePath = '/' + relative(cwd, file);
 			// if sourcemaps are enabled, link to them in the client error:
 			if (sourcemap) relativePath = 'source://' + relativePath;
 			return ` (${relativePath}:${line}:${col})`;

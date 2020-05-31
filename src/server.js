@@ -1,57 +1,55 @@
 import { createServer } from 'http';
-import { parse as parseUrl } from 'url';
-import ws from 'ws';
 import polka from 'polka';
 import sirv from 'sirv';
 import compression from './lib/polkompress.js';
 import npmMiddleware from './lib/npm-middleware.js';
+import WebSocketServer from './lib/websocket-server.js';
 
 /**
  * @typedef CustomServer
- * @type {import('polka').Polka & { server?: ReturnType<createServer>, ws?: ws.Server & { broadcast?(data: any) } }}
+ * @type {polka.Polka & { server?: ReturnType<createServer>, ws?: WebSocketServer } }
  */
 
 /**
  * @param {object} [options]
  * @param {string} [options.cwd = ''] Directory to serve
- * @param {string} [options.out = '.dist'] Directory to store generated files
+ * @param {string} [options.overlayDir] A directory of generated files to serve if present
+ * @param {polka.Middleware[]} [options.middleware] Additional Polka middlewares to inject
  * @param {boolean|number} [options.compress = true] Compress responses? Pass a `number` to set the size threshold.
  */
-export default function server({ cwd, out, compress = true } = {}) {
+export default function server({ cwd, overlayDir, middleware, compress = true } = {}) {
 	/** @type {CustomServer} */
-	const app = polka();
+	const app = polka({
+		onError(err, req, res) {
+			// ignore missing favicon requests
+			if (req.path == '/favicon.ico') return res.end();
 
-	app.server = createServer();
-
-	app.ws = new ws.Server({ noServer: true });
-
-	app.ws.broadcast = data => {
-		app.ws.clients.forEach(client => {
-			if (client.readyState !== ws.OPEN) return;
-			client.send(JSON.stringify(data));
-		});
-	};
-
-	app.server.on('upgrade', (req, socket, head) => {
-		const pathname = parseUrl(req.url).pathname;
-		if (pathname == '/_hmr') {
-			app.ws.handleUpgrade(req, socket, head, ws => {
-				ws.emit('connection', ws, req);
-			});
-		} else {
-			socket.destroy();
+			const code = typeof err.code === 'number' ? err.code : 500;
+			res.writeHead(code, { 'content-type': 'text/plain' });
+			res.end(err + '');
+			console.error(err);
 		}
 	});
 
+	app.server = createServer();
+
+	app.ws = new WebSocketServer(app.server, '/_hmr');
+
 	if (compress) {
-		// @TODO: consider moving to AOT+upgrade compression
+		// @TODO: reconsider now that npm deps are compressed AOT
 		const threshold = compress === true ? 1024 : compress;
 		app.use(compression({ threshold, level: 4 }));
 	}
 
 	app.use('/@npm', npmMiddleware());
 
-	app.use(sirv(out || '.dist', { dev: true }));
+	if (middleware) {
+		app.use(...middleware);
+	}
+
+	if (overlayDir) {
+		app.use(sirv(overlayDir, { dev: true }));
+	}
 
 	const servePublic = sirv(cwd || '', { dev: true });
 	app.use(servePublic);

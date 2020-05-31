@@ -1,10 +1,12 @@
 import { promises as fs } from 'fs';
 import server from './server.js';
 import bundler from './bundler.js';
+import wmrMiddleware from './wmr-middleware.js';
 import { getFreePort, getServerAddresses } from './lib/net-utils.js';
 
 /**
  * @typedef OtherOptions
+ * @property {boolean} [bundle = false]
  * @property {string} [host]
  * @property {string} [port]
  */
@@ -13,37 +15,53 @@ import { getFreePort, getServerAddresses } from './lib/net-utils.js';
  * @param {Parameters<server>[0] & Parameters<bundler>[0] & OtherOptions} options
  */
 export async function start(options = {}) {
+	options = { ...options };
 	if (!options.cwd) {
 		if ((await fs.stat('public')).isDirectory()) {
 			options.cwd = 'public';
 		}
 	}
 
-	const app = server(options);
+	if (options.bundle) {
+		options.overlayDir = '.dist';
+		bundler({
+			...options,
+			onError: sendError,
+			onBuild: sendChanges
+		});
+	} else {
+		options.overlayDir = '.dist';
+		options.middleware = [
+			wmrMiddleware({
+				...options,
+				onError: sendError,
+				onChange: sendChanges
+			})
+		];
+	}
 
-	bundler({
-		...options,
-		onError(err) {
-			if (err.clientMessage && app.ws.clients.size > 0) {
-				app.ws.broadcast({
-					type: 'error',
-					error: err.clientMessage
-				});
-			} else {
-				const message = /^Error/.test(err.message) ? err.message : err + '';
-				console.error(message);
-			}
-		},
-		onBuild({ changes, duration }) {
+	function sendError(err) {
+		if (app.ws.clients.size > 0) {
 			app.ws.broadcast({
-				type: 'update',
-				dur: duration,
-				changes
+				type: 'error',
+				error: err.clientMessage || err.message
 			});
+		} else {
+			const message = /^Error/.test(err.message) ? err.message : err + '';
+			console.error(message);
 		}
-	});
+	}
 
+	function sendChanges({ changes }) {
+		app.ws.broadcast({
+			type: 'update',
+			changes
+		});
+	}
+
+	const app = server(options);
 	const port = await getFreePort(options.port || process.env.PORT || 8080);
-	app.listen(port, options.host || process.env.HOST);
+	const host = options.host || process.env.HOST;
+	app.listen(port, host);
 	console.log(getServerAddresses(app.server.address()));
 }

@@ -3,9 +3,11 @@ import { basename, dirname, relative, resolve } from 'path';
 
 /**
  * Implements hot-reloading for stylesheets imported by JS.
+ * @param {object} [options]
+ * @param {string} [options.cwd] Manually specify the cwd from which to resolve filenames (important for calculating hashes!)
  * @returns {import('rollup').Plugin}
  */
-export default function wmrStylesPlugin() {
+export default function wmrStylesPlugin({ cwd } = {}) {
 	const cwds = new Set();
 
 	return {
@@ -26,12 +28,12 @@ export default function wmrStylesPlugin() {
 		// resolveFileUrl({ })
 		async load(id) {
 			if (!id.match(/\.css$/)) return;
-			const idRelative = '/' + multiRelative(cwds, id);
+			const idRelative = '/' + cwd ? relative(cwd, resolve(cwd, id)) : multiRelative(cwds, id);
 			// this.addWatchFile(id);
 			let source = await fs.readFile(id, 'utf-8');
 			let mappings = [];
 			if (id.match(/\.module\.css$/)) {
-				const suffix = '_' + hash(id);
+				const suffix = '_' + hash(idRelative);
 				source = source.replace(/\.([a-z0-9_-]+)/gi, (str, className) => {
 					const mapped = className + suffix;
 					const q = /^\d|[^a-z0-9_$]/gi.test(className) ? `'` : ``;
@@ -92,7 +94,7 @@ function forEachInput(input, callback) {
 	if (input) callback(input);
 }
 
-function hash(str) {
+export function hash(str) {
 	let hash = 5381,
 		i = str.length;
 	while (i) hash = (hash * 33) ^ str.charCodeAt(--i);
