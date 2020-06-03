@@ -1,8 +1,8 @@
-import { createServer } from 'http';
 import ws from 'ws';
 import sirv from 'sirv';
 import polka from 'polka';
 import parse from '@polka/url';
+import { createServer } from 'http';
 import compression from './lib/polkompress.js';
 
 /**
