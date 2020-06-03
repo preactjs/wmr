@@ -48,12 +48,15 @@ export async function loadFixture(name, env) {
 /** @typedef {{output: string[], code: number, close: () => void}} WmrInstance */
 
 /**
+ * @param {string} cwd
  * @param {...string[]} args
  * @returns {WmrInstance}
  */
-export async function runWmr(...args) {
+export async function runWmr(cwd, ...args) {
 	const bin = path.join(__dirname, '..', 'src', 'cli.js');
-	const child = childProcess.spawn('node', [bin, ...args]);
+	const child = childProcess.spawn('node', [bin, ...args], {
+		cwd
+	});
 
 	const out = {
 		output: [],

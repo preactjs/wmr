@@ -19,9 +19,9 @@ describe('boot', () => {
 
 	it('should listen on port', async () => {
 		await loadFixture('simple', env);
-		instance = await runWmr('--cwd', env.tmp.path);
+		instance = await runWmr(env.tmp.path);
 		await waitForMessage(instance.output, /^Listening/);
 
-		expect(instance.output).toEqual(['Listening on http://localhost:8080', '  ⌙ http://192.168.2.107:8080']);
+		expect(instance.output).toEqual(['Listening on http://localhost:8080', '  ⌙ http://192.168.2.107:8080', '']);
 	});
 });
