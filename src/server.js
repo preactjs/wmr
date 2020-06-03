@@ -1,8 +1,8 @@
-import { createServer } from 'http';
-import { parse as parseUrl } from 'url';
 import ws from 'ws';
-import polka from 'polka';
 import sirv from 'sirv';
+import polka from 'polka';
+import parse from '@polka/url';
+import { createServer } from 'http';
 import compression from './lib/polkompress.js';
 
 /**
@@ -32,7 +32,7 @@ export default function server({ cwd, out, compress = true } = {}) {
 	};
 
 	app.server.on('upgrade', (req, socket, head) => {
-		const pathname = parseUrl(req.url).pathname;
+		const pathname = parse(req).pathname;
 		if (pathname == '/_hmr') {
 			app.ws.handleUpgrade(req, socket, head, ws => {
 				ws.emit('connection', ws, req);
