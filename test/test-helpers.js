@@ -50,7 +50,7 @@ export async function loadFixture(name, env) {
 /**
  * @param {string} cwd
  * @param {...string[]} args
- * @returns {WmrInstance}
+ * @returns {Promise<WmrInstance>}
  */
 export async function runWmr(cwd, ...args) {
 	const bin = path.join(__dirname, '..', 'src', 'cli.js');
@@ -83,13 +83,14 @@ export async function runWmr(cwd, ...args) {
 
 /**
  * @param {number} ms
+ * @returns {Promise<void>}
  */
 export const wait = ms => new Promise(r => setTimeout(r, ms));
 
 /**
  * @param {() => boolean | Promise<boolean>} fn
  * @param {number} timeout
- * @returns {boolean}
+ * @returns {Promise<boolean>}
  */
 export async function waitFor(fn, timeout = 2000) {
 	const start = Date.now();
