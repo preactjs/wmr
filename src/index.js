@@ -6,7 +6,7 @@ import { getFreePort, getServerAddresses } from './lib/net-utils.js';
 
 /**
  * @typedef OtherOptions
- * @property {boolean} [bundle = false]
+ * @property {boolean} [prebuild = false]
  * @property {string} [host]
  * @property {string} [port]
  */
