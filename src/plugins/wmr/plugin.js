@@ -19,10 +19,10 @@ if (import.meta.hot) {
 
 // @ts-ignore
 const __filename = import.meta.url;
-const wmr = fs.readFile(new URL('./client.js', __filename), 'utf-8');
+const wmrClientPromise = fs.readFile(new URL('./client.js', __filename), 'utf-8');
 
 export function getWmrClient() {
-	return wmr;
+	return wmrClientPromise;
 }
 
 /**
@@ -38,7 +38,7 @@ export default function wmrPlugin({} = {}) {
 			if (s == 'wmr') return '\0wmr.js';
 		},
 		load(s) {
-			if (s == '\0wmr.js') return wmr;
+			if (s == '\0wmr.js') return wmrClientPromise;
 		},
 		resolveImportMeta(property) {
 			if (property === 'hot') {
