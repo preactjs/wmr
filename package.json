@@ -7,7 +7,7 @@
     "demo": "cd demo && node --experimental-modules ../src/cli.js 2>&1 | grep -v ExperimentalWarning",
     "dev": "PROFILE=true nodemon -w src --exec \"npm run -s demo\"",
     "build": "rollup -c",
-    "test": "eslint"
+    "test": "eslint && jest"
   },
   "author": "Jason Miller <jason@developit.ca> (http://jasonformat.com)",
   "files": [
@@ -57,7 +57,12 @@
       "pre-commit": "lint-staged"
     }
   },
+  "jest": {
+    "preset": "jest-puppeteer"
+  },
   "devDependencies": {
+    "@babel/core": "^7.10.2",
+    "@babel/preset-env": "^7.10.2",
     "@rollup/plugin-commonjs": "^12.0.0",
     "@rollup/plugin-json": "^4.0.3",
     "@rollup/plugin-node-resolve": "^8.0.0",
@@ -65,20 +70,24 @@
     "acorn-jsx-walk": "^2.0.0",
     "acorn-walk": "^7.1.1",
     "async-disk-cache": "^2.0.0",
-    "cacache": "^15.0.3",
+    "babel-jest": "^26.0.1",
     "eslint": "^7.0.0",
     "eslint-config-developit": "^1.2.0",
     "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-prettier": "^3.1.3",
     "gunzip-maybe": "^1.4.2",
     "husky": "^4.2.5",
+    "jest": "^26.0.1",
+    "jest-puppeteer": "^4.4.0",
     "lint-staged": "^10.2.4",
     "magic-string": "^0.25.7",
+    "ncp": "^2.0.0",
     "node-fetch": "^2.6.0",
     "nodemon": "^2.0.4",
     "npm-merge-driver-install": "^1.1.1",
     "polka": "^0.5.2",
     "prettier": "^2.0.5",
+    "puppeteer": "^3.3.0",
     "rollup": "^2.11.2",
     "rollup-plugin-preserve-shebang": "^1.0.0",
     "sade": "^1.7.3",
@@ -87,6 +96,7 @@
     "tar-stream": "^2.1.2",
     "terser": "^4.7.0",
     "tiny-glob": "^0.2.6",
-    "wss": "^3.3.4"
+    "tmp-promise": "^3.0.2",
+    "ws": "^7.3.0"
   }
 }

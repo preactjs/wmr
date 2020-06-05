@@ -1,6 +1,6 @@
-import { createServer } from 'http';
-import polka from 'polka';
 import sirv from 'sirv';
+import polka from 'polka';
+import { createServer } from 'http';
 import compression from './lib/polkompress.js';
 import npmMiddleware from './lib/npm-middleware.js';
 import WebSocketServer from './lib/websocket-server.js';
