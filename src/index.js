@@ -15,7 +15,6 @@ import { getFreePort, getServerAddresses } from './lib/net-utils.js';
  * @param {Parameters<server>[0] & Parameters<bundler>[0] & OtherOptions} options
  */
 export async function start(options = {}) {
-	options = { ...options };
 	if (!options.cwd) {
 		if ((await fs.stat('public')).isDirectory()) {
 			options.cwd = 'public';
