@@ -29,7 +29,7 @@ export default function compress({ threshold = 1024, level = -1, brotli = false,
 
 		/** @type {zlib.Gzip | zlib.BrotliCompress} */
 		let compress;
-		let pendingHead;
+		let pendingStatus;
 		let started = false;
 		let size = 0;
 
@@ -37,7 +37,9 @@ export default function compress({ threshold = 1024, level = -1, brotli = false,
 			started = true;
 			// @ts-ignore
 			size = res.getHeader('Content-Length') | 0 || size;
-			if (mimes.test(res.getHeader('Content-Type') + '') && size >= threshold) {
+			const compressible = mimes.test(res.getHeader('Content-Type') + '');
+			const cleartext = !res.getHeader('Content-Encoding');
+			if (compressible && cleartext && size >= threshold) {
 				res.setHeader('Content-Encoding', encoding);
 				res.removeHeader('Content-Length');
 				if (encoding === 'br') {
@@ -59,7 +61,7 @@ export default function compress({ threshold = 1024, level = -1, brotli = false,
 				// });
 			}
 			pendingListeners.forEach(p => on.apply(res, p));
-			writeHead.apply(res, pendingHead);
+			if (pendingStatus) writeHead.call(res, pendingStatus);
 		}
 
 		const { end, write, on, writeHead } = res;
@@ -67,7 +69,7 @@ export default function compress({ threshold = 1024, level = -1, brotli = false,
 		res.writeHead = function (status, reason, headers) {
 			if (typeof reason !== 'string') [headers, reason] = [reason, headers];
 			if (headers) for (let i in headers) res.setHeader(i, headers[i]);
-			pendingHead = [status];
+			pendingStatus = status;
 			return this;
 		};
 		res.write = function (chunk, enc) {
@@ -77,8 +79,9 @@ export default function compress({ threshold = 1024, level = -1, brotli = false,
 			return compress.write(chunk, enc);
 		};
 		res.end = function (chunk, enc) {
-			if (!compress) return end.call(this, chunk, enc);
 			size += getChunkSize(chunk, enc);
+			if (!started) start();
+			if (!compress) return end.call(this, chunk, enc);
 			return compress.end(chunk, enc);
 		};
 		/** Not currently used. */

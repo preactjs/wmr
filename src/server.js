@@ -4,6 +4,7 @@ import polka from 'polka';
 import parse from '@polka/url';
 import { createServer } from 'http';
 import compression from './lib/polkompress.js';
+import npmMiddleware from './lib/npm-middleware.js';
 
 /**
  * @typedef CustomServer
@@ -47,6 +48,8 @@ export default function server({ cwd, out, compress = true } = {}) {
 		const threshold = compress === true ? 1024 : compress;
 		app.use(compression({ threshold, level: 4 }));
 	}
+
+	app.use('/@npm', npmMiddleware());
 
 	app.use(sirv(out || '.dist', { dev: true }));
 
