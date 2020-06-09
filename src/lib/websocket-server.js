@@ -20,7 +20,7 @@ export default class WebSocketServer extends ws.Server {
 	}
 
 	_handleUpgrade(req, socket, head) {
-		const pathname = parse(req.url).pathname;
+		const pathname = parse(req).pathname;
 		if (pathname == this.mountPath) {
 			this.handleUpgrade(req, socket, head, client => {
 				client.emit('connection', client, req);
