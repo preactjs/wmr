@@ -286,7 +286,8 @@ const DEFAULTS = {
  * @param {typeof DEFAULTS.sourceMaps} [options.sourceMaps]
  * @param {string} [options.sourceFileName]
  */
-export function transform(code, { presets, plugins, parse, filename, ast, sourceMaps, sourceFileName } = DEFAULTS) {
+export function transform(code, { presets, plugins, parse, filename, ast, sourceMaps, sourceFileName } = {}) {
+	parse = parse || DEFAULTS.parse;
 	const out = new MagicString(code);
 	const { types, template, visit } = createContext({ code, out, parse });
 
@@ -351,6 +352,7 @@ export function transform(code, { presets, plugins, parse, filename, ast, source
 
 function buildError(err, code, filename) {
 	const { loc, message } = err;
+	if (!loc) return message;
 	const text = message.replace(/ \(\d+:\d+\)$/, '');
 	const position = `${filename}:${loc.line}:${loc.column + 1}`;
 	const frame = codeFrame(code, loc);

@@ -20,12 +20,13 @@ export default function localNpmPlugin({ publicPath = '/@npm' } = {}) {
 			};
 			return opts;
 		},
-		async resolveId(s) {
+		resolveId(s) {
 			if (s.match(/^\.?\//)) return;
 			// s = s.replace(/^https?:\/\/unpkg\.com\/((?:@[^@\/?]+\/)?[^@\/?]+)(@[^\/?]+)?(\/[^?]+)?\?module/g, '$1$2$3');
 			return {
 				id: `${publicPath}/${s}`,
-				external: true
+				external: true,
+				moduleSideEffects: true
 			};
 		}
 	};

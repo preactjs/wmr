@@ -4,10 +4,12 @@
 		"allowJs": true,
 		"checkJs": true,
 		"noEmit": true,
+		"moduleResolution": "node",
 		"allowSyntheticDefaultImports": true,
-		"downlevelIteration": true
+		"downlevelIteration": true,
+		"target": "ESNext"
 	},
 	"typeAcquisition": {
-		"enable": true
+		"enable": false
 	}
 }

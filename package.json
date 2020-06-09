@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "demo": "cd demo && node --experimental-modules ../src/cli.js 2>&1 | grep -v ExperimentalWarning",
-    "dev": "nodemon -w src --exec \"npm run -s demo -- --profile\"",
+    "dev": "PROFILE=true nodemon -w src --exec \"npm run -s demo\"",
     "build": "rollup -c",
     "test": "eslint && jest"
   },
@@ -88,7 +88,7 @@
     "polka": "^0.5.2",
     "prettier": "^2.0.5",
     "puppeteer": "^3.3.0",
-    "rollup": "^2.10.5",
+    "rollup": "^2.11.2",
     "rollup-plugin-preserve-shebang": "^1.0.0",
     "sade": "^1.7.3",
     "semver": "^7.3.2",

@@ -49,6 +49,8 @@ export default function npmMiddleware({ source = 'npm' } = {}) {
 	};
 }
 
+let npmCache;
+
 /**
  * Bundle am npm module entry path into a single file
  * @param {string} mod The module to bundle, including subpackage/path
@@ -56,8 +58,9 @@ export default function npmMiddleware({ source = 'npm' } = {}) {
  */
 async function bundleNpmModule(mod, { source }) {
 	const bundle = await rollup.rollup({
-		treeshake: false,
 		input: mod,
+		cache: npmCache,
+		// treeshake: false,
 		// inlineDynamicImports: true,
 		// shimMissingExports: true,
 		plugins: [
@@ -82,6 +85,8 @@ async function bundleNpmModule(mod, { source }) {
 			}
 		]
 	});
+
+	npmCache = bundle.cache;
 
 	const { output } = await bundle.generate({
 		format: 'es',

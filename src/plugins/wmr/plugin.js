@@ -19,6 +19,11 @@ if (import.meta.hot) {
 
 // @ts-ignore
 const __filename = import.meta.url;
+const wmrClientPromise = fs.readFile(new URL('./client.js', __filename), 'utf-8');
+
+export function getWmrClient() {
+	return wmrClientPromise;
+}
 
 /**
  * Implements Hot Module Replacement.
@@ -27,14 +32,13 @@ const __filename = import.meta.url;
  * @returns {import('rollup').Plugin}
  */
 export default function wmrPlugin({} = {}) {
-	const wmr = fs.readFile(new URL('./client.js', __filename), 'utf8');
 	return {
 		name: 'wmr',
 		resolveId(s) {
 			if (s == 'wmr') return '\0wmr.js';
 		},
 		load(s) {
-			if (s == '\0wmr.js') return wmr;
+			if (s == '\0wmr.js') return wmrClientPromise;
 		},
 		resolveImportMeta(property) {
 			if (property === 'hot') {
