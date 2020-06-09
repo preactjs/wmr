@@ -11,6 +11,6 @@
 		"target": "ESNext"
 	},
 	"typeAcquisition": {
-		"enable": false
+		"enable": true
 	}
 }
