@@ -30,7 +30,8 @@
       "function-call-argument-newline": [
         "error",
         "consistent"
-      ]
+      ],
+      "react/jsx-no-bind": "off"
     }
   },
   "eslintIgnore": [

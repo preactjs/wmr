@@ -1,6 +1,7 @@
 {
 	"compileOnSave": false,
 	"compilerOptions": {
+		"jsx": "preserve",
 		"allowJs": true,
 		"checkJs": true,
 		"noEmit": true,
