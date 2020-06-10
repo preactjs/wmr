@@ -164,6 +164,11 @@ export const TRANSFORMS = {
 		code = await NonRollup.transform(code, id);
 
 		code = code.replace(
+			/\bimport\.meta\.([a-zA-Z_$][a-zA-Z0-9_$]*)\b/g,
+			(str, property) => NonRollup.resolveImportMeta(property) || str
+		);
+
+		code = code.replace(
 			/\b(import\s*(?:(?:\{.*?\}(?:\s*,\s*[\w$]+(?:\s+as\s+[\w$]+)?)?|[\w$]+(?:\s+as\s+[\w$]+)?(?:\s*,\s*\{.*?\})?)\s*from\s*)?)(['"])(.*?)\2/g,
 			(str, pre, q, spec) => {
 				// console.log(spec);
