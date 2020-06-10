@@ -51,15 +51,14 @@ export default function server({ cwd, overlayDir, middleware, compress = true } 
 		app.use(sirv(overlayDir, { dev: true }));
 	}
 
-	const servePublic = sirv(cwd || '', { dev: true });
-	app.use(servePublic);
 	// SPA nav fallback
-	app.use((req, res, next) => {
-		if (!/text\/html/.test(req.headers.accept)) return next();
-		// @ts-ignore
-		req.path = '/';
-		servePublic(req, res, next);
-	});
+	app.use(
+		sirv(cwd || '', {
+			ignores: ['@npm'],
+			single: true,
+			dev: true
+		})
+	);
 
 	return app;
 }
