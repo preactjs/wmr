@@ -1,5 +1,6 @@
 import { join, normalize, resolve, relative } from 'path';
-import { promises as fs, watch } from 'fs';
+import { promises as fs } from 'fs';
+import chokidar from 'chokidar';
 import mime from 'mime/lite.js';
 import htmPlugin from './plugins/htm-plugin.js';
 import wmrPlugin, { getWmrClient } from './plugins/wmr/plugin.js';
@@ -21,15 +22,19 @@ import { compileSingleModule } from './lib/compile-single-module.js';
 export default function wmrMiddleware({ cwd, out = '.dist', onError, onChange } = {}) {
 	cwd = resolve(process.cwd(), cwd || '.');
 
-	const watcher = watch(cwd, { recursive: true });
+	const watcher = chokidar.watch(cwd, {
+		cwd,
+		disableGlobbing: true,
+		ignored: /(^|[/\\])node_modules[/\\]/
+	});
 	const pendingChanges = new Set();
 	function flushChanges() {
 		onChange({ changes: Array.from(pendingChanges), duration: 0 });
 		pendingChanges.clear();
 	}
-	watcher.on('change', (type, filename) => {
+	watcher.on('change', (filename, stats) => {
 		if (!pendingChanges.size) setTimeout(flushChanges, 60);
-		pendingChanges.add(filename);
+		pendingChanges.add('/' + filename);
 	});
 
 	return async (req, res, next) => {
@@ -157,6 +162,11 @@ export const TRANSFORMS = {
 		// code = (result && result.code) || result || code;
 
 		code = await NonRollup.transform(code, id);
+
+		code = code.replace(
+			/\bimport\.meta\.([a-zA-Z_$][a-zA-Z0-9_$]*)\b/g,
+			(str, property) => NonRollup.resolveImportMeta(property) || str
+		);
 
 		code = code.replace(
 			/\b(import\s*(?:(?:\{.*?\}(?:\s*,\s*[\w$]+(?:\s+as\s+[\w$]+)?)?|[\w$]+(?:\s+as\s+[\w$]+)?(?:\s*,\s*\{.*?\})?)\s*from\s*)?)(['"])(.*?)\2/g,

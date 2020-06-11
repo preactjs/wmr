@@ -37,6 +37,15 @@ export function createPluginContainer(plugins, opts = {}) {
 			return options;
 		},
 
+		/** @param {string} property */
+		resolveImportMeta(property) {
+			for (const plugin of plugins) {
+				if (!plugin.resolveImportMeta) continue;
+				const result = plugin.resolveImportMeta.call(ctx, property);
+				if (result) return result;
+			}
+		},
+
 		/**
 		 * @param {string} id
 		 * @param {string} [importer]
