@@ -23,7 +23,7 @@ async function createHttp2Server(options = {}) {
 
 /**
  * @typedef CustomServer
- * @type {polka.Polka & { server?: ReturnType<createServer> | import('http2').Http2Server, ws?: WebSocketServer } }
+ * @type {polka.Polka & { server?: ReturnType<createServer> | import('http2').Http2Server, ws?: WebSocketServer, http2?: boolean } }
  */
 
 /**
@@ -51,12 +51,14 @@ export default async function server({ cwd, overlayDir, middleware, http2 = fals
 	if (http2) {
 		try {
 			app.server = await createHttp2Server();
+			app.http2 = true;
 		} catch (e) {
 			console.error(`Unable to create HTTP2 server, falling back to HTTP1:\n${e}`);
 		}
 	}
 	if (!app.server) {
 		app.server = createServer();
+		app.http2 = false;
 	}
 
 	app.ws = new WebSocketServer(app.server, '/_hmr');

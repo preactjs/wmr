@@ -62,5 +62,5 @@ export async function start(options = {}) {
 	const port = await getFreePort(options.port || process.env.PORT || 8080);
 	const host = options.host || process.env.HOST;
 	app.listen(port, host);
-	console.log(getServerAddresses(app.server.address(), { https: options.http2 }));
+	console.log(getServerAddresses(app.server.address(), { https: app.http2 }));
 }
