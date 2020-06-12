@@ -3,9 +3,9 @@ import { setupTest, teardown, runWmr, loadFixture, waitForMessage } from './test
 jest.setTimeout(30000);
 
 describe('boot', () => {
-	/** @type {import('./test-helpers').TestEnv} */
+	/** @type {TestEnv} */
 	let env;
-	/** @type {import('./test-helpers').WmrInstance} */
+	/** @type {WmrInstance} */
 	let instance;
 
 	beforeEach(async () => {
@@ -22,6 +22,8 @@ describe('boot', () => {
 		instance = await runWmr(env.tmp.path);
 		await waitForMessage(instance.output, /^Listening/);
 
-		expect(instance.output).toEqual(['Listening on http://localhost:8080', '  ⌙ http://192.168.2.107:8080', '']);
+		const output = instance.output.join('\n');
+		expect(output).toMatch(/Listening on http:\/\/localhost:\d+/);
+		expect(output).toMatch(/⌙ http:\/\/\d+.\d+.\d+.\d+:\d+/);
 	});
 });
