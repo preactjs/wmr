@@ -1,4 +1,3 @@
-import puppeteer from 'puppeteer';
 import tmp from 'tmp-promise';
 import path from 'path';
 import ncpCb from 'ncp';
@@ -7,32 +6,19 @@ import { promisify } from 'util';
 
 const ncp = promisify(ncpCb);
 
-export async function startBrowser() {
-	const browser = await puppeteer.launch();
-	const page = await browser.newPage();
-	return { browser, page };
-}
-
-/**
- * @typedef {{ tmp: import('tmp-promise').DirectoryResult, browser: import('puppeteer').Browser, page: import('puppeteer').Page}} TestEnv
- */
-
 /**
  * @returns {Promise<TestEnv>}
  */
 export async function setupTest() {
-	const browser = await startBrowser();
-	const cwd = await tmp.dir({
-		unsafeCleanup: true
-	});
-	return { tmp: cwd, ...browser };
+	const cwdPromise = tmp.dir({ unsafeCleanup: true });
+	await jestPuppeteer.resetPage();
+	return { tmp: await cwdPromise, browser, page };
 }
 
 /**
  * @param {TestEnv} env
  */
 export async function teardown(env) {
-	await env.browser.close();
 	await env.tmp.cleanup();
 }
 
@@ -45,16 +31,14 @@ export async function loadFixture(name, env) {
 	await ncp(fixture, env.tmp.path);
 }
 
-/** @typedef {{output: string[], code: number, close: () => void}} WmrInstance */
-
 /**
  * @param {string} cwd
- * @param {...string[]} args
+ * @param {...string} args
  * @returns {Promise<WmrInstance>}
  */
 export async function runWmr(cwd, ...args) {
 	const bin = path.join(__dirname, '..', 'src', 'cli.js');
-	const child = childProcess.spawn('node', [bin, ...args], {
+	const child = childProcess.spawn('node', ['--experimental-modules', bin, ...args], {
 		cwd
 	});
 
