@@ -41,6 +41,7 @@ export default async function server({ cwd, overlayDir, middleware, http2 = fals
 			// ignore missing favicon requests
 			if (req.path == '/favicon.ico') return res.end();
 
+			// @ts-ignore
 			const code = typeof err.code === 'number' ? err.code : 500;
 			res.writeHead(code, { 'content-type': 'text/plain' });
 			res.end(err + '');
