@@ -79,6 +79,7 @@
     "async-disk-cache": "^2.0.0",
     "babel-jest": "^26.0.1",
     "chokidar": "^3.4.0",
+    "devcert": "^1.1.0",
     "eslint": "^7.0.0",
     "eslint-config-developit": "^1.2.0",
     "eslint-config-prettier": "^6.11.0",
