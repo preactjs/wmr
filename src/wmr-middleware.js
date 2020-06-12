@@ -44,7 +44,7 @@ export default function wmrMiddleware({ cwd, out = '.dist', onError, onChange } 
 		const id = relative(cwd, file).replace(/^\.\//, '');
 
 		const type = mime.getType(file);
-		res.setHeader('content-type', type);
+		if (type) res.setHeader('content-type', type);
 
 		const ctx = { req, res, id, file, path, cwd, out, next };
 
