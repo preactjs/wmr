@@ -1,4 +1,4 @@
-name: CI
+name: compressed-size
 on:
   pull_request:
     branches: [ master ]
@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-
+    
     - name: compressed-size-action
       uses: preactjs/compressed-size-action@v2
       with:
