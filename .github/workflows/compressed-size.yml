@@ -14,3 +14,4 @@ jobs:
       with:
         pattern: wmr.js
         use-check: true
+        repo-token: "${{ secrets.GITHUB_TOKEN }}"
