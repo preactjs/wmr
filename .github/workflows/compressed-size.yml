@@ -12,6 +12,6 @@ jobs:
     - name: compressed-size-action
       uses: preactjs/compressed-size-action@v2
       with:
-        pattern: wmr.js
+        pattern: wmr.cjs
         use-check: true
         repo-token: "${{ secrets.GITHUB_TOKEN }}"
