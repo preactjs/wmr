@@ -1,0 +1,16 @@
+name: CI
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: compressed-size-action
+      uses: preactjs/compressed-size-action@v2
+      with:
+        pattern: wmr.js
+        use-check: true
