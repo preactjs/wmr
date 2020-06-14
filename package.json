@@ -100,7 +100,6 @@
     "puppeteer": "^3.3.0",
     "rollup": "^2.11.2",
     "rollup-plugin-preserve-shebang": "^1.0.1",
-    "rollup-plugin-terser": "^6.1.0",
     "sade": "^1.7.3",
     "semver": "^7.3.2",
     "sirv": "^1.0.0",

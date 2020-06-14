@@ -1,6 +1,5 @@
 import { relative, resolve, join, normalize } from 'path';
 import * as rollup from 'rollup';
-import { terser } from 'rollup-plugin-terser';
 // import commonJs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import watcherPlugin from './plugins/watcher-plugin.js';
@@ -10,6 +9,7 @@ import wmrPlugin from './plugins/wmr/plugin.js';
 import wmrStylesPlugin from './plugins/wmr/styles-plugin.js';
 // import processGlobalPlugin from './plugins/process-global-plugin.js';
 import localNpmPlugin from './plugins/local-npm-plugin.js';
+import terser from './plugins/fast-minify';
 
 /** @typedef BuildEvent @type {{ changes: string[] } & Extract<rollup.RollupWatcherEvent, { code: 'BUNDLE_END' }> }} */
 /** @typedef BuildError @type {rollup.RollupError & { clientMessage?: string }} */
@@ -134,10 +134,7 @@ function prod({ cwd, out, sourcemap, profile }) {
 				htmPlugin(),
 				json(),
 				localNpmPlugin(),
-				terser({
-					ecma: 8,
-					safari10: true
-				})
+				terser({ compress: true, sourcemap })
 			]
 		})
 		.then(bundle => {
