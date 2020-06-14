@@ -124,35 +124,37 @@ function dev({ cwd, out, sourcemap, onError, onBuild, profile }) {
 }
 
 function prod({ cwd, out, sourcemap, profile }) {
-	const bundle = rollup.rollup({
-		input: './' + join(cwd, 'index.js'),
-		perf: !!profile,
-		treeshake: true,
-		manualChunks(filename) {
-			// Internal modules get an underscore prefix:
-			if (filename[0] === '\0') {
-				filename = '_' + filename.substring(1);
-				// return '_' + stripExt(filename.substring(1));
-			} else {
-				filename = relative(cwd, filename);
-			}
-			// Source modules get normalized file extensions
-			// return stripExt(relative(cwd, filename).replace(/^[\\/]/gi, ''));
+	return rollup
+		.rollup({
+			input: './' + join(cwd, 'index.js'),
+			perf: !!profile,
+			treeshake: true,
+			manualChunks(filename) {
+				// Internal modules get an underscore prefix:
+				if (filename[0] === '\0') {
+					filename = '_' + filename.substring(1);
+					// return '_' + stripExt(filename.substring(1));
+				} else {
+					filename = relative(cwd, filename);
+				}
+				// Source modules get normalized file extensions
+				// return stripExt(relative(cwd, filename).replace(/^[\\/]/gi, ''));
 
-			return filename.replace(/(^[\\/]|\.([cm]js|[tj]sx?)$)/gi, '');
-		},
-		plugins: [wmrStylesPlugin(), htmPlugin(), json(), localNpmPlugin(), terser()]
-	});
-
-	return bundle.write({
-		sourcemap,
-		sourcemapPathTransform: p => 'source://' + resolve('.', p).replace(/\/public\//g, '/'),
-		preferConst: true,
-		dir: out || '.dist',
-		assetFileNames: '[name].[ext]',
-		entryFileNames: '[name].js',
-		chunkFileNames: '[name].js'
-	});
+				return filename.replace(/(^[\\/]|\.([cm]js|[tj]sx?)$)/gi, '');
+			},
+			plugins: [wmrStylesPlugin(), htmPlugin(), json(), localNpmPlugin(), terser()]
+		})
+		.then(bundle => {
+			return bundle.write({
+				sourcemap,
+				sourcemapPathTransform: p => 'source://' + resolve('.', p).replace(/\/public\//g, '/'),
+				preferConst: true,
+				dir: out || '.dist',
+				assetFileNames: '[name].[ext]',
+				entryFileNames: '[name].js',
+				chunkFileNames: '[name].js'
+			});
+		});
 }
 
 /**
