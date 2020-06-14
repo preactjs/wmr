@@ -128,7 +128,6 @@ function prod({ cwd, out, sourcemap, profile }) {
 		.rollup({
 			input: './' + join(cwd, 'index.js'),
 			perf: !!profile,
-			treeshake: true,
 			plugins: [
 				wmrStylesPlugin({ hot: false }),
 				htmPlugin(),
@@ -141,7 +140,7 @@ function prod({ cwd, out, sourcemap, profile }) {
 			console.log('succcessfully built bundle.');
 			return bundle.write({
 				sourcemap,
-				sourcemapPathTransform: p => 'source://' + resolve('.', p).replace(/\/public\//g, '/'),
+				sourcemapPathTransform: p => 'source://' + resolve(cwd, p).replace(/^(.\/)?/g, '/'),
 				preferConst: true,
 				dir: out || '.dist',
 				assetFileNames: '[name].[ext]',
