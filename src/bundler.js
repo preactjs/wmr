@@ -1,5 +1,6 @@
 import { relative, resolve, join, normalize } from 'path';
 import * as rollup from 'rollup';
+import { terser } from 'rollup-plugin-terser';
 // import commonJs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import watcherPlugin from './plugins/watcher-plugin.js';
@@ -13,19 +14,7 @@ import localNpmPlugin from './plugins/local-npm-plugin.js';
 /** @typedef BuildEvent @type {{ changes: string[] } & Extract<rollup.RollupWatcherEvent, { code: 'BUNDLE_END' }> }} */
 /** @typedef BuildError @type {rollup.RollupError & { clientMessage?: string }} */
 
-/**
- * Start a watching bundler
- * @param {object} options
- * @param {string} [options.cwd = '']
- * @param {string} [options.out = '.dist']
- * @param {boolean} [options.sourcemap]
- * @param {boolean} [options.profile] Enable bundler performance profiling
- * @param {(error: BuildError)=>void} [options.onError]
- * @param {(error: BuildEvent)=>void} [options.onBuild]
- */
-export default function bundler({ cwd = '', out, sourcemap = false, onError, onBuild, profile = false }) {
-	cwd = normalize(cwd);
-
+function dev({ cwd, out, sourcemap, onError, onBuild, profile }) {
 	const changedFiles = new Set();
 
 	const watcher = rollup.watch({
@@ -132,4 +121,54 @@ export default function bundler({ cwd = '', out, sourcemap = false, onError, onB
 	});
 
 	return watcher;
+}
+
+function prod({ cwd, out, sourcemap, profile }) {
+	const bundle = rollup.rollup({
+		input: './' + join(cwd, 'index.js'),
+		perf: !!profile,
+		treeshake: true,
+		manualChunks(filename) {
+			// Internal modules get an underscore prefix:
+			if (filename[0] === '\0') {
+				filename = '_' + filename.substring(1);
+				// return '_' + stripExt(filename.substring(1));
+			} else {
+				filename = relative(cwd, filename);
+			}
+			// Source modules get normalized file extensions
+			// return stripExt(relative(cwd, filename).replace(/^[\\/]/gi, ''));
+
+			return filename.replace(/(^[\\/]|\.([cm]js|[tj]sx?)$)/gi, '');
+		},
+		plugins: [wmrStylesPlugin(), htmPlugin(), json(), localNpmPlugin(), terser()]
+	});
+
+	return bundle.write({
+		sourcemap,
+		sourcemapPathTransform: p => 'source://' + resolve('.', p).replace(/\/public\//g, '/'),
+		preferConst: true,
+		dir: out || '.dist',
+		assetFileNames: '[name].[ext]',
+		entryFileNames: '[name].js',
+		chunkFileNames: '[name].js'
+	});
+}
+
+/**
+ * Start a watching bundler
+ * @param {object} options
+ * @param {string} [options.cwd = '']
+ * @param {string} [options.out = '.dist']
+ * @param {boolean} [options.sourcemap]
+ * @param {boolean} [options.profile] Enable bundler performance profiling
+ * @param {(error: BuildError)=>void} [options.onError]
+ * @param {(error: BuildEvent)=>void} [options.onBuild]
+ */
+export default function bundler({ cwd = '', out, sourcemap = false, onError, onBuild, profile = false }, devMode) {
+	cwd = normalize(cwd);
+	if (devMode) {
+		return dev({ cwd, out, sourcemap, onError, onBuild, profile });
+	}
+	return prod({ cwd, out, sourcemap, profile });
 }

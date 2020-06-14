@@ -28,4 +28,11 @@ describe('fixtures', () => {
 
 		expect(await env.page.content()).toMatch(`<h1>Hello wmr</h1>`);
 	});
+
+	it('should build', async () => {
+		await loadFixture('empty', env);
+		await runWmr(env.tmp.path, 'build');
+
+		expect(true).toBe(true);
+	});
 });

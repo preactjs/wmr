@@ -4,7 +4,7 @@
   "bin": "wmr.cjs",
   "type": "module",
   "scripts": {
-    "demo": "cd demo && node --experimental-modules ../src/cli.js 2>&1 | grep -v ExperimentalWarning",
+    "demo": "cd demo && node --experimental-modules ../src/cli.js build 2>&1 | grep -v ExperimentalWarning",
     "dev": "PROFILE=true nodemon -w src --exec \"npm run -s demo\"",
     "build": "rollup -c",
     "test": "eslint && jest --runInBand"
@@ -99,6 +99,7 @@
     "puppeteer": "^3.3.0",
     "rollup": "^2.11.2",
     "rollup-plugin-preserve-shebang": "^1.0.1",
+    "rollup-plugin-terser": "^6.1.0",
     "sade": "^1.7.3",
     "semver": "^7.3.2",
     "sirv": "^1.0.0",
