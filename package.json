@@ -4,7 +4,8 @@
   "bin": "wmr.cjs",
   "type": "module",
   "scripts": {
-    "demo": "cd demo && node --experimental-modules ../src/cli.js build 2>&1 | grep -v ExperimentalWarning",
+    "demo": "cd demo && node --experimental-modules ../src/cli.js 2>&1 | grep -v ExperimentalWarning",
+    "demo:prod": "cd demo && node --experimental-modules ../src/cli.js build 2>&1 | grep -v ExperimentalWarning",
     "dev": "PROFILE=true nodemon -w src --exec \"npm run -s demo\"",
     "build": "rollup -c",
     "test": "eslint && jest --runInBand"
