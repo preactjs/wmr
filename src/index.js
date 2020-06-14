@@ -76,6 +76,4 @@ export async function build(options = {}) {
 	}
 
 	bundler(options, false);
-
-	console.log('success!');
 }

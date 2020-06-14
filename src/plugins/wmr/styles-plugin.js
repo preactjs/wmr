@@ -5,9 +5,10 @@ import { basename, dirname, relative, resolve } from 'path';
  * Implements hot-reloading for stylesheets imported by JS.
  * @param {object} [options]
  * @param {string} [options.cwd] Manually specify the cwd from which to resolve filenames (important for calculating hashes!)
+ * @param {boolean} [options.hot] Indicates the plugin should inject a HMR-runtime
  * @returns {import('rollup').Plugin}
  */
-export default function wmrStylesPlugin({ cwd } = {}) {
+export default function wmrStylesPlugin({ cwd, hot } = {}) {
 	const cwds = new Set();
 
 	return {
@@ -28,7 +29,7 @@ export default function wmrStylesPlugin({ cwd } = {}) {
 		// resolveFileUrl({ })
 		async load(id) {
 			if (!id.match(/\.css$/)) return;
-			const idRelative = '/' + cwd ? relative(cwd, resolve(cwd, id)) : multiRelative(cwds, id);
+			const idRelative = '/' + cwd ? relative(cwd || '', resolve(cwd, id)) : multiRelative(cwds, id);
 			// this.addWatchFile(id);
 			let source = await fs.readFile(id, 'utf-8');
 			let mappings = [];
@@ -57,9 +58,16 @@ export default function wmrStylesPlugin({ cwd } = {}) {
 			const code = `
 				import { style } from 'wmr';
 				style(import.meta.ROLLUP_FILE_URL_${ref}, ${JSON.stringify(idRelative)});
-				import.meta.hot.accept(({ module: { default: s } }) => {
-					for (let i in s) styles[i] = s[i];
-				});
+
+				${
+					hot &&
+					`
+					import.meta.hot.accept(({ module: { default: s } }) => {
+						for (let i in s) styles[i] = s[i];
+					});
+				`
+				}
+
 				const styles = {${mappings.join(',')}};
 				export default styles;
 			`.replace(/^\s+/gm, '');

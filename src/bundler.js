@@ -51,7 +51,7 @@ function dev({ cwd, out, sourcemap, onError, onBuild, profile }) {
 					changedFiles.add(filename);
 				}
 			}),
-			wmrStylesPlugin(),
+			wmrStylesPlugin({ hot: true, cwd }),
 			wmrPlugin(),
 			htmPlugin(),
 			// processGlobalPlugin(),
@@ -142,9 +142,19 @@ function prod({ cwd, out, sourcemap, profile }) {
 
 				return filename.replace(/(^[\\/]|\.([cm]js|[tj]sx?)$)/gi, '');
 			},
-			plugins: [wmrStylesPlugin(), htmPlugin(), json(), localNpmPlugin(), terser()]
+			plugins: [
+				wmrStylesPlugin({ hot: false }),
+				htmPlugin(),
+				json(),
+				localNpmPlugin(),
+				terser({
+					ecma: 8,
+					safari10: true
+				})
+			]
 		})
 		.then(bundle => {
+			console.log('succcessfully built bundle.');
 			return bundle.write({
 				sourcemap,
 				sourcemapPathTransform: p => 'source://' + resolve('.', p).replace(/\/public\//g, '/'),
