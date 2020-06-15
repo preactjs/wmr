@@ -49,14 +49,20 @@ export async function runWmr(cwd, ...args) {
 	};
 
 	child.stdout.on('data', buffer => {
-		const raw = buffer.toString();
+		const raw = buffer.toString('utf-8');
 		const lines = raw.split('\n');
 		out.output.push(...lines);
+		if (/Error:/.test(raw)) {
+			console.error(`Error running wmr:\n${raw}`);
+		}
 	});
 	child.stderr.on('data', buffer => {
-		const raw = buffer.toString();
+		const raw = buffer.toString('utf-8');
 		const lines = raw.split('\n');
 		out.output.push(...lines);
+		if (/Error:/.test(raw)) {
+			console.error(`Error running wmr:\n${raw}`);
+		}
 	});
 	child.on('close', code => (out.code = code));
 
