@@ -20,11 +20,11 @@ describe('boot', () => {
 	it('should listen on port', async () => {
 		await loadFixture('simple', env);
 		instance = await runWmr(env.tmp.path);
-		await waitForMessage(instance.output, /(^Listening|Error:)/);
+		await waitForMessage(instance.output, /(^Listening|^Error)/);
 
 		const output = instance.output.join('\n');
 
-		expect(output).not.toMatch(/Error:/);
+		expect(output).not.toMatch(/^Error/m);
 
 		expect(output).toMatch(/Listening on http:\/\/localhost:\d+/);
 		expect(output).toMatch(/⌙ http:\/\/\d+.\d+.\d+.\d+:\d+/);
