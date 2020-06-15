@@ -22,7 +22,8 @@
 			"plugin:prettier/recommended"
 		],
 		"plugins": [
-			"prettier"
+			"prettier",
+			"import"
 		],
 		"rules": {
 			"no-console": "off",
@@ -32,7 +33,14 @@
 				"error",
 				"consistent"
 			],
-			"react/jsx-no-bind": "off"
+			"react/jsx-no-bind": "off",
+			"import/extensions": [
+				"error",
+				"always",
+				{
+					"ignorePackages": true
+				}
+			]
 		},
 		"globals": {
 			"jestPuppeteer": "readonly",
