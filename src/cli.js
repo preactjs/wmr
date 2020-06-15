@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 import sade from 'sade';
-import { build, start } from './index.js';
+import build from './build.js';
+import start from './start.js';
 
 const prog = sade('wmr');
 

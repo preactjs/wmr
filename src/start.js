@@ -14,7 +14,7 @@ import { getFreePort, getServerAddresses } from './lib/net-utils.js';
 /**
  * @param {Parameters<server>[0] & Parameters<bundler>[0] & OtherOptions} options
  */
-export async function start(options = {}) {
+export default async function start(options = {}) {
 	if (!options.cwd) {
 		if ((await fs.stat('public')).isDirectory()) {
 			options.cwd = 'public';
@@ -66,14 +66,4 @@ export async function start(options = {}) {
 	const host = options.host || process.env.HOST;
 	app.listen(port, host);
 	console.log(getServerAddresses(app.server.address(), { https: app.http2 }));
-}
-
-export async function build(options = {}) {
-	if (!options.cwd) {
-		if ((await fs.stat('public')).isDirectory()) {
-			options.cwd = 'public';
-		}
-	}
-
-	bundler(options, false);
 }

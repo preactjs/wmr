@@ -142,10 +142,7 @@ function prod({ cwd, out, sourcemap, profile }) {
 				sourcemap,
 				sourcemapPathTransform: p => 'source://' + resolve(cwd, p).replace(/^(.\/)?/g, '/'),
 				preferConst: true,
-				dir: out || '.dist',
-				assetFileNames: '[name].[ext]',
-				entryFileNames: '[name].js',
-				chunkFileNames: '[name].js'
+				dir: out || '.dist'
 			});
 		});
 }
