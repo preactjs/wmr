@@ -1,7 +1,7 @@
 import terser from 'terser';
 
 /** @returns {import('rollup').Plugin} */
-export default function fastMinifyPlugin({ sourcemap = false, warnThreshold = 50 } = {}) {
+export default function fastMinifyPlugin({ sourcemap = false, warnThreshold = 50, compress = false } = {}) {
 	return {
 		name: 'fast-minify',
 		renderChunk(code, chunk) {
@@ -9,7 +9,7 @@ export default function fastMinifyPlugin({ sourcemap = false, warnThreshold = 50
 			const out = terser.minify(code, {
 				sourceMap: sourcemap,
 				mangle: true,
-				compress: false,
+				compress,
 				module: true,
 				ecma: 9,
 				safari10: true,

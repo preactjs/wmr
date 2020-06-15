@@ -1,4 +1,4 @@
-import { relative, resolve, join, normalize } from 'path';
+import { relative, resolve, join } from 'path';
 import * as rollup from 'rollup';
 // import commonJs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
@@ -9,23 +9,31 @@ import wmrPlugin from './plugins/wmr/plugin.js';
 import wmrStylesPlugin from './plugins/wmr/styles-plugin.js';
 // import processGlobalPlugin from './plugins/process-global-plugin.js';
 import localNpmPlugin from './plugins/local-npm-plugin.js';
-
-/** @typedef BuildEvent @type {{ changes: string[] } & Extract<rollup.RollupWatcherEvent, { code: 'BUNDLE_END' }> }} */
-/** @typedef BuildError @type {rollup.RollupError & { clientMessage?: string }} */
+import terser from './plugins/fast-minify.js';
+import npmPlugin from './plugins/npm-plugin/index.js';
 
 /**
- * Start a watching bundler
- * @param {object} options
- * @param {string} [options.cwd = '']
- * @param {string} [options.out = '.dist']
- * @param {boolean} [options.sourcemap]
- * @param {boolean} [options.profile] Enable bundler performance profiling
- * @param {(error: BuildError)=>void} [options.onError]
- * @param {(error: BuildEvent)=>void} [options.onBuild]
+ * @typedef {Object} BuildOptions
+ * @property {string} [cwd = '']
+ * @property {string} [out = '.dist']
+ * @property {boolean} [sourcemap]
+ * @property {boolean} [profile] Enable bundler performance profiling
+ * @property {(error: BuildError)=>void} [onError]
+ * @property {(error: BuildEvent)=>void} [onBuild]
  */
-export default function bundler({ cwd = '', out, sourcemap = false, onError, onBuild, profile = false }) {
-	cwd = normalize(cwd);
 
+/**
+ * @typedef BuildEvent
+ * @type {{ changes: string[] } & Extract<rollup.RollupWatcherEvent, { code: 'BUNDLE_END' }> }}
+ */
+
+/**
+ * @typedef BuildError
+ * @type {rollup.RollupError & { clientMessage?: string }}
+ */
+
+/** @param {BuildOptions} options */
+export function bundleDev({ cwd, out, sourcemap, onError, onBuild, profile }) {
 	const changedFiles = new Set();
 
 	const watcher = rollup.watch({
@@ -62,7 +70,7 @@ export default function bundler({ cwd = '', out, sourcemap = false, onError, onB
 					changedFiles.add(filename);
 				}
 			}),
-			wmrStylesPlugin(),
+			wmrStylesPlugin({ hot: true, cwd }),
 			wmrPlugin(),
 			htmPlugin(),
 			// processGlobalPlugin(),
@@ -132,4 +140,24 @@ export default function bundler({ cwd = '', out, sourcemap = false, onError, onB
 	});
 
 	return watcher;
+}
+
+/** @param {BuildOptions} options */
+export async function bundleProd({ cwd, out, sourcemap, profile }) {
+	const bundle = await rollup.rollup({
+		input: './' + join(cwd, 'index.js'),
+		perf: !!profile,
+		plugins: [wmrStylesPlugin({ hot: false }), htmPlugin(), json(), npmPlugin({ external: false })]
+	});
+
+	return await bundle.write({
+		entryFileNames: '[name].[hash].js',
+		chunkFileNames: '[name].[hash].js',
+		assetFileNames: '[name].[hash].[ext]',
+		plugins: [terser({ compress: true, sourcemap })],
+		sourcemap,
+		sourcemapPathTransform: p => 'source://' + resolve(cwd, p).replace(/^(.\/)?/g, '/'),
+		preferConst: true,
+		dir: out || 'dist'
+	});
 }

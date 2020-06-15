@@ -1,3 +1,5 @@
+import path from 'path';
+import { promises as fs } from 'fs';
 import { setupTest, teardown, runWmr, loadFixture, waitForMessage } from './test-helpers';
 
 jest.setTimeout(30000);
@@ -27,5 +29,18 @@ describe('fixtures', () => {
 		await env.page.goto(address);
 
 		expect(await env.page.content()).toMatch(`<h1>Hello wmr</h1>`);
+	});
+
+	it('should build', async () => {
+		await loadFixture('simple', env);
+		instance = await runWmr(env.tmp.path, 'build');
+
+		await waitForMessage(instance.output, /Wrote/);
+
+		const files = await fs.readdir(env.tmp.path);
+		expect(files).toEqual(['dist', 'public']);
+
+		const dist = await fs.readdir(path.join(env.tmp.path, 'dist'));
+		expect(dist).toContainEqual(expect.stringMatching(/^index\.[a-z0-9]+\.js$/));
 	});
 });

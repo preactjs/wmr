@@ -52,7 +52,7 @@ export async function runWmr(cwd, ...args) {
 		const raw = buffer.toString('utf-8');
 		const lines = raw.split('\n');
 		out.output.push(...lines);
-		if (/Error:/.test(raw)) {
+		if (/^Error/m.test(raw)) {
 			console.error(`Error running wmr:\n${raw}`);
 		}
 	});
@@ -60,7 +60,7 @@ export async function runWmr(cwd, ...args) {
 		const raw = buffer.toString('utf-8');
 		const lines = raw.split('\n');
 		out.output.push(...lines);
-		if (/Error:/.test(raw)) {
+		if (/^Error/m.test(raw)) {
 			console.error(`Error running wmr:\n${raw}`);
 		}
 	});
