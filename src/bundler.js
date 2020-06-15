@@ -9,7 +9,7 @@ import wmrPlugin from './plugins/wmr/plugin.js';
 import wmrStylesPlugin from './plugins/wmr/styles-plugin.js';
 // import processGlobalPlugin from './plugins/process-global-plugin.js';
 import localNpmPlugin from './plugins/local-npm-plugin.js';
-import terser from './plugins/fast-minify';
+import terser from './plugins/fast-minify.js';
 
 /** @typedef BuildEvent @type {{ changes: string[] } & Extract<rollup.RollupWatcherEvent, { code: 'BUNDLE_END' }> }} */
 /** @typedef BuildError @type {rollup.RollupError & { clientMessage?: string }} */
