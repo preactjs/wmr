@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs';
 import server from './server.js';
-import bundler from './bundler.js';
+import { bundleDev } from './bundler.js';
 import wmrMiddleware from './wmr-middleware.js';
 import { getFreePort, getServerAddresses } from './lib/net-utils.js';
 
@@ -12,7 +12,7 @@ import { getFreePort, getServerAddresses } from './lib/net-utils.js';
  */
 
 /**
- * @param {Parameters<server>[0] & Parameters<bundler>[0] & OtherOptions} options
+ * @param {Parameters<server>[0] & Parameters<bundleDev>[0] & OtherOptions} options
  */
 export default async function start(options = {}) {
 	if (!options.cwd) {
@@ -23,15 +23,13 @@ export default async function start(options = {}) {
 
 	if (options.prebuild) {
 		options.overlayDir = '.dist';
-		bundler(
-			{
-				...options,
-				onError: sendError,
-				onBuild: sendChanges
-			},
-			true
-		);
+		bundleDev({
+			...options,
+			onError: sendError,
+			onBuild: sendChanges
+		});
 	} else {
+		// TODO: check if the following line was a mistake (nothing writes to .dist)
 		options.overlayDir = '.dist';
 		options.middleware = [
 			wmrMiddleware({
