@@ -1,25 +1,11 @@
-import sirv from 'sirv';
-import polka from 'polka';
+import { resolve } from 'path';
 import { createServer } from 'http';
-import { createSecureServer } from 'http2';
+import { createHttp2Server } from './lib/http2.js';
+import polka from 'polka';
+import sirv from 'sirv';
 import compression from './lib/polkompress.js';
-import devcert from 'devcert';
 import npmMiddleware from './lib/npm-middleware.js';
 import WebSocketServer from './lib/websocket-server.js';
-
-async function createHttp2Server(options = {}) {
-	const host = process.env.HOST || 'localhost';
-	const { key, cert } = await devcert.certificateFor(host);
-
-	const server = createSecureServer({
-		key,
-		cert,
-		allowHTTP1: true, // required for websockets
-		...options
-	});
-
-	return server;
-}
 
 /**
  * @typedef CustomServer
@@ -29,7 +15,8 @@ async function createHttp2Server(options = {}) {
 /**
  * @param {object} [options]
  * @param {string} [options.cwd = ''] Directory to serve
- * @param {string} [options.overlayDir] A directory of generated files to serve if present
+ * @param {string} [options.publicDir] A directory containing public files, relative to cwd
+ * @param {string} [options.overlayDir] A directory of generated files to serve if present, relative to cwd
  * @param {polka.Middleware[]} [options.middleware] Additional Polka middlewares to inject
  * @param {boolean} [options.http2 = false] Use HTTP/2
  * @param {boolean|number} [options.compress = true] Compress responses? Pass a `number` to set the size threshold.
@@ -77,7 +64,7 @@ export default async function server({ cwd, overlayDir, middleware, http2 = fals
 	}
 
 	if (overlayDir) {
-		app.use(sirv(overlayDir, { dev: true }));
+		app.use(sirv(resolve(cwd || '', overlayDir), { dev: true }));
 	}
 
 	// SPA nav fallback
