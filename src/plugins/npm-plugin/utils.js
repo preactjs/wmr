@@ -17,7 +17,7 @@ export function getStream(url, config) {
 	return new Promise((resolve, reject) => {
 		get(url, config || {}, res => {
 			const status = res.statusCode;
-			if (status < 200 || status >= 400) reject(Error(res.statusMessage));
+			if (status < 200 || status >= 400) reject(Error(`${res.statusMessage}: ${url}`));
 			else resolve(res);
 		});
 	});
