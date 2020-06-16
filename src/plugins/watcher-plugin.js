@@ -11,10 +11,14 @@ import glob from 'tiny-glob';
  */
 export default function watcherPlugin({ cwd = '.', watchedFiles, onChange } = {}) {
 	if (typeof watchedFiles === 'string') {
-		if (cwd && cwd !== '.') {
-			watchedFiles = cwd + '/' + watchedFiles;
-		}
-		watchedFiles = glob(watchedFiles, { filesOnly: true });
+		watchedFiles = glob(watchedFiles, {
+			filesOnly: true,
+			cwd
+		}).catch(err => {
+			throw Error(`Failed to create file watcher:\n${err.message}`);
+		});
+		// suppress async rejection warning:
+		watchedFiles.catch(() => {});
 	}
 
 	return {
