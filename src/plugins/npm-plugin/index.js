@@ -7,7 +7,7 @@ import { resolveModule } from './resolve.js';
  * @param {Object} options
  * @param {string} [options.publicPath] URL path prefix to use for npm module scripts
  * @param {string} [options.prefix] Import prefix to use internally for representing npm modules
- * @param {boolean} [options.external] If `false`, dependencies will be inlined by Rollup.
+ * @param {boolean} [options.external] If `false`, resolved npm dependencies will be inlined by Rollup.
  * @returns {import('rollup').Plugin}
  */
 export default function npmPlugin({ publicPath = '/@npm', prefix = '\0npm/', external = true } = {}) {
@@ -23,23 +23,23 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = '\0npm/', ext
 			/** @type {ReturnType <normalizeSpecifier>} */
 			let meta;
 
-			const importerMeta = importer && normalizeSpecifier(importer);
+			const importerMeta = importer && !isDiskPath(importer) && normalizeSpecifier(importer);
 
 			// A relative import from within a module (resolve based on importer):
-			if (id.match(/^\.\.?(\/|$)/)) {
+			if (isDiskPath(id)) {
 				// not an npm module
-				if (!importer) return;
+				if (!importerMeta) return;
 
 				meta = Object.assign({}, importerMeta);
-				console.log(importer, id, meta);
 				meta.path = join(dirname(meta.path || ''), id);
 			} else {
 				// An absolute, self or bare import
 				meta = normalizeSpecifier(id);
 
 				// Mark everything except self-imports as external: (eg: "preact/hooks" importing "preact")
-				if (importerMeta && meta.specifier !== importerMeta.specifier) {
-					return { id: `${publicPath}/${id}`, external };
+				// Note: if `external=false` here, we're building a combined bundle and want to merge npm deps.
+				if (external && importerMeta && meta.specifier !== importerMeta.specifier) {
+					return { id: `${publicPath}/${id}`, external: true };
 					// return { id, external: true };
 					// return { id: `${prefix}${id}`, external: true };
 				}
@@ -81,6 +81,10 @@ export const normalizeSpecifier = memo(spec => {
 	const specifier = module + (path ? '/' + path : '');
 	return { module, version, path, specifier };
 });
+
+function isDiskPath(filename) {
+	return /^(\/|\.\.?(\/|$))/.test(filename);
+}
 
 // /** @param {import('./registry.js').Module} spec */
 // async function resolveModule({ module, version, path }) {
