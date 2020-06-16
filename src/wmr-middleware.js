@@ -1,4 +1,4 @@
-import { join, normalize, resolve, relative } from 'path';
+import { join, normalize, resolve, relative, dirname } from 'path';
 import { promises as fs } from 'fs';
 import chokidar from 'chokidar';
 import mime from 'mime/lite.js';
@@ -38,6 +38,7 @@ export default function wmrMiddleware({ cwd, out = '.dist', onError, onChange } 
 	});
 
 	return async (req, res, next) => {
+		// @ts-ignore
 		const path = normalize(req.path);
 		const file = join(cwd, path);
 		// rollup-style cwd-relative path ID
@@ -47,6 +48,8 @@ export default function wmrMiddleware({ cwd, out = '.dist', onError, onChange } 
 		if (type) res.setHeader('content-type', type);
 
 		const ctx = { req, res, id, file, path, cwd, out, next };
+
+		/** @TODO if there's a cached version of the requested module in .dist/, serve it. */
 
 		let transform;
 		if (path === '/_wmr.js') {
@@ -183,8 +186,7 @@ export const TRANSFORMS = {
 		);
 		res.setHeader('content-type', 'application/javascript');
 
-		// console.log('writing ', resolve(out, id));
-		fs.writeFile(resolve(out, id), code);
+		writeCacheFile(out, id, code);
 
 		return code;
 	},
@@ -278,3 +280,17 @@ export const TRANSFORMS = {
 		// });
 	}
 };
+
+/**
+ * Write a file to a directory, ensuring any nested paths exist
+ * @param {string} rootDir
+ * @param {string} fileName
+ * @param {string|Buffer} data
+ */
+async function writeCacheFile(rootDir, fileName, data) {
+	const filePath = resolve(rootDir, fileName);
+	if (dirname(filePath) !== rootDir) {
+		await fs.mkdir(dirname(filePath), { recursive: true });
+	}
+	await fs.writeFile(filePath, data);
+}
