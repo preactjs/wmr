@@ -20,9 +20,10 @@ if (import.meta.hot) {
 // @ts-ignore
 const __filename = import.meta.url;
 const wmrClientPromise = fs.readFile(new URL('./client.js', __filename), 'utf-8');
+const wmrProdClientPromise = fs.readFile(new URL('./client-prod.js', __filename), 'utf-8');
 
-export function getWmrClient() {
-	return wmrClientPromise;
+export function getWmrClient({ hot = true } = {}) {
+	return hot ? wmrClientPromise : wmrProdClientPromise;
 }
 
 /**
@@ -31,14 +32,14 @@ export function getWmrClient() {
  * @param {object} options
  * @returns {import('rollup').Plugin}
  */
-export default function wmrPlugin({} = {}) {
+export default function wmrPlugin({ hot = true } = {}) {
 	return {
 		name: 'wmr',
 		resolveId(s) {
 			if (s == 'wmr') return '\0wmr.js';
 		},
 		load(s) {
-			if (s == '\0wmr.js') return wmrClientPromise;
+			if (s == '\0wmr.js') return getWmrClient({ hot });
 		},
 		resolveImportMeta(property) {
 			if (property === 'hot') {
@@ -69,10 +70,14 @@ export default function wmrPlugin({} = {}) {
 				filename: id,
 				indentExclusionRanges: undefined
 			});
-			s.append(after);
-			s.prepend(
-				`import { createHotContext as $createHotContext$ } from 'wmr';const $IMPORT_META_HOT$ = $createHotContext$(import.meta.url);${before}`
-			);
+			if (hot) {
+				s.append(after);
+				s.prepend(
+					`import { createHotContext as $createHotContext$ } from 'wmr';const $IMPORT_META_HOT$ = $createHotContext$(import.meta.url);${before}`
+				);
+			} else {
+				s.prepend(`const $IMPORT_META_HOT$ = null;${before}`);
+			}
 			return {
 				code: s.toString(),
 				map: s.generateMap({ includeContent: false })
