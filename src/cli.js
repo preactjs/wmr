@@ -9,6 +9,7 @@ const prog = sade('wmr');
 prog
 	.command('build', 'make a production build')
 	.option('--cwd', 'Your web app root directory (default: ./public)')
+	.option('--out', 'Where to store generated files (default: ./dist)')
 	.action(opts => {
 		build(opts);
 	})

@@ -1,4 +1,4 @@
-import { relative, resolve, join } from 'path';
+import { relative, resolve, join, dirname } from 'path';
 import * as rollup from 'rollup';
 // import commonJs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
@@ -11,10 +11,12 @@ import wmrStylesPlugin from './plugins/wmr/styles-plugin.js';
 import localNpmPlugin from './plugins/local-npm-plugin.js';
 import terser from './plugins/fast-minify.js';
 import npmPlugin from './plugins/npm-plugin/index.js';
+import publicPathPlugin from './plugins/public-path-plugin.js';
 
 /**
  * @typedef {Object} BuildOptions
  * @property {string} [cwd = '']
+ * @property {string} [publicDir = '']
  * @property {string} [out = '.dist']
  * @property {boolean} [sourcemap]
  * @property {boolean} [profile] Enable bundler performance profiling
@@ -34,18 +36,20 @@ import npmPlugin from './plugins/npm-plugin/index.js';
 
 /** @param {BuildOptions} options */
 export function bundleDev({ cwd, out, sourcemap, onError, onBuild, profile }) {
+	cwd = cwd || '';
 	const changedFiles = new Set();
+	const input = './' + relative('.', join(cwd, 'index.js'));
 
 	const watcher = rollup.watch({
-		input: './' + join(cwd, 'index.js'),
+		input, //'./' + join(cwd, 'index.js'),
 		output: {
 			sourcemap,
-			sourcemapPathTransform: p => 'source://' + resolve('.', p).replace(/\/public\//g, '/'),
+			sourcemapPathTransform: p => 'source://' + resolve(cwd, p).replace(/^(.\/)?/g, '/'),
 			preferConst: true,
-			dir: out || '.dist',
-			assetFileNames: '[name].[ext]',
+			dir: out,
 			entryFileNames: '[name].js',
-			chunkFileNames: '[name].js'
+			chunkFileNames: '[name].js',
+			assetFileNames: '[name][extname]'
 		},
 		perf: !!profile,
 		treeshake: false,
@@ -142,22 +146,82 @@ export function bundleDev({ cwd, out, sourcemap, onError, onBuild, profile }) {
 	return watcher;
 }
 
-/** @param {BuildOptions} options */
-export async function bundleProd({ cwd, out, sourcemap, profile }) {
+/** @param {BuildOptions & { npmChunks?: boolean }} options */
+export async function bundleProd({ cwd, out, sourcemap, profile, npmChunks = false }) {
+	cwd = cwd || '';
+	const input = './' + relative('.', join(cwd, 'index.js'));
+
 	const bundle = await rollup.rollup({
-		input: './' + join(cwd, 'index.js'),
+		input,
 		perf: !!profile,
-		plugins: [wmrStylesPlugin({ hot: false }), htmPlugin(), json(), npmPlugin({ external: false })]
+		preserveEntrySignatures: 'allow-extension',
+		manualChunks: npmChunks ? extractNpmChunks : undefined,
+		plugins: [
+			publicPathPlugin({ publicPath: '/' }),
+			wmrStylesPlugin({ hot: false }),
+			wmrPlugin({ hot: false }),
+			htmPlugin(),
+			json(),
+			npmPlugin({ external: false })
+		]
 	});
 
 	return await bundle.write({
 		entryFileNames: '[name].[hash].js',
-		chunkFileNames: '[name].[hash].js',
-		assetFileNames: '[name].[hash].[ext]',
-		plugins: [terser({ compress: true, sourcemap })],
+		chunkFileNames: 'chunks/[name].[hash].js',
+		assetFileNames: 'assets/[name].[hash][extname]',
+		compact: true,
+		plugins: [terser({ compress: false, sourcemap })],
 		sourcemap,
 		sourcemapPathTransform: p => 'source://' + resolve(cwd, p).replace(/^(.\/)?/g, '/'),
 		preferConst: true,
 		dir: out || 'dist'
 	});
+}
+
+/** @type {import('rollup').GetManualChunk} */
+function extractNpmChunks(id, { getModuleIds, getModuleInfo }) {
+	const chunk = getModuleInfo(id);
+	if (/^\0npm\//.test(chunk.id)) {
+		// merge any modules that are only used by other modules:
+		const isInternalModule = chunk.importers.every(c => /^\0npm\//.test(c));
+		if (isInternalModule) return null;
+
+		// create dedicated chunks for npm dependencies that are used in more than one place:
+		const importerCount = chunk.importers.length + chunk.dynamicImporters.length;
+		if (importerCount > 1) {
+			let name = chunk.id;
+			// strip any unnecessary (non-unique) trailing path segments:
+			const moduleIds = Array.from(getModuleIds()).filter(m => m !== name);
+			while (name.length > 1) {
+				const dir = dirname(name);
+				const match = moduleIds.find(m => m.startsWith(dir));
+				if (match) break;
+				name = dir;
+			}
+			// /chunks/@npm/NAME.[hash].js
+			return name.replace(/^\0npm\/((?:@[^/]+\/)?[^/]+)@[^/]+/, '@npm/$1');
+		}
+	}
+
+	/*
+	// This essentially duplicates what Rollup does by default:
+	let fileName = relative(cwd, chunk.id);
+	if (chunk.isEntry) {
+		console.log('entry: ', chunk.id, fileName);
+		return fileName;
+	} else if (chunk.dynamicImporters.length && !chunk.importers.length) {
+		console.log(
+			'dynamic import: ',
+			chunk.id,
+			`lazy~${fileName.replace(/(^(\.?\/)?|(\/index)?\.[a-zA-Z]+$)/g, '').replace(/\//g, '--')}`
+		);
+		console.log(chunk);
+		return `\0lazy~${fileName.replace(/(^(\.?\/)?|(\/index)?\.[a-zA-Z]+$)/g, '').replace(/\//g, '--')}`;
+	} else if (/^\0npm\//.test(chunk.id) && !chunk.importers.every(c => /^\0npm\//.test(c))) {
+		// Each outwardly-used npm module gets its own chunk
+		return chunk.id;
+	}
+	*/
+	return null;
 }
