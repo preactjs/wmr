@@ -1,10 +1,13 @@
 import { h, render } from 'preact';
 import { Loc, Router } from './loc.js';
+import lazy from './lazy.js';
 import Home from './pages/home.js';
-import About from './pages/about/index.js';
+// import About from './pages/about/index.js';
 import NotFound from './pages/_404.js';
 import Header from './header.js';
 // import './style.css';
+
+const About = lazy(() => import('./pages/about/index.js'));
 
 export function App() {
 	return (

@@ -1,4 +1,5 @@
 .dist
+dist
 node_modules
 wmr.cjs
 yarn.lock
