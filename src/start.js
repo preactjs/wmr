@@ -3,6 +3,7 @@ import { bundleDev } from './bundler.js';
 import wmrMiddleware from './wmr-middleware.js';
 import { getFreePort, getServerAddresses } from './lib/net-utils.js';
 import { normalizeOptions } from './lib/normalize-options.js';
+import { setCwd } from './plugins/npm-plugin/registry.js';
 
 /**
  * @typedef OtherOptions
@@ -16,6 +17,9 @@ import { normalizeOptions } from './lib/normalize-options.js';
  */
 export default async function start(options = {}) {
 	options = await normalizeOptions(options);
+
+	// @todo remove this hack once registry.js is instantiable
+	setCwd(options.cwd);
 
 	if (options.prebuild) {
 		bundleDev({

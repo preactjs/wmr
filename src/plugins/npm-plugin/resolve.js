@@ -1,8 +1,8 @@
 /**
  * @param {string} path
- * @param {{ readFile(f:string): Promise<string>, hasFile(f:string): Promise<boolean> }} context
+ * @param {{ readFile(f:string): Promise<string>, hasFile(f:string): Promise<boolean>, module?: string }} context
  */
-export async function resolveModule(path, { readFile, hasFile }) {
+export async function resolveModule(path, { readFile, hasFile, module }) {
 	let pkg;
 	try {
 		pkg = JSON.parse(await readFile('package.json'));
