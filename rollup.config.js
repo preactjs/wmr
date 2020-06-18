@@ -31,7 +31,8 @@ const config = {
 			}
 		]
 	},
-	external: ['fsevents'].concat(builtins),
+	// external: ['fsevents'].concat(builtins),
+	external: [].concat(builtins),
 	// /* Logs all included npm dependencies: */
 	// external(source, importer) {
 	// 	const ch = source[0];
@@ -92,6 +93,19 @@ const config = {
 			}
 		},
 		virtual({
+			fsevents: `
+				module.exports = {
+					get watch() {
+						return require('fsevents/fsevents.js').watch;
+					},
+					get getInfo() {
+						return require('fsevents/fsevents.js').getInfo;
+					},
+					get constants() {
+						return require('fsevents/fsevents.js').constants;
+					}
+				};
+			`,
 			// remove pointless util.inherits shim
 			inherits: `module.exports = require('util').inherits;`
 		}),
@@ -107,7 +121,7 @@ const config = {
 			]
 		}),
 		commonjs({
-			ignore: [f => f.endsWith('.mjs'), 'inherits', ...builtins],
+			ignore: [f => f.endsWith('.mjs'), 'inherits', 'fsevents', ...builtins],
 			ignoreGlobal: true
 		}),
 		nodeResolve({
