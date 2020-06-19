@@ -19,6 +19,7 @@ if (import.meta.hot) {
 
 // @ts-ignore
 const __filename = import.meta.url;
+// rollup-inline-files
 const wmrClientPromise = fs.readFile(new URL('./client.js', __filename), 'utf-8');
 const wmrProdClientPromise = fs.readFile(new URL('./client-prod.js', __filename), 'utf-8');
 

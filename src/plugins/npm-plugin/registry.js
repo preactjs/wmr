@@ -31,7 +31,12 @@ const FILES_INCLUDE = /\.(js|mjs|cjs|json|ts)$/i;
 /** Files that should always be ignored when storing packages */
 const FILES_EXCLUDE = /([._-]test\.|__tests?|\/tests?\/|\/node_modules\/)/i;
 
-const NODE_MODULES = './node_modules';
+let NODE_MODULES = './node_modules';
+
+/** @todo this is terrible and should be removed once this module is instantiable */
+export function setCwd(cwd) {
+	NODE_MODULES = resolve(cwd || '.', './node_modules');
+}
 
 /**
  * @typedef Plugin
@@ -177,7 +182,11 @@ export async function loadPackageFile({ module, version, path = '' }) {
 		return contents;
 	} catch (e) {
 		const packageExists = await fs.stat(resolve(NODE_MODULES, module)).catch(() => null);
-		// console.log(`${path} not found, there is ${packageExists ? 'a' : 'no'} package.json`);
+		// console.log(
+		// 	`${path} not found, there is ${packageExists ? 'a' : 'no'} package at ${resolve(NODE_MODULES, module)}:\n${
+		// 		e.message
+		// 	}`
+		// );
 		if (packageExists) {
 			// the package has been streamed to disk, but it doesn't contain this file.
 			throw Error(`File not found`);

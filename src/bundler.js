@@ -12,6 +12,7 @@ import localNpmPlugin from './plugins/local-npm-plugin.js';
 import terser from './plugins/fast-minify.js';
 import npmPlugin from './plugins/npm-plugin/index.js';
 import publicPathPlugin from './plugins/public-path-plugin.js';
+import dynamicImportNamesPlugin from './plugins/dynamic-import-names-plugin.js';
 
 /**
  * @typedef {Object} BuildOptions
@@ -46,6 +47,7 @@ export function bundleDev({ cwd, out, sourcemap, onError, onBuild, profile }) {
 			sourcemap,
 			sourcemapPathTransform: p => 'source://' + resolve(cwd, p).replace(/^(.\/)?/g, '/'),
 			preferConst: true,
+			minifyInternalExports: false,
 			dir: out,
 			entryFileNames: '[name].js',
 			chunkFileNames: '[name].js',
@@ -53,6 +55,7 @@ export function bundleDev({ cwd, out, sourcemap, onError, onBuild, profile }) {
 		},
 		perf: !!profile,
 		treeshake: false,
+		preserveEntrySignatures: 'allow-extension',
 		manualChunks(filename) {
 			// Internal modules get an underscore prefix:
 			if (filename[0] === '\0') {
@@ -67,6 +70,9 @@ export function bundleDev({ cwd, out, sourcemap, onError, onBuild, profile }) {
 			return filename.replace(/(^[\\/]|\.([cm]js|[tj]sx?)$)/gi, '');
 		},
 		plugins: [
+			dynamicImportNamesPlugin({
+				// suffix: '~' // avoid collisions with entry modules
+			}),
 			watcherPlugin({
 				cwd,
 				watchedFiles: '**/*.!({js,cjs,mjs,ts,tsx})',

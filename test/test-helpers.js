@@ -52,16 +52,16 @@ export async function runWmr(cwd, ...args) {
 		const raw = buffer.toString('utf-8');
 		const lines = raw.split('\n');
 		out.output.push(...lines);
-		if (/^Error/m.test(raw)) {
-			console.error(`Error running wmr:\n${raw}`);
+		if (/\b([A-Z][a-z]+)?Error\b/m.test(raw)) {
+			console.error(`Error running "wmr ${args.join(' ')}":\n${raw}`);
 		}
 	});
 	child.stderr.on('data', buffer => {
 		const raw = buffer.toString('utf-8');
 		const lines = raw.split('\n');
 		out.output.push(...lines);
-		if (/^Error/m.test(raw)) {
-			console.error(`Error running wmr:\n${raw}`);
+		if (/\b([A-Z][a-z]+)?Error\b/m.test(raw)) {
+			console.error(`Error running "wmr ${args.join(' ')}":\n${raw}`);
 		}
 	});
 	child.on('close', code => (out.code = code));

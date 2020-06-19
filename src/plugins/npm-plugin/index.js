@@ -56,7 +56,7 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = '\0npm/', ext
 				readFile(path)
 					.then(() => true)
 					.catch(() => false);
-			const resolvedPath = await resolveModule(path, { readFile, hasFile });
+			const resolvedPath = await resolveModule(path, { readFile, hasFile, module });
 
 			return prefix + meta.module + '@' + meta.version + '/' + resolvedPath.replace(/^\//, '');
 		},

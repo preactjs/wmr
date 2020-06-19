@@ -7,6 +7,7 @@ const { Parser } = cjsDefault(acorn);
 export function createPluginContainer(plugins, opts = {}) {
 	if (!Array.isArray(plugins)) plugins = [plugins];
 
+	let plugin;
 	let parser = Parser;
 	const ctx = {
 		meta: {},
@@ -19,6 +20,9 @@ export function createPluginContainer(plugins, opts = {}) {
 				onComment: [],
 				...opts
 			});
+		},
+		warn(...args) {
+			console.log(`[${plugin.name}]`, ...args);
 		}
 	};
 
@@ -27,7 +31,7 @@ export function createPluginContainer(plugins, opts = {}) {
 
 		/** @type {OmitThisParameter<import('rollup').PluginHooks['options']>} */
 		options(options) {
-			for (const plugin of plugins) {
+			for (plugin of plugins) {
 				if (!plugin.options) continue;
 				options = plugin.options.call(ctx, options) || options;
 			}
@@ -39,7 +43,7 @@ export function createPluginContainer(plugins, opts = {}) {
 
 		/** @param {string} property */
 		resolveImportMeta(property) {
-			for (const plugin of plugins) {
+			for (plugin of plugins) {
 				if (!plugin.resolveImportMeta) continue;
 				const result = plugin.resolveImportMeta.call(ctx, property);
 				if (result) return result;
@@ -53,7 +57,7 @@ export function createPluginContainer(plugins, opts = {}) {
 		 */
 		async resolveId(id, importer) {
 			const opts = {};
-			for (const plugin of plugins) {
+			for (plugin of plugins) {
 				if (!plugin.resolveId) continue;
 				const result = await plugin.resolveId.call(ctx, id, importer);
 				if (!result) return null;
@@ -73,7 +77,7 @@ export function createPluginContainer(plugins, opts = {}) {
 		 * @param {string} id
 		 */
 		async transform(code, id) {
-			for (const plugin of plugins) {
+			for (plugin of plugins) {
 				if (!plugin.transform) continue;
 				const result = await plugin.transform.call(ctx, code, id);
 				if (!result) continue;
