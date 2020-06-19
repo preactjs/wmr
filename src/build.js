@@ -9,10 +9,10 @@ import { setCwd } from './plugins/npm-plugin/registry.js';
 export default async function build(options = {}) {
 	options.out = options.out || 'dist';
 
-	options = await normalizeOptions(options);
-
 	// @todo remove this hack once registry.js is instantiable
 	setCwd(options.cwd);
+
+	options = await normalizeOptions(options);
 
 	const bundleOutput = await bundleProd(options);
 

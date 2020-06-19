@@ -16,15 +16,18 @@ export async function normalizeOptions(options) {
 	options.overlayDir = options.out;
 
 	// Ensure the output directory exists so that writeFile() doesn't have to create it:
-	try {
-		await fs.mkdir(options.out, { recursive: true });
-	} catch (err) {}
+	// Note: awaiting the promise later lets it run in parallel with the CWD check below.
+	const ensureOutDirPromise = fs.mkdir(options.out, { recursive: true });
 
 	// If the CWD has a public/ directory, all files are assumed to be within it.
 	// From here, everything except node_modules and `out` are relative to public:
 	if (await isDirectory(join(options.cwd, 'public'))) {
 		options.cwd = join(options.cwd, 'public');
 	}
+
+	try {
+		await ensureOutDirPromise;
+	} catch (err) {}
 
 	return options;
 }

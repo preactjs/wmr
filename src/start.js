@@ -16,10 +16,10 @@ import { setCwd } from './plugins/npm-plugin/registry.js';
  * @param {Parameters<server>[0] & Parameters<bundleDev>[0] & OtherOptions} options
  */
 export default async function start(options = {}) {
-	options = await normalizeOptions(options);
-
 	// @todo remove this hack once registry.js is instantiable
 	setCwd(options.cwd);
+
+	options = await normalizeOptions(options);
 
 	if (options.prebuild) {
 		bundleDev({
