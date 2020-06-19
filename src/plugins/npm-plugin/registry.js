@@ -35,7 +35,7 @@ let NODE_MODULES = './node_modules';
 
 /** @todo this is terrible and should be removed once this module is instantiable */
 export function setCwd(cwd) {
-	NODE_MODULES = resolve(cwd, './node_modules');
+	NODE_MODULES = resolve(cwd || '.', './node_modules');
 }
 
 /**
