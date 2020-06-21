@@ -32,7 +32,7 @@ const config = {
 		]
 	},
 	// external: ['fsevents'].concat(builtins),
-	external: [].concat(builtins),
+	external: ['readable-stream'].concat(builtins),
 	// /* Logs all included npm dependencies: */
 	// external(source, importer) {
 	// 	const ch = source[0];
@@ -105,23 +105,25 @@ const config = {
 						return require('fsevents/fsevents.js').constants;
 					}
 				};
-			`,
-			// remove pointless util.inherits shim
-			inherits: `module.exports = require('util').inherits;`
+			`
 		}),
 		alias({
 			entries: [
-				// bypass native modules aimed at production WS performance
+				// bypass native modules aimed at production WS performance:
 				{ find: /^bufferutil$/, replacement: 'bufferutil/fallback.js' },
 				{ find: /^utf-8-validate$/, replacement: 'utf-8-validate/fallback.js' },
-				// just use native streams
-				{ find: /^readable-stream$/, replacement: 'stream' },
-				// avoid pulling in 50kb of "editions" dependencies to resolve one file
+				// just use native streams:
+				// { find: /(^|\/)readable-stream/, replacement: require.resolve('./src/lib/~readable-stream.js') },
+				// just use util:
+				{ find: /^inherits$/, replacement: require.resolve('./src/lib/~inherits.js') },
+				// only pull in fsevents when its exports are accessed (avoids exceptions):
+				// { find: /^fsevents$/, replacement: require.resolve('./src/lib/~fsevents.js') },
+				// avoid pulling in 50kb of "editions" dependencies to resolve one file:
 				{ find: /^istextorbinary$/, replacement: 'istextorbinary/edition-node-0.12/index.js' } // 2.6.0
 			]
 		}),
 		commonjs({
-			ignore: [f => f.endsWith('.mjs'), 'inherits', 'fsevents', ...builtins],
+			ignore: [f => f.endsWith('.mjs'), 'fsevents', ...builtins],
 			ignoreGlobal: true
 		}),
 		nodeResolve({

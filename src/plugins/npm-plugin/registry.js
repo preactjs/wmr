@@ -1,8 +1,7 @@
 import { resolve, dirname } from 'path';
 import { promises as fs } from 'fs';
-// import fetch from 'node-fetch';
 import tar from 'tar-stream';
-import gunzip from 'gunzip-maybe';
+import zlib from 'zlib';
 import semverMaxSatisfying from 'semver/ranges/max-satisfying.js';
 import { getJson, getStream, memo, streamToString } from './utils.js';
 import stripPackageJsonProperties from './package-strip-plugin.js';
@@ -156,6 +155,7 @@ const DISK_CACHE = new Map();
  * @param {Module} info
  */
 export async function loadPackageFile({ module, version, path = '' }) {
+	// console.log('loadPackageFile: ', module, version, path);
 	// first, check if this file is sitting in the in-memory cache:
 	const files = tarFiles.get(module + '/' + version);
 	if (files) {
@@ -174,7 +174,10 @@ export async function loadPackageFile({ module, version, path = '' }) {
 			diskFiles = new Map();
 			DISK_CACHE.set(module + '/' + version, diskFiles);
 		}
-		if (diskFiles.has(path)) return diskFiles.get(path);
+		// console.log(`  > ${diskFiles.has(path) ? 'in DISK_CACHE' : 'not in DISK_CACHE'}`);
+		if (diskFiles.has(path)) {
+			return diskFiles.get(path);
+		}
 
 		const contents = await fs.readFile(localPath, 'utf-8');
 		// console.log(`${path}: read ${contents.length}b from disk`);
@@ -189,7 +192,7 @@ export async function loadPackageFile({ module, version, path = '' }) {
 		// );
 		if (packageExists) {
 			// the package has been streamed to disk, but it doesn't contain this file.
-			throw Error(`File not found`);
+			throw Error(`File not found ${e.message}`);
 		}
 	}
 
@@ -337,6 +340,6 @@ function parseTarball(bodyStream, onFile) {
 		extract.on('finish', resolve);
 		extract.on('error', reject);
 
-		bodyStream.pipe(gunzip()).pipe(extract);
+		bodyStream.pipe(zlib.createGunzip()).pipe(extract);
 	});
 }
