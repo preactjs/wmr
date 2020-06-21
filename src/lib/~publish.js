@@ -1,12 +1,13 @@
-import { copyFileSync, readFileSync, writeFileSync, unlinkSync } from 'fs';
+import { copyFileSync, readFileSync, writeFileSync } from 'fs';
 
 const dry = /dry/.test(process.argv.join(' '));
 const read = f => readFileSync(f, 'utf-8');
 const write = dry ? console.info : writeFileSync;
+const copy = dry ? (f, t) => console.info(`copy ${f} to ${t}`) : copyFileSync;
 
 const pkg = JSON.parse(read('package.json'));
-copyFileSync('package.json', '.package.json');
-copyFileSync('package-lock.json', '.package-lock.json');
+copy('package.json', '.package.json');
+copy('package-lock.json', '.package-lock.json');
 const normalized = {
 	name: pkg.name,
 	version: pkg.version,
