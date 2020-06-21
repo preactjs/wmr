@@ -11,7 +11,8 @@
 		"prepack": "node --experimental-modules ./src/lib/~publish.js",
 		"test": "eslint && jest --runInBand"
 	},
-	"author": "Jason Miller <jason@developit.ca> (http://jasonformat.com)",
+	"author": "The Preact Authors (https://preactjs.com)",
+	"repository": "preactjs/wmr",
 	"files": [
 		"wmr.cjs"
 	],

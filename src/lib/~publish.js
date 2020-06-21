@@ -8,15 +8,18 @@ const copy = dry ? (f, t) => console.info(`copy ${f} to ${t}`) : copyFileSync;
 const pkg = JSON.parse(read('package.json'));
 copy('package.json', '.package.json');
 copy('package-lock.json', '.package-lock.json');
+const { name, version, bin, author, contributors, repository, files } = pkg;
 const normalized = {
-	name: pkg.name,
-	version: pkg.version,
-	bin: pkg.bin,
-	author: pkg.author,
+	name,
+	version,
+	bin,
+	author,
+	contributors,
+	repository,
 	scripts: {
 		postpack: 'mv -f .package.json package.json || true; mv -f .package-lock.json package-lock.json || true'
 	},
 	// engines: pkg.engines,
-	files: pkg.files
+	files
 };
 write('package.json', JSON.stringify(normalized, null, 2));
