@@ -8,13 +8,19 @@
 		"demo:prod": "cd demo && node --experimental-modules ../src/cli.js build 2>&1 | grep -v ExperimentalWarning",
 		"dev": "PROFILE=true nodemon -w src --exec \"npm run -s demo\"",
 		"build": "rollup -c",
+		"prepack": "node --experimental-modules ./src/lib/~publish.js",
+		"postpack": "mv -f .package.json package.json",
 		"test": "eslint && jest --runInBand"
 	},
 	"author": "Jason Miller <jason@developit.ca> (http://jasonformat.com)",
 	"files": [
-		"src",
 		"wmr.js"
 	],
+	"babel": {
+		"plugins": [
+			"@babel/plugin-transform-modules-commonjs"
+		]
+	},
 	"eslintConfig": {
 		"extends": [
 			"developit",
@@ -77,7 +83,7 @@
 	},
 	"devDependencies": {
 		"@babel/core": "^7.10.2",
-		"@babel/preset-env": "^7.10.2",
+		"@babel/plugin-transform-modules-commonjs": "^7.10.1",
 		"@rollup/plugin-alias": "^3.1.1",
 		"@rollup/plugin-commonjs": "^13.0.0",
 		"@rollup/plugin-json": "^4.0.3",
