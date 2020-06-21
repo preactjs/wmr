@@ -8,7 +8,7 @@ const copy = dry ? (f, t) => console.info(`copy ${f} to ${t}`) : copyFileSync;
 const pkg = JSON.parse(read('package.json'));
 copy('package.json', '.package.json');
 copy('package-lock.json', '.package-lock.json');
-const { name, version, bin, author, contributors, repository, files } = pkg;
+const { name, version, bin, author, contributors, repository, dependencies, files } = pkg;
 const normalized = {
 	name,
 	version,
@@ -16,6 +16,7 @@ const normalized = {
 	author,
 	contributors,
 	repository,
+	dependencies,
 	scripts: {
 		postpack: 'mv -f .package.json package.json || true; mv -f .package-lock.json package-lock.json || true'
 	},
