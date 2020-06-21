@@ -9,12 +9,11 @@
 		"dev": "PROFILE=true nodemon -w src --exec \"npm run -s demo\"",
 		"build": "rollup -c",
 		"prepack": "node --experimental-modules ./src/lib/~publish.js",
-		"postpack": "mv -f .package.json package.json",
 		"test": "eslint && jest --runInBand"
 	},
 	"author": "Jason Miller <jason@developit.ca> (http://jasonformat.com)",
 	"files": [
-		"wmr.js"
+		"wmr.cjs"
 	],
 	"babel": {
 		"plugins": [
