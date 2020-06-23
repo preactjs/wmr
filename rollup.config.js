@@ -14,7 +14,11 @@ const config = {
 		file: 'wmr.cjs',
 		format: 'cjs',
 		compact: true,
+		freeze: false,
+		interop: false,
+		namespaceToStringTag: false,
 		externalLiveBindings: false,
+		preferConst: true,
 		plugins: [
 			{
 				name: 'minify',
@@ -31,7 +35,7 @@ const config = {
 		]
 	},
 	// external: ['fsevents'].concat(builtins),
-	external: ['readable-stream'].concat(builtins),
+	external: [].concat(builtins),
 	// /* Logs all included npm dependencies: */
 	// external(source, importer) {
 	// 	const ch = source[0];
@@ -97,7 +101,8 @@ const config = {
 				{ find: /^bufferutil$/, replacement: 'bufferutil/fallback.js' },
 				{ find: /^utf-8-validate$/, replacement: 'utf-8-validate/fallback.js' },
 				// just use native streams:
-				// { find: /(^|\/)readable-stream/, replacement: require.resolve('./src/lib/~readable-stream.js') },
+				{ find: /(^|\/)readable-stream$/, replacement: require.resolve('./src/lib/~readable-stream.js') },
+				{ find: /(^|\/)readable-stream\/duplex/, replacement: require.resolve('./src/lib/~readable-stream-duplex.js') },
 				// just use util:
 				{ find: /^inherits$/, replacement: require.resolve('./src/lib/~inherits.js') },
 				// only pull in fsevents when its exports are accessed (avoids exceptions):
