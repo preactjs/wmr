@@ -22,10 +22,17 @@ import { compileSingleModule } from './lib/compile-single-module.js';
 export default function wmrMiddleware({ cwd, out = '.dist', onError, onChange } = {}) {
 	cwd = resolve(process.cwd(), cwd || '.');
 
+	let useFsEvents = false;
+	try {
+		eval('require')('fsevents');
+		useFsEvents = true;
+	} catch (e) {}
+
 	const watcher = chokidar.watch(cwd, {
 		cwd,
 		disableGlobbing: true,
-		ignored: /(^|[/\\])node_modules[/\\]/
+		ignored: /(^|[/\\])node_modules[/\\]/,
+		useFsEvents
 	});
 	const pendingChanges = new Set();
 	function flushChanges() {
