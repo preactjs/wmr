@@ -2,7 +2,6 @@ import shebangPlugin from 'rollup-plugin-preserve-shebang';
 import commonjs from '@rollup/plugin-commonjs';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import alias from '@rollup/plugin-alias';
-import virtual from '@rollup/plugin-virtual';
 import json from '@rollup/plugin-json';
 import builtins from 'builtin-modules';
 import terser from 'terser';
@@ -15,7 +14,11 @@ const config = {
 		file: 'wmr.cjs',
 		format: 'cjs',
 		compact: true,
+		freeze: false,
+		interop: false,
+		namespaceToStringTag: false,
 		externalLiveBindings: false,
+		preferConst: true,
 		plugins: [
 			{
 				name: 'minify',
@@ -32,7 +35,7 @@ const config = {
 		]
 	},
 	// external: ['fsevents'].concat(builtins),
-	external: ['readable-stream'].concat(builtins),
+	external: [].concat(builtins),
 	// /* Logs all included npm dependencies: */
 	// external(source, importer) {
 	// 	const ch = source[0];
@@ -92,38 +95,24 @@ const config = {
 				}
 			}
 		},
-		virtual({
-			fsevents: `
-				module.exports = {
-					get watch() {
-						return require('fsevents/fsevents.js').watch;
-					},
-					get getInfo() {
-						return require('fsevents/fsevents.js').getInfo;
-					},
-					get constants() {
-						return require('fsevents/fsevents.js').constants;
-					}
-				};
-			`
-		}),
 		alias({
 			entries: [
 				// bypass native modules aimed at production WS performance:
 				{ find: /^bufferutil$/, replacement: 'bufferutil/fallback.js' },
 				{ find: /^utf-8-validate$/, replacement: 'utf-8-validate/fallback.js' },
 				// just use native streams:
-				// { find: /(^|\/)readable-stream/, replacement: require.resolve('./src/lib/~readable-stream.js') },
+				{ find: /(^|\/)readable-stream$/, replacement: require.resolve('./src/lib/~readable-stream.js') },
+				{ find: /(^|\/)readable-stream\/duplex/, replacement: require.resolve('./src/lib/~readable-stream-duplex.js') },
 				// just use util:
 				{ find: /^inherits$/, replacement: require.resolve('./src/lib/~inherits.js') },
 				// only pull in fsevents when its exports are accessed (avoids exceptions):
-				// { find: /^fsevents$/, replacement: require.resolve('./src/lib/~fsevents.js') },
+				{ find: /^fsevents$/, replacement: require.resolve('./src/lib/~fsevents.js') },
 				// avoid pulling in 50kb of "editions" dependencies to resolve one file:
 				{ find: /^istextorbinary$/, replacement: 'istextorbinary/edition-node-0.12/index.js' } // 2.6.0
 			]
 		}),
 		commonjs({
-			ignore: [f => f.endsWith('.mjs'), 'fsevents', ...builtins],
+			ignore: [f => f.endsWith('.mjs'), ...builtins],
 			ignoreGlobal: true
 		}),
 		nodeResolve({
