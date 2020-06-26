@@ -75,6 +75,10 @@ export default async function server({ cwd, overlayDir, middleware, http2 = fals
 			dev: true
 		})
 	);
+	
+	app.on('/favicon.ico', (req, res) => {
+		res.end('');
+	});
 
 	return app;
 }
