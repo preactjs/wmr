@@ -1,4 +1,4 @@
-import { join, normalize, resolve, relative, dirname } from 'path';
+import { join, normalize, resolve, relative, dirname, posix } from 'path';
 import { promises as fs } from 'fs';
 import chokidar from 'chokidar';
 import mime from 'mime/lite.js';
@@ -46,10 +46,10 @@ export default function wmrMiddleware({ cwd, out = '.dist', onError, onChange } 
 
 	return async (req, res, next) => {
 		// @ts-ignore
-		const path = normalize(req.path);
-		const file = join(cwd, path);
+		const path = posix.normalize(req.path);
+		const file = posix.join(cwd, path);
 		// rollup-style cwd-relative path ID
-		const id = relative(cwd, file).replace(/^\.\//, '');
+		const id = posix.relative(cwd, file).replace(/^\.\//, '');
 
 		const type = mime.getType(file);
 		if (type) res.setHeader('content-type', type);
