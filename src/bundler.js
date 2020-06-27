@@ -170,7 +170,8 @@ export async function bundleProd({ cwd, out, sourcemap, profile, npmChunks = fal
 		plugins: [
 			sucrase({
 				exclude: ['node_modules/**', '*/**.js', '*/**.jsx'],
-				transforms: ['typescript']
+				transforms: ['typescript'],
+				production: true
 			}),
 			publicPathPlugin({ publicPath: '/' }),
 			wmrStylesPlugin({ hot: false }),
