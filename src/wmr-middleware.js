@@ -13,14 +13,16 @@ import { compileSingleModule } from './lib/compile-single-module.js';
  * @param {object} [options]
  * @param {string} [options.cwd]
  * @param {string} [options.out = '.dist']
+ * @param {string} [options.distDir] if set, ignores watch events within this directory
  * @param {boolean} [options.sourcemap]
  * @param {boolean} [options.profile] Enable bundler performance profiling
  * @param {(error: Error & { clientMessage?: string })=>void} [options.onError]
  * @param {(event: { changes: string[], duration: number })=>void} [options.onChange]
  * @returns {import('polka').Middleware}
  */
-export default function wmrMiddleware({ cwd, out = '.dist', onError, onChange } = {}) {
+export default function wmrMiddleware({ cwd, out = '.dist', distDir = 'dist', onError, onChange } = {}) {
 	cwd = resolve(process.cwd(), cwd || '.');
+	distDir = resolve(dirname(out), distDir);
 
 	let useFsEvents = false;
 	try {
@@ -31,7 +33,7 @@ export default function wmrMiddleware({ cwd, out = '.dist', onError, onChange } 
 	const watcher = chokidar.watch(cwd, {
 		cwd,
 		disableGlobbing: true,
-		ignored: /(^|[/\\])node_modules[/\\]/,
+		ignored: [/(^|[/\\])(node_modules|\.git|\.DS_Store)([/\\]|$)/, resolve(cwd, out), resolve(cwd, distDir)],
 		useFsEvents
 	});
 	const pendingChanges = new Set();
