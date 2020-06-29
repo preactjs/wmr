@@ -1,8 +1,9 @@
-import { join, normalize, resolve, relative, dirname } from 'path';
+import { resolve, relative, dirname, posix } from 'path';
 import { promises as fs } from 'fs';
 import chokidar from 'chokidar';
 import mime from 'mime/lite.js';
 import htmPlugin from './plugins/htm-plugin.js';
+import sucrasePlugin from './plugins/sucrase-plugin.js';
 import wmrPlugin, { getWmrClient } from './plugins/wmr/plugin.js';
 import wmrStylesPlugin, { hash } from './plugins/wmr/styles-plugin.js';
 import { createHash } from 'crypto';
@@ -13,14 +14,16 @@ import { compileSingleModule } from './lib/compile-single-module.js';
  * @param {object} [options]
  * @param {string} [options.cwd]
  * @param {string} [options.out = '.dist']
+ * @param {string} [options.distDir] if set, ignores watch events within this directory
  * @param {boolean} [options.sourcemap]
  * @param {boolean} [options.profile] Enable bundler performance profiling
  * @param {(error: Error & { clientMessage?: string })=>void} [options.onError]
  * @param {(event: { changes: string[], duration: number })=>void} [options.onChange]
  * @returns {import('polka').Middleware}
  */
-export default function wmrMiddleware({ cwd, out = '.dist', onError, onChange } = {}) {
+export default function wmrMiddleware({ cwd, out = '.dist', distDir = 'dist', onError, onChange } = {}) {
 	cwd = resolve(process.cwd(), cwd || '.');
+	distDir = resolve(dirname(out), distDir);
 
 	let useFsEvents = false;
 	try {
@@ -31,7 +34,7 @@ export default function wmrMiddleware({ cwd, out = '.dist', onError, onChange } 
 	const watcher = chokidar.watch(cwd, {
 		cwd,
 		disableGlobbing: true,
-		ignored: /(^|[/\\])node_modules[/\\]/,
+		ignored: [/(^|[/\\])(node_modules|\.git|\.DS_Store)([/\\]|$)/, resolve(cwd, out), resolve(cwd, distDir)],
 		useFsEvents
 	});
 	const pendingChanges = new Set();
@@ -46,10 +49,10 @@ export default function wmrMiddleware({ cwd, out = '.dist', onError, onChange } 
 
 	return async (req, res, next) => {
 		// @ts-ignore
-		const path = normalize(req.path);
-		const file = join(cwd, path);
+		const path = posix.normalize(req.path);
+		const file = posix.join(cwd, path);
 		// rollup-style cwd-relative path ID
-		const id = relative(cwd, file).replace(/^\.\//, '');
+		const id = posix.relative(cwd, file).replace(/^\.\//, '');
 
 		const type = mime.getType(file);
 		if (type) res.setHeader('content-type', type);
@@ -129,7 +132,15 @@ export default function wmrMiddleware({ cwd, out = '.dist', onError, onChange } 
 // 	return instance;
 // }
 
-const NonRollup = createPluginContainer([htmPlugin(), wmrPlugin()]);
+const NonRollup = createPluginContainer([
+	sucrasePlugin({
+		typescript: true,
+		sourcemap: false,
+		production: false
+	}),
+	htmPlugin(),
+	wmrPlugin()
+]);
 
 export const TRANSFORMS = {
 	async js_test(ctx) {
