@@ -1,7 +1,7 @@
 import { useLoc } from './loc.js';
 
 export default function Header() {
-	const { url } = useLoc();
+	const { url } : { url: string } = useLoc();
 	return (
 		<header>
 			<nav>
