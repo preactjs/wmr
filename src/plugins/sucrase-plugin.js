@@ -1,4 +1,9 @@
-import sucrase from 'sucrase';
+import * as sucrase from 'sucrase';
+
+const cjsDefault = m => ('default' in m ? m.default : m);
+
+/** @type {sucrase.transform} */
+const transform = cjsDefault(sucrase).transform;
 
 /**
  * Transform (TypeScript) files with Sucrase.
@@ -36,7 +41,7 @@ export default function sucrasePlugin(opts = {}) {
 				return allTransforms.includes(v);
 			};
 
-			const result = sucrase.transform(code, {
+			const result = transform(code, {
 				transforms,
 				production: opts.production === true,
 				filePath: id,
