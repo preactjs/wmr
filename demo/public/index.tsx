@@ -4,7 +4,7 @@ import lazy from './lazy.js';
 import Home from './pages/home.js';
 // import About from './pages/about/index.js';
 import NotFound from './pages/_404.js';
-import Header from './header.js';
+import Header from './header.tsx';
 // import './style.css';
 
 const About = lazy(() => import('./pages/about/index.js'));

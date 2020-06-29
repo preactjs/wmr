@@ -4,8 +4,8 @@
 	"bin": "wmr.cjs",
 	"type": "module",
 	"scripts": {
-		"demo": "cd demo && node --experimental-modules ../src/cli.js 2>&1 | grep -v ExperimentalWarning",
-		"demo:prod": "cd demo && node --experimental-modules ../src/cli.js build 2>&1 | grep -v ExperimentalWarning",
+		"demo": "cd demo && node --experimental-modules ../src/cli.js 2>&1",
+		"demo:prod": "cd demo && node --experimental-modules ../src/cli.js build 2>&1",
 		"dev": "PROFILE=true nodemon -w src --exec \"npm run -s demo\"",
 		"build": "rollup -c",
 		"prepack": "node --experimental-modules ./src/lib/~publish.js",
@@ -120,6 +120,7 @@
 		"sade": "^1.7.3",
 		"semver": "^7.3.2",
 		"sirv": "^1.0.0",
+		"sucrase": "^3.15.0",
 		"tar-stream": "^2.1.2",
 		"terser": "^4.8.0",
 		"tiny-glob": "^0.2.6",
