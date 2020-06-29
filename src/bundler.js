@@ -1,11 +1,11 @@
 import { relative, resolve, join, dirname } from 'path';
 import * as rollup from 'rollup';
-import sucrase from '@rollup/plugin-sucrase';
 // import commonJs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import watcherPlugin from './plugins/watcher-plugin.js';
 // import unpkgPlugin from './plugins/unpkg-plugin.js';
 import htmPlugin from './plugins/htm-plugin.js';
+import sucrasePlugin from './plugins/sucrase-plugin.js';
 import wmrPlugin from './plugins/wmr/plugin.js';
 import wmrStylesPlugin from './plugins/wmr/styles-plugin.js';
 // import processGlobalPlugin from './plugins/process-global-plugin.js';
@@ -71,9 +71,10 @@ export function bundleDev({ cwd, out, sourcemap, onError, onBuild, profile }) {
 			return filename.replace(/(^[\\/]|\.([cm]js|[tj]sx?)$)/gi, '');
 		},
 		plugins: [
-			sucrase({
-				exclude: ['node_modules/**', '*/**.js', '*/**.jsx'],
-				transforms: ['typescript']
+			sucrasePlugin({
+				typescript: true,
+				sourcemap,
+				production: false
 			}),
 			dynamicImportNamesPlugin({
 				// suffix: '~' // avoid collisions with entry modules
@@ -168,9 +169,9 @@ export async function bundleProd({ cwd, out, sourcemap, profile, npmChunks = fal
 		preserveEntrySignatures: 'allow-extension',
 		manualChunks: npmChunks ? extractNpmChunks : undefined,
 		plugins: [
-			sucrase({
-				exclude: ['node_modules/**', '*/**.js', '*/**.jsx'],
-				transforms: ['typescript'],
+			sucrasePlugin({
+				typescript: true,
+				sourcemap,
 				production: true
 			}),
 			publicPathPlugin({ publicPath: '/' }),

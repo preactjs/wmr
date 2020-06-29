@@ -1,8 +1,9 @@
-import { join, normalize, resolve, relative, dirname, posix } from 'path';
+import { resolve, relative, dirname, posix } from 'path';
 import { promises as fs } from 'fs';
 import chokidar from 'chokidar';
 import mime from 'mime/lite.js';
 import htmPlugin from './plugins/htm-plugin.js';
+import sucrasePlugin from './plugins/sucrase-plugin.js';
 import wmrPlugin, { getWmrClient } from './plugins/wmr/plugin.js';
 import wmrStylesPlugin, { hash } from './plugins/wmr/styles-plugin.js';
 import { createHash } from 'crypto';
@@ -129,7 +130,15 @@ export default function wmrMiddleware({ cwd, out = '.dist', onError, onChange } 
 // 	return instance;
 // }
 
-const NonRollup = createPluginContainer([wmrPlugin(), htmPlugin()]);
+const NonRollup = createPluginContainer([
+	sucrasePlugin({
+		typescript: true,
+		sourcemap: false,
+		production: false
+	}),
+	htmPlugin(),
+	wmrPlugin()
+]);
 
 export const TRANSFORMS = {
 	async js_test(ctx) {
