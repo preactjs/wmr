@@ -8,7 +8,7 @@ import wmrPlugin, { getWmrClient } from './plugins/wmr/plugin.js';
 import wmrStylesPlugin, { hash } from './plugins/wmr/styles-plugin.js';
 import { createHash } from 'crypto';
 import { createPluginContainer } from './lib/rollup-plugin-container.js';
-import { compileSingleModule } from './lib/compile-single-module.js';
+// import { compileSingleModule } from './lib/compile-single-module.js';
 import { transformImports } from './lib/transform-imports.js';
 
 /**
@@ -68,16 +68,7 @@ export default function wmrMiddleware({ cwd, out = '.dist', distDir = 'dist', on
 		} else if (/\.css\.js$/.test(file)) {
 			transform = TRANSFORMS.cssModule;
 		} else if (/\.([mc]js|[tj]sx?)$/.test(file)) {
-			// transform = async ctx => {
-			// 	let time = Date.now();
-			// 	let ret = await TRANSFORMS.js_bundled(ctx);
-			// 	const bundledTime = Date.now() - time;
-			// 	time = Date.now();
-			// 	ret = await TRANSFORMS.js(ctx);
-			// 	const rawTime = Date.now() - time;
-			// 	console.log(`Bundled: ${bundledTime}ms, Raw: ${rawTime}ms`);
-			// 	return ret;
-			// };
+			// transform = TRANSFORMS.js_test;
 			// transform = TRANSFORMS.js_bundled;
 			transform = TRANSFORMS.js;
 		} else if (/\.(css|s[ac]ss)$/.test(file)) {
@@ -124,16 +115,32 @@ const NonRollup = createPluginContainer([
 ]);
 
 export const TRANSFORMS = {
-	async js_test(ctx) {
-		let time = Date.now();
-		let ret = await TRANSFORMS.js_bundled(ctx);
-		const bundledTime = Date.now() - time;
-		time = Date.now();
-		ret = await TRANSFORMS.js(ctx);
-		const rawTime = Date.now() - time;
-		console.log(`Bundled: ${bundledTime}ms, Raw: ${rawTime}ms`);
-		return ret;
-	},
+	// async js_test(ctx) {
+	// 	let bundled = 0,
+	// 		raw = 0;
+	// 	for (let i = 0; i < 10; i++) {
+	// 		let start = Date.now();
+	// 		if (i % 2) {
+	// 			await TRANSFORMS.js_bundled(ctx).then(code => {
+	// 				bundled += Date.now() - start;
+	// 			});
+	// 		} else {
+	// 			await TRANSFORMS.js(ctx).then(code => {
+	// 				raw += Date.now() - start;
+	// 			});
+	// 		}
+	// 	}
+	// 	console.log(`${ctx.id}: ${bundled}ms, Raw: ${raw}ms`);
+	// 	return TRANSFORMS.js(ctx);
+	// },
+
+	// async js_bundled({ id, file, res, cwd, out }) {
+	// 	const input = resolve(cwd, file);
+	// 	// const input = resolve(process.cwd(), file);
+	// 	const code = await compileSingleModule(input, { cwd, out });
+	// 	res.setHeader('content-type', 'application/javascript');
+	// 	return code;
+	// },
 
 	// non-rollup-based straight transform (still uses Acorn + rollup plugins)
 	async js({ id, file, res, cwd, out }) {
@@ -163,14 +170,6 @@ export const TRANSFORMS = {
 
 		writeCacheFile(out, id, code);
 
-		return code;
-	},
-
-	async js_bundled({ id, file, res, cwd, out }) {
-		const input = resolve(cwd, file);
-		// const input = resolve(process.cwd(), file);
-		const code = await compileSingleModule(input, { cwd, out });
-		res.setHeader('content-type', 'application/javascript');
 		return code;
 	},
 
