@@ -129,7 +129,7 @@ export default function wmrMiddleware({ cwd, out = '.dist', onError, onChange } 
 // 	return instance;
 // }
 
-const NonRollup = createPluginContainer([wmrPlugin(), htmPlugin()]);
+const NonRollup = createPluginContainer([htmPlugin(), wmrPlugin()]);
 
 export const TRANSFORMS = {
 	async js_test(ctx) {

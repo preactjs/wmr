@@ -7,6 +7,8 @@ const { Parser } = cjsDefault(acorn);
 export function createPluginContainer(plugins, opts = {}) {
 	if (!Array.isArray(plugins)) plugins = [plugins];
 
+	const MODULES = opts.modules || new Map();
+
 	let plugin;
 	let parser = Parser;
 	const ctx = {
@@ -20,6 +22,15 @@ export function createPluginContainer(plugins, opts = {}) {
 				onComment: [],
 				...opts
 			});
+		},
+		getModuleInfo(id) {
+			let mod = MODULES.get(id);
+			if (mod) return mod.info;
+			mod = {
+				info: {}
+			};
+			MODULES.set(id, mod);
+			return mod.info;
 		},
 		warn(...args) {
 			console.log(`[${plugin.name}]`, ...args);

@@ -59,10 +59,14 @@ export default function wmrPlugin({ hot = true } = {}) {
 				before += 'const module={hot:import.meta.hot};\n';
 			}
 
-			// detect JSX and inject prefresh: (@todo: move to separate plugin)
-			if (code.match(/<\/([a-z][a-z0-9.:-]*)?>/i)) {
+			// Detect modules that appear to have both JSX and an export, and inject prefresh:
+			// @todo: move to separate plugin.
+			// if (code.match(/\/\*@@prefresh_include\*\//) && code.match(/\bexport\b/)) {
+			if (code.match(/html`[^`]*<([a-zA-Z][a-zA-Z0-9.:-]*|\$\{.+?\})[^>]*>/) && code.match(/\bexport\b/)) {
+				// if (this.getModuleInfo(id).hasJSX) {
 				hasHot = true;
 				after += '\n' + PREFRESH;
+				// }
 			}
 
 			if (!hasHot) return null;
