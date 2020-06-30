@@ -1,14 +1,13 @@
 import { relative, resolve, join, dirname } from 'path';
+import fs from 'fs';
+import htmlparser2 from 'htmlparser2';
 import * as rollup from 'rollup';
-// import commonJs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import watcherPlugin from './plugins/watcher-plugin.js';
-// import unpkgPlugin from './plugins/unpkg-plugin.js';
 import htmPlugin from './plugins/htm-plugin.js';
 import sucrasePlugin from './plugins/sucrase-plugin.js';
 import wmrPlugin from './plugins/wmr/plugin.js';
 import wmrStylesPlugin from './plugins/wmr/styles-plugin.js';
-// import processGlobalPlugin from './plugins/process-global-plugin.js';
 import localNpmPlugin from './plugins/local-npm-plugin.js';
 import terser from './plugins/fast-minify.js';
 import npmPlugin from './plugins/npm-plugin/index.js';
@@ -158,11 +157,41 @@ export function bundleDev({ cwd, out, sourcemap, onError, onBuild, profile }) {
 	return watcher;
 }
 
+const isLocalFile = src => !src.startsWith('http');
+
 /** @param {BuildOptions & { npmChunks?: boolean }} options */
 export async function bundleProd({ cwd, out, sourcemap, profile, npmChunks = false }) {
 	cwd = cwd || '';
+
+	const htmlFile = fs.readFileSync('./' + relative('.', join(cwd, 'index.html'))).toString();
+	const scripts = [];
+	const styles = [];
+	const parser = new htmlparser2.Parser({
+		onopentag(name, attribs) {
+			switch (name) {
+				case 'script': {
+					if (attribs.type === 'module' && isLocalFile(attribs.src)) {
+						scripts.push('./' + relative('.', join(cwd, attribs.src)));
+					}
+					break;
+				}
+				case 'link': {
+					if (attribs.rel === 'stylesheet' && isLocalFile(attribs.href)) {
+						styles.push('./' + relative('.', join(cwd, attribs.href)));
+					}
+					break;
+				}
+				default:
+					return;
+			}
+		}
+	});
+
+	parser.write(htmlFile);
+
 	const input = './' + relative('.', join(cwd, 'index.js'));
 
+	// TODO: produce multiple bundles with the contents of scripts and styles array
 	const bundle = await rollup.rollup({
 		input,
 		perf: !!profile,
