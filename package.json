@@ -136,5 +136,8 @@
 	},
 	"engines": {
 		"node": ">=12.16"
+	},
+	"dependencies": {
+		"cssnano": "^4.1.10"
 	}
 }
