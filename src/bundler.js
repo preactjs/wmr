@@ -1,4 +1,4 @@
-import { relative, resolve, join, dirname, posix } from 'path';
+import path from 'path';
 import { promises as fs } from 'fs';
 import * as rollup from 'rollup';
 import json from '@rollup/plugin-json';
@@ -13,6 +13,8 @@ import npmPlugin from './plugins/npm-plugin/index.js';
 import publicPathPlugin from './plugins/public-path-plugin.js';
 import dynamicImportNamesPlugin from './plugins/dynamic-import-names-plugin.js';
 import { parse } from './lib/get-scripts.js';
+
+const { relative, resolve, join, dirname } = path.posix;
 
 /**
  * @typedef {Object} BuildOptions
@@ -163,21 +165,32 @@ const isLocalFile = src => !/^([a-z]+:)\/\//i.test(src);
 export async function bundleProd({ cwd, out, sourcemap, profile, npmChunks = false }) {
 	cwd = cwd || '';
 
-	const htmlFile = await fs.readFile('./' + relative('.', join(cwd, 'index.html')), 'utf-8');
+	const htmlFile = await fs.readFile(path.join(cwd, 'index.html'), 'utf-8');
 	const scripts = [];
 	const styles = [];
+
+	// cwd = pathToPosix(cwd);
+	cwd = cwd
+		.replace(/^[A-Z]:/, '')
+		.split(path.sep)
+		.join('/');
+	const actualCwd = process
+		.cwd()
+		.replace(/^[A-Z]:/, '')
+		.split(path.sep)
+		.join('/');
 
 	const callback = (name, attribs) => {
 		switch (name) {
 			case 'script': {
 				if (attribs.type === 'module' && isLocalFile(attribs.src)) {
-					scripts.push('./' + posix.relative('.', posix.join(cwd, attribs.src)));
+					scripts.push('./' + relative(actualCwd, join(cwd, attribs.src)));
 				}
 				break;
 			}
 			case 'link': {
 				if (attribs.rel === 'stylesheet' && isLocalFile(attribs.href)) {
-					styles.push('./' + posix.relative('.', posix.join(cwd, attribs.href)));
+					styles.push('./' + relative(actualCwd, join(cwd, attribs.href)));
 				}
 				break;
 			}
@@ -187,6 +200,8 @@ export async function bundleProd({ cwd, out, sourcemap, profile, npmChunks = fal
 	};
 
 	parse(htmlFile, callback);
+
+	console.log(scripts);
 
 	// TODO: produce multiple bundles with the contents of scripts and styles array
 	const bundle = await rollup.rollup({
@@ -216,7 +231,7 @@ export async function bundleProd({ cwd, out, sourcemap, profile, npmChunks = fal
 		compact: true,
 		plugins: [terser({ compress: false, sourcemap })],
 		sourcemap,
-		sourcemapPathTransform: p => 'source://' + posix.resolve(cwd, p).replace(/^(.\/)?/g, '/'),
+		sourcemapPathTransform: p => 'source://' + resolve(cwd, p).replace(/^(.\/)?/g, '/'),
 		preferConst: true,
 		dir: out || 'dist'
 	});
@@ -237,7 +252,7 @@ function extractNpmChunks(id, { getModuleIds, getModuleInfo }) {
 			// strip any unnecessary (non-unique) trailing path segments:
 			const moduleIds = Array.from(getModuleIds()).filter(m => m !== name);
 			while (name.length > 1) {
-				const dir = posix.dirname(name);
+				const dir = dirname(name);
 				const match = moduleIds.find(m => m.startsWith(dir));
 				if (match) break;
 				name = dir;
