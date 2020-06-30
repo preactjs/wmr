@@ -8,7 +8,8 @@ import wmrPlugin, { getWmrClient } from './plugins/wmr/plugin.js';
 import wmrStylesPlugin, { hash } from './plugins/wmr/styles-plugin.js';
 import { createHash } from 'crypto';
 import { createPluginContainer } from './lib/rollup-plugin-container.js';
-import { compileSingleModule } from './lib/compile-single-module.js';
+// import { compileSingleModule } from './lib/compile-single-module.js';
+import { transformImports } from './lib/transform-imports.js';
 
 /**
  * @param {object} [options]
@@ -67,16 +68,7 @@ export default function wmrMiddleware({ cwd, out = '.dist', distDir = 'dist', on
 		} else if (/\.css\.js$/.test(file)) {
 			transform = TRANSFORMS.cssModule;
 		} else if (/\.([mc]js|[tj]sx?)$/.test(file)) {
-			// transform = async ctx => {
-			// 	let time = Date.now();
-			// 	let ret = await TRANSFORMS.js_bundled(ctx);
-			// 	const bundledTime = Date.now() - time;
-			// 	time = Date.now();
-			// 	ret = await TRANSFORMS.js(ctx);
-			// 	const rawTime = Date.now() - time;
-			// 	console.log(`Bundled: ${bundledTime}ms, Raw: ${rawTime}ms`);
-			// 	return ret;
-			// };
+			// transform = TRANSFORMS.js_test;
 			// transform = TRANSFORMS.js_bundled;
 			transform = TRANSFORMS.js;
 		} else if (/\.(css|s[ac]ss)$/.test(file)) {
@@ -112,26 +104,6 @@ export default function wmrMiddleware({ cwd, out = '.dist', distDir = 'dist', on
 	};
 }
 
-// const pluginInstances = new Map();
-
-// /**
-//  * @template {(opts: any?) => any} T
-//  * @param {T} factory
-//  * @param {Parameters<T>[0]} [opts]
-//  */
-// function getPluginInstance(factory, opts) {
-// 	let instance = pluginInstances.get(factory);
-// 	if (!instance) {
-// 		instance = factory(opts);
-// 		pluginInstances.set(factory, instance);
-
-// 		let options = { acornInjectPlugins: [] };
-// 		options = (await instance.options.call(ctx, options)) || options;
-// 		parser = acorn.Parser.extend(...options.acornInjectPlugins);
-// 	}
-// 	return instance;
-// }
-
 const NonRollup = createPluginContainer([
 	sucrasePlugin({
 		typescript: true,
@@ -143,77 +115,61 @@ const NonRollup = createPluginContainer([
 ]);
 
 export const TRANSFORMS = {
-	async js_test(ctx) {
-		let time = Date.now();
-		let ret = await TRANSFORMS.js_bundled(ctx);
-		const bundledTime = Date.now() - time;
-		time = Date.now();
-		ret = await TRANSFORMS.js(ctx);
-		const rawTime = Date.now() - time;
-		console.log(`Bundled: ${bundledTime}ms, Raw: ${rawTime}ms`);
-		return ret;
-	},
+	// async js_test(ctx) {
+	// 	let bundled = 0,
+	// 		raw = 0;
+	// 	for (let i = 0; i < 10; i++) {
+	// 		let start = Date.now();
+	// 		if (i % 2) {
+	// 			await TRANSFORMS.js_bundled(ctx).then(code => {
+	// 				bundled += Date.now() - start;
+	// 			});
+	// 		} else {
+	// 			await TRANSFORMS.js(ctx).then(code => {
+	// 				raw += Date.now() - start;
+	// 			});
+	// 		}
+	// 	}
+	// 	console.log(`${ctx.id}: ${bundled}ms, Raw: ${raw}ms`);
+	// 	return TRANSFORMS.js(ctx);
+	// },
+
+	// async js_bundled({ id, file, res, cwd, out }) {
+	// 	const input = resolve(cwd, file);
+	// 	// const input = resolve(process.cwd(), file);
+	// 	const code = await compileSingleModule(input, { cwd, out });
+	// 	res.setHeader('content-type', 'application/javascript');
+	// 	return code;
+	// },
 
 	// non-rollup-based straight transform (still uses Acorn + rollup plugins)
 	async js({ id, file, res, cwd, out }) {
 		const input = resolve(cwd, file);
 		let code = await fs.readFile(input, 'utf-8');
-		// let parser = acorn.Parser;
-		// const ctx = {
-		// 	parse: (code, opts) => {
-		// 		return parser.parse(code, {
-		// 			sourceType: 'module',
-		// 			ecmaVersion: 2020,
-		// 			locations: true,
-		// 			onComment: [],
-		// 			...opts
-		// 		});
-		// 	}
-		// };
-		// const wmr = getPluginInstance(wmrPlugin);
-		// const htm = getPluginInstance(htmPlugin);
-		// let options = { acornInjectPlugins: [] };
-		// options = (await htm.options.call(ctx, options)) || options;
-		// parser = acorn.Parser.extend(...options.acornInjectPlugins);
-
-		// let result = await htm.transform.call(ctx, code, id);
-		// code = (result && result.code) || result || code;
-
-		// result = await wmr.transform.call(ctx, code, id);
-		// code = (result && result.code) || result || code;
 
 		code = await NonRollup.transform(code, id);
 
-		code = code.replace(
-			/\bimport\.meta\.([a-zA-Z_$][a-zA-Z0-9_$]*)\b/g,
-			(str, property) => NonRollup.resolveImportMeta(property) || str
-		);
+		code = await transformImports(code, id, {
+			resolveImportMeta(property) {
+				return NonRollup.resolveImportMeta(property);
+			},
+			resolveId(spec, importer) {
+				if (spec === 'wmr') return '/_wmr.js';
 
-		code = code.replace(
-			/\b(import\s*(?:(?:\{.*?\}(?:\s*,\s*[\w$]+(?:\s+as\s+[\w$]+)?)?|[\w$]+(?:\s+as\s+[\w$]+)?(?:\s*,\s*\{.*?\})?)\s*from\s*)?)(['"])(.*?)\2/g,
-			(str, pre, q, spec) => {
-				// console.log(spec);
+				// foo.css --> foo.css.js (import of CSS Modules proxy module)
 				if (spec.endsWith('.css')) spec += '.js';
-				if (spec === 'wmr') {
-					spec = '/_wmr.js';
-				} else if (spec[0] !== '.' && spec[0] !== '/') {
+
+				if (!/^\.?\.?\//.test(spec)) {
 					spec = `/@npm/${spec}`;
 				}
-				return `${pre}${q}${spec}${q}`;
+				return spec;
 			}
-		);
+		});
+
 		res.setHeader('content-type', 'application/javascript');
 
 		writeCacheFile(out, id, code);
 
-		return code;
-	},
-
-	async js_bundled({ id, file, res, cwd, out }) {
-		const input = resolve(cwd, file);
-		// const input = resolve(process.cwd(), file);
-		const code = await compileSingleModule(input, { cwd, out });
-		res.setHeader('content-type', 'application/javascript');
 		return code;
 	},
 

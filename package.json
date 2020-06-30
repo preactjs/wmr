@@ -98,6 +98,7 @@
 		"bufferutil": "^4.0.1",
 		"chokidar": "^3.4.0",
 		"devcert": "^1.1.0",
+		"es-module-lexer": "^0.3.24",
 		"eslint": "^7.0.0",
 		"eslint-config-developit": "^1.2.0",
 		"eslint-config-prettier": "^6.11.0",
