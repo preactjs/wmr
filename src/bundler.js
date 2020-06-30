@@ -190,12 +190,9 @@ export async function bundleProd({ cwd, out, sourcemap, profile, npmChunks = fal
 	parser.write(htmlFile);
 	parser.end();
 
-	const input = {};
-	[...scripts, ...styles].forEach(path => (input[path] = path));
-
 	// TODO: produce multiple bundles with the contents of scripts and styles array
 	const bundle = await rollup.rollup({
-		input,
+		input: [...scripts, ...styles],
 		perf: !!profile,
 		preserveEntrySignatures: 'allow-extension',
 		manualChunks: npmChunks ? extractNpmChunks : undefined,

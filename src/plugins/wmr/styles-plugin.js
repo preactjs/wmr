@@ -99,7 +99,8 @@ function forEachInput(input, callback) {
 		}
 		for (let i in input) forEachInput(input[i], callback);
 	}
-	if (input) callback(input);
+
+	if (typeof input === 'string') callback(input);
 }
 
 export function hash(str) {
