@@ -1,17 +1,17 @@
 name: compressed-size
 on:
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    
-    - name: compressed-size-action
-      uses: preactjs/compressed-size-action@v2
-      with:
-        pattern: wmr.cjs
-        use-check: true
-        repo-token: "${{ secrets.GITHUB_TOKEN }}"
+      - uses: actions/checkout@v2
+
+      - name: compressed-size-action
+        uses: preactjs/compressed-size-action@v2
+        with:
+          pattern: '{wmr.cjs,demo/dist/**/*.{js,css,html}}'
+          build-script: 'npm run build && npm run demo:prod'
+          repo-token: '${{ secrets.GITHUB_TOKEN }}'
