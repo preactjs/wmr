@@ -157,7 +157,7 @@ export function bundleDev({ cwd, out, sourcemap, onError, onBuild, profile }) {
 	return watcher;
 }
 
-const isLocalFile = src => !src.startsWith('http');
+const isLocalFile = src => !/^([a-z]+:)\/\//i.test(src);
 
 /** @param {BuildOptions & { npmChunks?: boolean }} options */
 export async function bundleProd({ cwd, out, sourcemap, profile, npmChunks = false }) {
