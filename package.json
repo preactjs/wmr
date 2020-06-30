@@ -8,6 +8,7 @@
 		"demo:prod": "cd demo && node --experimental-modules ../src/cli.js build 2>&1",
 		"dev": "PROFILE=true nodemon -w src --exec \"npm run -s demo\"",
 		"build": "rollup -c",
+		"ci": "npm run build && cd demo && node ../wmr.cjs",
 		"prepack": "node --experimental-modules ./src/lib/~publish.js",
 		"test": "eslint && jest --runInBand"
 	},

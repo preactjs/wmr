@@ -13,5 +13,5 @@ jobs:
         uses: preactjs/compressed-size-action@v2
         with:
           pattern: '{wmr.cjs,demo/dist/**/*.{js,css,html}}'
-          build-script: 'npm run build && npm run demo:prod'
+          build-script: ci
           repo-token: '${{ secrets.GITHUB_TOKEN }}'
