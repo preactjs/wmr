@@ -86,9 +86,9 @@ export function bundleDev({ cwd, out, sourcemap, onError, onBuild, profile }) {
 					changedFiles.add(filename);
 				}
 			}),
+			htmPlugin(),
 			wmrStylesPlugin({ hot: true, cwd }),
 			wmrPlugin(),
-			htmPlugin(),
 			// processGlobalPlugin(),
 			// commonJs({
 			// 	ignoreGlobal: true,
@@ -175,9 +175,9 @@ export async function bundleProd({ cwd, out, sourcemap, profile, npmChunks = fal
 				production: true
 			}),
 			publicPathPlugin({ publicPath: '/' }),
+			htmPlugin(),
 			wmrStylesPlugin({ hot: false }),
 			wmrPlugin({ hot: false }),
-			htmPlugin(),
 			json(),
 			npmPlugin({ external: false })
 		]
