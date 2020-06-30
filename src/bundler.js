@@ -1,6 +1,5 @@
 import { relative, resolve, join, dirname } from 'path';
 import fs from 'fs';
-import htmlparser2 from 'htmlparser2';
 import * as rollup from 'rollup';
 import json from '@rollup/plugin-json';
 import watcherPlugin from './plugins/watcher-plugin.js';
@@ -13,6 +12,7 @@ import terser from './plugins/fast-minify.js';
 import npmPlugin from './plugins/npm-plugin/index.js';
 import publicPathPlugin from './plugins/public-path-plugin.js';
 import dynamicImportNamesPlugin from './plugins/dynamic-import-names-plugin.js';
+import { parse } from './lib/get-scripts.js';
 
 /**
  * @typedef {Object} BuildOptions
@@ -166,29 +166,27 @@ export async function bundleProd({ cwd, out, sourcemap, profile, npmChunks = fal
 	const htmlFile = fs.readFileSync('./' + relative('.', join(cwd, 'index.html'))).toString();
 	const scripts = [];
 	const styles = [];
-	const parser = new htmlparser2.Parser({
-		onopentag(name, attribs) {
-			switch (name) {
-				case 'script': {
-					if (attribs.type === 'module' && isLocalFile(attribs.src)) {
-						scripts.push('./' + relative('.', join(cwd, attribs.src)));
-					}
-					break;
-				}
-				case 'link': {
-					if (attribs.rel === 'stylesheet' && isLocalFile(attribs.href)) {
-						styles.push('./' + relative('.', join(cwd, attribs.href)));
-					}
-					break;
-				}
-				default:
-					return;
-			}
-		}
-	});
 
-	parser.write(htmlFile);
-	parser.end();
+	const callback = (name, attribs) => {
+		switch (name) {
+			case 'script': {
+				if (attribs.type === 'module' && isLocalFile(attribs.src)) {
+					scripts.push('./' + relative('.', join(cwd, attribs.src)));
+				}
+				break;
+			}
+			case 'link': {
+				if (attribs.rel === 'stylesheet' && isLocalFile(attribs.href)) {
+					styles.push('./' + relative('.', join(cwd, attribs.href)));
+				}
+				break;
+			}
+			default:
+				return;
+		}
+	};
+
+	parse(htmlFile, callback);
 
 	// TODO: produce multiple bundles with the contents of scripts and styles array
 	const bundle = await rollup.rollup({
