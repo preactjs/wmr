@@ -1,5 +1,5 @@
 import { relative, resolve, join, dirname } from 'path';
-import fs from 'fs';
+import { promises as fs } from 'fs';
 import * as rollup from 'rollup';
 import json from '@rollup/plugin-json';
 import watcherPlugin from './plugins/watcher-plugin.js';
@@ -163,7 +163,7 @@ const isLocalFile = src => !src.startsWith('http');
 export async function bundleProd({ cwd, out, sourcemap, profile, npmChunks = false }) {
 	cwd = cwd || '';
 
-	const htmlFile = fs.readFileSync('./' + relative('.', join(cwd, 'index.html'))).toString();
+	const htmlFile = await fs.readFile('./' + relative('.', join(cwd, 'index.html')), 'utf-8');
 	const scripts = [];
 	const styles = [];
 
