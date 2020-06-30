@@ -1,4 +1,4 @@
-import { relative, resolve, join, dirname } from 'path';
+import { relative, resolve, join, dirname, posix } from 'path';
 import { promises as fs } from 'fs';
 import * as rollup from 'rollup';
 import json from '@rollup/plugin-json';
@@ -163,7 +163,7 @@ const isLocalFile = src => !/^([a-z]+:)\/\//i.test(src);
 export async function bundleProd({ cwd, out, sourcemap, profile, npmChunks = false }) {
 	cwd = cwd || '';
 
-	const htmlFile = await fs.readFile('./' + relative('.', join(cwd, 'index.html')), 'utf-8');
+	const htmlFile = await fs.readFile('./' + posix.relative('.', posix.join(cwd, 'index.html')), 'utf-8');
 	const scripts = [];
 	const styles = [];
 
@@ -171,13 +171,13 @@ export async function bundleProd({ cwd, out, sourcemap, profile, npmChunks = fal
 		switch (name) {
 			case 'script': {
 				if (attribs.type === 'module' && isLocalFile(attribs.src)) {
-					scripts.push('./' + relative('.', join(cwd, attribs.src)));
+					scripts.push('./' + posix.relative('.', posix.join(cwd, attribs.src)));
 				}
 				break;
 			}
 			case 'link': {
 				if (attribs.rel === 'stylesheet' && isLocalFile(attribs.href)) {
-					styles.push('./' + relative('.', join(cwd, attribs.href)));
+					styles.push('./' + posix.relative('.', posix.join(cwd, attribs.href)));
 				}
 				break;
 			}
@@ -216,7 +216,7 @@ export async function bundleProd({ cwd, out, sourcemap, profile, npmChunks = fal
 		compact: true,
 		plugins: [terser({ compress: false, sourcemap })],
 		sourcemap,
-		sourcemapPathTransform: p => 'source://' + resolve(cwd, p).replace(/^(.\/)?/g, '/'),
+		sourcemapPathTransform: p => 'source://' + posix.resolve(cwd, p).replace(/^(.\/)?/g, '/'),
 		preferConst: true,
 		dir: out || 'dist'
 	});
@@ -237,7 +237,7 @@ function extractNpmChunks(id, { getModuleIds, getModuleInfo }) {
 			// strip any unnecessary (non-unique) trailing path segments:
 			const moduleIds = Array.from(getModuleIds()).filter(m => m !== name);
 			while (name.length > 1) {
-				const dir = dirname(name);
+				const dir = posix.dirname(name);
 				const match = moduleIds.find(m => m.startsWith(dir));
 				if (match) break;
 				name = dir;
