@@ -1,19 +1,18 @@
 import { relative, resolve, join, dirname } from 'path';
+import { promises as fs } from 'fs';
 import * as rollup from 'rollup';
-// import commonJs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import watcherPlugin from './plugins/watcher-plugin.js';
-// import unpkgPlugin from './plugins/unpkg-plugin.js';
 import htmPlugin from './plugins/htm-plugin.js';
 import sucrasePlugin from './plugins/sucrase-plugin.js';
 import wmrPlugin from './plugins/wmr/plugin.js';
 import wmrStylesPlugin from './plugins/wmr/styles-plugin.js';
-// import processGlobalPlugin from './plugins/process-global-plugin.js';
 import localNpmPlugin from './plugins/local-npm-plugin.js';
 import terser from './plugins/fast-minify.js';
 import npmPlugin from './plugins/npm-plugin/index.js';
 import publicPathPlugin from './plugins/public-path-plugin.js';
 import dynamicImportNamesPlugin from './plugins/dynamic-import-names-plugin.js';
+import { parse } from './lib/get-scripts.js';
 
 /**
  * @typedef {Object} BuildOptions
@@ -158,13 +157,40 @@ export function bundleDev({ cwd, out, sourcemap, onError, onBuild, profile }) {
 	return watcher;
 }
 
+const isLocalFile = src => !/^([a-z]+:)\/\//i.test(src);
+
 /** @param {BuildOptions & { npmChunks?: boolean }} options */
 export async function bundleProd({ cwd, out, sourcemap, profile, npmChunks = false }) {
 	cwd = cwd || '';
-	const input = './' + relative('.', join(cwd, 'index.js'));
 
+	const htmlFile = await fs.readFile('./' + relative('.', join(cwd, 'index.html')), 'utf-8');
+	const scripts = [];
+	const styles = [];
+
+	const callback = (name, attribs) => {
+		switch (name) {
+			case 'script': {
+				if (attribs.type === 'module' && isLocalFile(attribs.src)) {
+					scripts.push('./' + relative('.', join(cwd, attribs.src)));
+				}
+				break;
+			}
+			case 'link': {
+				if (attribs.rel === 'stylesheet' && isLocalFile(attribs.href)) {
+					styles.push('./' + relative('.', join(cwd, attribs.href)));
+				}
+				break;
+			}
+			default:
+				return;
+		}
+	};
+
+	parse(htmlFile, callback);
+
+	// TODO: produce multiple bundles with the contents of scripts and styles array
 	const bundle = await rollup.rollup({
-		input,
+		input: [...scripts, ...styles],
 		perf: !!profile,
 		preserveEntrySignatures: 'allow-extension',
 		manualChunks: npmChunks ? extractNpmChunks : undefined,

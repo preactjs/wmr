@@ -98,8 +98,7 @@ function forEachInput(input, callback) {
 			}
 		}
 		for (let i in input) forEachInput(input[i], callback);
-	}
-	if (input) callback(input);
+	} else if (typeof input === 'string') callback(input);
 }
 
 export function hash(str) {
