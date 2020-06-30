@@ -163,7 +163,7 @@ const isLocalFile = src => !/^([a-z]+:)\/\//i.test(src);
 export async function bundleProd({ cwd, out, sourcemap, profile, npmChunks = false }) {
 	cwd = cwd || '';
 
-	const htmlFile = await fs.readFile('./' + posix.relative('.', posix.join(cwd, 'index.html')), 'utf-8');
+	const htmlFile = await fs.readFile('./' + relative('.', join(cwd, 'index.html')), 'utf-8');
 	const scripts = [];
 	const styles = [];
 
