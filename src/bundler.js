@@ -201,8 +201,6 @@ export async function bundleProd({ cwd, out, sourcemap, profile, npmChunks = fal
 		preserveEntrySignatures: 'allow-extension',
 		manualChunks: npmChunks ? extractNpmChunks : undefined,
 		plugins: [
-			minifyStyles(),
-			virtual(virtualEntries),
 			sucrasePlugin({
 				typescript: true,
 				sourcemap,
@@ -210,10 +208,12 @@ export async function bundleProd({ cwd, out, sourcemap, profile, npmChunks = fal
 			}),
 			publicPathPlugin({ publicPath: '/' }),
 			htmPlugin(),
+			virtual(virtualEntries),
 			wmrStylesPlugin({ hot: false }),
 			wmrPlugin({ hot: false }),
 			json(),
-			npmPlugin({ external: false })
+			npmPlugin({ external: false }),
+			minifyStyles()
 		]
 	});
 
