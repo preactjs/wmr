@@ -1,14 +1,16 @@
 import { promises as fs } from 'fs';
 import { basename, dirname, relative, resolve } from 'path';
+import cssnano from 'cssnano';
 
 /**
  * Implements hot-reloading for stylesheets imported by JS.
  * @param {object} [options]
  * @param {string} [options.cwd] Manually specify the cwd from which to resolve filenames (important for calculating hashes!)
  * @param {boolean} [options.hot] Indicates the plugin should inject a HMR-runtime
+ * @param {boolean} [options.minify] Indicates the plugin should minify the css
  * @returns {import('rollup').Plugin}
  */
-export default function wmrStylesPlugin({ cwd, hot } = {}) {
+export default function wmrStylesPlugin({ cwd, hot, minify } = {}) {
 	const cwds = new Set();
 
 	return {
@@ -46,7 +48,7 @@ export default function wmrStylesPlugin({ cwd, hot } = {}) {
 			const ref = this.emitFile({
 				type: 'asset',
 				name: basename(id),
-				source
+				source: minify ? (await cssnano.process(source, { from: undefined })).css : source
 			});
 
 			// import.meta.hot.accept((m) => {

@@ -209,7 +209,7 @@ export async function bundleProd({ cwd, out, sourcemap, profile, npmChunks = fal
 			publicPathPlugin({ publicPath: '/' }),
 			htmPlugin(),
 			virtual(virtualEntries),
-			wmrStylesPlugin({ hot: false }),
+			wmrStylesPlugin({ hot: false, minify: true }),
 			wmrPlugin({ hot: false }),
 			json(),
 			npmPlugin({ external: false }),
