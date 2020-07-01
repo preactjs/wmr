@@ -44,7 +44,7 @@ export default function wmrPlugin({ hot = true } = {}) {
 		},
 		resolveImportMeta(property) {
 			if (property === 'hot') {
-				return `$IMPORT_META_HOT$`;
+				return hot ? `$IMPORT_META_HOT$` : 'null';
 			}
 			return null;
 		},
