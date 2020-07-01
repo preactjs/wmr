@@ -21,7 +21,7 @@ export default function htmPlugin({ include } = {}) {
 		},
 
 		transform(code, filename) {
-			if (!filename.match(/\.js$/) || !filename.match(/\.ts$/)) return;
+			if (!filename.match(/\.[tj]sx?$/)) return;
 			// skip internal modules
 			if (filename[0] === '\0') return;
 
