@@ -14,6 +14,7 @@ import dynamicImportNamesPlugin from './plugins/dynamic-import-names-plugin.js';
 import minifyCssPlugin from './plugins/minify-css-plugin.js';
 import glob from 'tiny-glob';
 import htmlPlugin from './plugins/html-plugin.js';
+// import { parse } from './lib/get-scripts.js';
 
 /**
  * @typedef {Object} BuildOptions
@@ -158,6 +159,8 @@ export function bundleDev({ cwd, out, sourcemap, onError, onBuild, profile }) {
 	return watcher;
 }
 
+// const isLocalFile = src => !/^([a-z]+:)\/\//i.test(src);
+
 /** @param {BuildOptions & { npmChunks?: boolean }} options */
 export async function bundleProd({ cwd, publicDir, out, sourcemap, profile, npmChunks = false }) {
 	cwd = cwd || '';
@@ -170,11 +173,52 @@ export async function bundleProd({ cwd, publicDir, out, sourcemap, profile, npmC
 	// Ignore URLs in dist/, and make entries relative to CWD:
 	htmlFiles = htmlFiles.filter(p => !p.startsWith(out)).map(p => './' + posix.relative('.', p));
 
+	// const htmlFile = await fs.readFile('./' + relative('.', join(cwd, 'index.html')), 'utf-8');
+	// const scripts = [];
+	// const styles = [];
+
+	// const callback = (name, attribs) => {
+	// 	switch (name) {
+	// 		case 'script': {
+	// 			if (attribs.type === 'module' && isLocalFile(attribs.src)) {
+	// 				scripts.push('./' + relative('.', join(cwd, attribs.src)));
+	// 			}
+	// 			break;
+	// 		}
+	// 		case 'link': {
+	// 			if (attribs.rel === 'stylesheet' && isLocalFile(attribs.href)) {
+	// 				styles.push('./' + relative('.', join(cwd, attribs.href)));
+	// 			}
+	// 			break;
+	// 		}
+	// 		default:
+	// 			return;
+	// 	}
+	// };
+
+	// parse(htmlFile, callback);
+
+	// const virtualEntries = styles.reduce((acc, style) => {
+	// 	acc[style] = `import ${JSON.stringify(style)};`;
+	// 	return acc;
+	// }, {});
+
 	const bundle = await rollup.rollup({
 		input: htmlFiles,
+		// input: [...scripts, ...styles.map(f => `css:${f}`)],
 		perf: !!profile,
 		preserveEntrySignatures: 'allow-extension',
 		manualChunks: npmChunks ? extractNpmChunks : undefined,
+		// manualChunks(filename, { getModuleInfo }) {
+		// 	// Internal modules get an underscore prefix:
+		// 	if (filename[0] === '\0') return null;
+		// 	const info = getModuleInfo(filename);
+		// 	if (info.isEntry || (info.dynamicImporters.length && !info.importers.length)) {
+		// 		filename = relative(cwd, filename);
+		// 		return filename.replace(/(^[\\/]|\.([cm]js|[tj]sx?)$)/gi, '');
+		// 	}
+		// 	return null;
+		// },
 		plugins: [
 			sucrasePlugin({
 				typescript: true,
@@ -184,6 +228,7 @@ export async function bundleProd({ cwd, publicDir, out, sourcemap, profile, npmC
 			htmlPlugin({ cwd, publicDir, publicPath: '/' }),
 			publicPathPlugin({ publicPath: '/' }),
 			htmPlugin(),
+			// virtual(virtualEntries),
 			wmrStylesPlugin({ hot: false, minify: true }),
 			wmrPlugin({ hot: false }),
 			json(),
