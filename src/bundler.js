@@ -194,7 +194,7 @@ export async function bundleProd({ cwd, publicDir, out, sourcemap, profile, npmC
 
 	return await bundle.write({
 		entryFileNames: '[name].[hash].js',
-		chunkFileNames: 'chunks/[name].[hash].js',
+		chunkFileNames: '[name].[hash].js',
 		assetFileNames: 'assets/[name].[hash][extname]',
 		compact: true,
 		plugins: [terser({ compress: false, sourcemap })],
