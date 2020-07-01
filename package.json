@@ -89,7 +89,7 @@
 		"@rollup/plugin-commonjs": "^13.0.0",
 		"@rollup/plugin-json": "^4.0.3",
 		"@rollup/plugin-node-resolve": "^8.0.1",
-		"@rollup/plugin-virtual": "^2.0.2",
+		"@rollup/plugin-virtual": "^2.0.3",
 		"@types/jest": "^26.0.0",
 		"acorn-jsx": "^5.2.0",
 		"acorn-jsx-walk": "^2.0.0",

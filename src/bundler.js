@@ -1,6 +1,7 @@
 import { relative, resolve, join, dirname } from 'path';
 import { promises as fs } from 'fs';
 import * as rollup from 'rollup';
+import virtual from '@rollup/plugin-virtual';
 import json from '@rollup/plugin-json';
 import watcherPlugin from './plugins/watcher-plugin.js';
 import htmPlugin from './plugins/htm-plugin.js';
@@ -189,13 +190,19 @@ export async function bundleProd({ cwd, out, sourcemap, profile, npmChunks = fal
 
 	parse(htmlFile, callback);
 
+	const virtualEntries = styles.reduce((acc, style) => {
+		acc[style] = `import "${style}"`;
+		return acc;
+	}, {});
+
 	const bundle = await rollup.rollup({
-		input: [...scripts, ...styles],
+		input: scripts,
 		perf: !!profile,
 		preserveEntrySignatures: 'allow-extension',
 		manualChunks: npmChunks ? extractNpmChunks : undefined,
 		plugins: [
 			minifyStyles(),
+			virtual(virtualEntries),
 			sucrasePlugin({
 				typescript: true,
 				sourcemap,
