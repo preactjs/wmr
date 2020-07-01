@@ -1,12 +1,13 @@
 import cssnano from 'cssnano';
 
-export default function minifyStylesPlugin() {
+export default function cssEntriesPlugin() {
 	return {
-		name: 'minify-styles',
-		transform(code, id) {
-			if (!id.match(/\.css$/)) return;
+		async transform(code, id) {
+			if (/.css$/.test(id) && !/.module.css$/.test(id)) {
+				return { id, code: (await cssnano.process(code, { from: id, to: id })).css };
+			}
 
-			return cssnano.process(code);
+			return { id, code };
 		}
 	};
 }

@@ -28,7 +28,7 @@ export default function wmrStylesPlugin({ cwd, hot } = {}) {
 		// },
 		// resolveFileUrl({ })
 		async load(id) {
-			if (!id.match(/\.css$/)) return;
+			if (!id.match(/\.css$/) || !id.match(/\.module\.css$/)) return;
 			const idRelative = '/' + cwd ? relative(cwd || '', resolve(cwd, id)) : multiRelative(cwds, id);
 			// this.addWatchFile(id);
 			let source = await fs.readFile(id, 'utf-8');

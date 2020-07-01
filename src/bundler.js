@@ -12,6 +12,7 @@ import terser from './plugins/fast-minify.js';
 import npmPlugin from './plugins/npm-plugin/index.js';
 import publicPathPlugin from './plugins/public-path-plugin.js';
 import dynamicImportNamesPlugin from './plugins/dynamic-import-names-plugin.js';
+import minifyStyles from './plugins/minify-css-plugin.js';
 import { parse } from './lib/get-scripts.js';
 
 /**
@@ -188,13 +189,13 @@ export async function bundleProd({ cwd, out, sourcemap, profile, npmChunks = fal
 
 	parse(htmlFile, callback);
 
-	// TODO: produce multiple bundles with the contents of scripts and styles array
 	const bundle = await rollup.rollup({
 		input: [...scripts, ...styles],
 		perf: !!profile,
 		preserveEntrySignatures: 'allow-extension',
 		manualChunks: npmChunks ? extractNpmChunks : undefined,
 		plugins: [
+			minifyStyles(),
 			sucrasePlugin({
 				typescript: true,
 				sourcemap,
