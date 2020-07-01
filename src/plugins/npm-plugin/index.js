@@ -17,6 +17,8 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = '\0npm/', ext
 			if (id.startsWith(publicPath)) return { id, external };
 
 			if (id.startsWith(prefix)) id = id.substring(prefix.length);
+			else if (/^(?:\0|[a-z]+:)/.test(id)) return;
+
 			if (importer && importer.startsWith(prefix)) importer = importer.substring(prefix.length);
 
 			// let module, path, version;

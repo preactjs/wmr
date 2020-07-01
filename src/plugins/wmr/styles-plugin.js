@@ -1,6 +1,5 @@
 import { promises as fs } from 'fs';
 import { basename, dirname, relative, resolve } from 'path';
-import cssnano from 'cssnano';
 
 /**
  * Implements hot-reloading for stylesheets imported by JS.
@@ -10,7 +9,7 @@ import cssnano from 'cssnano';
  * @param {boolean} [options.minify] Indicates the plugin should minify the css
  * @returns {import('rollup').Plugin}
  */
-export default function wmrStylesPlugin({ cwd, hot, minify } = {}) {
+export default function wmrStylesPlugin({ cwd, hot } = {}) {
 	const cwds = new Set();
 
 	return {
@@ -30,7 +29,7 @@ export default function wmrStylesPlugin({ cwd, hot, minify } = {}) {
 		// },
 		// resolveFileUrl({ })
 		async load(id) {
-			if (!id.match(/\.css$/) || !id.match(/\.module\.css$/)) return;
+			if (!id.match(/\.css$/)) return;
 			const idRelative = '/' + cwd ? relative(cwd || '', resolve(cwd, id)) : multiRelative(cwds, id);
 			// this.addWatchFile(id);
 			let source = await fs.readFile(id, 'utf-8');
@@ -48,7 +47,7 @@ export default function wmrStylesPlugin({ cwd, hot, minify } = {}) {
 			const ref = this.emitFile({
 				type: 'asset',
 				name: basename(id),
-				source: minify ? (await cssnano.process(source, { from: undefined })).css : source
+				source
 			});
 
 			// import.meta.hot.accept((m) => {
