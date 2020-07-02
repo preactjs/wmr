@@ -1,15 +1,19 @@
-import { resolve, relative, dirname, posix } from 'path';
+import { resolve, dirname, posix } from 'path';
 import { promises as fs } from 'fs';
 import chokidar from 'chokidar';
 import mime from 'mime/lite.js';
 import htmPlugin from './plugins/htm-plugin.js';
 import sucrasePlugin from './plugins/sucrase-plugin.js';
 import wmrPlugin, { getWmrClient } from './plugins/wmr/plugin.js';
-import wmrStylesPlugin, { hash } from './plugins/wmr/styles-plugin.js';
-import { createHash } from 'crypto';
+import wmrStylesPlugin from './plugins/wmr/styles-plugin.js';
 import { createPluginContainer } from './lib/rollup-plugin-container.js';
-// import { compileSingleModule } from './lib/compile-single-module.js';
 import { transformImports } from './lib/transform-imports.js';
+
+/**
+ * In-memory cache of files that have been generated and written to .dist/
+ * @type {Map<string, string | Buffer>}
+ */
+const WRITE_CACHE = new Map();
 
 /**
  * @param {object} [options]
@@ -46,6 +50,10 @@ export default function wmrMiddleware({ cwd, out = '.dist', distDir = 'dist', on
 	watcher.on('change', (filename, stats) => {
 		if (!pendingChanges.size) setTimeout(flushChanges, 60);
 		pendingChanges.add('/' + filename);
+		// Delete file from the in-memory cache:
+		WRITE_CACHE.delete(filename);
+		// Delete any generated CSS Modules mapping modules:
+		if (/\.module\.css$/.test(filename)) WRITE_CACHE.delete(filename + '.js');
 	});
 
 	return async (req, res, next) => {
@@ -59,8 +67,6 @@ export default function wmrMiddleware({ cwd, out = '.dist', distDir = 'dist', on
 		if (type) res.setHeader('content-type', type);
 
 		const ctx = { req, res, id, file, path, cwd, out, next };
-
-		/** @TODO if there's a cached version of the requested module in .dist/, serve it. */
 
 		let transform;
 		if (path === '/_wmr.js') {
@@ -111,7 +117,7 @@ const NonRollup = createPluginContainer([
 		production: false
 	}),
 	htmPlugin(),
-	wmrPlugin()
+	wmrPlugin({ hot: true })
 ]);
 
 export const TRANSFORMS = {
@@ -144,8 +150,11 @@ export const TRANSFORMS = {
 
 	// non-rollup-based straight transform (still uses Acorn + rollup plugins)
 	async js({ id, file, res, cwd, out }) {
-		const input = resolve(cwd, file);
-		let code = await fs.readFile(input, 'utf-8');
+		res.setHeader('content-type', 'application/javascript');
+
+		if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
+
+		let code = await fs.readFile(resolve(cwd, file), 'utf-8');
 
 		code = await NonRollup.transform(code, id);
 
@@ -166,81 +175,109 @@ export const TRANSFORMS = {
 			}
 		});
 
-		res.setHeader('content-type', 'application/javascript');
-
 		writeCacheFile(out, id, code);
 
 		return code;
 	},
 
 	async cssModule({ id, file, cwd, out, res }) {
-		// if (/\.module\.css$/.test(file)) {
+		// Cache the generated mapping/proxy module with a .js extension (the CSS itself is also cached)
+		const jsId = id;
+
+		res.setHeader('content-type', 'application/javascript');
+
+		if (WRITE_CACHE.has(jsId)) return WRITE_CACHE.get(jsId);
+
 		id = id.replace(/\.js$/, '');
 		file = file.replace(/\.js$/, '');
-		const plugin = wmrStylesPlugin({ cwd });
-		const files = new Map();
-		let ids = 0;
-		const ctx = {
-			meta: {},
-			emitFile({ type, name, source }) {
-				if (type !== 'asset') throw Error(`Unsupported type ${type}`);
-				const id = String(++ids);
-				const hash = createHash('md5').update(source).digest('hex').substring(0, 5);
-				const filename = resolve(out, name).replace(/([^/]+?)(\.[\w]+)?$/, `$1-${hash}$2`);
-				// console.log('emitFile', name, filename);
-				files.set(id, { id, name, filename });
-				fs.writeFile(filename, source);
-				return id;
+
+		// We create a plugin container for each request to prevent asset referenceId clashes
+		const container = createPluginContainer([wmrPlugin(), wmrStylesPlugin({ cwd, hot: true, fullPath: true })], {
+			cwd,
+			output: {
+				dir: out,
+				assetFileNames: '[name][extname]'
+			},
+			writeFile(filename, source) {
+				writeCacheFile(out, filename, source);
 			}
-		};
-		await plugin.options.call(ctx, { input: cwd + '/_.js' });
-		const result = await plugin.load.call(ctx, file);
-		// console.log(id, result);
-		let code = (result && result.code) || result;
-		res.setHeader('content-type', 'application/javascript');
-		const wmr = wmrPlugin();
-		code = code.replace(/\bimport\.meta\.([\w$]+)/g, (str, property) => {
-			return wmr.resolveImportMeta.call(ctx, property) || str;
-		});
-		const transformed = await wmr.transform.call(ctx, code, id);
-		code = (transformed && transformed.code) || transformed || code;
-		return code.replace(/(['"])wmr\1/g, '$1/_wmr.js$1').replace(/import\.meta\.ROLLUP_FILE_URL_(\d+)/g, (s, id) => {
-			return JSON.stringify('/' + relative(out, files.get(id).filename));
 		});
 
-		// alternative inline version (no HMR support)
-		// let source = await fs.readFile(file, 'utf-8');
-		// let mappings = [];
-		// if (id.match(/\.module\.css$/)) {
-		// 	const suffix = '_' + hash(id);
-		// 	source = source.replace(/\.([a-z0-9_-]+)/gi, (str, className) => {
-		// 		const mapped = className + suffix;
-		// 		const q = /^\d|[^a-z0-9_$]/gi.test(className) ? `'` : ``;
-		// 		mappings.push(`${q + className + q}:'${mapped}'`);
-		// 		return `.${mapped}`;
-		// 	});
-		// }
-		// }
-		// return TRANSFORMS.generic({ file, res });
+		const result = await container.load(file);
+
+		let code = typeof result === 'string' ? result : result && result.code;
+
+		code = await container.transform(code, id);
+
+		code = await transformImports(code, id, {
+			resolveImportMeta(property) {
+				return container.resolveImportMeta(property);
+			},
+			resolveId(spec) {
+				if (spec === 'wmr') return '/_wmr.js';
+				console.warn('unresolved specifier: ', spec);
+			}
+		});
+
+		writeCacheFile(out, jsId, code);
+
+		return code;
 	},
 
-	async css({ id, path, file, cwd }) {
+	// async cssModule_old({ id, file, cwd, out, res }) {
+	// 	id = id.replace(/\.js$/, '');
+	// 	file = file.replace(/\.js$/, '');
+	// 	const plugin = wmrStylesPlugin({ cwd, hot: true });
+	// 	const files = new Map();
+	// 	let ids = 0;
+	// 	const ctx = {
+	// 		meta: {},
+	// 		emitFile({ type, name, source }) {
+	// 			if (type !== 'asset') throw Error(`Unsupported type ${type}`);
+	// 			const id = String(++ids);
+	// 			// const hash = createHash('md5').update(source).digest('hex').substring(0, 5);
+	// 			// const filename = resolve(out, name).replace(/([^/]+?)(\.[\w]+)?$/, `$1-${hash}$2`);
+	// 			const filename = resolve(out, name);
+	// 			files.set(id, { id, name, filename });
+	// 			WRITE_CACHE.set(name, source);
+	// 			fs.writeFile(filename, source);
+	// 			return id;
+	// 		}
+	// 	};
+	// 	await plugin.options.call(ctx, { input: cwd + '/_.js' });
+	// 	const result = await plugin.load.call(ctx, file);
+	// 	let code = (result && result.code) || result;
+	// 	res.setHeader('content-type', 'application/javascript');
+	// 	const wmr = wmrPlugin();
+	// 	code = code.replace(/\bimport\.meta\.([\w$]+)/g, (str, property) => {
+	// 		return wmr.resolveImportMeta.call(ctx, property) || str;
+	// 	});
+	// 	const transformed = await wmr.transform.call(ctx, code, id);
+	// 	code = (transformed && transformed.code) || transformed || code;
+	// 	return code.replace(/(['"])wmr\1/g, '$1/_wmr.js$1').replace(/import\.meta\.ROLLUP_FILE_URL_(\d+)/g, (s, id) => {
+	// 		return JSON.stringify('/' + relative(out, files.get(id).filename));
+	// 	});
+
+	async css({ id, path, file, cwd, out }) {
 		if (!/\.module\.css$/.test(path)) throw null;
-		let source = await fs.readFile(file, 'utf-8');
-		let mappings = [];
-		if (id.match(/\.module\.css$/)) {
-			const suffix = '_' + hash(id);
-			source = source.replace(/\.([a-z0-9_-]+)/gi, (str, className) => {
-				const mapped = className + suffix;
-				const q = /^\d|[^a-z0-9_$]/gi.test(className) ? `'` : ``;
-				mappings.push(`${q + className + q}:'${mapped}'`);
-				return `.${mapped}`;
-			});
-		}
+
+		if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
+
+		const plugin = wmrStylesPlugin({ cwd, hot: false, fullPath: true });
+		let source;
+		const context = {
+			emitFile(asset) {
+				source = asset.source;
+			}
+		};
+		await plugin.load.call(context, file);
+
+		writeCacheFile(out, id, source);
+
 		return source;
 	},
 
-	generic({ file, res }) {
+	generic() {
 		return false;
 		// return new Promise((resolve, reject) => {
 		// 	if (file.endsWith('/') || !file.match(/[^/]\.[a-z0-9]+$/gi)) {
@@ -262,6 +299,7 @@ export const TRANSFORMS = {
  * @param {string|Buffer} data
  */
 async function writeCacheFile(rootDir, fileName, data) {
+	WRITE_CACHE.set(fileName, data);
 	const filePath = resolve(rootDir, fileName);
 	if (dirname(filePath) !== rootDir) {
 		await fs.mkdir(dirname(filePath), { recursive: true });
