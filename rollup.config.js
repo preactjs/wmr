@@ -111,12 +111,21 @@ const config = {
 				{ find: /^istextorbinary$/, replacement: 'istextorbinary/edition-node-0.12/index.js' } // 2.6.0
 			]
 		}),
+		{
+			name: 'postcss-es6',
+			resolveId(id, importer) {
+				if (id === 'postcss') {
+					return this.resolve('postcss/lib/postcss.es6', importer);
+				}
+			}
+		},
 		commonjs({
 			ignore: [f => f.endsWith('.mjs'), ...builtins],
 			ignoreGlobal: true
 		}),
 		nodeResolve({
-			preferBuiltins: true
+			preferBuiltins: true,
+			extensions: ['.mjs', '.js', '.json', '.es6', '.node']
 		}),
 		json()
 	]

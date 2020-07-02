@@ -116,7 +116,7 @@
 		"nodemon": "^2.0.4",
 		"npm-merge-driver-install": "^1.1.1",
 		"polka": "^0.5.2",
-		"postcss": "^7.0.32",
+		"postcss": "github:postcss/postcss",
 		"posthtml": "^0.13.1",
 		"posthtml-urls": "^1.0.0",
 		"prettier": "^2.0.5",
