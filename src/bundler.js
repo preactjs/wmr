@@ -1,5 +1,4 @@
-import { relative, resolve, join, dirname } from 'path';
-import { promises as fs } from 'fs';
+import { relative, resolve, join, dirname, posix } from 'path';
 import * as rollup from 'rollup';
 import json from '@rollup/plugin-json';
 import watcherPlugin from './plugins/watcher-plugin.js';
@@ -12,7 +11,9 @@ import terser from './plugins/fast-minify.js';
 import npmPlugin from './plugins/npm-plugin/index.js';
 import publicPathPlugin from './plugins/public-path-plugin.js';
 import dynamicImportNamesPlugin from './plugins/dynamic-import-names-plugin.js';
-import { parse } from './lib/get-scripts.js';
+import minifyCssPlugin from './plugins/minify-css-plugin.js';
+import glob from 'tiny-glob';
+import htmlPlugin from './plugins/html-plugin.js';
 
 /**
  * @typedef {Object} BuildOptions
@@ -157,40 +158,20 @@ export function bundleDev({ cwd, out, sourcemap, onError, onBuild, profile }) {
 	return watcher;
 }
 
-const isLocalFile = src => !/^([a-z]+:)\/\//i.test(src);
-
 /** @param {BuildOptions & { npmChunks?: boolean }} options */
-export async function bundleProd({ cwd, out, sourcemap, profile, npmChunks = false }) {
+export async function bundleProd({ cwd, publicDir, out, sourcemap, profile, npmChunks = false }) {
 	cwd = cwd || '';
 
-	const htmlFile = await fs.readFile('./' + relative('.', join(cwd, 'index.html')), 'utf-8');
-	const scripts = [];
-	const styles = [];
+	let htmlFiles = await glob('**/*.html', {
+		cwd,
+		absolute: true,
+		filesOnly: true
+	});
+	// Ignore URLs in dist/, and make entries relative to CWD:
+	htmlFiles = htmlFiles.filter(p => !p.startsWith(out)).map(p => './' + posix.relative('.', p));
 
-	const callback = (name, attribs) => {
-		switch (name) {
-			case 'script': {
-				if (attribs.type === 'module' && isLocalFile(attribs.src)) {
-					scripts.push('./' + relative('.', join(cwd, attribs.src)));
-				}
-				break;
-			}
-			case 'link': {
-				if (attribs.rel === 'stylesheet' && isLocalFile(attribs.href)) {
-					styles.push('./' + relative('.', join(cwd, attribs.href)));
-				}
-				break;
-			}
-			default:
-				return;
-		}
-	};
-
-	parse(htmlFile, callback);
-
-	// TODO: produce multiple bundles with the contents of scripts and styles array
 	const bundle = await rollup.rollup({
-		input: [...scripts, ...styles],
+		input: htmlFiles,
 		perf: !!profile,
 		preserveEntrySignatures: 'allow-extension',
 		manualChunks: npmChunks ? extractNpmChunks : undefined,
@@ -200,18 +181,20 @@ export async function bundleProd({ cwd, out, sourcemap, profile, npmChunks = fal
 				sourcemap,
 				production: true
 			}),
+			htmlPlugin({ cwd, publicDir, publicPath: '/' }),
 			publicPathPlugin({ publicPath: '/' }),
 			htmPlugin(),
-			wmrStylesPlugin({ hot: false }),
+			wmrStylesPlugin({ hot: false, minify: true }),
 			wmrPlugin({ hot: false }),
 			json(),
-			npmPlugin({ external: false })
+			npmPlugin({ external: false }),
+			minifyCssPlugin()
 		]
 	});
 
 	return await bundle.write({
 		entryFileNames: '[name].[hash].js',
-		chunkFileNames: 'chunks/[name].[hash].js',
+		chunkFileNames: '[name].[hash].js',
 		assetFileNames: 'assets/[name].[hash][extname]',
 		compact: true,
 		plugins: [terser({ compress: false, sourcemap })],

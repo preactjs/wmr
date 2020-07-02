@@ -6,6 +6,7 @@ import { basename, dirname, relative, resolve } from 'path';
  * @param {object} [options]
  * @param {string} [options.cwd] Manually specify the cwd from which to resolve filenames (important for calculating hashes!)
  * @param {boolean} [options.hot] Indicates the plugin should inject a HMR-runtime
+ * @param {boolean} [options.minify] Indicates the plugin should minify the css
  * @returns {import('rollup').Plugin}
  */
 export default function wmrStylesPlugin({ cwd, hot } = {}) {

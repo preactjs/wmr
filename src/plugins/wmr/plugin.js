@@ -44,11 +44,12 @@ export default function wmrPlugin({ hot = true } = {}) {
 		},
 		resolveImportMeta(property) {
 			if (property === 'hot') {
-				return `$IMPORT_META_HOT$`;
+				return hot ? `$IMPORT_META_HOT$` : 'null';
 			}
 			return null;
 		},
 		transform(code, id) {
+			if (!/\.[tj]sx?$/.test(id) || id[0] === '\0') return;
 			let hasHot = /(import\.meta\.hot|\$IMPORT_META_HOT\$)/.test(code);
 			let before = '';
 			let after = '';
