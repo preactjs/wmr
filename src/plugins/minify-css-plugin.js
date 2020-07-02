@@ -1,8 +1,8 @@
 import { posix } from 'path';
-import cssnano from 'cssnano';
+import cssnano from '../lib/cssnano-lite.js';
 import postcss from 'postcss';
 
-const processor = postcss([cssnano()]);
+const processor = postcss([cssnano]);
 
 /** @returns {import('rollup').Plugin} */
 export default function minifyCssPlugin() {
