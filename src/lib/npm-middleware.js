@@ -1,7 +1,7 @@
 import * as rollup from 'rollup';
 import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
-import unpkgPlugin from '../plugins/unpkg-plugin.js';
+// import unpkgPlugin from '../plugins/unpkg-plugin.js';
 import npmPlugin, { normalizeSpecifier } from '../plugins/npm-plugin/index.js';
 import { resolvePackageVersion } from '../plugins/npm-plugin/registry.js';
 import { getCachedBundle, setCachedBundle, sendCachedBundle, enqueueCompress } from './npm-middleware-cache.js';
@@ -57,6 +57,20 @@ let npmCache;
  * @param {{ source: 'npm'|'unpkg' }} opts
  */
 async function bundleNpmModule(mod, { source }) {
+	let npmProviderPlugin;
+
+	if (source === 'unpkg') {
+		throw Error('unpkg plugin is disabled');
+		// npmProviderPlugin = unpkgPlugin({
+		// 	publicPath: '/@npm',
+		// 	perPackage: true
+		// });
+	} else {
+		npmProviderPlugin = npmPlugin({
+			publicPath: '/@npm'
+		});
+	}
+
 	const bundle = await rollup.rollup({
 		input: mod,
 		cache: npmCache,
@@ -64,14 +78,7 @@ async function bundleNpmModule(mod, { source }) {
 		// inlineDynamicImports: true,
 		// shimMissingExports: true,
 		plugins: [
-			source === 'npm'
-				? npmPlugin({
-						publicPath: '/@npm'
-				  })
-				: unpkgPlugin({
-						publicPath: '/@npm',
-						perPackage: true
-				  }),
+			npmProviderPlugin,
 			commonjs({
 				sourceMap: false,
 				transformMixedEsModules: false
