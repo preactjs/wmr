@@ -121,34 +121,7 @@ const NonRollup = createPluginContainer([
 ]);
 
 export const TRANSFORMS = {
-	// async js_test(ctx) {
-	// 	let bundled = 0,
-	// 		raw = 0;
-	// 	for (let i = 0; i < 10; i++) {
-	// 		let start = Date.now();
-	// 		if (i % 2) {
-	// 			await TRANSFORMS.js_bundled(ctx).then(code => {
-	// 				bundled += Date.now() - start;
-	// 			});
-	// 		} else {
-	// 			await TRANSFORMS.js(ctx).then(code => {
-	// 				raw += Date.now() - start;
-	// 			});
-	// 		}
-	// 	}
-	// 	console.log(`${ctx.id}: ${bundled}ms, Raw: ${raw}ms`);
-	// 	return TRANSFORMS.js(ctx);
-	// },
-
-	// async js_bundled({ id, file, res, cwd, out }) {
-	// 	const input = resolve(cwd, file);
-	// 	// const input = resolve(process.cwd(), file);
-	// 	const code = await compileSingleModule(input, { cwd, out });
-	// 	res.setHeader('content-type', 'application/javascript');
-	// 	return code;
-	// },
-
-	// non-rollup-based straight transform (still uses Acorn + rollup plugins)
+	// Handle individual JavaScript modules
 	async js({ id, file, res, cwd, out }) {
 		res.setHeader('content-type', 'application/javascript');
 
@@ -180,6 +153,7 @@ export const TRANSFORMS = {
 		return code;
 	},
 
+	// Handles "CSS Modules" proxy modules (style.module.css.js)
 	async cssModule({ id, file, cwd, out, res }) {
 		// Cache the generated mapping/proxy module with a .js extension (the CSS itself is also cached)
 		const jsId = id;
@@ -224,40 +198,7 @@ export const TRANSFORMS = {
 		return code;
 	},
 
-	// async cssModule_old({ id, file, cwd, out, res }) {
-	// 	id = id.replace(/\.js$/, '');
-	// 	file = file.replace(/\.js$/, '');
-	// 	const plugin = wmrStylesPlugin({ cwd, hot: true });
-	// 	const files = new Map();
-	// 	let ids = 0;
-	// 	const ctx = {
-	// 		meta: {},
-	// 		emitFile({ type, name, source }) {
-	// 			if (type !== 'asset') throw Error(`Unsupported type ${type}`);
-	// 			const id = String(++ids);
-	// 			// const hash = createHash('md5').update(source).digest('hex').substring(0, 5);
-	// 			// const filename = resolve(out, name).replace(/([^/]+?)(\.[\w]+)?$/, `$1-${hash}$2`);
-	// 			const filename = resolve(out, name);
-	// 			files.set(id, { id, name, filename });
-	// 			WRITE_CACHE.set(name, source);
-	// 			fs.writeFile(filename, source);
-	// 			return id;
-	// 		}
-	// 	};
-	// 	await plugin.options.call(ctx, { input: cwd + '/_.js' });
-	// 	const result = await plugin.load.call(ctx, file);
-	// 	let code = (result && result.code) || result;
-	// 	res.setHeader('content-type', 'application/javascript');
-	// 	const wmr = wmrPlugin();
-	// 	code = code.replace(/\bimport\.meta\.([\w$]+)/g, (str, property) => {
-	// 		return wmr.resolveImportMeta.call(ctx, property) || str;
-	// 	});
-	// 	const transformed = await wmr.transform.call(ctx, code, id);
-	// 	code = (transformed && transformed.code) || transformed || code;
-	// 	return code.replace(/(['"])wmr\1/g, '$1/_wmr.js$1').replace(/import\.meta\.ROLLUP_FILE_URL_(\d+)/g, (s, id) => {
-	// 		return JSON.stringify('/' + relative(out, files.get(id).filename));
-	// 	});
-
+	// Handles CSS Modules (the actual CSS)
 	async css({ id, path, file, cwd, out }) {
 		if (!/\.module\.css$/.test(path)) throw null;
 
@@ -277,6 +218,7 @@ export const TRANSFORMS = {
 		return source;
 	},
 
+	// Falls through to sirv
 	generic() {
 		return false;
 		// return new Promise((resolve, reject) => {
