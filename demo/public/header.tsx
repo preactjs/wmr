@@ -1,7 +1,7 @@
 import { useLoc } from './loc.js';
 
 export default function Header() {
-	const { url } : { url: string } = useLoc();
+	const { url }: { url: string } = useLoc();
 	return (
 		<header>
 			<nav>
@@ -9,10 +9,10 @@ export default function Header() {
 				<a href="/about">About</a>
 				<a href="/error">Error</a>
 			</nav>
-			<section>
+			<label>
 				URL:
 				<input readonly value={url} ref={c => c && (c.size = c.value.length)} />
-			</section>
+			</label>
 		</header>
 	);
 }
