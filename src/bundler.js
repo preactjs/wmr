@@ -184,7 +184,7 @@ export async function bundleProd({ cwd, publicDir, out, sourcemap, profile, npmC
 			htmlEntriesPlugin({ cwd, publicDir, publicPath: '/' }),
 			publicPathPlugin({ publicPath: '/' }),
 			htmPlugin(),
-			wmrStylesPlugin({ hot: false, minify: true }),
+			wmrStylesPlugin({ hot: false, cwd }),
 			wmrPlugin({ hot: false }),
 			json(),
 			npmPlugin({ external: false }),

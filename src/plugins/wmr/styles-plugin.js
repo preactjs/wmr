@@ -6,10 +6,10 @@ import { basename, dirname, relative, resolve } from 'path';
  * @param {object} [options]
  * @param {string} [options.cwd] Manually specify the cwd from which to resolve filenames (important for calculating hashes!)
  * @param {boolean} [options.hot] Indicates the plugin should inject a HMR-runtime
- * @param {boolean} [options.minify] Indicates the plugin should minify the css
+ * @param {boolean} [options.fullPath] Preserve the full original path when producing CSS assets
  * @returns {import('rollup').Plugin}
  */
-export default function wmrStylesPlugin({ cwd, hot } = {}) {
+export default function wmrStylesPlugin({ cwd, hot, fullPath } = {}) {
 	const cwds = new Set();
 
 	return {
@@ -30,7 +30,7 @@ export default function wmrStylesPlugin({ cwd, hot } = {}) {
 		// resolveFileUrl({ })
 		async load(id) {
 			if (!id.match(/\.css$/)) return;
-			const idRelative = '/' + cwd ? relative(cwd || '', resolve(cwd, id)) : multiRelative(cwds, id);
+			const idRelative = cwd ? relative(cwd || '', resolve(cwd, id)) : multiRelative(cwds, id);
 			// this.addWatchFile(id);
 			let source = await fs.readFile(id, 'utf-8');
 			let mappings = [];
@@ -46,32 +46,32 @@ export default function wmrStylesPlugin({ cwd, hot } = {}) {
 
 			const ref = this.emitFile({
 				type: 'asset',
-				name: basename(id),
+				name: fullPath ? undefined : basename(id),
+				fileName: fullPath ? idRelative : undefined,
 				source
 			});
 
-			// import.meta.hot.accept((m) => {
-			// 	console.log({...styles}, {...m.default});
-			// 	for (let i in m.default) styles[i] = m.default[i];
-			// 	for (let i in styles) if (!(i in m.default)) delete[i];
-			// });
-
-			const code = `
+			let code = `
 				import { style } from 'wmr';
 				style(import.meta.ROLLUP_FILE_URL_${ref}, ${JSON.stringify(idRelative)});
+				const styles = {${mappings.join(',')}};
+				export default styles;
+			`;
 
-				${
-					hot &&
-					`
+			if (hot) {
+				// import.meta.hot.accept((m) => {
+				// 	console.log({...styles}, {...m.default});
+				// 	for (let i in m.default) styles[i] = m.default[i];
+				// 	for (let i in styles) if (!(i in m.default)) delete[i];
+				// });
+				code += `
 					import.meta.hot.accept(({ module: { default: s } }) => {
 						for (let i in s) styles[i] = s[i];
 					});
-				`
-				}
+				`;
+			}
 
-				const styles = {${mappings.join(',')}};
-				export default styles;
-			`.replace(/^\s+/gm, '');
+			code = code.replace(/^\s+/gm, '');
 
 			return {
 				code,
