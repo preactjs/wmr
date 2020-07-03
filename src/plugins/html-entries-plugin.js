@@ -7,13 +7,11 @@ const isLocalFile = src => src && !/^([a-z]+:)\/\//i.test(src);
 /**
  * This Rollup plugin handles resolving HTML entrypoints.
  *
- * It works by returning an empty JS module in place of the HTML,
- * then passing the HTML through emitFile() as an asset.
+ * It works by intercepting HTML files in `options.input`,
+ * instead passing the HTML through emitFile() as an asset.
  *
- * It also finds scripts and styles in the HTML and passes them to Rollup
- * as entrypoints, then updates the built HTML with the generated filenames.
- *
- * Finally, the empty JS modules from each HTML entry are removed from the bundle.
+ * It also finds scripts and styles in the HTML and passes them to Rollup.
+ * Notably, <scripts> become *user-defined entries*, so they correctly use `output.entryFileNames`.
  *
  * @param {object} options
  * @param {string} [options.cwd]
