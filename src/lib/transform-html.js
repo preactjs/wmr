@@ -19,6 +19,7 @@ function transformUrls({ transformUrl }) {
 			const out = transformUrl(url, attr, tag, node);
 			if (out != null && out !== false) {
 				attrs[attr] = out;
+				cache.set(url, out);
 			}
 		}
 	}
