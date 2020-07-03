@@ -10,7 +10,7 @@
 		"build": "rollup -c",
 		"ci": "npm run build && cd demo && node ../wmr.cjs build",
 		"prepack": "node --experimental-modules ./src/lib/~publish.js",
-		"test": "eslint && jest --runInBand"
+		"test": "eslint src test && jest --runInBand"
 	},
 	"author": "The Preact Authors (https://preactjs.com)",
 	"repository": "preactjs/wmr",
