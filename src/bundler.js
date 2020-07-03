@@ -188,7 +188,7 @@ export async function bundleProd({ cwd, publicDir, out, sourcemap, profile, npmC
 			wmrPlugin({ hot: false }),
 			json(),
 			npmPlugin({ external: false }),
-			minifyCssPlugin()
+			minifyCssPlugin({ sourcemap })
 		]
 	});
 

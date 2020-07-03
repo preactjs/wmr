@@ -2,10 +2,14 @@ import { posix } from 'path';
 import cssnano from '../lib/cssnano-lite.js';
 import postcss from 'postcss';
 
-const processor = postcss([cssnano]);
+const processor = postcss(cssnano());
 
-/** @returns {import('rollup').Plugin} */
-export default function minifyCssPlugin() {
+/**
+ * @param {object} [options]
+ * @param {boolean} [options.sourcemap = false]
+ * @returns {import('rollup').Plugin}
+ */
+export default function minifyCssPlugin({ sourcemap } = {}) {
 	return {
 		name: 'minify-css',
 		async resolveId(id, importer) {
@@ -24,7 +28,7 @@ export default function minifyCssPlugin() {
 					const result = await processor.process(asset.source, {
 						from: id,
 						to: id,
-						map: {
+						map: sourcemap && {
 							annotation: posix.basename(mapFile),
 							from: posix.basename(mapFile),
 							sourcesContent: false

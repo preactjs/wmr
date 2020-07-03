@@ -46,33 +46,34 @@ const rawCache = postcss.plugin('cssnano-util-raw-cache', () => {
 	};
 });
 
+const plugins = [
+	discardComments,
+	postcssReduceInitial,
+	postcssReduceTransforms,
+	postcssConvertValues,
+	postcssCalc,
+	postcssColormin,
+	postcssOrderedValues,
+	postcssMinifySelectors,
+	postcssMinifyParams,
+	postcssMinifyFontValues,
+	postcssNormalizeUrl,
+	postcssMergeLonghand,
+	postcssDiscardDuplicates,
+	postcssDiscardOverridden,
+	postcssNormalizeRepeatStyle,
+	postcssMergeRules,
+	postcssDiscardEmpty,
+	postcssUniqueSelectors,
+	postcssNormalizeString,
+	postcssNormalizePositions,
+	postcssNormalizeWhitespace,
+	postcssNormalizeUnicode,
+	postcssNormalizeDisplayValues,
+	postcssNormalizeTimingFunctions,
+	rawCache
+].map(fn => (fn && fn.default) || fn);
+
 export default function cssnanoLite() {
-	const plugins = [
-		[discardComments],
-		[postcssReduceInitial],
-		[postcssReduceTransforms],
-		[postcssConvertValues],
-		[postcssCalc],
-		[postcssColormin],
-		[postcssOrderedValues],
-		[postcssMinifySelectors],
-		[postcssMinifyParams],
-		[postcssMinifyFontValues],
-		[postcssNormalizeUrl],
-		[postcssMergeLonghand],
-		[postcssDiscardDuplicates],
-		[postcssDiscardOverridden],
-		[postcssNormalizeRepeatStyle],
-		[postcssMergeRules],
-		[postcssDiscardEmpty],
-		[postcssUniqueSelectors],
-		[postcssNormalizeString],
-		[postcssNormalizePositions],
-		[postcssNormalizeWhitespace],
-		[postcssNormalizeUnicode],
-		[postcssNormalizeDisplayValues],
-		[postcssNormalizeTimingFunctions],
-		[rawCache]
-	];
-	return { plugins };
+	return plugins;
 }
