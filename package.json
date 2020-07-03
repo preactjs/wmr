@@ -10,7 +10,7 @@
 		"build": "rollup -c",
 		"ci": "npm run build && cd demo && node ../wmr.cjs build",
 		"prepack": "node --experimental-modules ./src/lib/~publish.js",
-		"test": "eslint && jest --runInBand"
+		"test": "eslint src test && jest --runInBand"
 	},
 	"author": "The Preact Authors (https://preactjs.com)",
 	"repository": "preactjs/wmr",
@@ -119,7 +119,6 @@
 		"postcss": "^7.0.32",
 		"postcss-es6": "github:postcss/postcss#7.0.32",
 		"posthtml": "^0.13.1",
-		"posthtml-urls": "^1.0.0",
 		"prettier": "^2.0.5",
 		"puppeteer": "^3.3.0",
 		"rollup": "^2.17.1",

@@ -1,6 +1,6 @@
 import path from 'path';
 import { promises as fs } from 'fs';
-import { setupTest, teardown, runWmr, loadFixture, waitForMessage } from './test-helpers';
+import { setupTest, teardown, runWmr, loadFixture, waitForMessage } from './test-helpers.js';
 
 jest.setTimeout(30000);
 
