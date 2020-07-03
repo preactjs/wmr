@@ -12,8 +12,8 @@ import npmPlugin from './plugins/npm-plugin/index.js';
 import publicPathPlugin from './plugins/public-path-plugin.js';
 import dynamicImportNamesPlugin from './plugins/dynamic-import-names-plugin.js';
 import minifyCssPlugin from './plugins/minify-css-plugin.js';
+import htmlEntriesPlugin from './plugins/html-entries-plugin.js';
 import glob from 'tiny-glob';
-import htmlPlugin from './plugins/html-plugin.js';
 
 /**
  * @typedef {Object} BuildOptions
@@ -181,7 +181,7 @@ export async function bundleProd({ cwd, publicDir, out, sourcemap, profile, npmC
 				sourcemap,
 				production: true
 			}),
-			htmlPlugin({ cwd, publicDir, publicPath: '/' }),
+			htmlEntriesPlugin({ cwd, publicDir, publicPath: '/' }),
 			publicPathPlugin({ publicPath: '/' }),
 			htmPlugin(),
 			wmrStylesPlugin({ hot: false, minify: true }),
@@ -194,7 +194,7 @@ export async function bundleProd({ cwd, publicDir, out, sourcemap, profile, npmC
 
 	return await bundle.write({
 		entryFileNames: '[name].[hash].js',
-		chunkFileNames: '[name].[hash].js',
+		chunkFileNames: 'chunks/[name].[hash].js',
 		assetFileNames: 'assets/[name].[hash][extname]',
 		compact: true,
 		plugins: [terser({ compress: false, sourcemap })],
