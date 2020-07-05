@@ -5,7 +5,7 @@ import mime from 'mime/lite.js';
 import htmPlugin from './plugins/htm-plugin.js';
 import sucrasePlugin from './plugins/sucrase-plugin.js';
 import wmrPlugin, { getWmrClient } from './plugins/wmr/plugin.js';
-import wmrStylesPlugin from './plugins/wmr/styles-plugin.js';
+import wmrStylesPlugin, { modularizeCss } from './plugins/wmr/styles-plugin.js';
 import { createPluginContainer } from './lib/rollup-plugin-container.js';
 import { transformImports } from './lib/transform-imports.js';
 
@@ -155,27 +155,27 @@ export const TRANSFORMS = {
 
 	// Handles "CSS Modules" proxy modules (style.module.css.js)
 	async cssModule({ id, file, cwd, out, res }) {
-		// Cache the generated mapping/proxy module with a .js extension (the CSS itself is also cached)
-		const jsId = id;
-
 		res.setHeader('content-type', 'application/javascript');
 
-		if (WRITE_CACHE.has(jsId)) return WRITE_CACHE.get(jsId);
+		// Cache the generated mapping/proxy module with a .js extension (the CSS itself is also cached)
+		if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
 
-		id = id.replace(/\.js$/, '');
 		file = file.replace(/\.js$/, '');
 
 		// We create a plugin container for each request to prevent asset referenceId clashes
-		const container = createPluginContainer([wmrPlugin(), wmrStylesPlugin({ cwd, hot: true, fullPath: true })], {
-			cwd,
-			output: {
-				dir: out,
-				assetFileNames: '[name][extname]'
-			},
-			writeFile(filename, source) {
-				writeCacheFile(out, filename, source);
+		const container = createPluginContainer(
+			[wmrPlugin({ hot: true }), wmrStylesPlugin({ cwd, hot: true, fullPath: true })],
+			{
+				cwd,
+				output: {
+					dir: out,
+					assetFileNames: '[name][extname]'
+				},
+				writeFile(filename, source) {
+					writeCacheFile(out, filename, source);
+				}
 			}
-		});
+		);
 
 		const result = await container.load(file);
 
@@ -193,7 +193,7 @@ export const TRANSFORMS = {
 			}
 		});
 
-		writeCacheFile(out, jsId, code);
+		writeCacheFile(out, id, code);
 
 		return code;
 	},
@@ -204,18 +204,22 @@ export const TRANSFORMS = {
 
 		if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
 
-		const plugin = wmrStylesPlugin({ cwd, hot: false, fullPath: true });
-		let source;
-		const context = {
-			emitFile(asset) {
-				source = asset.source;
-			}
-		};
-		await plugin.load.call(context, file);
+		let code = await fs.readFile(resolve(cwd, file), 'utf-8');
 
-		writeCacheFile(out, id, source);
+		code = modularizeCss(code, id);
 
-		return source;
+		// const plugin = wmrStylesPlugin({ cwd, hot: false, fullPath: true });
+		// let code;
+		// const context = {
+		// 	emitFile(asset) {
+		// 		code = asset.source;
+		// 	}
+		// };
+		// await plugin.load.call(context, file);
+
+		writeCacheFile(out, id, code);
+
+		return code;
 	},
 
 	// Falls through to sirv
