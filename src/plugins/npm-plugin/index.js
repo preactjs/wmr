@@ -1,4 +1,5 @@
 import { join, dirname } from 'path';
+import { promises as fs } from 'fs';
 import { memo } from './utils.js';
 import { resolvePackageVersion, loadPackageFile } from './registry.js';
 import { resolveModule } from './resolve.js';
@@ -11,9 +12,21 @@ import { resolveModule } from './resolve.js';
  * @returns {import('rollup').Plugin}
  */
 export default function npmPlugin({ publicPath = '/@npm', prefix = '\0npm/', external = true } = {}) {
+	let aliases;
 	return {
 		name: 'npm-plugin',
 		async resolveId(id, importer) {
+			if (!aliases) {
+				try {
+					aliases = JSON.parse(await fs.readFile('package.json', 'utf-8')).aliases || {};
+				} catch (err) {
+					aliases = {};
+				}
+			}
+			if (aliases.hasOwnProperty(id)) {
+				return aliases[id];
+			}
+
 			if (id.startsWith(publicPath)) return { id, external };
 
 			if (id.startsWith(prefix)) id = id.substring(prefix.length);
@@ -73,7 +86,7 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = '\0npm/', ext
 	};
 }
 
-const PACKAGE_SPECIFIER = /^((?:@[a-z0-9-]{1,200}\/)?[a-z0-9-]{1,200})(?:@([a-z0-9^.~>=<-]{1,50}))?(?:\/(.*))?$/i;
+const PACKAGE_SPECIFIER = /^((?:@[a-z0-9._-]{1,200}\/)?[a-z0-9._-]{1,200})(?:@([a-z0-9^.~>=<-]{1,50}))?(?:\/(.*))?$/i;
 
 export const normalizeSpecifier = memo(spec => {
 	let [, module = '', version = '', path = ''] = spec.match(PACKAGE_SPECIFIER) || [];

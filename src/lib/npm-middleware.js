@@ -13,7 +13,7 @@ import { getCachedBundle, setCachedBundle, sendCachedBundle, enqueueCompress } f
  */
 export default function npmMiddleware({ source = 'npm' } = {}) {
 	return async (req, res, next) => {
-		const mod = req.path.replace(/^\//, '');
+		let mod = req.path.replace(/^\//, '');
 		try {
 			const meta = normalizeSpecifier(mod);
 			await resolvePackageVersion(meta);
