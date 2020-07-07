@@ -10,7 +10,7 @@ import { resolveModule } from './resolve.js';
  * @param {boolean} [options.external] If `false`, resolved npm dependencies will be inlined by Rollup.
  * @returns {import('rollup').Plugin}
  */
-export default function npmPlugin({ publicPath = '/@npm', prefix = '\0npm/', external = true } = {}) {
+export default function npmPlugin({ publicPath = '/@npm', prefix = '\bnpm/', external = true } = {}) {
 	return {
 		name: 'npm-plugin',
 		async resolveId(id, importer) {

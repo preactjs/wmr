@@ -49,7 +49,8 @@ export default function wmrPlugin({ hot = true } = {}) {
 			return null;
 		},
 		transform(code, id) {
-			if (!/\.[tj]sx?$/.test(id) || id[0] === '\0') return;
+			const ch = id[0];
+			if (ch === '\0' || ch === '\b' || !/\.[tj]sx?$/.test(id)) return;
 			let hasHot = /(import\.meta\.hot|\$IMPORT_META_HOT\$)/.test(code);
 			let before = '';
 			let after = '';

@@ -2,8 +2,8 @@ import path from 'path';
 import fetch from 'node-fetch';
 import Cache from 'async-disk-cache';
 
-const PREFIX = '\0npm/';
-const PREFIX_INTERNAL = '\0npd/';
+const PREFIX = '\bnpm/';
+const PREFIX_INTERNAL = '\bnpd/';
 
 /**
  * Progressively load and cache individual dependency modules from unpkg.com
@@ -18,7 +18,7 @@ export default function unpkgPlugin({ resolutions = new Map(), publicPath = '@np
 		// if this is a submodule of a package entry, merge it into the entry:
 		if (filename.startsWith(PREFIX_INTERNAL)) {
 			const info = getModuleInfo(filename);
-			filename = info.importers.find(p => p.startsWith('\0npm/')) || filename;
+			filename = info.importers.find(p => p.startsWith('\bnpm/')) || filename;
 		}
 
 		let root = filename.substring(5);
@@ -31,9 +31,9 @@ export default function unpkgPlugin({ resolutions = new Map(), publicPath = '@np
 		name: 'unpkg-plugin',
 
 		async resolveId(s, from) {
-			if (/^\0np[md]\//.test(s)) s = s.substring(5);
+			if (/^[\b]np[md]\//.test(s)) s = s.substring(5);
 
-			if (from && /^\0np[md]\//.test(from)) from = from.substring(5);
+			if (from && /^[\b]np[md]\//.test(from)) from = from.substring(5);
 
 			const isRelativeToPackage = from && /^((?:@[^@/?]+\/)?[^@/?]+)(?:@[^/?]+)?(?:\/([^?]+))?(?:\?.*)?$/.test(from);
 			const isRelativeImport = /^\.?\.?(\/|$)/.test(s);
@@ -69,7 +69,7 @@ export default function unpkgPlugin({ resolutions = new Map(), publicPath = '@np
 		},
 
 		load(id) {
-			if (/^\0np[md]\//.test(id)) {
+			if (/^[\b]np[md]\//.test(id)) {
 				return unpkg(id.substring(5));
 			}
 		},
@@ -91,7 +91,7 @@ export default function unpkgPlugin({ resolutions = new Map(), publicPath = '@np
 			return {
 				...options,
 				manualChunks(filename, ctx) {
-					if (/^\0np[md]\//.test(filename)) {
+					if (/^[\b]np[md]\//.test(filename)) {
 						return manualChunks(filename, ctx);
 					}
 

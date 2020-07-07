@@ -1,5 +1,6 @@
 import { relative, resolve, join, dirname, posix } from 'path';
 import * as rollup from 'rollup';
+import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import watcherPlugin from './plugins/watcher-plugin.js';
 import htmPlugin from './plugins/htm-plugin.js';
@@ -59,7 +60,7 @@ export function bundleDev({ cwd, out, sourcemap, onError, onBuild, profile }) {
 		preserveEntrySignatures: 'allow-extension',
 		manualChunks(filename) {
 			// Internal modules get an underscore prefix:
-			if (filename[0] === '\0') {
+			if (filename[0] === '\0' || filename[0] === '\b') {
 				filename = '_' + filename.substring(1);
 				// return '_' + stripExt(filename.substring(1));
 			} else {
@@ -90,12 +91,12 @@ export function bundleDev({ cwd, out, sourcemap, onError, onBuild, profile }) {
 			wmrStylesPlugin({ hot: true, cwd }),
 			wmrPlugin(),
 			// processGlobalPlugin(),
-			// commonJs({
-			// 	ignoreGlobal: true,
-			// 	sourceMap: sourcemap,
-			// 	transformMixedEsModules: false,
-			// 	include: /^\0npm/
-			// }),
+			commonjs({
+				sourceMap: sourcemap,
+				transformMixedEsModules: false,
+				extensions: ['.js', '.cjs', ''],
+				include: /^[\b]npm\//
+			}),
 			// unpkgPlugin()
 			json(),
 			localNpmPlugin()
@@ -186,6 +187,12 @@ export async function bundleProd({ cwd, publicDir, out, sourcemap, profile, npmC
 			htmPlugin(),
 			wmrStylesPlugin({ hot: false, cwd }),
 			wmrPlugin({ hot: false }),
+			commonjs({
+				sourceMap: sourcemap,
+				transformMixedEsModules: false,
+				extensions: ['.js', '.cjs', ''],
+				include: /^[\b]npm\//
+			}),
 			json(),
 			npmPlugin({ external: false }),
 			minifyCssPlugin({ sourcemap })
@@ -208,9 +215,9 @@ export async function bundleProd({ cwd, publicDir, out, sourcemap, profile, npmC
 /** @type {import('rollup').GetManualChunk} */
 function extractNpmChunks(id, { getModuleIds, getModuleInfo }) {
 	const chunk = getModuleInfo(id);
-	if (/^\0npm\//.test(chunk.id)) {
+	if (/^[\b]npm\//.test(chunk.id)) {
 		// merge any modules that are only used by other modules:
-		const isInternalModule = chunk.importers.every(c => /^\0npm\//.test(c));
+		const isInternalModule = chunk.importers.every(c => /^[\b]npm\//.test(c));
 		if (isInternalModule) return null;
 
 		// create dedicated chunks for npm dependencies that are used in more than one place:
@@ -226,7 +233,7 @@ function extractNpmChunks(id, { getModuleIds, getModuleInfo }) {
 				name = dir;
 			}
 			// /chunks/@npm/NAME.[hash].js
-			return name.replace(/^\0npm\/((?:@[^/]+\/)?[^/]+)@[^/]+/, '@npm/$1');
+			return name.replace(/^[\b]npm\/((?:@[^/]+\/)?[^/]+)@[^/]+/, '@npm/$1');
 		}
 	}
 
