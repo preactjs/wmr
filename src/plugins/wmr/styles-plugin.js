@@ -1,5 +1,30 @@
 import { promises as fs } from 'fs';
 import { basename, dirname, relative, resolve } from 'path';
+// import { transformCss } from '../../lib/transform-css.js';
+
+/**
+ * @param {string} css
+ * @param {string} id cwd-relative path to the stylesheet, no leading `./`
+ * @param {string[]} [mappings] an array to populate with object property code
+ * @returns {string}
+ */
+export function modularizeCss(css, id, mappings) {
+	const classNames = new Set();
+	const suffix = '_' + hash(id);
+	const applyClassSuffix = className => {
+		const mapped = className + suffix;
+		if (mappings && !classNames.has(className)) {
+			// quote keys only if necessary:
+			const q = /^\d|[^a-z0-9_$]/gi.test(className) ? `'` : ``;
+			mappings.push(`${q + className + q}:'${mapped}'`);
+		}
+		return mapped;
+	};
+	// return transformCss(css, applyClassSuffix);
+	return css.replace(/(?:\/\*[\s\S]*?\*\/|\[.*?\]|{[\s\S]*?}|\.([^[\]:.{}()\s]+))/gi, (str, className) => {
+		return className ? '.' + applyClassSuffix(className) : str;
+	});
+}
 
 /**
  * Implements hot-reloading for stylesheets imported by JS.
@@ -22,26 +47,14 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath } = {}) {
 			});
 			return opts;
 		},
-		// async transform(code, id) {
-		// 	if (!id.match(/\.css$/gi)) return;
-		// 	// console.log('transforming CSS', id);
-		// 	return code;
-		// },
-		// resolveFileUrl({ })
 		async load(id) {
 			if (!id.match(/\.css$/)) return;
 			const idRelative = cwd ? relative(cwd || '', resolve(cwd, id)) : multiRelative(cwds, id);
 			// this.addWatchFile(id);
 			let source = await fs.readFile(id, 'utf-8');
-			let mappings = [];
+			const mappings = [];
 			if (id.match(/\.module\.css$/)) {
-				const suffix = '_' + hash(idRelative);
-				source = source.replace(/\.([a-z0-9_-]+)/gi, (str, className) => {
-					const mapped = className + suffix;
-					const q = /^\d|[^a-z0-9_$]/gi.test(className) ? `'` : ``;
-					mappings.push(`${q + className + q}:'${mapped}'`);
-					return `.${mapped}`;
-				});
+				source = modularizeCss(source, idRelative, mappings);
 			}
 
 			const ref = this.emitFile({
@@ -60,7 +73,6 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath } = {}) {
 
 			if (hot) {
 				// import.meta.hot.accept((m) => {
-				// 	console.log({...styles}, {...m.default});
 				// 	for (let i in m.default) styles[i] = m.default[i];
 				// 	for (let i in styles) if (!(i in m.default)) delete[i];
 				// });
