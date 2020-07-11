@@ -325,11 +325,6 @@ function parseTarball(bodyStream, onFile) {
 	return new Promise((resolve, reject) => {
 		const extract = tar.extract();
 
-		// tar-stream breaks in Node 10+ due to autoDestroy, so we have to patch it.
-		// @see https://nodejs.org/api/stream.html#stream_constructor_new_stream_writable_options
-		const destroy = extract.destroy;
-		extract.destroy = () => {};
-
 		extract.on('entry', (header, stream, next) => {
 			let { type, name } = header;
 			name = name.replace(/^package\//, '');
@@ -342,10 +337,7 @@ function parseTarball(bodyStream, onFile) {
 			onFile(name, stream).then(next);
 		});
 
-		extract.on('finish', () => {
-			destroy.call(extract);
-			resolve();
-		});
+		extract.on('finish', resolve);
 		extract.on('error', reject);
 
 		bodyStream.pipe(zlib.createGunzip()).pipe(extract);
