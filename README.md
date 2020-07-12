@@ -19,12 +19,11 @@ Now we can add a script to our `package.json` to spin up the dev environment and
 
 ```json
 {
-  "scripts": {
-    "start": "wmr",
-    "build": "wmr build"
-  }
+	"scripts": {
+		"start": "wmr",
+		"build": "wmr build"
+	}
 }
-
 ```
 
 ### Features
@@ -40,7 +39,7 @@ Now we can add a script to our `package.json` to spin up the dev environment and
 - [x] caches installed and built npm dependencies locally
 - [x] auto-populates `node_modules` progressively based on usage
 - [x] `wmr build` generates optimized bundles for production
-- [ ] no "entry points" or "pages" to configure
+- [x] no "entry points" or "pages" to configure
 
 ### Hacking
 

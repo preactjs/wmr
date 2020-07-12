@@ -19,6 +19,8 @@ export default function sucrasePlugin(opts = {}) {
 	if (opts.typescript) allTransforms.push('typescript');
 
 	function shouldProcess(id) {
+		const ch = id[0];
+		if (ch === '\0' || ch === '\b') return false;
 		if (opts.typescript && /\.tsx?$/.test(id)) return true;
 		return include.length > 0 && include.some(pattern => id.match(pattern));
 	}

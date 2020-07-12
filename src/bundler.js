@@ -1,6 +1,6 @@
-import path from 'path';
-import { promises as fs } from 'fs';
+import { posix } from 'path';
 import * as rollup from 'rollup';
+import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import watcherPlugin from './plugins/watcher-plugin.js';
 import htmPlugin from './plugins/htm-plugin.js';
@@ -12,9 +12,9 @@ import terser from './plugins/fast-minify.js';
 import npmPlugin from './plugins/npm-plugin/index.js';
 import publicPathPlugin from './plugins/public-path-plugin.js';
 import dynamicImportNamesPlugin from './plugins/dynamic-import-names-plugin.js';
-import { parse } from './lib/get-scripts.js';
-
-const { relative, resolve, join, dirname } = path.posix;
+import minifyCssPlugin from './plugins/minify-css-plugin.js';
+import htmlEntriesPlugin from './plugins/html-entries-plugin.js';
+import glob from 'tiny-glob';
 
 /**
  * @typedef {Object} BuildOptions
@@ -41,13 +41,13 @@ const { relative, resolve, join, dirname } = path.posix;
 export function bundleDev({ cwd, out, sourcemap, onError, onBuild, profile }) {
 	cwd = cwd || '';
 	const changedFiles = new Set();
-	const input = './' + relative('.', join(cwd, 'index.js'));
+	const input = './' + posix.relative('.', posix.join(cwd, 'index.js'));
 
 	const watcher = rollup.watch({
 		input, //'./' + join(cwd, 'index.js'),
 		output: {
 			sourcemap,
-			sourcemapPathTransform: p => 'source://' + resolve(cwd, p).replace(/^(.\/)?/g, '/'),
+			sourcemapPathTransform: p => 'source://' + posix.resolve(cwd, p).replace(/^(.\/)?/g, '/'),
 			preferConst: true,
 			minifyInternalExports: false,
 			dir: out,
@@ -60,11 +60,11 @@ export function bundleDev({ cwd, out, sourcemap, onError, onBuild, profile }) {
 		preserveEntrySignatures: 'allow-extension',
 		manualChunks(filename) {
 			// Internal modules get an underscore prefix:
-			if (filename[0] === '\0') {
+			if (filename[0] === '\0' || filename[0] === '\b') {
 				filename = '_' + filename.substring(1);
 				// return '_' + stripExt(filename.substring(1));
 			} else {
-				filename = relative(cwd, filename);
+				filename = posix.relative(cwd, filename);
 			}
 			// Source modules get normalized file extensions
 			// return stripExt(relative(cwd, filename).replace(/^[\\/]/gi, ''));
@@ -91,12 +91,12 @@ export function bundleDev({ cwd, out, sourcemap, onError, onBuild, profile }) {
 			wmrStylesPlugin({ hot: true, cwd }),
 			wmrPlugin(),
 			// processGlobalPlugin(),
-			// commonJs({
-			// 	ignoreGlobal: true,
-			// 	sourceMap: sourcemap,
-			// 	transformMixedEsModules: false,
-			// 	include: /^\0npm/
-			// }),
+			commonjs({
+				sourceMap: sourcemap,
+				transformMixedEsModules: false,
+				extensions: ['.js', '.cjs', ''],
+				include: /^[\b]npm\//
+			}),
 			// unpkgPlugin()
 			json(),
 			localNpmPlugin()
@@ -117,7 +117,7 @@ export function bundleDev({ cwd, out, sourcemap, onError, onBuild, profile }) {
 
 		// normalize source paths for use on the client
 		error.clientMessage = err.replace(/ \(([^(]+):(\d+):(\d+)\)/, (s, file, line, col) => {
-			let relativePath = '/' + relative(cwd, file);
+			let relativePath = '/' + posix.relative(cwd, file);
 			// if sourcemaps are enabled, link to them in the client error:
 			if (sourcemap) relativePath = 'source://' + relativePath;
 			return ` (${relativePath}:${line}:${col})`;
@@ -159,53 +159,20 @@ export function bundleDev({ cwd, out, sourcemap, onError, onBuild, profile }) {
 	return watcher;
 }
 
-const isLocalFile = src => !/^([a-z]+:)\/\//i.test(src);
-
 /** @param {BuildOptions & { npmChunks?: boolean }} options */
-export async function bundleProd({ cwd, out, sourcemap, profile, npmChunks = false }) {
+export async function bundleProd({ cwd, publicDir, out, sourcemap, profile, npmChunks = false }) {
 	cwd = cwd || '';
 
-	const htmlFile = await fs.readFile(path.join(cwd, 'index.html'), 'utf-8');
-	const scripts = [];
-	const styles = [];
+	let htmlFiles = await glob('**/*.html', {
+		cwd,
+		absolute: true,
+		filesOnly: true
+	});
+	// Ignore URLs in dist/, and make entries relative to CWD:
+	htmlFiles = htmlFiles.filter(p => !p.startsWith(out)).map(p => './' + posix.relative('.', p));
 
-	// cwd = pathToPosix(cwd);
-	cwd = cwd
-		.replace(/^[A-Z]:/, '')
-		.split(path.sep)
-		.join('/');
-	const actualCwd = process
-		.cwd()
-		.replace(/^[A-Z]:/, '')
-		.split(path.sep)
-		.join('/');
-
-	const callback = (name, attribs) => {
-		switch (name) {
-			case 'script': {
-				if (attribs.type === 'module' && isLocalFile(attribs.src)) {
-					scripts.push('./' + relative(actualCwd, join(cwd, attribs.src)));
-				}
-				break;
-			}
-			case 'link': {
-				if (attribs.rel === 'stylesheet' && isLocalFile(attribs.href)) {
-					styles.push('./' + relative(actualCwd, join(cwd, attribs.href)));
-				}
-				break;
-			}
-			default:
-				return;
-		}
-	};
-
-	parse(htmlFile, callback);
-
-	console.log(scripts);
-
-	// TODO: produce multiple bundles with the contents of scripts and styles array
 	const bundle = await rollup.rollup({
-		input: [...scripts, ...styles],
+		input: htmlFiles,
 		perf: !!profile,
 		preserveEntrySignatures: 'allow-extension',
 		manualChunks: npmChunks ? extractNpmChunks : undefined,
@@ -215,12 +182,20 @@ export async function bundleProd({ cwd, out, sourcemap, profile, npmChunks = fal
 				sourcemap,
 				production: true
 			}),
+			htmlEntriesPlugin({ cwd, publicDir, publicPath: '/' }),
 			publicPathPlugin({ publicPath: '/' }),
 			htmPlugin(),
-			wmrStylesPlugin({ hot: false }),
+			wmrStylesPlugin({ hot: false, cwd }),
 			wmrPlugin({ hot: false }),
+			commonjs({
+				sourceMap: sourcemap,
+				transformMixedEsModules: false,
+				extensions: ['.js', '.cjs', ''],
+				include: /^[\b]npm\//
+			}),
 			json(),
-			npmPlugin({ external: false })
+			npmPlugin({ external: false }),
+			minifyCssPlugin({ sourcemap })
 		]
 	});
 
@@ -231,7 +206,7 @@ export async function bundleProd({ cwd, out, sourcemap, profile, npmChunks = fal
 		compact: true,
 		plugins: [terser({ compress: false, sourcemap })],
 		sourcemap,
-		sourcemapPathTransform: p => 'source://' + resolve(cwd, p).replace(/^(.\/)?/g, '/'),
+		sourcemapPathTransform: p => 'source://' + posix.resolve(cwd, p).replace(/^(.\/)?/g, '/'),
 		preferConst: true,
 		dir: out || 'dist'
 	});
@@ -240,9 +215,9 @@ export async function bundleProd({ cwd, out, sourcemap, profile, npmChunks = fal
 /** @type {import('rollup').GetManualChunk} */
 function extractNpmChunks(id, { getModuleIds, getModuleInfo }) {
 	const chunk = getModuleInfo(id);
-	if (/^\0npm\//.test(chunk.id)) {
+	if (/^[\b]npm\//.test(chunk.id)) {
 		// merge any modules that are only used by other modules:
-		const isInternalModule = chunk.importers.every(c => /^\0npm\//.test(c));
+		const isInternalModule = chunk.importers.every(c => /^[\b]npm\//.test(c));
 		if (isInternalModule) return null;
 
 		// create dedicated chunks for npm dependencies that are used in more than one place:
@@ -252,13 +227,13 @@ function extractNpmChunks(id, { getModuleIds, getModuleInfo }) {
 			// strip any unnecessary (non-unique) trailing path segments:
 			const moduleIds = Array.from(getModuleIds()).filter(m => m !== name);
 			while (name.length > 1) {
-				const dir = dirname(name);
+				const dir = posix.dirname(name);
 				const match = moduleIds.find(m => m.startsWith(dir));
 				if (match) break;
 				name = dir;
 			}
 			// /chunks/@npm/NAME.[hash].js
-			return name.replace(/^\0npm\/((?:@[^/]+\/)?[^/]+)@[^/]+/, '@npm/$1');
+			return name.replace(/^[\b]npm\/((?:@[^/]+\/)?[^/]+)@[^/]+/, '@npm/$1');
 		}
 	}
 

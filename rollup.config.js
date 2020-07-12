@@ -24,11 +24,20 @@ const config = {
 				name: 'minify',
 				renderChunk(code) {
 					return terser.minify(code, {
-						ecma: 9,
-						compress: true,
-						mangle: true,
+						ecma: 2019,
+						module: true,
+						compress: {
+							toplevel: true
+						},
+						mangle: {
+							eval: true
+						},
 						sourceMap: false,
-						output: { comments: false }
+						output: {
+							comments: false,
+							inline_script: false,
+							ecma: 2019
+						}
 					}).code;
 				}
 			}
@@ -40,7 +49,7 @@ const config = {
 	// external(source, importer) {
 	// 	const ch = source[0];
 	// 	if (ch === '.' || ch === '/') return false;
-	// 	if (source === 'fsevents' || builtins.includes(source)) return true;
+	// 	if (builtins.includes(source)) return true;
 	// 	const mod = source.match(/^(@[^/]+\/)?[^/]+/)[0];
 	// 	const mods = global.mods || (global.mods = new Set());
 	// 	if (!mods.has(mod)) {
@@ -97,6 +106,8 @@ const config = {
 		},
 		alias({
 			entries: [
+				{ find: /^postcss$/, replacement: 'postcss-es6' },
+				{ find: /^postcss\/$/, replacement: 'postcss-es6/' },
 				// bypass native modules aimed at production WS performance:
 				{ find: /^bufferutil$/, replacement: 'bufferutil/fallback.js' },
 				{ find: /^utf-8-validate$/, replacement: 'utf-8-validate/fallback.js' },
@@ -116,7 +127,8 @@ const config = {
 			ignoreGlobal: true
 		}),
 		nodeResolve({
-			preferBuiltins: true
+			preferBuiltins: true,
+			extensions: ['.mjs', '.js', '.json', '.es6', '.node']
 		}),
 		json()
 	]

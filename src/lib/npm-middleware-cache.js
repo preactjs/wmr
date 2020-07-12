@@ -4,8 +4,8 @@ import terser from 'terser';
 import { dirname } from 'path';
 
 // 1 minute
+// @TODO: this could actually be indefinite, since cache keys are deterministic (version+path).
 const CACHE_TTL = 60000;
-// export const CACHE_TTL = 0;
 
 /**
  * @typedef Mem

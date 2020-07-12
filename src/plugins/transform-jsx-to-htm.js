@@ -36,10 +36,10 @@ export default function transformJsxToHtm({ types: t, template }) {
 					// another option here that is grosser but simpler:
 					//   return str += attr.getSource().replace('{', '${');
 					if (t.isJSXSpreadAttribute(attr)) {
-						str += '...';
+						str += '...${' + attr.get('argument').getSource() + '}';
+					} else {
+						str += attr.get('name').getSource();
 					}
-
-					str += attr.get('name').getSource();
 
 					// We could do the whole clone()/serialize() thing here, but
 					// the only transform required is to prepend expressions with "$".

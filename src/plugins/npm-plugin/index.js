@@ -10,7 +10,7 @@ import { resolveModule } from './resolve.js';
  * @param {boolean} [options.external] If `false`, resolved npm dependencies will be inlined by Rollup.
  * @returns {import('rollup').Plugin}
  */
-export default function npmPlugin({ publicPath = '/@npm', prefix = '\0npm/', external = true } = {}) {
+export default function npmPlugin({ publicPath = '/@npm', prefix = '\bnpm/', external = true } = {}) {
 	return {
 		name: 'npm-plugin',
 		async resolveId(id, importer) {
@@ -23,6 +23,8 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = '\0npm/', ext
 			if (id.startsWith(publicPath)) return { id, external };
 
 			if (id.startsWith(prefix)) id = id.substring(prefix.length);
+			else if (/^(?:\0|[a-z]+:)/.test(id)) return;
+
 			if (importer && importer.startsWith(prefix)) importer = importer.substring(prefix.length);
 
 			// let module, path, version;

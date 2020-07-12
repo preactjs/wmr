@@ -1,7 +1,10 @@
 /** @param {import('rollup').RollupOutput} bundle */
 export function bundleStats(bundle) {
 	let total = 0;
-	const assets = bundle.output.slice().sort((a, b) => scoreAsset(b) - scoreAsset(a));
+	const assets = bundle.output
+		.filter(asset => !/\.map$/.test(asset.fileName))
+		.sort((a, b) => scoreAsset(b) - scoreAsset(a));
+
 	const assetsText = assets.reduce((str, output) => {
 		const content = output.type === 'asset' ? output.source : output.code;
 		const size = content.length;
@@ -18,6 +21,10 @@ export function bundleStats(bundle) {
 function scoreAsset(asset) {
 	if (asset.type === 'chunk') {
 		return asset.isEntry ? 10 : asset.isDynamicEntry ? 8 : 6;
+	}
+	// List HTML files first, sorted by path depth
+	if (/\.html$/.test(asset.fileName)) {
+		return 30 - asset.fileName.split('/').length;
 	}
 	return 1;
 }
