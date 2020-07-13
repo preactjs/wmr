@@ -1,4 +1,4 @@
-import { join, dirname } from 'path';
+import { posix, sep } from 'path';
 import { memo } from './utils.js';
 import { resolvePackageVersion, loadPackageFile } from './registry.js';
 import { resolveModule } from './resolve.js';
@@ -14,6 +14,12 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = '\bnpm/', ext
 	return {
 		name: 'npm-plugin',
 		async resolveId(id, importer) {
+			importer =
+				importer &&
+				importer
+					.replace(/^[A-Z]:/, '')
+					.split(sep)
+					.join('/');
 			if (id.startsWith(publicPath)) return { id, external };
 
 			if (id.startsWith(prefix)) id = id.substring(prefix.length);
@@ -33,7 +39,7 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = '\bnpm/', ext
 				if (!importerMeta) return;
 
 				meta = Object.assign({}, importerMeta);
-				meta.path = join(dirname(meta.path || ''), id);
+				meta.path = posix.join(posix.dirname(meta.path || ''), id);
 			} else {
 				// An absolute, self or bare import
 				meta = normalizeSpecifier(id);
@@ -84,8 +90,11 @@ export const normalizeSpecifier = memo(spec => {
 	return { module, version, path, specifier };
 });
 
+/** @param {string} filename */
 function isDiskPath(filename) {
-	return /^(\/|\.\.?(\/|$))/.test(filename);
+	// only check for windows paths if we're on windows
+	if (sep === '\\' && /^(([A-Z]+:)?\\|\.\.?(\\|$))/.test(filename)) return true;
+	return /^(file:\/\/)?([A-Z]:)?(\/|\.\.?(\/|$))/.test(filename);
 }
 
 // /** @param {import('./registry.js').Module} spec */

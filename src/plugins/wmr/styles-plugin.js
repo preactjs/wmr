@@ -1,5 +1,5 @@
 import { promises as fs } from 'fs';
-import { basename, dirname, relative, resolve } from 'path';
+import { basename, dirname, relative, resolve, sep, posix } from 'path';
 // import { transformCss } from '../../lib/transform-css.js';
 
 /**
@@ -49,7 +49,8 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath } = {}) {
 		},
 		async load(id) {
 			if (!id.match(/\.css$/)) return;
-			const idRelative = cwd ? relative(cwd || '', resolve(cwd, id)) : multiRelative(cwds, id);
+			let idRelative = cwd ? relative(cwd || '', resolve(cwd, id)) : multiRelative(cwds, id);
+			if (idRelative.match(/^[^/]*\\/)) idRelative = idRelative.split(sep).join(posix.sep);
 			// this.addWatchFile(id);
 			let source = await fs.readFile(id, 'utf-8');
 			const mappings = [];

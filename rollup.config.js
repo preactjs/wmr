@@ -1,3 +1,4 @@
+import { sep } from 'path';
 import shebangPlugin from 'rollup-plugin-preserve-shebang';
 import commonjs from '@rollup/plugin-commonjs';
 import nodeResolve from '@rollup/plugin-node-resolve';
@@ -89,7 +90,7 @@ const config = {
 			// https://github.com/davewasmer/devcert/blob/master/src/platforms/index.ts
 			name: 'fix-devcert',
 			transform(code, id) {
-				if (/devcert\/dist\/platforms\/index\.js$/.test(id)) {
+				if (/devcert[/\\]dist[/\\]platforms[/\\]index\.js$/.test(id)) {
 					const platforms = require('fs')
 						.readdirSync('node_modules/devcert/dist/platforms')
 						.reduce((str, p) => {
@@ -107,13 +108,16 @@ const config = {
 		alias({
 			entries: [
 				{ find: /^postcss$/, replacement: 'postcss-es6' },
-				{ find: /^postcss\/$/, replacement: 'postcss-es6/' },
+				{ find: /^postcss[/\\]$/, replacement: `postcss-es6${sep}` },
 				// bypass native modules aimed at production WS performance:
-				{ find: /^bufferutil$/, replacement: 'bufferutil/fallback.js' },
-				{ find: /^utf-8-validate$/, replacement: 'utf-8-validate/fallback.js' },
+				{ find: /^bufferutil$/, replacement: `bufferutil${sep}fallback.js` },
+				{ find: /^utf-8-validate$/, replacement: `utf-8-validate${sep}fallback.js` },
 				// just use native streams:
-				{ find: /(^|\/)readable-stream$/, replacement: require.resolve('./src/lib/~readable-stream.js') },
-				{ find: /(^|\/)readable-stream\/duplex/, replacement: require.resolve('./src/lib/~readable-stream-duplex.js') },
+				{ find: /(^|[/\\])readable-stream$/, replacement: require.resolve('./src/lib/~readable-stream.js') },
+				{
+					find: /(^|[/\\])readable-stream[/\\]duplex/,
+					replacement: require.resolve('./src/lib/~readable-stream-duplex.js')
+				},
 				// just use util:
 				{ find: /^inherits$/, replacement: require.resolve('./src/lib/~inherits.js') },
 				// only pull in fsevents when its exports are accessed (avoids exceptions):

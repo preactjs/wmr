@@ -19,12 +19,11 @@ Now we can add a script to our `package.json` to spin up the dev environment and
 
 ```json
 {
-  "scripts": {
-    "start": "wmr",
-    "build": "wmr build"
-  }
+	"scripts": {
+		"start": "wmr",
+		"build": "wmr build"
+	}
 }
-
 ```
 
 ### Features
