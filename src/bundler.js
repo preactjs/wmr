@@ -1,4 +1,4 @@
-import { posix } from 'path';
+import { relative, sep, posix, resolve, dirname } from 'path';
 import * as rollup from 'rollup';
 import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
@@ -15,6 +15,9 @@ import dynamicImportNamesPlugin from './plugins/dynamic-import-names-plugin.js';
 import minifyCssPlugin from './plugins/minify-css-plugin.js';
 import htmlEntriesPlugin from './plugins/html-entries-plugin.js';
 import glob from 'tiny-glob';
+
+/** @param {string} p */
+const pathToPosix = p => p.split(sep).join(posix.sep);
 
 /**
  * @typedef {Object} BuildOptions
@@ -37,7 +40,11 @@ import glob from 'tiny-glob';
  * @type {rollup.RollupError & { clientMessage?: string }}
  */
 
-/** @param {BuildOptions} options */
+/**
+ * @param {BuildOptions} options
+ * @TODO Refactor to return a customized bundleProd() return value,
+ *       to make bundled development mode more useful and reduce complexity.
+ */
 export function bundleDev({ cwd, out, sourcemap, onError, onBuild, profile }) {
 	cwd = cwd || '';
 	const changedFiles = new Set();
@@ -47,7 +54,14 @@ export function bundleDev({ cwd, out, sourcemap, onError, onBuild, profile }) {
 		input, //'./' + join(cwd, 'index.js'),
 		output: {
 			sourcemap,
-			sourcemapPathTransform: p => 'source://' + posix.resolve(cwd, p).replace(/^(.\/)?/g, '/'),
+			sourcemapPathTransform(p, mapPath) {
+				let url = pathToPosix(relative(cwd, resolve(dirname(mapPath), p)));
+				// strip leading relative path
+				url = url.replace(/^\.\//g, '');
+				// replace internal npm prefix
+				url = url.replace(/^(\.?\.?\/)?[\b]npm\//, '@npm/');
+				return 'source:///' + url;
+			},
 			preferConst: true,
 			minifyInternalExports: false,
 			dir: out,
@@ -163,16 +177,17 @@ export function bundleDev({ cwd, out, sourcemap, onError, onBuild, profile }) {
 export async function bundleProd({ cwd, publicDir, out, sourcemap, profile, npmChunks = false }) {
 	cwd = cwd || '';
 
-	let htmlFiles = await glob('**/*.html', {
+	const htmlFiles = await glob('**/*.html', {
 		cwd,
 		absolute: true,
 		filesOnly: true
 	});
-	// Ignore URLs in dist/, and make entries relative to CWD:
-	htmlFiles = htmlFiles.filter(p => !p.startsWith(out)).map(p => './' + posix.relative('.', p));
+
+	// note: we intentionally pass these to Rollup as posix paths
+	const input = htmlFiles.filter(p => !p.startsWith(out)).map(p => './' + pathToPosix(relative('.', p)));
 
 	const bundle = await rollup.rollup({
-		input: htmlFiles,
+		input,
 		perf: !!profile,
 		preserveEntrySignatures: 'allow-extension',
 		manualChunks: npmChunks ? extractNpmChunks : undefined,
@@ -206,7 +221,14 @@ export async function bundleProd({ cwd, publicDir, out, sourcemap, profile, npmC
 		compact: true,
 		plugins: [terser({ compress: false, sourcemap })],
 		sourcemap,
-		sourcemapPathTransform: p => 'source://' + posix.resolve(cwd, p).replace(/^(.\/)?/g, '/'),
+		sourcemapPathTransform(p, mapPath) {
+			let url = pathToPosix(relative(cwd, resolve(dirname(mapPath), p)));
+			// strip leading relative path
+			url = url.replace(/^\.\//g, '');
+			// replace internal npm prefix
+			url = url.replace(/^(\.?\.?\/)?[\b]npm\//, '@npm/');
+			return 'source:///' + url;
+		},
 		preferConst: true,
 		dir: out || 'dist'
 	});
@@ -236,25 +258,5 @@ function extractNpmChunks(id, { getModuleIds, getModuleInfo }) {
 			return name.replace(/^[\b]npm\/((?:@[^/]+\/)?[^/]+)@[^/]+/, '@npm/$1');
 		}
 	}
-
-	/*
-	// This essentially duplicates what Rollup does by default:
-	let fileName = relative(cwd, chunk.id);
-	if (chunk.isEntry) {
-		console.log('entry: ', chunk.id, fileName);
-		return fileName;
-	} else if (chunk.dynamicImporters.length && !chunk.importers.length) {
-		console.log(
-			'dynamic import: ',
-			chunk.id,
-			`lazy~${fileName.replace(/(^(\.?\/)?|(\/index)?\.[a-zA-Z]+$)/g, '').replace(/\//g, '--')}`
-		);
-		console.log(chunk);
-		return `\0lazy~${fileName.replace(/(^(\.?\/)?|(\/index)?\.[a-zA-Z]+$)/g, '').replace(/\//g, '--')}`;
-	} else if (/^\0npm\//.test(chunk.id) && !chunk.importers.every(c => /^\0npm\//.test(c))) {
-		// Each outwardly-used npm module gets its own chunk
-		return chunk.id;
-	}
-	*/
 	return null;
 }

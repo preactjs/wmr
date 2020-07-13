@@ -1,4 +1,4 @@
-import { resolve, dirname, posix } from 'path';
+import { resolve, dirname, sep, posix } from 'path';
 import { promises as fs } from 'fs';
 import chokidar from 'chokidar';
 import mime from 'mime/lite.js';
@@ -43,11 +43,13 @@ export default function wmrMiddleware({ cwd, out = '.dist', distDir = 'dist', on
 		useFsEvents
 	});
 	const pendingChanges = new Set();
+
 	function flushChanges() {
 		onChange({ changes: Array.from(pendingChanges), duration: 0 });
 		pendingChanges.clear();
 	}
 	watcher.on('change', (filename, stats) => {
+		filename = filename.split(sep).join(posix.sep);
 		if (!pendingChanges.size) setTimeout(flushChanges, 60);
 		pendingChanges.add('/' + filename);
 		// Delete file from the in-memory cache:

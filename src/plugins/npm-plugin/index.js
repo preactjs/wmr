@@ -90,8 +90,11 @@ export const normalizeSpecifier = memo(spec => {
 	return { module, version, path, specifier };
 });
 
+/** @param {string} filename */
 function isDiskPath(filename) {
-	return /^(\/|\.\.?(\/|$))/.test(filename);
+	// only check for windows paths if we're on windows
+	if (sep === '\\' && /^(([A-Z]+:)?\\|\.\.?(\\|$))/.test(filename)) return true;
+	return /^(file:\/\/)?([A-Z]:)?(\/|\.\.?(\/|$))/.test(filename);
 }
 
 // /** @param {import('./registry.js').Module} spec */

@@ -1,8 +1,12 @@
 import { promises as fs } from 'fs';
-import { posix } from 'path';
+import { resolve, join, dirname, relative, sep, posix } from 'path';
 import { transformHtml } from '../lib/transform-html.js';
 
+/** @param {string} src */
 const isLocalFile = src => src && !/^([a-z]+:)\/\//i.test(src);
+
+/** @param {string} p */
+const toSystemPath = p => p.split(posix.sep).join(sep);
 
 /**
  * This Rollup plugin handles resolving HTML entrypoints.
@@ -40,10 +44,10 @@ export default function htmlEntriesPlugin({ cwd, publicDir, publicPath } = {}) {
 				let abs = url;
 				if (url[0] === '/') {
 					url = './' + url.substring(1);
-					abs = posix.join(publicDir || cwd, url);
+					abs = join(publicDir || cwd, toSystemPath(url));
 				} else {
 					if (!/^\.?\.\//.test(url)) url = './' + url;
-					abs = posix.resolve(posix.dirname(id), url);
+					abs = resolve(dirname(id), toSystemPath(url));
 				}
 
 				if (tag === 'script' && /^module$/i.test(attrs.type)) {
@@ -70,7 +74,7 @@ export default function htmlEntriesPlugin({ cwd, publicDir, publicPath } = {}) {
 
 		this.emitFile({
 			type: 'asset',
-			fileName: posix.relative(publicDir || cwd, id),
+			fileName: relative(publicDir || cwd, id),
 			source: transformed
 		});
 
