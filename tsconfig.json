@@ -8,7 +8,8 @@
 		"moduleResolution": "node",
 		"allowSyntheticDefaultImports": true,
 		"downlevelIteration": true,
-		"target": "ESNext"
+		"target": "ESNext",
+		"module": "ESNext"
 	},
 	"typeAcquisition": {
 		"enable": true

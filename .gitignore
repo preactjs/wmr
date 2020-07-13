@@ -2,4 +2,5 @@
 dist
 node_modules
 wmr.cjs
+wmr.*.cjs
 yarn.lock
