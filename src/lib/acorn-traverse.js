@@ -133,6 +133,9 @@ class Path {
 	replaceWithString(str) {
 		this.ctx.out.overwrite(this.node.start, this.node.end, str);
 	}
+	remove() {
+		this.replaceWithString('');
+	}
 	prependString(str) {
 		this.ctx.out.appendLeft(this.node.start, str);
 	}
