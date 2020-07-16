@@ -61,8 +61,14 @@ export default function wmrMiddleware({ cwd, out = '.dist', distDir = 'dist', on
 	return async (req, res, next) => {
 		// @ts-ignore
 		const path = posix.normalize(req.path);
+
+		if (path.startsWith('/@npm/')) {
+			return next();
+		}
+
 		const file = posix.join(cwd, path);
-		// rollup-style cwd-relative path ID
+
+		// Rollup-style CWD-relative path "id"
 		const id = posix.relative(cwd, file).replace(/^\.\//, '');
 
 		const type = mime.getType(file);
@@ -76,8 +82,6 @@ export default function wmrMiddleware({ cwd, out = '.dist', distDir = 'dist', on
 		} else if (/\.css\.js$/.test(file)) {
 			transform = TRANSFORMS.cssModule;
 		} else if (/\.([mc]js|[tj]sx?)$/.test(file)) {
-			// transform = TRANSFORMS.js_test;
-			// transform = TRANSFORMS.js_bundled;
 			transform = TRANSFORMS.js;
 		} else if (/\.(css|s[ac]ss)$/.test(file)) {
 			transform = TRANSFORMS.css;

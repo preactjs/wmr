@@ -30,9 +30,9 @@ export default function npmMiddleware({ source = 'npm' } = {}) {
 			const cached = await getCachedBundle(etag, meta);
 			if (cached) return sendCachedBundle(req, res, cached);
 
-			const start = Date.now();
+			// const start = Date.now();
 			const code = await bundleNpmModule(mod, { source });
-			console.log(`Bundle dep: ${mod}: ${Date.now() - start}ms`);
+			// console.log(`Bundle dep: ${mod}: ${Date.now() - start}ms`);
 
 			// send it!
 			res.writeHead(200, { 'content-length': code.length }).end(code);
