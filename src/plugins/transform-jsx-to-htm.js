@@ -86,9 +86,15 @@ export default function transformJsxToHtm({ types: t, template }) {
 				path.replaceWithString(str);
 			},
 			JSXExpressionContainer(path) {
-				// path.replaceWith(path.get('expression'));
-				path.prependString('$');
+				if (t.isJSXEmptyExpression(path.get('expression'))) {
+					// <div>a{/*b*/}c</div> --> `<div>ac</div>`
+					path.remove();
+				} else {
+					// <div>{a}</div> --> `<div>${a}</div>`
+					path.prependString('$');
+				}
 			},
+			// <div>a</div> --> `<div>a</div>`
 			JSXText(path) {
 				path.replaceWithString(path.node.value);
 			}
