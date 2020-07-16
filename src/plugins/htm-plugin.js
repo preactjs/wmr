@@ -21,13 +21,19 @@ export default function htmPlugin({ include } = {}) {
 		},
 
 		transform(code, filename) {
-			if (!filename.match(/\.[tj]sx?$/)) return;
+			if (!/\.[tj]sx?$/.test(filename)) return;
+
 			// skip internal modules
 			if (filename[0] === '\0' || filename[0] === '\b') return;
 
 			if (include) {
 				const shouldTransform = typeof include === 'function' ? include(filename) : filename.match(include);
 				if (!shouldTransform) return;
+			}
+
+			// Note: optimization to skip non-JSX/TSX files that don't contain JSX (remove if extended)
+			if (!/\.[tj]sx$/.test(filename) && !/<[a-zA-Z$_][\w.:-]*[^>]*>/.test(code)) {
+				return;
 			}
 
 			const start = Date.now();
@@ -47,7 +53,7 @@ export default function htmPlugin({ include } = {}) {
 			// }
 
 			const end = Date.now();
-			if (end - start > 50) this.warn(`${filename} took ${end - start}ms`);
+			if (end - start > 100) this.warn(`${filename} took ${end - start}ms`);
 			return out;
 		}
 	};
