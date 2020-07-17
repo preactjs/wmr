@@ -26,8 +26,11 @@ export default function aliasesPlugin({ aliases } = {}) {
 	return {
 		name: 'aliases',
 		async buildStart() {
-			pkgFilename = (await this.resolve('./package.json')).id;
-			this.addWatchFile(pkgFilename);
+			const resolved = await this.resolve('./package.json');
+			if (resolved) {
+				pkgFilename = resolved.id;
+				this.addWatchFile(pkgFilename);
+			}
 		},
 		watchChange(id) {
 			if (id === pkgFilename) {
