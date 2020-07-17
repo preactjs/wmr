@@ -14,12 +14,18 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = '\bnpm/', ext
 	return {
 		name: 'npm-plugin',
 		async resolveId(id, importer) {
-			importer =
-				importer &&
-				importer
+			if (id[0] === '\0') return;
+
+			if (importer) {
+				if (importer[0] === '\0') importer = '';
+
+				// replace windows paths
+				importer = importer
 					.replace(/^[A-Z]:/, '')
 					.split(sep)
 					.join('/');
+			}
+
 			if (id.startsWith(publicPath)) return { id, external };
 
 			if (id.startsWith(prefix)) id = id.substring(prefix.length);

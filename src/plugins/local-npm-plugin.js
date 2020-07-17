@@ -20,7 +20,7 @@ export default function localNpmPlugin({ publicPath = '/@npm' } = {}) {
 			};
 			return opts;
 		},
-		resolveId(s) {
+		async resolveId(s, importer) {
 			if (s.match(/^\.?\//)) return;
 			// s = s.replace(/^https?:\/\/unpkg\.com\/((?:@[^@\/?]+\/)?[^@\/?]+)(@[^\/?]+)?(\/[^?]+)?\?module/g, '$1$2$3');
 			return {

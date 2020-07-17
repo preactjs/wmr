@@ -20,8 +20,9 @@ import WebSocketServer from './lib/websocket-server.js';
  * @param {polka.Middleware[]} [options.middleware] Additional Polka middlewares to inject
  * @param {boolean} [options.http2 = false] Use HTTP/2
  * @param {boolean|number} [options.compress = true] Compress responses? Pass a `number` to set the size threshold.
+ * @param {Record<string, string>} [options.aliases] module aliases
  */
-export default async function server({ cwd, overlayDir, middleware, http2 = false, compress = true } = {}) {
+export default async function server({ cwd, overlayDir, middleware, http2 = false, compress = true, aliases } = {}) {
 	/** @type {CustomServer} */
 	const app = polka({
 		onError(err, req, res) {
@@ -57,7 +58,7 @@ export default async function server({ cwd, overlayDir, middleware, http2 = fals
 		app.use(compression({ threshold, level: 4 }));
 	}
 
-	app.use('/@npm', npmMiddleware());
+	app.use('/@npm', npmMiddleware({ aliases }));
 
 	if (middleware) {
 		app.use(...middleware);

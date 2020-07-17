@@ -8,6 +8,7 @@ import wmrPlugin, { getWmrClient } from './plugins/wmr/plugin.js';
 import wmrStylesPlugin, { modularizeCss } from './plugins/wmr/styles-plugin.js';
 import { createPluginContainer } from './lib/rollup-plugin-container.js';
 import { transformImports } from './lib/transform-imports.js';
+import aliasesPlugin from './plugins/aliases-plugin.js';
 
 /**
  * In-memory cache of files that have been generated and written to .dist/
@@ -18,17 +19,37 @@ const WRITE_CACHE = new Map();
 /**
  * @param {object} [options]
  * @param {string} [options.cwd]
+ * @param {string} [options.root] cwd without ./public suffix
  * @param {string} [options.out = '.dist']
  * @param {string} [options.distDir] if set, ignores watch events within this directory
  * @param {boolean} [options.sourcemap]
+ * @param {Record<string, string>} [options.aliases]
  * @param {boolean} [options.profile] Enable bundler performance profiling
  * @param {(error: Error & { clientMessage?: string })=>void} [options.onError]
  * @param {(event: { changes: string[], duration: number })=>void} [options.onChange]
  * @returns {import('polka').Middleware}
  */
-export default function wmrMiddleware({ cwd, out = '.dist', distDir = 'dist', onError, onChange } = {}) {
+export default function wmrMiddleware({ cwd, root, out = '.dist', distDir = 'dist', aliases, onError, onChange } = {}) {
 	cwd = resolve(process.cwd(), cwd || '.');
 	distDir = resolve(dirname(out), distDir);
+
+	root = root || cwd;
+
+	const NonRollup = createPluginContainer(
+		[
+			sucrasePlugin({
+				typescript: true,
+				sourcemap: false,
+				production: false
+			}),
+			aliasesPlugin({ aliases }),
+			htmPlugin(),
+			wmrPlugin({ hot: true })
+		],
+		{ cwd: root }
+	);
+
+	NonRollup.buildStart();
 
 	let useFsEvents = false;
 	try {
@@ -36,7 +57,7 @@ export default function wmrMiddleware({ cwd, out = '.dist', distDir = 'dist', on
 		useFsEvents = true;
 	} catch (e) {}
 
-	const watcher = chokidar.watch(cwd, {
+	const watcher = chokidar.watch([cwd, resolve(root, 'package.json')], {
 		cwd,
 		disableGlobbing: true,
 		ignored: [/(^|[/\\])(node_modules|\.git|\.DS_Store)([/\\]|$)/, resolve(cwd, out), resolve(cwd, distDir)],
@@ -48,7 +69,8 @@ export default function wmrMiddleware({ cwd, out = '.dist', distDir = 'dist', on
 		onChange({ changes: Array.from(pendingChanges), duration: 0 });
 		pendingChanges.clear();
 	}
-	watcher.on('change', (filename, stats) => {
+	watcher.on('change', filename => {
+		NonRollup.watchChange(resolve(cwd, filename));
 		filename = filename.split(sep).join(posix.sep);
 		if (!pendingChanges.size) setTimeout(flushChanges, 60);
 		pendingChanges.add('/' + filename);
@@ -74,7 +96,7 @@ export default function wmrMiddleware({ cwd, out = '.dist', distDir = 'dist', on
 		const type = mime.getType(file);
 		if (type) res.setHeader('content-type', type);
 
-		const ctx = { req, res, id, file, path, cwd, out, next };
+		const ctx = { req, res, id, file, path, cwd, out, NonRollup, next };
 
 		let transform;
 		if (path === '/_wmr.js') {
@@ -116,19 +138,9 @@ export default function wmrMiddleware({ cwd, out = '.dist', distDir = 'dist', on
 	};
 }
 
-const NonRollup = createPluginContainer([
-	sucrasePlugin({
-		typescript: true,
-		sourcemap: false,
-		production: false
-	}),
-	htmPlugin(),
-	wmrPlugin({ hot: true })
-]);
-
 export const TRANSFORMS = {
 	// Handle individual JavaScript modules
-	async js({ id, file, res, cwd, out }) {
+	async js({ id, file, res, cwd, out, NonRollup }) {
 		res.setHeader('content-type', 'application/javascript');
 
 		if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
