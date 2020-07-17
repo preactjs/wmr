@@ -16,6 +16,7 @@ import minifyCssPlugin from './plugins/minify-css-plugin.js';
 import htmlEntriesPlugin from './plugins/html-entries-plugin.js';
 import glob from 'tiny-glob';
 import aliasesPlugin from './plugins/aliases-plugin.js';
+import processGlobalPlugin from './plugins/process-global-plugin.js';
 
 /** @param {string} p */
 const pathToPosix = p => p.split(sep).join(posix.sep);
@@ -107,13 +108,13 @@ export function bundleDev({ cwd, out, sourcemap, aliases, onError, onBuild, prof
 			htmPlugin(),
 			wmrStylesPlugin({ hot: true, cwd }),
 			wmrPlugin(),
-			// processGlobalPlugin(),
 			commonjs({
 				sourceMap: sourcemap,
 				transformMixedEsModules: false,
 				extensions: ['.js', '.cjs', ''],
 				include: /^[\b]npm\//
 			}),
+			processGlobalPlugin(),
 			// unpkgPlugin()
 			json(),
 			localNpmPlugin()
@@ -212,6 +213,7 @@ export async function bundleProd({ cwd, publicDir, out, sourcemap, aliases, prof
 				extensions: ['.js', '.cjs', ''],
 				include: /^[\b]npm\//
 			}),
+			processGlobalPlugin(),
 			json(),
 			npmPlugin({ external: false }),
 			minifyCssPlugin({ sourcemap })

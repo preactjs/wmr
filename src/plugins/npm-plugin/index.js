@@ -70,9 +70,14 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = '\bnpm/', ext
 				readFile(path)
 					.then(() => true)
 					.catch(() => false);
-			const resolvedPath = await resolveModule(path, { readFile, hasFile, module });
+			const resolvedPath = (await resolveModule(path, { readFile, hasFile, module })).replace(/^\//, '');
 
-			return prefix + meta.module + '@' + meta.version + '/' + resolvedPath.replace(/^\//, '');
+			// CSS files are not handled by this plugin.
+			if (/\.css$/.test(id) && (await hasFile(resolvedPath))) {
+				return `./node_modules/${meta.module}/${resolvedPath}`;
+			}
+
+			return prefix + meta.module + '@' + meta.version + '/' + resolvedPath;
 		},
 		load(id) {
 			// only load modules this plugin resolved
