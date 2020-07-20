@@ -119,12 +119,14 @@ async function bundleNpmModule(mod, { source, aliases }) {
 		plugins: [
 			aliasesPlugin({ aliases }),
 			npmProviderPlugin,
+			processGlobalPlugin({
+				NODE_ENV: 'development'
+			}),
 			commonjs({
-				// TODO: extensions[]?
+				extensions: ['.js', '.cjs', ''],
 				sourceMap: false,
 				transformMixedEsModules: true
 			}),
-			processGlobalPlugin(),
 			json(),
 			{
 				name: 'never-disk',
