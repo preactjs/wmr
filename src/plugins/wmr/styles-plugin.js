@@ -49,6 +49,8 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath } = {}) {
 		},
 		async load(id) {
 			if (!id.match(/\.css$/)) return;
+			if (id[0] === '\b' || id[0] === '\0') return;
+
 			let idRelative = cwd ? relative(cwd || '', resolve(cwd, id)) : multiRelative(cwds, id);
 			if (idRelative.match(/^[^/]*\\/)) idRelative = idRelative.split(sep).join(posix.sep);
 			// this.addWatchFile(id);

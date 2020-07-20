@@ -15,6 +15,8 @@ import dynamicImportNamesPlugin from './plugins/dynamic-import-names-plugin.js';
 import minifyCssPlugin from './plugins/minify-css-plugin.js';
 import htmlEntriesPlugin from './plugins/html-entries-plugin.js';
 import glob from 'tiny-glob';
+import aliasesPlugin from './plugins/aliases-plugin.js';
+import processGlobalPlugin from './plugins/process-global-plugin.js';
 
 /** @param {string} p */
 const pathToPosix = p => p.split(sep).join(posix.sep);
@@ -25,6 +27,7 @@ const pathToPosix = p => p.split(sep).join(posix.sep);
  * @property {string} [publicDir = '']
  * @property {string} [out = '.dist']
  * @property {boolean} [sourcemap]
+ * @property {Record<string, string>} [aliases] module aliases
  * @property {boolean} [profile] Enable bundler performance profiling
  * @property {(error: BuildError)=>void} [onError]
  * @property {(error: BuildEvent)=>void} [onBuild]
@@ -45,7 +48,7 @@ const pathToPosix = p => p.split(sep).join(posix.sep);
  * @TODO Refactor to return a customized bundleProd() return value,
  *       to make bundled development mode more useful and reduce complexity.
  */
-export function bundleDev({ cwd, out, sourcemap, onError, onBuild, profile }) {
+export function bundleDev({ cwd, out, sourcemap, aliases, onError, onBuild, profile }) {
 	cwd = cwd || '';
 	const changedFiles = new Set();
 	const input = './' + posix.relative('.', posix.join(cwd, 'index.js'));
@@ -94,6 +97,7 @@ export function bundleDev({ cwd, out, sourcemap, onError, onBuild, profile }) {
 			dynamicImportNamesPlugin({
 				// suffix: '~' // avoid collisions with entry modules
 			}),
+			aliasesPlugin({ aliases }),
 			watcherPlugin({
 				cwd,
 				watchedFiles: '**/*.!({js,cjs,mjs,ts,tsx})',
@@ -104,13 +108,13 @@ export function bundleDev({ cwd, out, sourcemap, onError, onBuild, profile }) {
 			htmPlugin(),
 			wmrStylesPlugin({ hot: true, cwd }),
 			wmrPlugin(),
-			// processGlobalPlugin(),
 			commonjs({
 				sourceMap: sourcemap,
 				transformMixedEsModules: false,
 				extensions: ['.js', '.cjs', ''],
 				include: /^[\b]npm\//
 			}),
+			processGlobalPlugin(),
 			// unpkgPlugin()
 			json(),
 			localNpmPlugin()
@@ -174,7 +178,7 @@ export function bundleDev({ cwd, out, sourcemap, onError, onBuild, profile }) {
 }
 
 /** @param {BuildOptions & { npmChunks?: boolean }} options */
-export async function bundleProd({ cwd, publicDir, out, sourcemap, profile, npmChunks = false }) {
+export async function bundleProd({ cwd, publicDir, out, sourcemap, aliases, profile, npmChunks = false }) {
 	cwd = cwd || '';
 
 	const htmlFiles = await glob('**/*.html', {
@@ -199,6 +203,7 @@ export async function bundleProd({ cwd, publicDir, out, sourcemap, profile, npmC
 			}),
 			htmlEntriesPlugin({ cwd, publicDir, publicPath: '/' }),
 			publicPathPlugin({ publicPath: '/' }),
+			aliasesPlugin({ aliases }),
 			htmPlugin(),
 			wmrStylesPlugin({ hot: false, cwd }),
 			wmrPlugin({ hot: false }),
@@ -208,6 +213,7 @@ export async function bundleProd({ cwd, publicDir, out, sourcemap, profile, npmC
 				extensions: ['.js', '.cjs', ''],
 				include: /^[\b]npm\//
 			}),
+			processGlobalPlugin(),
 			json(),
 			npmPlugin({ external: false }),
 			minifyCssPlugin({ sourcemap })

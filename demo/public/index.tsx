@@ -8,6 +8,7 @@ import Header from './header.tsx';
 // import './style.css';
 
 const About = lazy(() => import('./pages/about/index.js'));
+const CompatPage = lazy(() => import('./pages/compat.js'));
 
 export function App() {
 	return (
@@ -17,6 +18,7 @@ export function App() {
 				<Router>
 					<Home path="/" />
 					<About path="/about" />
+					<CompatPage path="/compat" />
 					<NotFound default />
 				</Router>
 			</div>

@@ -34,6 +34,8 @@ export function createPluginContainer(plugins, opts = {}) {
 	let ids = 0;
 	let files = new Map();
 
+	let watchFiles = new Set();
+
 	let plugin;
 	let parser = Parser;
 	const ctx = {
@@ -55,6 +57,20 @@ export function createPluginContainer(plugins, opts = {}) {
 				...opts
 			});
 		},
+		async resolve(id, importer) {
+			let out = await container.resolveId(id, importer);
+			if (typeof out === 'string') out = { id: out };
+			if (!out || !out.id) {
+				if (id && id.match(/^\.\.?[/\\]/)) {
+					if (importer && importer.match(/^\.\.?[/\\]/)) {
+						id = posix.resolve(importer, id);
+					}
+					id = posix.resolve(opts.cwd || '.', id);
+					out = { id };
+				}
+			}
+			return out || false;
+		},
 		getModuleInfo(id) {
 			let mod = MODULES.get(id);
 			if (mod) return mod.info;
@@ -73,6 +89,9 @@ export function createPluginContainer(plugins, opts = {}) {
 			else fs.writeFile(filename, source);
 			return id;
 		},
+		addWatchFile(id) {
+			watchFiles.add(id);
+		},
 		warn(...args) {
 			console.log(`[${plugin.name}]`, ...args);
 		}
@@ -81,7 +100,10 @@ export function createPluginContainer(plugins, opts = {}) {
 	const container = {
 		ctx,
 
-		/** @type {OmitThisParameter<import('rollup').PluginHooks['options']>} */
+		/**
+		 * @todo this is now an async series hook in rollup, need to find a way to allow for that here.
+		 * @type {OmitThisParameter<import('rollup').PluginHooks['options']>}
+		 */
 		options(options) {
 			for (plugin of plugins) {
 				if (!plugin.options) continue;
@@ -91,6 +113,27 @@ export function createPluginContainer(plugins, opts = {}) {
 				parser = Parser.extend(...[].concat(options.acornInjectPlugins));
 			}
 			return options;
+		},
+
+		/** @param {object} options */
+		async buildStart() {
+			await Promise.all(
+				plugins.map(plugin => {
+					if (plugin.buildStart) {
+						plugin.buildStart.call(ctx, ctx.options);
+					}
+				})
+			);
+		},
+
+		/** @param {string} id */
+		watchChange(id) {
+			if (watchFiles.has(id)) {
+				for (plugin of plugins) {
+					if (!plugin.watchChange) continue;
+					plugin.watchChange.call(ctx, id);
+				}
+			}
 		},
 
 		/** @param {string} property */

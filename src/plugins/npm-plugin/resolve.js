@@ -57,7 +57,9 @@ export async function resolveModule(path, { readFile, hasFile, module }) {
 
 /** Get the best possible entry from a package.json that doesn't have an Export Map */
 function getLegacyEntry(pkg) {
-	const entry = String(pkg.esmodules || pkg.modern || pkg.module || pkg['jsnext:main'] || pkg.browser || pkg.main);
+	const entry = String(
+		pkg.esmodules || pkg.modern || pkg.module || pkg['jsnext:main'] || pkg.browser || pkg.main || 'index.js'
+	);
 	return entry.replace(/^\/?/, '/');
 }
 

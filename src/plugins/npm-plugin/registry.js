@@ -25,7 +25,7 @@ import sizeWarningPlugin from './size-warning-plugin.js';
  */
 
 /** Files that should be included when storing packages */
-const FILES_INCLUDE = /\.(js|mjs|cjs|json|ts)$/i;
+const FILES_INCLUDE = /\.(js|mjs|cjs|json|tsx?|css)$/i;
 
 /** Files that should always be ignored when storing packages */
 const FILES_EXCLUDE = /([._-]test\.|__tests?|\/tests?\/|\/node_modules\/)/i;

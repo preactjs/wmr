@@ -2,12 +2,14 @@ import { resolve, join } from 'path';
 import { promises as fs } from 'fs';
 
 /**
- * @template {{ cwd?: string, out?: string, overlayDir?: string }} T
+ * @template {{ cwd?: string, root?: string, out?: string, overlayDir?: string, aliases?: Record<string, string> }} T
  * @param {T} options
  * @returns {Promise<T>}
  */
 export async function normalizeOptions(options) {
 	options.cwd = resolve(options.cwd || '');
+
+	options.root = options.cwd;
 
 	// Output directory is relative to CWD *before* ./public is detected + appended:
 	options.out = resolve(options.cwd, options.out || '.dist');
@@ -28,6 +30,10 @@ export async function normalizeOptions(options) {
 	try {
 		await ensureOutDirPromise;
 	} catch (err) {}
+
+	const pkgFile = resolve(options.root, 'package.json');
+	const pkg = fs.readFile(pkgFile, 'utf-8').then(JSON.parse);
+	options.aliases = (await pkg.catch(() => ({}))).aliases || {};
 
 	return options;
 }
