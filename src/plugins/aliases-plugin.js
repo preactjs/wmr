@@ -18,8 +18,8 @@ export default function aliasesPlugin({ aliases } = {}) {
 			console.error('[aliases] Failed to load package.json from ' + pkgFilename);
 		}
 		if (json) {
-			for (let i in aliases) if (!json.aliases || !(i in json.aliases)) delete aliases[i];
-			if (json.aliases) for (let i in json.aliases) aliases[i] = json.aliases[i];
+			for (let i in aliases) if (!json.alias || !(i in json.alias)) delete aliases[i];
+			if (json.alias) for (let i in json.alias) aliases[i] = json.alias[i];
 		}
 		aliasesLoaded = null;
 	}

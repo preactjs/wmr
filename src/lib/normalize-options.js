@@ -33,7 +33,7 @@ export async function normalizeOptions(options) {
 
 	const pkgFile = resolve(options.root, 'package.json');
 	const pkg = fs.readFile(pkgFile, 'utf-8').then(JSON.parse);
-	options.aliases = (await pkg.catch(() => ({}))).aliases || {};
+	options.aliases = (await pkg.catch(() => ({}))).alias || {};
 
 	return options;
 }
