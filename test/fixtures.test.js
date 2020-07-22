@@ -19,6 +19,12 @@ describe('fixtures', () => {
 		instance.close();
 	});
 
+	it('should error without an index.html file', async () => {
+		await loadFixture('erroneous', env);
+		instance = await runWmr(env.tmp.path);
+		expect(instance.output[0]).toMatch(/You are missing an "index.html" file/);
+	});
+
 	it('should listen on port', async () => {
 		await loadFixture('empty', env);
 		instance = await runWmr(env.tmp.path);

@@ -16,49 +16,55 @@ import { setCwd } from './plugins/npm-plugin/registry.js';
  * @param {Parameters<server>[0] & Parameters<bundleDev>[0] & OtherOptions} options
  */
 export default async function start(options = {}) {
-	// @todo remove this hack once registry.js is instantiable
-	setCwd(options.cwd);
+	try {
+		// @todo remove this hack once registry.js is instantiable
+		setCwd(options.cwd);
 
-	options = await normalizeOptions(options);
+		options = await normalizeOptions(options);
 
-	if (options.prebuild) {
-		bundleDev({
-			...options,
-			onError: sendError,
-			onBuild: sendChanges
-		});
-	} else {
-		options.middleware = [
-			wmrMiddleware({
+		if (options.prebuild) {
+			bundleDev({
 				...options,
 				onError: sendError,
-				onChange: sendChanges
-			})
-		];
-	}
-
-	function sendError(err) {
-		if (app.ws.clients.size > 0) {
-			app.ws.broadcast({
-				type: 'error',
-				error: err.clientMessage || err.message
+				onBuild: sendChanges
 			});
 		} else {
-			const message = /^Error/.test(err.message) ? err.message : err + '';
-			console.error(message);
+			options.middleware = [
+				wmrMiddleware({
+					...options,
+					onError: sendError,
+					onChange: sendChanges
+				})
+			];
 		}
-	}
 
-	function sendChanges({ changes }) {
-		app.ws.broadcast({
-			type: 'update',
-			changes
-		});
-	}
+		// eslint-disable-next-line
+		function sendError(err) {
+			if (app.ws.clients.size > 0) {
+				app.ws.broadcast({
+					type: 'error',
+					error: err.clientMessage || err.message
+				});
+			} else {
+				const message = /^Error/.test(err.message) ? err.message : err + '';
+				console.error(message);
+			}
+		}
 
-	const app = await server(options);
-	const port = await getFreePort(options.port || process.env.PORT || 8080);
-	const host = options.host || process.env.HOST;
-	app.listen(port, host);
-	console.log(getServerAddresses(app.server.address(), { https: app.http2 }));
+		// eslint-disable-next-line
+		function sendChanges({ changes }) {
+			app.ws.broadcast({
+				type: 'update',
+				changes
+			});
+		}
+
+		const app = await server(options);
+		const port = await getFreePort(options.port || process.env.PORT || 8080);
+		const host = options.host || process.env.HOST;
+		app.listen(port, host);
+		console.log(getServerAddresses(app.server.address(), { https: app.http2 }));
+	} catch (e) {
+		console.error(e.message);
+	}
 }
