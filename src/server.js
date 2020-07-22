@@ -1,6 +1,5 @@
 import { resolve } from 'path';
 import { createServer } from 'http';
-import { createHttp2Server } from './lib/http2.js';
 import polka from 'polka';
 import sirv from 'sirv';
 import compression from './lib/polkompress.js';
@@ -39,6 +38,7 @@ export default async function server({ cwd, overlayDir, middleware, http2 = fals
 
 	if (http2) {
 		try {
+			const { createHttp2Server } = await import('./lib/http2.js');
 			app.server = await createHttp2Server();
 			app.http2 = true;
 		} catch (e) {

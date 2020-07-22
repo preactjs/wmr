@@ -10,9 +10,11 @@ import terser from 'terser';
 /** @type {import('rollup').RollupOptions} */
 const config = {
 	input: 'src/cli.js',
-	inlineDynamicImports: true,
+	preserveEntrySignatures: false,
 	output: {
-		file: 'wmr.cjs',
+		dir: '.',
+		entryFileNames: 'wmr.cjs',
+		chunkFileNames: 'wmr.[name].cjs',
 		format: 'cjs',
 		compact: true,
 		freeze: false,
