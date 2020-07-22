@@ -80,6 +80,11 @@ export default function wmrMiddleware({ cwd, root, out = '.dist', distDir = 'dis
 		if (/\.module\.css$/.test(filename)) WRITE_CACHE.delete(filename + '.js');
 	});
 
+	/**
+	 * @param {IncomingMessage} req
+	 * @param {ServerResponse} res
+	 * @param {() => void} next
+	 */
 	return async (req, res, next) => {
 		// @ts-ignore
 		const path = posix.normalize(req.path);
