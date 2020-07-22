@@ -93,7 +93,24 @@ export default function wmrMiddleware({ cwd, root, out = '.dist', distDir = 'dis
 			return next();
 		}
 
-		const file = posix.join(cwd, path);
+		let file = posix.join(cwd, path);
+
+		// As of the time of this writing TS doesn't support import paths ending with
+		// ".tsx" or ".ts". We work around this by appending the extension when we
+		// know that the import came from a ts/tsx file.
+		// See #71
+		if (/\.([tj]sx?)$/.test(req.headers.referer || '') && !/\.\w{2,}$/.test(path)) {
+			const extensions = ['.tsx', '.ts'];
+			for (let i = 0; i < extensions.length; i++) {
+				try {
+					await fs.readFile(file + extensions[i]);
+					file += extensions[i];
+					break;
+				} catch (err) {
+					// File doesn't exist
+				}
+			}
+		}
 
 		// Rollup-style CWD-relative path "id"
 		const id = posix.relative(cwd, file).replace(/^\.\//, '');
