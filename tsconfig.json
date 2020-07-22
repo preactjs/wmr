@@ -5,6 +5,7 @@
 		"allowJs": true,
 		"checkJs": true,
 		"noEmit": true,
+		"module": "ES2020",
 		"moduleResolution": "node",
 		"allowSyntheticDefaultImports": true,
 		"downlevelIteration": true,
