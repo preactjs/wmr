@@ -3,9 +3,8 @@ import zlib from 'zlib';
 import terser from 'terser';
 import { dirname } from 'path';
 
-// 1 minute
-// @TODO: this could actually be indefinite, since cache keys are deterministic (version+path).
-const CACHE_TTL = 60000;
+// TODO: this could be indefinite, since cache keys are deterministic (version+path)
+const CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
 /**
  * @typedef Mem
