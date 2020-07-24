@@ -37,10 +37,12 @@ async function handleCss(meta, res) {
  * @param {object} [options]
  * @param {'npm'|'unpkg'} [options.source = 'npm'] How to fetch package files
  * @param {Record<string,string>} [options.aliases]
+ * @param {boolean} [options.optimize = true] Progressively minify and compress dependency bundles?
  * @returns {import('polka').Middleware}
  */
-export default function npmMiddleware({ source = 'npm', aliases } = {}) {
+export default function npmMiddleware({ source = 'npm', aliases, optimize } = {}) {
 	return async (req, res, next) => {
+		// @ts-ignore
 		const mod = req.path.replace(/^\//, '');
 
 		try {
@@ -75,7 +77,9 @@ export default function npmMiddleware({ source = 'npm', aliases } = {}) {
 			setCachedBundle(etag, code, meta);
 
 			// this is a new bundle, we'll compress it with terser and brotli shortly
-			enqueueCompress(etag);
+			if (optimize !== false) {
+				enqueueCompress(etag);
+			}
 		} catch (e) {
 			console.error(`Error bundling ${mod}: `, e);
 			next(e);
@@ -119,12 +123,14 @@ async function bundleNpmModule(mod, { source, aliases }) {
 		plugins: [
 			aliasesPlugin({ aliases }),
 			npmProviderPlugin,
+			processGlobalPlugin({
+				NODE_ENV: 'development'
+			}),
 			commonjs({
-				// TODO: extensions[]?
+				extensions: ['.js', '.cjs', ''],
 				sourceMap: false,
 				transformMixedEsModules: true
 			}),
-			processGlobalPlugin(),
 			json(),
 			{
 				name: 'never-disk',
