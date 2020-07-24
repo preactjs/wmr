@@ -108,13 +108,15 @@ export function bundleDev({ cwd, out, sourcemap, aliases, onError, onBuild, prof
 			htmPlugin(),
 			wmrStylesPlugin({ hot: true, cwd }),
 			wmrPlugin(),
+			processGlobalPlugin({
+				NODE_ENV: 'development'
+			}),
 			commonjs({
 				sourceMap: sourcemap,
 				transformMixedEsModules: false,
 				extensions: ['.js', '.cjs', ''],
 				include: /^[\b]npm\//
 			}),
-			processGlobalPlugin(),
 			// unpkgPlugin()
 			json(),
 			localNpmPlugin()
@@ -207,13 +209,15 @@ export async function bundleProd({ cwd, publicDir, out, sourcemap, aliases, prof
 			htmPlugin(),
 			wmrStylesPlugin({ hot: false, cwd }),
 			wmrPlugin({ hot: false }),
+			processGlobalPlugin({
+				NODE_ENV: 'production'
+			}),
 			commonjs({
 				sourceMap: sourcemap,
 				transformMixedEsModules: false,
 				extensions: ['.js', '.cjs', ''],
 				include: /^[\b]npm\//
 			}),
-			processGlobalPlugin(),
 			json(),
 			npmPlugin({ external: false }),
 			minifyCssPlugin({ sourcemap })
