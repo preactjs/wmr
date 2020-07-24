@@ -19,7 +19,9 @@ export async function normalizeOptions(options) {
 
 	// Ensure the output directory exists so that writeFile() doesn't have to create it:
 	// Note: awaiting the promise later lets it run in parallel with the CWD check below.
-	const ensureOutDirPromise = fs.mkdir(options.out, { recursive: true });
+	const ensureOutDirPromise = fs.mkdir(options.out, { recursive: true }).catch(err => {
+		console.warn(`Warning: Failed to create output directory: ${err.message}`);
+	});
 
 	// If the CWD has a public/ directory, all files are assumed to be within it.
 	// From here, everything except node_modules and `out` are relative to public:
@@ -27,9 +29,7 @@ export async function normalizeOptions(options) {
 		options.cwd = join(options.cwd, 'public');
 	}
 
-	try {
-		await ensureOutDirPromise;
-	} catch (err) {}
+	await ensureOutDirPromise;
 
 	const pkgFile = resolve(options.root, 'package.json');
 	const pkg = fs.readFile(pkgFile, 'utf-8').then(JSON.parse);
