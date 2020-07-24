@@ -22,6 +22,7 @@ prog
 	.option('--profile', 'Generate build statistics')
 	.option('--prebuild', 'Build modules at startup using Rollup')
 	.action(opts => {
+		opts.optimize = !/false|0/.test(opts.compress);
 		if (/true|false/.test(opts.compress)) opts.compress = opts.compress !== 'false';
 		if (/true/.test(process.env.PROFILE)) opts.profile = true;
 		start(opts);
