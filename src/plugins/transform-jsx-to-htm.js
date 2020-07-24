@@ -1,6 +1,6 @@
 export default function transformJsxToHtm({ types: t, template }) {
 	const isIdent = name => /(^[A-Z]|[.$])/.test(name);
-	const isRootElement = path => !t.isJSXElement(path.parentPath.parent);
+	const isRootElement = path => !t.isJSXElement(path.parentPath.parent) && !t.isJSXFragment(path.parentPath.parent);
 
 	return {
 		name: 'transform-jsx-to-htm',
@@ -97,6 +97,20 @@ export default function transformJsxToHtm({ types: t, template }) {
 			// <div>a</div> --> `<div>a</div>`
 			JSXText(path) {
 				path.replaceWithString(path.node.value);
+			},
+			JSXOpeningFragment(path) {
+				if (isRootElement(path)) {
+					path.replaceWithString('html`');
+				} else {
+					path.remove();
+				}
+			},
+			JSXClosingFragment(path) {
+				if (isRootElement(path)) {
+					path.replaceWithString('`');
+				} else {
+					path.remove();
+				}
 			}
 		}
 	};
