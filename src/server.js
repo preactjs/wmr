@@ -32,9 +32,16 @@ export default async function server({ cwd, overlayDir, middleware, http2, compr
 
 			// @ts-ignore
 			const code = typeof err.code === 'number' ? err.code : 500;
+
+			if (code === 404 && /text\/html/.test(req.headers.accept)) {
+				res.writeHead(404, { 'content-type': 'text/html' });
+				res.end('Not Found');
+				return;
+			}
+
 			res.writeHead(code, { 'content-type': 'text/plain' });
-			res.end(err + '');
-			console.error(err);
+			res.end(String((err && err.message) || err));
+			console.error(`${code} ${req.path}${err.message ? `: ${err}` : ''}`);
 		}
 	});
 
@@ -74,14 +81,10 @@ export default async function server({ cwd, overlayDir, middleware, http2, compr
 		sirv(cwd || '', {
 			ignores: ['@npm'],
 			single: true,
+			etag: true,
 			dev: true
 		})
 	);
-
-	// stub empty favicon
-	app.get('/favicon.ico', (req, res) => {
-		res.end('');
-	});
 
 	return app;
 }
