@@ -12,7 +12,7 @@ export async function normalizeOptions(options) {
 	options.root = options.cwd;
 
 	// Output directory is relative to CWD *before* ./public is detected + appended:
-	options.out = resolve(options.cwd, options.out || '.dist');
+	options.out = resolve(options.cwd, options.out || '.cache');
 
 	// Files in the output directory are served if no middleware overrides them:
 	options.overlayDir = options.out;
