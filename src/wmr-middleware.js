@@ -100,16 +100,14 @@ export default function wmrMiddleware({ cwd, root, out = '.dist', distDir = 'dis
 		// know that the import came from a ts/tsx file.
 		// See #71
 		if (/\.([tj]sx?)$/.test(req.headers.referer || '') && !/\.\w{2,}$/.test(path)) {
-			const extensions = ['.tsx', '.ts'];
-			for (let i = 0; i < extensions.length; i++) {
-				try {
-					await fs.readFile(file + extensions[i]);
-					file += extensions[i];
-					break;
-				} catch (err) {
-					// File doesn't exist
-				}
-			}
+			const isCached = file => WRITE_CACHE.has(posix.relative(cwd, file).replace(/^\.\//, ''));
+			const isFile = file => fs.stat(file).then(s => s.isFile()).catch(() => false);
+
+			// check in-memory cache first, then check the disk:
+			if (isCached(file + '.tsx')) file += '.tsx';
+			else if (isCached(file + '.ts')) file += '.ts';
+			else if (await isFile(file + '.tsx')) file += '.tsx';
+			else if (await isFile(file + '.ts')) file += '.ts';
 		}
 
 		// Rollup-style CWD-relative path "id"
