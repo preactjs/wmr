@@ -18,10 +18,8 @@ async function handleCss(meta, res) {
 		type = '';
 	if (meta.path.endsWith('.js')) {
 		type = 'application/javascript';
-		code = `
-			import { style } from '/_wmr.js';
-			style(${JSON.stringify('/@npm/' + meta.specifier.replace(/\.js$/, ''))});
-		`;
+		const specifier = JSON.stringify('/@npm/' + meta.specifier.replace(/\.js$/, ''));
+		code = `import{style}from '/_wmr.js';\nstyle(${specifier});`;
 	} else {
 		type = 'text/css';
 		code = await loadPackageFile(meta);
@@ -49,17 +47,19 @@ export default function npmMiddleware({ source = 'npm', aliases, optimize } = {}
 			const meta = normalizeSpecifier(mod);
 			await resolvePackageVersion(meta);
 
+			// The package name + path + version is a strong ETag since versions are immutable
+			const etag = Buffer.from(`${meta.specifier}${meta.version}`).toString('base64');
+			const ifNoneMatch = String(req.headers['if-none-match']).replace(/-(gz|br)$/g, '');
+			if (ifNoneMatch === etag) {
+				return res.writeHead(304).end();
+			}
+			res.setHeader('etag', etag);
+
 			// CSS files and proxy modules don't use Rollup.
 			if (meta.path.match(/\.css(\.js)?$/)) {
 				return handleCss(meta, res);
 			}
 
-			// The package name + path + version is a strong ETag since versions are immutable
-			const etag = Buffer.from(`${meta.specifier}${meta.version}`).toString('base64');
-			if (req.headers['if-none-match'] === etag) {
-				return res.writeHead(304).end();
-			}
-			res.setHeader('etag', etag);
 			res.setHeader('content-type', 'application/javascript');
 
 			// serve from memory and disk caches:
