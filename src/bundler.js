@@ -1,4 +1,5 @@
-import { relative, sep, posix, resolve, dirname } from 'path';
+import { relative, resolve, join, posix } from 'path';
+import { promises as fs } from 'fs';
 import * as rollup from 'rollup';
 import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
@@ -17,6 +18,7 @@ import htmlEntriesPlugin from './plugins/html-entries-plugin.js';
 import glob from 'tiny-glob';
 import aliasesPlugin from './plugins/aliases-plugin.js';
 import processGlobalPlugin from './plugins/process-global-plugin.js';
+import urlPlugin from './plugins/url-plugin.js';
 
 /** @param {string} p */
 const pathToPosix = p => p.split(sep).join(posix.sep);
@@ -119,7 +121,8 @@ export function bundleDev({ cwd, out, sourcemap, aliases, onError, onBuild, prof
 			}),
 			// unpkgPlugin()
 			json(),
-			localNpmPlugin()
+			localNpmPlugin(),
+			urlPlugin()
 		].filter(Boolean)
 	});
 
@@ -220,7 +223,8 @@ export async function bundleProd({ cwd, publicDir, out, sourcemap, aliases, prof
 			}),
 			json(),
 			npmPlugin({ external: false }),
-			minifyCssPlugin({ sourcemap })
+			minifyCssPlugin({ sourcemap }),
+			urlPlugin()
 		]
 	});
 
