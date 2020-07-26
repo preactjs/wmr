@@ -18,9 +18,9 @@ export default function urlPlugin(options = {}) {
 			if (!id.startsWith('url:')) return;
 			id = id.slice(4);
 
+			const fileId = this.emitFile({ type: 'asset', name: posix.basename(id) });
 			this.addWatchFile(id);
-			const source = await fs.readFile(id);
-			const fileId = this.emitFile({ type: 'asset', name: posix.basename(id), source });
+			fs.readFile(id).then(source => this.setAssetSource(fileId, source));
 			return `export default import.meta.ROLLUP_FILE_URL_${fileId}`;
 		}
 	};
