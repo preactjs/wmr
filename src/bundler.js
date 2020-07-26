@@ -1,5 +1,4 @@
-import { relative, resolve, join, posix } from 'path';
-import { promises as fs } from 'fs';
+import { relative, sep, posix, resolve, dirname } from 'path';
 import * as rollup from 'rollup';
 import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
