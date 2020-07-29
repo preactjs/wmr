@@ -28,7 +28,7 @@ export default async function server({ cwd, overlayDir, middleware, http2, compr
 	try {
 		await fs.access(posix.resolve(cwd, 'index.html'));
 	} catch (e) {
-		throw new Error(`You are missing an "index.html" file in "${cwd}".`);
+		process.stderr.write(`\u001b[33mWarning: missing "index.html" file \u001b[33;2m(in ${cwd})\u001b[0m\n`);
 	}
 
 	/** @type {CustomServer} */
