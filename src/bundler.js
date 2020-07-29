@@ -48,10 +48,22 @@ const pathToPosix = p => p.split(sep).join(posix.sep);
  * @TODO Refactor to return a customized bundleProd() return value,
  *       to make bundled development mode more useful and reduce complexity.
  */
-export function bundleDev({ cwd, out, sourcemap, aliases, onError, onBuild, profile }) {
+export async function bundleDev({ cwd, publicDir, out, sourcemap, aliases, onError, onBuild, profile }) {
 	cwd = cwd || '';
 	const changedFiles = new Set();
-	const input = './' + posix.relative('.', posix.join(cwd, 'index.js'));
+
+	const htmlFiles = await glob('**/*.html', {
+		cwd,
+		absolute: true,
+		filesOnly: true
+	});
+
+	// note: we intentionally pass these to Rollup as posix paths
+	const input = htmlFiles.filter(p => !p.startsWith(out)).map(p => './' + pathToPosix(relative('.', p)));
+
+	if (input.length === 0) {
+		throw Error(`Can't bundle: no HTML files found (in ${cwd})`);
+	}
 
 	const watcher = rollup.watch({
 		input, //'./' + join(cwd, 'index.js'),
@@ -89,6 +101,7 @@ export function bundleDev({ cwd, out, sourcemap, aliases, onError, onBuild, prof
 			return filename.replace(/(^[\\/]|\.([cm]js|[tj]sx?)$)/gi, '');
 		},
 		plugins: [
+			htmlEntriesPlugin({ cwd, publicDir, publicPath: '/' }),
 			sucrasePlugin({
 				typescript: true,
 				sourcemap,

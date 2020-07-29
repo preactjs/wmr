@@ -22,7 +22,7 @@ export default async function start(options = {}) {
 	options = await normalizeOptions(options);
 
 	if (options.prebuild) {
-		bundleDev({
+		await bundleDev({
 			...options,
 			onError: sendError,
 			onBuild: sendChanges
@@ -37,6 +37,7 @@ export default async function start(options = {}) {
 		];
 	}
 
+	// eslint-disable-next-line
 	function sendError(err) {
 		if (app.ws.clients.size > 0) {
 			app.ws.broadcast({
@@ -49,6 +50,7 @@ export default async function start(options = {}) {
 		}
 	}
 
+	// eslint-disable-next-line
 	function sendChanges({ changes }) {
 		app.ws.broadcast({
 			type: 'update',
@@ -60,5 +62,6 @@ export default async function start(options = {}) {
 	const port = await getFreePort(options.port || process.env.PORT || 8080);
 	const host = options.host || process.env.HOST;
 	app.listen(port, host);
-	console.log(getServerAddresses(app.server.address(), { https: app.http2 }));
+	const addresses = getServerAddresses(app.server.address(), { https: app.http2 });
+	process.stdout.write(`\u001b[36mListening on ${addresses}\u001b[0m\n`);
 }

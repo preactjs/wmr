@@ -1,4 +1,5 @@
-import { resolve } from 'path';
+import { posix } from 'path';
+import { promises as fs } from 'fs';
 import { createServer } from 'http';
 import { createHttp2Server } from './lib/http2.js';
 import polka from 'polka';
@@ -24,6 +25,12 @@ import WebSocketServer from './lib/websocket-server.js';
  * @param {Record<string, string>} [options.aliases] module aliases
  */
 export default async function server({ cwd, overlayDir, middleware, http2, compress = true, optimize, aliases } = {}) {
+	try {
+		await fs.access(posix.resolve(cwd, 'index.html'));
+	} catch (e) {
+		process.stderr.write(`\u001b[33mWarning: missing "index.html" file \u001b[33;2m(in ${cwd})\u001b[0m\n`);
+	}
+
 	/** @type {CustomServer} */
 	const app = polka({
 		onError(err, req, res) {
@@ -73,7 +80,7 @@ export default async function server({ cwd, overlayDir, middleware, http2, compr
 	}
 
 	if (overlayDir) {
-		app.use(sirv(resolve(cwd || '', overlayDir), { dev: true }));
+		app.use(sirv(posix.resolve(cwd || '', overlayDir), { dev: true }));
 	}
 
 	// SPA nav fallback
