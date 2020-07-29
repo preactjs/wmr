@@ -48,28 +48,25 @@ export async function runWmr(cwd, ...args) {
 		close: () => child.kill()
 	};
 
-	child.stdout.on('data', buffer => {
-		const raw = buffer.toString('utf-8');
-		const lines = raw.split('\n');
+	function onOutput(buffer) {
+		const raw = stripColors(buffer.toString('utf-8'));
+		const lines = raw.split('\n').filter(line => !/\(node:\d+\) ExperimentalWarning:/.test(line) && line);
 		out.output.push(...lines);
 		if (/\b([A-Z][a-z]+)?Error\b/m.test(raw)) {
 			console.error(`Error running "wmr ${args.join(' ')}":\n${raw}`);
 		}
-	});
-	child.stderr.on('data', buffer => {
-		const raw = buffer.toString('utf-8');
-		const lines = raw.split('\n');
-		out.output.push(...lines);
-		if (/\b([A-Z][a-z]+)?Error\b/m.test(raw)) {
-			console.error(`Error running "wmr ${args.join(' ')}":\n${raw}`);
-		}
-	});
+	}
+	child.stdout.on('data', onOutput);
+	child.stderr.on('data', onOutput);
 	child.on('close', code => (out.code = code));
 
 	await waitFor(() => out.output.length > 0, 10000);
 
 	return out;
 }
+
+// eslint-disable-next-line no-control-regex
+const stripColors = str => str.replace(/\x1b\[(?:[0-9]{1,3}(?:;[0-9]{1,3})*)?[m|K]/g, '');
 
 /**
  * @param {number} ms

@@ -62,5 +62,6 @@ export default async function start(options = {}) {
 	const port = await getFreePort(options.port || process.env.PORT || 8080);
 	const host = options.host || process.env.HOST;
 	app.listen(port, host);
-	console.log(getServerAddresses(app.server.address(), { https: app.http2 }));
+	const addresses = getServerAddresses(app.server.address(), { https: app.http2 });
+	process.stdout.write(`\u001b[36mListening on ${addresses}\u001b[0m\n`);
 }

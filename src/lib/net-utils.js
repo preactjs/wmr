@@ -42,7 +42,7 @@ export async function getFreePort(port) {
  */
 export function getServerAddresses(addr, { https = false } = {}) {
 	if (typeof addr === 'string') {
-		return `Listening on ${addr}`;
+		return addr;
 	}
 
 	const protocol = https ? 'https:' : 'http:';
@@ -61,7 +61,7 @@ export function getServerAddresses(addr, { https = false } = {}) {
 		}
 	}
 
-	let out = `Listening on ${protocol}//${host}:${port}`;
+	let out = `${protocol}//${host}:${port}`;
 	if (addresses.length) {
 		out += `\n  ⌙ ${addresses.join(', ')}`;
 	}

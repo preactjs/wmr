@@ -11,7 +11,7 @@ prog
 	.option('--out', 'Where to store generated files (default: ./dist)')
 	.command('build', 'make a production build')
 	.action(opts => {
-		build(opts);
+		run(build(opts));
 	})
 	.command('start', 'Start a development server', { default: true })
 	.option('--port, -p', 'HTTP port to listen on (default: $PORT or 8080)')
@@ -25,7 +25,15 @@ prog
 		opts.optimize = !/false|0/.test(opts.compress);
 		if (/true|false/.test(opts.compress)) opts.compress = opts.compress !== 'false';
 		if (/true/.test(process.env.PROFILE)) opts.profile = true;
-		start(opts);
+		run(start(opts));
 	});
 
 prog.parse(process.argv);
+
+function run(p) {
+	p.catch(err => {
+		const text = (process.env.DEBUG ? err.stack : err.message) || err + '';
+		process.stderr.write(`\u001b[31m${text}\u001b[0m\n`);
+		process.exit(p.code || 1);
+	});
+}
