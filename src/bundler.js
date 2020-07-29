@@ -26,7 +26,7 @@ const pathToPosix = p => p.split(sep).join(posix.sep);
  * @typedef {Object} BuildOptions
  * @property {string} [cwd = '']
  * @property {string} [publicDir = '']
- * @property {string} [out = '.dist']
+ * @property {string} [out = '.cache']
  * @property {boolean} [sourcemap]
  * @property {Record<string, string>} [aliases] module aliases
  * @property {boolean} [profile] Enable bundler performance profiling

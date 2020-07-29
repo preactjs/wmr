@@ -11,7 +11,7 @@ import { transformImports } from './lib/transform-imports.js';
 import aliasesPlugin from './plugins/aliases-plugin.js';
 
 /**
- * In-memory cache of files that have been generated and written to .dist/
+ * In-memory cache of files that have been generated and written to .cache/
  * @type {Map<string, string | Buffer>}
  */
 const WRITE_CACHE = new Map();
@@ -20,7 +20,7 @@ const WRITE_CACHE = new Map();
  * @param {object} [options]
  * @param {string} [options.cwd]
  * @param {string} [options.root] cwd without ./public suffix
- * @param {string} [options.out = '.dist']
+ * @param {string} [options.out = '.cache']
  * @param {string} [options.distDir] if set, ignores watch events within this directory
  * @param {boolean} [options.sourcemap]
  * @param {Record<string, string>} [options.aliases]
@@ -29,7 +29,15 @@ const WRITE_CACHE = new Map();
  * @param {(event: { changes: string[], duration: number })=>void} [options.onChange]
  * @returns {import('polka').Middleware}
  */
-export default function wmrMiddleware({ cwd, root, out = '.dist', distDir = 'dist', aliases, onError, onChange } = {}) {
+export default function wmrMiddleware({
+	cwd,
+	root,
+	out = '.cache',
+	distDir = 'dist',
+	aliases,
+	onError,
+	onChange
+} = {}) {
 	cwd = resolve(process.cwd(), cwd || '.');
 	distDir = resolve(dirname(out), distDir);
 
