@@ -82,7 +82,15 @@ export default function wmrMiddleware({ cwd, root, out = '.dist', distDir = 'dis
 
 	return async (req, res, next) => {
 		// @ts-ignore
-		const path = posix.normalize(req.path);
+		let path = posix.normalize(req.path);
+
+		if ((await fs.lstat(path)).isDirectory()) {
+			if ((await fs.lstat(`${cwd}/200.html`)).isFile()) {
+				path = `${cwd}/200.html`;
+			} else if ((await fs.lstat(`${cwd}/index.html`)).isFile()) {
+				path = `${cwd}/index.html`;
+			}
+		}
 
 		if (path.startsWith('/@npm/')) {
 			return next();
