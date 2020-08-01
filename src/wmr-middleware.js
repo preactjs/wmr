@@ -1,5 +1,5 @@
 import { resolve, dirname, sep, posix } from 'path';
-import { promises as fs } from 'fs';
+import { promises as fs, fs as syncFS } from 'fs';
 import chokidar from 'chokidar';
 import mime from 'mime/lite.js';
 import htmPlugin from './plugins/htm-plugin.js';
@@ -85,9 +85,9 @@ export default function wmrMiddleware({ cwd, root, out = '.dist', distDir = 'dis
 		let path = posix.normalize(req.path);
 
 		if ((await fs.lstat(path)).isDirectory()) {
-			if ((await fs.lstat(`${cwd}/200.html`)).isFile()) {
+			if (syncFS.existsSync(`${cwd}/200.html`)) {
 				path = `${cwd}/200.html`;
-			} else if ((await fs.lstat(`${cwd}/index.html`)).isFile()) {
+			} else if (syncFS.existsSync(`${cwd}/index.html`)) {
 				path = `${cwd}/index.html`;
 			}
 		}
