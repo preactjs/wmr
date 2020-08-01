@@ -1,5 +1,5 @@
 import { resolve, dirname, sep, posix } from 'path';
-import { promises as fs, fs as syncFS } from 'fs';
+import syncFS, { promises as fs } from 'fs';
 import chokidar from 'chokidar';
 import mime from 'mime/lite.js';
 import htmPlugin from './plugins/htm-plugin.js';
