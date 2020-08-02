@@ -1,12 +1,14 @@
 import { parse } from 'es-module-lexer/dist/lexer.js';
 
+/** @template T @typedef {Promise<T>|T} MaybePromise */
+
 /**
  * @param {string} code Module code
  * @param {string} id Source module specifier
  * @param {object} [options]
- * @param {(specifier: string) => string|null|false} [options.resolveImportMeta] Replace `import.meta.FIELD` with a JS string. Return `false`/`null` preserve.
- * @param {(specifier: string, id?: string) => string|null|false} [options.resolveId] Return a replacement for import specifiers
- * @param {(specifier: string, id?: string) => string|null|false} [options.resolveDynamicImport] `false` preserves, `null` falls back to resolveId()
+ * @param {(specifier: string) => MaybePromise<string|null|false>} [options.resolveImportMeta] Replace `import.meta.FIELD` with a JS string. Return `false`/`null` preserve.
+ * @param {(specifier: string, id?: string) => MaybePromise<string|null|false>} [options.resolveId] Return a replacement for import specifiers
+ * @param {(specifier: string, id?: string) => MaybePromise<string|null|false>} [options.resolveDynamicImport] `false` preserves, `null` falls back to resolveId()
  */
 export async function transformImports(code, id, { resolveImportMeta, resolveId, resolveDynamicImport } = {}) {
 	const [imports] = await parse(code, id);
@@ -49,7 +51,8 @@ export async function transformImports(code, id, { resolveImportMeta, resolveId,
 				spec += match[0];
 				// resolve it:
 				const property = match[1];
-				spec = (resolveImportMeta && resolveImportMeta(property)) || spec;
+				const resolved = resolveImportMeta && (await resolveImportMeta(property));
+				spec = resolved || spec;
 			}
 			out += spec;
 			continue;
@@ -74,14 +77,14 @@ export async function transformImports(code, id, { resolveImportMeta, resolveId,
 			spec = spec.replace(/^\s*(['"`])(.*)\1\s*$/g, '$2');
 
 			// Falls through to resolveId() if null, preserves spec if false.
-			const resolved = resolveDynamicImport && resolveDynamicImport(spec, id);
+			const resolved = resolveDynamicImport && (await resolveDynamicImport(spec, id));
 			if (resolved != null) {
 				out += quote + (resolved || spec) + quote + after;
 				continue;
 			}
 		}
 
-		const resolved = resolveId && resolveId(spec, id);
+		const resolved = resolveId && (await resolveId(spec, id));
 		if (resolved) {
 			spec = resolved;
 		}

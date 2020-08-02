@@ -52,9 +52,22 @@ export default function wmrMiddleware({
 			}),
 			aliasesPlugin({ aliases }),
 			htmPlugin(),
-			wmrPlugin({ hot: true })
+			wmrPlugin({ hot: true }),
+			{
+				name: 'direct-asset-urls',
+				resolveFileUrl({ fileName }) {
+					return JSON.stringify(`/${fileName}?asset`);
+				}
+			}
 		],
-		{ cwd: root }
+		{
+			cwd,
+			writeFile: (filename, source) => writeCacheFile(out, filename, source),
+			output: {
+				// assetFileNames: '@asset/[name][extname]',
+				dir: out
+			}
+		}
 	);
 
 	NonRollup.buildStart();
@@ -90,16 +103,28 @@ export default function wmrMiddleware({
 
 	return async (req, res, next) => {
 		// @ts-ignore
-		const path = posix.normalize(req.path);
+		let path = posix.normalize(req.path);
+
+		const queryParams = new URL(req.url, 'file://').searchParams;
 
 		if (path.startsWith('/@npm/')) {
 			return next();
 		}
 
-		const file = posix.join(cwd, path);
+		let prefix = '';
+		const prefixMatches = path.match(/^\/?@([a-z-]+)\/(.+)$/);
+		if (prefixMatches) {
+			prefix = '\0' + prefixMatches[1] + ':';
+			path = prefixMatches[2];
+		}
+
+		let file = posix.join(cwd, path);
 
 		// Rollup-style CWD-relative path "id"
-		const id = posix.relative(cwd, file).replace(/^\.\//, '');
+		let id = posix.relative(cwd, file).replace(/^\.\//, '');
+
+		file = prefix + file;
+		id = prefix + id;
 
 		const type = mime.getType(file);
 		if (type) res.setHeader('content-type', type);
@@ -109,6 +134,10 @@ export default function wmrMiddleware({
 		let transform;
 		if (path === '/_wmr.js') {
 			transform = getWmrClient.bind(null);
+		} else if (queryParams.has('asset')) {
+			transform = TRANSFORMS.asset;
+			// } else if (prefix) {
+			// 	transform = TRANSFORMS.prefix;
 		} else if (/\.css\.js$/.test(file)) {
 			transform = TRANSFORMS.cssModule;
 		} else if (/\.([mc]js|[tj]sx?)$/.test(file)) {
@@ -147,13 +176,27 @@ export default function wmrMiddleware({
 }
 
 export const TRANSFORMS = {
+	// Handle direct asset requests (/foo?asset)
+	async asset({ file }) {
+		return await fs.readFile(file);
+	},
+
 	// Handle individual JavaScript modules
+	/** @param {object} opts @param {ReturnType<createPluginContainer>} [opts.NonRollup] */
 	async js({ id, file, res, cwd, out, NonRollup }) {
 		res.setHeader('content-type', 'application/javascript');
 
-		if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
+		const cacheKey = id.replace(/^[\0\b]/, '');
 
-		let code = await fs.readFile(resolve(cwd, file), 'utf-8');
+		if (WRITE_CACHE.has(cacheKey)) return WRITE_CACHE.get(cacheKey);
+
+		const result = await NonRollup.load(file);
+
+		let code = (result && result.code) || result;
+
+		if (code == null || code === false) {
+			code = await fs.readFile(resolve(cwd, file), 'utf-8');
+		}
 
 		code = await NonRollup.transform(code, id);
 
@@ -161,8 +204,22 @@ export const TRANSFORMS = {
 			resolveImportMeta(property) {
 				return NonRollup.resolveImportMeta(property);
 			},
-			resolveId(spec, importer) {
+			async resolveId(spec, importer) {
 				if (spec === 'wmr') return '/_wmr.js';
+
+				const resolved = await NonRollup.resolveId(spec, importer);
+				if (resolved) {
+					spec = (resolved && resolved.id) || resolved;
+					if (resolved && resolved.external) {
+						if (!/^(\/|[\w-]+:)/.test(spec)) spec = `/${spec}`;
+						return spec;
+					}
+				}
+
+				// \0abc:./x --> /@abc/x
+				spec = spec.replace(/^\0?([a-z-]+):(.+)$/, (s, prefix, spec) => {
+					return '/@' + prefix + '/' + posix.relative(cwd, spec);
+				});
 
 				// foo.css --> foo.css.js (import of CSS Modules proxy module)
 				if (spec.endsWith('.css')) spec += '.js';
@@ -174,7 +231,7 @@ export const TRANSFORMS = {
 			}
 		});
 
-		writeCacheFile(out, id, code);
+		writeCacheFile(out, cacheKey, code);
 
 		return code;
 	},
