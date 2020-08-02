@@ -9,6 +9,7 @@ import wmrStylesPlugin, { modularizeCss } from './plugins/wmr/styles-plugin.js';
 import { createPluginContainer } from './lib/rollup-plugin-container.js';
 import { transformImports } from './lib/transform-imports.js';
 import aliasesPlugin from './plugins/aliases-plugin.js';
+import urlPlugin from './plugins/url-plugin.js';
 
 /**
  * In-memory cache of files that have been generated and written to .cache/
@@ -45,6 +46,7 @@ export default function wmrMiddleware({
 
 	const NonRollup = createPluginContainer(
 		[
+			urlPlugin({ cwd }),
 			sucrasePlugin({
 				typescript: true,
 				sourcemap: false,
