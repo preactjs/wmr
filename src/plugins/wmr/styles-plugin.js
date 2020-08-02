@@ -9,6 +9,9 @@ import { basename, dirname, relative, resolve, sep, posix } from 'path';
  * @returns {string}
  */
 export function modularizeCss(css, id, mappings) {
+	// normalize to posix id for consistent hashing
+	if (id.match(/^[^/]*\\/)) id = id.split(sep).join(posix.sep);
+
 	const classNames = new Set();
 	const suffix = '_' + hash(id);
 	const applyClassSuffix = className => {

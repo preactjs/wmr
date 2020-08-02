@@ -1,4 +1,4 @@
-import { resolve, dirname, sep, posix } from 'path';
+import { resolve, dirname, relative, sep, posix } from 'path';
 import { promises as fs } from 'fs';
 import chokidar from 'chokidar';
 import mime from 'mime/lite.js';
@@ -94,6 +94,7 @@ export default function wmrMiddleware({
 	}
 	watcher.on('change', filename => {
 		NonRollup.watchChange(resolve(cwd, filename));
+		// normalize paths to 'nix:
 		filename = filename.split(sep).join(posix.sep);
 		if (!pendingChanges.size) setTimeout(flushChanges, 60);
 		pendingChanges.add('/' + filename);
@@ -114,16 +115,19 @@ export default function wmrMiddleware({
 		}
 
 		let prefix = '';
-		const prefixMatches = path.match(/^\/?@([a-z-]+)\/(.+)$/);
+		const prefixMatches = path.match(/^\/?@([a-z-]+)(\/.+)$/);
 		if (prefixMatches) {
 			prefix = '\0' + prefixMatches[1] + ':';
 			path = prefixMatches[2];
 		}
 
-		let file = posix.join(cwd, path);
+		// convert to OS path
+		const osPath = path.slice(1).split(posix.sep).join(sep);
+
+		let file = resolve(cwd, osPath);
 
 		// Rollup-style CWD-relative path "id"
-		let id = posix.relative(cwd, file).replace(/^\.\//, '');
+		let id = relative(cwd, file).replace(/^\.\//, '');
 
 		file = prefix + file;
 		id = prefix + id;
@@ -220,15 +224,18 @@ export const TRANSFORMS = {
 
 				// \0abc:./x --> /@abc/x
 				spec = spec.replace(/^\0?([a-z-]+):(.+)$/, (s, prefix, spec) => {
-					return '/@' + prefix + '/' + posix.relative(cwd, spec);
+					// console.log(spec, relative(cwd, spec).split(sep).join(posix.sep));
+					return '/@' + prefix + '/' + relative(cwd, spec).split(sep).join(posix.sep);
 				});
 
 				// foo.css --> foo.css.js (import of CSS Modules proxy module)
 				if (spec.endsWith('.css')) spec += '.js';
 
-				if (!/^\.?\.?\//.test(spec)) {
+				if (!/^\.?\.?[/\\]/.test(spec)) {
+					// TODO: normalize `spec` path?
 					spec = `/@npm/${spec}`;
 				}
+
 				return spec;
 			}
 		});

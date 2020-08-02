@@ -1,4 +1,4 @@
-import { posix } from 'path';
+import { relative, basename } from 'path';
 import { promises as fs } from 'fs';
 
 /**
@@ -16,7 +16,7 @@ export default function urlPlugin({ inline, cwd } = {}) {
 			if (resolved) {
 				// note: not currently used, might be worth removing.
 				if (inline) {
-					const url = posix.relative(cwd, resolved.id).replace(/^\./, '');
+					const url = relative(cwd, resolved.id).replace(/^\./, '');
 					return { id: `data:text/javascript,export default${JSON.stringify(url)}`, external: true };
 				}
 				resolved.id = `\0url:${resolved.id}`;
@@ -27,7 +27,7 @@ export default function urlPlugin({ inline, cwd } = {}) {
 			if (!id.startsWith('\0url:')) return;
 			id = id.slice(5);
 
-			const fileId = this.emitFile({ type: 'asset', name: posix.basename(id) });
+			const fileId = this.emitFile({ type: 'asset', name: basename(id) });
 			this.addWatchFile(id);
 			fs.readFile(id).then(source => this.setAssetSource(fileId, source));
 			return `export default import.meta.ROLLUP_FILE_URL_${fileId}`;
