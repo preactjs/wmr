@@ -11,12 +11,14 @@ export default function urlPlugin(options = {}) {
 		async resolveId(id, importer) {
 			if (!id.startsWith('url:')) return;
 			const resolved = await this.resolve(id.slice(4), importer);
-			if (resolved) resolved.id = `url:${id}`;
+			if (resolved) {
+				resolved.id = `\0url:${resolved.id}`;
+			}
 			return resolved;
 		},
 		async load(id) {
-			if (!id.startsWith('url:')) return;
-			id = id.slice(4);
+			if (!id.startsWith('\0url:')) return;
+			id = id.slice(5);
 
 			const fileId = this.emitFile({ type: 'asset', name: posix.basename(id) });
 			this.addWatchFile(id);
