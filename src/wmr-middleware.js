@@ -84,14 +84,6 @@ export default function wmrMiddleware({ cwd, root, out = '.dist', distDir = 'dis
 		// @ts-ignore
 		let path = posix.normalize(req.path);
 
-		if ((await fs.lstat(path)).isDirectory()) {
-			if (syncFS.existsSync(`${cwd}/200.html`)) {
-				path = `${cwd}/200.html`;
-			} else if (syncFS.existsSync(`${cwd}/index.html`)) {
-				path = `${cwd}/index.html`;
-			}
-		}
-
 		if (path.startsWith('/@npm/')) {
 			return next();
 		}
@@ -117,6 +109,14 @@ export default function wmrMiddleware({ cwd, root, out = '.dist', distDir = 'dis
 			transform = TRANSFORMS.css;
 		} else {
 			transform = TRANSFORMS.generic;
+		}
+
+		if (syncFS.existsSync(file) && (await fs.lstat(file)).isDirectory()) {
+			if (syncFS.existsSync(posix.resolve(cwd, '200.html'))) {
+				path = posix.resolve(cwd, '200.html');
+			} else if (syncFS.existsSync(posix.resolve(cwd, 'index.html'))) {
+				path = posix.resolve(cwd, 'index.html');
+			}
 		}
 
 		try {
