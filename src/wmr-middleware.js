@@ -138,8 +138,8 @@ export default function wmrMiddleware({
 			transform = getWmrClient.bind(null);
 		} else if (queryParams.has('asset')) {
 			transform = TRANSFORMS.asset;
-			// } else if (prefix) {
-			// 	transform = TRANSFORMS.prefix;
+		} else if (prefix) {
+			transform = TRANSFORMS.js;
 		} else if (/\.css\.js$/.test(file)) {
 			transform = TRANSFORMS.cssModule;
 		} else if (/\.([mc]js|[tj]sx?)$/.test(file)) {
