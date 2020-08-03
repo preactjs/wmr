@@ -18,6 +18,8 @@ import glob from 'tiny-glob';
 import aliasesPlugin from './plugins/aliases-plugin.js';
 import processGlobalPlugin from './plugins/process-global-plugin.js';
 import urlPlugin from './plugins/url-plugin.js';
+// import * as esbuild from 'esbuild';
+// import greenlet from './lib/greenlet.js';
 
 /** @param {string} p */
 const pathToPosix = p => p.split(sep).join(posix.sep);
@@ -213,11 +215,12 @@ export async function bundleProd({ cwd, publicDir, out, sourcemap, aliases, prof
 		preserveEntrySignatures: 'allow-extension',
 		manualChunks: npmChunks ? extractNpmChunks : undefined,
 		plugins: [
-			sucrasePlugin({
-				typescript: true,
-				sourcemap,
-				production: true
-			}),
+			// sucrasePlugin({
+			// 	typescript: true,
+			// 	sourcemap,
+			// 	production: true
+			// }),
+			terser({ compress: true, sourcemap }),
 			htmlEntriesPlugin({ cwd, publicDir, publicPath: '/' }),
 			publicPathPlugin({ publicPath: '/' }),
 			aliasesPlugin({ aliases }),
@@ -240,12 +243,9 @@ export async function bundleProd({ cwd, publicDir, out, sourcemap, aliases, prof
 		]
 	});
 
-	return await bundle.write({
-		entryFileNames: '[name].[hash].js',
-		chunkFileNames: 'chunks/[name].[hash].js',
-		assetFileNames: 'assets/[name].[hash][extname]',
+	const outputOptions = {
+		dir: out || 'dist',
 		compact: true,
-		plugins: [terser({ compress: true, sourcemap })],
 		sourcemap,
 		sourcemapPathTransform(p, mapPath) {
 			let url = pathToPosix(relative(cwd, resolve(dirname(mapPath), p)));
@@ -254,10 +254,69 @@ export async function bundleProd({ cwd, publicDir, out, sourcemap, aliases, prof
 			// replace internal npm prefix
 			url = url.replace(/^(\.?\.?\/)?[\b]npm\//, '@npm/');
 			return 'source:///' + url;
-		},
-		preferConst: true,
-		dir: out || 'dist'
+		}
+	};
+
+	const modern = bundle.write({
+		...outputOptions,
+		entryFileNames: '[name].[hash].js',
+		chunkFileNames: 'chunks/[name].[hash].js',
+		assetFileNames: 'assets/[name].[hash][extname]',
+		preferConst: true
+		// plugins: [terser({ compress: true, sourcemap })]
 	});
+
+	// const downlevel = greenlet(code => {
+	// 	const { transform } = require('sucrase');
+	// 	const out = transform(code, {
+	// 		transforms: ['typescript'],
+	// 		production: true
+	// 	});
+	// 	return out.code;
+	// });
+
+	// let esbuildService = ((esbuild && esbuild.default) || esbuild).startService();
+	// async function downlevel(code, fileName, sourcemap) {
+	// 	const start = Date.now();
+	// 	const { transform } = await esbuildService;
+	// 	const result = await transform(code, {
+	// 		define: {
+	// 			process: 'self',
+	// 			'process.env': 'self',
+	// 			'process.env.NODE_ENV': '"production"'
+	// 		},
+	// 		minify: true,
+	// 		sourcefile: fileName,
+	// 		sourcemap: sourcemap === true,
+	// 		strict: false,
+	// 		target: 'es2015' // es5 not supported (yet?)
+	// 	});
+	// 	console.log('esbuild(' + fileName + '): ', Date.now() - start);
+	// 	return { code: result.js, map: (sourcemap && result.jsSourceMap) || null };
+	// }
+
+	const legacy = bundle.write({
+		...outputOptions,
+		entryFileNames: '[name].[hash].legacy.js',
+		chunkFileNames: 'chunks/[name].[hash].legacy.js',
+		assetFileNames: 'assets/[name].[hash][extname]',
+		plugins: [
+			// {
+			// 	name: 'lazy-sucrase',
+			// 	async renderChunk(code, chunk) {
+			// 		return await downlevel(code, chunk.fileName);
+			// 	}
+			// }
+			// terser({ compress: true, sourcemap })
+		]
+	});
+
+	const results = await Promise.all([modern, legacy]);
+
+	// downlevel.terminate();
+	// (await esbuildService).stop();
+
+	return results[0];
 }
 
 /** @type {import('rollup').GetManualChunk} */
