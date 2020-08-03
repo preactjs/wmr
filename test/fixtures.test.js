@@ -91,4 +91,18 @@ describe('fixtures', () => {
 			expect(await getOutput(env, instance)).toMatch(`<h1>Hello wmr</h1>`);
 		});
 	});
+
+	describe('url: import prefix', () => {
+		it('should return ?asset URLs in development', async () => {
+			await loadFixture('url-prefix', env);
+			instance = await runWmr(env.tmp.path);
+			const output = await getOutput(env, instance);
+			expect(output).toMatch(/<pre id="out">{.+}<\/pre>/);
+			const json = JSON.parse(await env.page.$eval('#out', el => el.textContent));
+			expect(json).toHaveProperty('htmlUrl', '/index.html?asset');
+			expect(json).toHaveProperty('selfUrl', '/index.js?asset');
+			const out = await env.page.evaluate(async () => await (await fetch('/index.js?asset')).text());
+			expect(out).toEqual(await fs.readFile(path.resolve(__dirname, 'fixtures/url-prefix/index.js'), 'utf-8'));
+		});
+	});
 });

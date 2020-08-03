@@ -1,10 +1,12 @@
-import { posix } from 'path';
+import { resolve, relative, sep, posix } from 'path';
 import { createHash } from 'crypto';
 import { promises as fs } from 'fs';
 import * as acorn from 'acorn';
 // Rollup respects "module", Node 14 doesn't.
 const cjsDefault = m => ('default' in m ? m.default : m);
 const { Parser } = cjsDefault(acorn);
+
+const toPosixPath = path => path.split(sep).join(posix.sep);
 
 /**
  * @param {import('rollup').Plugin[]} plugins
@@ -16,16 +18,16 @@ export function createPluginContainer(plugins, opts = {}) {
 	const MODULES = opts.modules || new Map();
 
 	function generateFilename({ type, name, fileName, source }) {
+		const posixName = toPosixPath(name);
 		if (!fileName) {
 			fileName =
 				(type === 'entry' && ctx.outputOptions.file) || ctx.outputOptions[type + 'FileNames'] || '[name][extname]';
 			fileName = fileName.replace('[hash]', () => createHash('md5').update(source).digest('hex').substring(0, 5));
-			fileName = fileName.replace('[extname]', posix.extname(name));
-			fileName = fileName.replace('[ext]', posix.extname(name).substring(1));
-			fileName = fileName.replace('[name]', posix.basename(name).replace(/\.[a-z0-9]+$/g, ''));
+			fileName = fileName.replace('[extname]', posix.extname(posixName));
+			fileName = fileName.replace('[ext]', posix.extname(posixName).substring(1));
+			fileName = fileName.replace('[name]', posix.basename(posixName).replace(/\.[a-z0-9]+$/g, ''));
 		}
-		const result = posix.resolve(opts.cwd || '.', ctx.outputOptions.dir || '.', fileName);
-		// const file = posix.resolve(opts.cwd || '.', ctx.outputOptions.dir || '.', fileName || name);
+		const result = resolve(opts.cwd || '.', ctx.outputOptions.dir || '.', fileName);
 		// console.log('filename for ' + name + ': ', result);
 		return result;
 	}
@@ -60,14 +62,12 @@ export function createPluginContainer(plugins, opts = {}) {
 		async resolve(id, importer) {
 			let out = await container.resolveId(id, importer);
 			if (typeof out === 'string') out = { id: out };
-			if (!out || !out.id) {
-				if (id && id.match(/^\.\.?[/\\]/)) {
-					if (importer && importer.match(/^\.\.?[/\\]/)) {
-						id = posix.resolve(importer, id);
-					}
-					id = posix.resolve(opts.cwd || '.', id);
-					out = { id };
+			if (!out || !out.id) out = { id };
+			if (out.id.match(/^\.\.?[/\\]/)) {
+				if (importer && importer.match(/^\.\.?[/\\]/)) {
+					out.id = resolve(importer, out.id);
 				}
+				out.id = resolve(opts.cwd || '.', out.id);
 			}
 			return out || false;
 		},
@@ -85,9 +85,17 @@ export function createPluginContainer(plugins, opts = {}) {
 			const id = String(++ids);
 			const filename = fileName || generateFilename({ type, name, source, fileName });
 			files.set(id, { id, name, filename });
-			if (opts.writeFile) opts.writeFile(filename, source);
-			else fs.writeFile(filename, source);
+			if (source) {
+				if (opts.writeFile) opts.writeFile(filename, source);
+				else fs.writeFile(filename, source);
+			}
 			return id;
+		},
+		setAssetSource(assetId, source) {
+			const asset = files.get(String(assetId));
+			asset.source = source;
+			if (opts.writeFile) opts.writeFile(asset.filename, source);
+			else fs.writeFile(asset.filename, source);
 		},
 		addWatchFile(id) {
 			watchFiles.add(id);
@@ -147,7 +155,8 @@ export function createPluginContainer(plugins, opts = {}) {
 			// handle file URLs by default
 			const matches = property.match(/^ROLLUP_FILE_URL_(\d+)$/);
 			if (matches) {
-				const result = container.resolveFileUrl({ referenceId: matches[1] });
+				const referenceId = matches[1];
+				const result = container.resolveFileUrl({ referenceId });
 				if (result) return result;
 			}
 		},
@@ -162,7 +171,7 @@ export function createPluginContainer(plugins, opts = {}) {
 			for (plugin of plugins) {
 				if (!plugin.resolveId) continue;
 				const result = await plugin.resolveId.call(ctx, id, importer);
-				if (!result) return null;
+				if (!result) continue;
 				if (typeof result === 'string') {
 					id = result;
 				} else {
@@ -208,11 +217,25 @@ export function createPluginContainer(plugins, opts = {}) {
 		},
 
 		resolveFileUrl({ referenceId }) {
-			const file = files.get(String(referenceId));
+			referenceId = String(referenceId);
+			const file = files.get(referenceId);
 			if (file == null) return null;
-			const out = posix.resolve(opts.cwd || '.', ctx.outputOptions.dir || '.');
-			const filename = posix.relative(out, file.filename);
-			return JSON.stringify('/' + filename);
+			const out = resolve(opts.cwd || '.', ctx.outputOptions.dir || '.');
+			const fileName = relative(out, file.filename);
+			const assetInfo = {
+				referenceId,
+				fileName,
+				// @TODO: this should be relative to the module that imported the asset
+				relativePath: fileName
+			};
+			for (plugin of plugins) {
+				if (!plugin.resolveFileUrl) continue;
+				const result = plugin.resolveFileUrl.call(ctx, assetInfo);
+				if (result != null) {
+					return result;
+				}
+			}
+			return JSON.stringify('/' + fileName.split(sep).join(posix.sep));
 		}
 	};
 

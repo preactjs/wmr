@@ -14,7 +14,7 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = '\bnpm/', ext
 	return {
 		name: 'npm-plugin',
 		async resolveId(id, importer) {
-			if (id[0] === '\0') return;
+			if (id[0] === '\0' || /^[\w-]+:/.test(id)) return;
 
 			if (importer) {
 				if (importer[0] === '\0') importer = '';
