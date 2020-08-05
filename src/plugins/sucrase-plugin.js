@@ -12,6 +12,7 @@ const transform = cjsDefault(sucrase).transform;
  * @param {boolean} [opts.typescript]
  * @param {boolean} [opts.sourcemap=false]
  * @param {boolean} [opts.production=false]
+ * @returns {import('rollup').Plugin}
  */
 export default function sucrasePlugin(opts = {}) {
 	const include = [].concat(opts.include || []);
