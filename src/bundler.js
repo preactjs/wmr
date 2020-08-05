@@ -245,7 +245,7 @@ export async function bundleProd({ cwd, publicDir, out, sourcemap, aliases, prof
 		chunkFileNames: 'chunks/[name].[hash].js',
 		assetFileNames: 'assets/[name].[hash][extname]',
 		compact: true,
-		plugins: [terser({ compress: false, sourcemap })],
+		plugins: [terser({ compress: true, sourcemap })],
 		sourcemap,
 		sourcemapPathTransform(p, mapPath) {
 			let url = pathToPosix(relative(cwd, resolve(dirname(mapPath), p)));

@@ -44,7 +44,7 @@ export default function wmrPlugin({ hot = true } = {}) {
 		},
 		resolveImportMeta(property) {
 			if (property === 'hot') {
-				return hot ? `$IMPORT_META_HOT$` : 'null';
+				return hot ? `$IMPORT_META_HOT$` : 'undefined';
 			}
 			return null;
 		},
@@ -58,7 +58,7 @@ export default function wmrPlugin({ hot = true } = {}) {
 			// stub webpack-style `module.hot` using `import.meta.hot`:
 			if (code.match(/module\.hot/)) {
 				hasHot = true;
-				before += 'const module={hot:import.meta.hot};\n';
+				before += `const module={${hot ? 'hot:import.meta.hot' : ''}};\n`;
 			}
 
 			// Detect modules that appear to have both JSX and an export, and inject prefresh:
@@ -83,7 +83,7 @@ export default function wmrPlugin({ hot = true } = {}) {
 					`import { createHotContext as $createHotContext$ } from 'wmr';const $IMPORT_META_HOT$ = $createHotContext$(import.meta.url);${before}`
 				);
 			} else {
-				s.prepend(`const $IMPORT_META_HOT$ = null;${before}`);
+				s.prepend(`const $IMPORT_META_HOT$ = undefined;${before}`);
 			}
 			return {
 				code: s.toString(),
