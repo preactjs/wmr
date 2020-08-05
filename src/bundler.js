@@ -29,6 +29,7 @@ const pathToPosix = p => p.split(sep).join(posix.sep);
  * @property {string} [out = '.cache']
  * @property {boolean} [sourcemap]
  * @property {Record<string, string>} [aliases] module aliases
+ * @property {boolean} [legacy = false] Enable module/nomodule output (default is to only output modules)
  * @property {boolean} [profile] Enable bundler performance profiling
  * @property {(error: BuildError)=>void} [onError]
  * @property {(error: BuildEvent)=>void} [onBuild]
@@ -195,7 +196,7 @@ export async function bundleDev({ cwd, publicDir, out, sourcemap, aliases, onErr
 }
 
 /** @param {BuildOptions & { npmChunks?: boolean }} options */
-export async function bundleProd({ cwd, publicDir, out, sourcemap, aliases, profile, npmChunks = false }) {
+export async function bundleProd({ cwd, publicDir, out, sourcemap, aliases, profile, legacy, npmChunks }) {
 	cwd = cwd || '';
 
 	const htmlFiles = await glob('**/*.html', {
@@ -240,12 +241,9 @@ export async function bundleProd({ cwd, publicDir, out, sourcemap, aliases, prof
 		]
 	});
 
-	return await bundle.write({
-		entryFileNames: '[name].[hash].js',
-		chunkFileNames: 'chunks/[name].[hash].js',
-		assetFileNames: 'assets/[name].[hash][extname]',
+	const outputOptions = {
+		dir: out || 'dist',
 		compact: true,
-		plugins: [terser({ compress: false, sourcemap })],
 		sourcemap,
 		sourcemapPathTransform(p, mapPath) {
 			let url = pathToPosix(relative(cwd, resolve(dirname(mapPath), p)));
@@ -254,10 +252,40 @@ export async function bundleProd({ cwd, publicDir, out, sourcemap, aliases, prof
 			// replace internal npm prefix
 			url = url.replace(/^(\.?\.?\/)?[\b]npm\//, '@npm/');
 			return 'source:///' + url;
-		},
+		}
+	};
+
+	// write bundles in parallel
+	const bundles = [];
+
+	const modernBundle = bundle.write({
+		...outputOptions,
+		entryFileNames: '[name].[hash].js',
+		chunkFileNames: 'chunks/[name].[hash].js',
+		assetFileNames: 'assets/[name].[hash][extname]',
+		format: 'esm',
 		preferConst: true,
-		dir: out || 'dist'
+		plugins: [terser({ compress: true, sourcemap, ecma: 2017 })]
 	});
+	bundles.push(modernBundle);
+
+	if (legacy) {
+		const legacyBundle = bundle.write({
+			...outputOptions,
+			entryFileNames: '[name].[hash].legacy.js',
+			chunkFileNames: 'chunks/[name].[hash].legacy.js',
+			assetFileNames: 'assets/[name].[hash][extname]',
+			format: 'amd',
+			preferConst: false,
+			plugins: [terser({ compress: true, sourcemap, ecma: 5 })]
+		});
+		bundles.push(legacyBundle);
+	}
+
+	// important: always wait for all bundles to be written before returning!
+	await Promise.all(bundles);
+
+	return modernBundle;
 }
 
 /** @type {import('rollup').GetManualChunk} */
