@@ -206,6 +206,7 @@ function visit(root, visitors, state) {
 					visitor(path, state);
 				}
 				if (path.shouldStop) {
+					// TODO: this doesn't actually stop traversal.
 					return false;
 				}
 			}
