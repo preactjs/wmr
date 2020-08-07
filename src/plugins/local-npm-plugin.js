@@ -26,7 +26,8 @@ export default function localNpmPlugin({ publicPath = '/@npm' } = {}) {
 			return {
 				id: `${publicPath}/${s}`,
 				external: true,
-				moduleSideEffects: true
+				moduleSideEffects: true,
+				syntheticNamedExports: true
 			};
 		}
 	};
