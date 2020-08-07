@@ -39,3 +39,5 @@ export default function App() {
 }
 
 render(<App />, document.body);
+
+window.didRender = true;
