@@ -24,6 +24,11 @@ import sizeWarningPlugin from './size-warning-plugin.js';
  * @type {{ module: string, version: string, path?: string }}
  */
 
+/**
+ * @typedef PackageJson
+ * @type {{ dependencies?:Record<string,string>, devDependencies?: Record<string,string>, peerDependencies?: Record<string, string>, resolutions?: Record<string, string> }}
+ */
+
 /** Files that should be included when storing packages */
 const FILES_INCLUDE = /\.(js|mjs|cjs|json|tsx?|css)$/i;
 
@@ -54,6 +59,40 @@ const DIST_TAG_TTL = 60000;
 /** @type {Map<string, { time: number, version: string }>} */
 const DIST_TAG_CACHE = new Map();
 
+async function readPackageJson(filename) {
+	try {
+		return JSON.parse(await fs.readFile(filename, 'utf-8'));
+	} catch (e) {}
+}
+
+/** @type {PackageJson} */
+let appPackageJson;
+
+/** @param {PackageJson} pkg */
+export function getPackageVersionFromDeps(pkg, name) {
+	return (
+		(pkg.dependencies && pkg.dependencies[name]) ||
+		(pkg.devDependencies && pkg.devDependencies[name]) ||
+		(pkg.peerDependencies && pkg.peerDependencies[name])
+	);
+}
+
+function getPackageVersionFromResolutions(pkg, name) {
+	if (pkg.resolutions) {
+		for (const pattern in pkg.resolutions) {
+			const escaped = pattern
+				.replace(/([.\\^$[]{}()?!])/g, '$1')
+				.replace(/\*\*/g, '.+')
+				.replace(/\*/g, '[^/]+');
+			const reg = new RegExp('^' + escaped + '$', 'gi');
+			if (reg.test(name)) {
+				// console.log(`using resolution: ${pattern} (${escaped})`);
+				return pkg.resolutions[pattern];
+			}
+		}
+	}
+}
+
 /**
  * Resolve a (possible) dist-tag version
  * @template {Module} T
@@ -70,15 +109,26 @@ export async function resolvePackageVersion(info) {
 		}
 	}
 
-	try {
-		const pkg = JSON.parse(await fs.readFile(resolve(NODE_MODULES, info.module, 'package.json'), 'utf-8'));
+	// If not specified, use any version constraints from the project's package.json:
+	if (!info.version) {
+		if (!appPackageJson) {
+			appPackageJson = (await readPackageJson(resolve(NODE_MODULES, '..', 'package.json'))) || {};
+		}
+		const resolvedVersion =
+			getPackageVersionFromDeps(appPackageJson, info.module) ||
+			getPackageVersionFromResolutions(appPackageJson, info.module);
+		info.version = resolvedVersion || 'latest';
+	}
+
+	const pkg = await readPackageJson(resolve(NODE_MODULES, info.module, 'package.json'));
+	if (pkg) {
 		DIST_TAG_CACHE.set(key, { time: Date.now(), version: pkg.version });
 		info.version = pkg.version;
 		return info;
-	} catch (e) {}
+	}
 
 	const r = await manuallyResolvePackageVersion(info);
-	DIST_TAG_CACHE.set(key, { time: Date.now(), version: info.version });
+	DIST_TAG_CACHE.set(key, { time: Date.now(), version: r.version });
 	return r;
 }
 
