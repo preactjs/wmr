@@ -11,6 +11,7 @@ import { transformImports } from './lib/transform-imports.js';
 import aliasesPlugin from './plugins/aliases-plugin.js';
 import urlPlugin from './plugins/url-plugin.js';
 import { normalizeSpecifier } from './plugins/npm-plugin/index.js';
+// import { resolvePackageVersion } from './plugins/npm-plugin/registry.js';
 
 /**
  * In-memory cache of files that have been generated and written to .cache/
@@ -236,6 +237,15 @@ export const TRANSFORMS = {
 				if (!/^\.?\.?[/\\]/.test(spec)) {
 					const meta = normalizeSpecifier(spec);
 
+					// // Option 1: resolve all package verions (note: adds non-trivial delay to imports)
+					// await resolvePackageVersion(meta);
+					// // Option 2: omit package versions that resolve to the root
+					// // if ((await resolvePackageVersion({ module: meta.module, version: '' })).version === meta.version) {
+					// // 	meta.version = '';
+					// // }
+					// spec = `/@npm/${meta.module}${meta.version ? '@' + meta.version : ''}${meta.path ? '/' + meta.path : ''}`;
+
+					// Option 3: omit root package versions
 					spec = `/@npm/${meta.module}${meta.path ? '/' + meta.path : ''}`;
 				}
 
