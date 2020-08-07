@@ -14,8 +14,9 @@ import WebSocketServer from './lib/websocket-server.js';
  */
 
 /**
- * @param {object} [options]
+ * @param {object} options
  * @param {string} [options.cwd = ''] Directory to serve
+ * @param {string} [options.root] Virtual process.cwd
  * @param {string} [options.publicDir] A directory containing public files, relative to cwd
  * @param {string} [options.overlayDir] A directory of generated files to serve if present, relative to cwd
  * @param {polka.Middleware[]} [options.middleware] Additional Polka middlewares to inject
@@ -24,7 +25,7 @@ import WebSocketServer from './lib/websocket-server.js';
  * @param {boolean} [options.optimize = true] Enable lazy dependency compression and optimization
  * @param {Record<string, string>} [options.aliases] module aliases
  */
-export default async function server({ cwd, overlayDir, middleware, http2, compress = true, optimize, aliases } = {}) {
+export default async function server({ cwd, root, overlayDir, middleware, http2, compress = true, optimize, aliases }) {
 	try {
 		await fs.access(resolve(cwd, 'index.html'));
 	} catch (e) {
@@ -35,7 +36,7 @@ export default async function server({ cwd, overlayDir, middleware, http2, compr
 	const app = polka({
 		onError(err, req, res) {
 			// ignore missing favicon requests
-			if (req.path == '/favicon.ico') return res.end();
+			if (req.path == '/favicon.ico') return res.end('');
 
 			// @ts-ignore
 			const code = typeof err.code === 'number' ? err.code : 500;
@@ -73,7 +74,7 @@ export default async function server({ cwd, overlayDir, middleware, http2, compr
 		app.use(compression({ threshold, level: 4 }));
 	}
 
-	app.use('/@npm', npmMiddleware({ aliases, optimize }));
+	app.use('/@npm', npmMiddleware({ aliases, optimize, cwd: root }));
 
 	if (middleware) {
 		app.use(...middleware);

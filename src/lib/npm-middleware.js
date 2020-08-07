@@ -36,9 +36,10 @@ async function handleCss(meta, res) {
  * @param {'npm'|'unpkg'} [options.source = 'npm'] How to fetch package files
  * @param {Record<string,string>} [options.aliases]
  * @param {boolean} [options.optimize = true] Progressively minify and compress dependency bundles?
+ * @param {string} [options.cwd] Virtual cwd
  * @returns {import('polka').Middleware}
  */
-export default function npmMiddleware({ source = 'npm', aliases, optimize } = {}) {
+export default function npmMiddleware({ source = 'npm', aliases, optimize, cwd } = {}) {
 	return async (req, res, next) => {
 		// @ts-ignore
 		const mod = req.path.replace(/^\//, '');
@@ -63,7 +64,7 @@ export default function npmMiddleware({ source = 'npm', aliases, optimize } = {}
 			res.setHeader('content-type', 'application/javascript');
 
 			// serve from memory and disk caches:
-			const cached = await getCachedBundle(etag, meta);
+			const cached = await getCachedBundle(etag, meta, cwd);
 			if (cached) return sendCachedBundle(req, res, cached);
 
 			// const start = Date.now();
@@ -74,7 +75,7 @@ export default function npmMiddleware({ source = 'npm', aliases, optimize } = {}
 			res.writeHead(200, { 'content-length': code.length }).end(code);
 
 			// store the bundle in memory and disk caches
-			setCachedBundle(etag, code, meta);
+			setCachedBundle(etag, code, meta, cwd);
 
 			// this is a new bundle, we'll compress it with terser and brotli shortly
 			if (optimize !== false) {
