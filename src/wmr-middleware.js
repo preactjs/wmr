@@ -111,11 +111,10 @@ export default function wmrMiddleware({ cwd, root, out = '.dist', distDir = 'dis
 			transform = TRANSFORMS.generic;
 		}
 
-		if (syncFS.existsSync(file) && (await fs.lstat(file)).isDirectory()) {
-			if (syncFS.existsSync(posix.resolve(cwd, '200.html'))) {
-				path = posix.resolve(cwd, '200.html');
-			} else if (syncFS.existsSync(posix.resolve(cwd, 'index.html'))) {
-				path = posix.resolve(cwd, 'index.html');
+		const missing = () => false;
+		if (await fs.lstat(file).then(s => s.isDirectory()).catch(missing)) {
+			if (await fs.lstat(resolve(cwd, '200.html')).catch(missing)) {
+				path = '200.html';
 			}
 		}
 
