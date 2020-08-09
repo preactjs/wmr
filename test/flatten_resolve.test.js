@@ -11,7 +11,7 @@ export const description = 'should minimize network traffic caused by dependenci
  * @param {import('pentf/runner').TaskConfig} config
  */
 export async function run(config) {
-	const env = await setupTest(config, 'flatten-resolve');
+	const env = await setupTest(config, 'flatten-resolve', { open: false });
 
 	const instance = await runWmr(config, env.tmp.path);
 	const addr = await waitForWmr(instance);

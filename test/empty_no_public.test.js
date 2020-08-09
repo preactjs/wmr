@@ -8,7 +8,7 @@ export const description = 'should start successfully with only an HTML file (no
  * @param {import('pentf/runner').TaskConfig} config
  */
 export async function run(config) {
-	const env = await setupTest(config, 'htmlonly-nopublic');
+	const env = await setupTest(config, 'htmlonly-nopublic', { open: false });
 
 	const instance = await runWmr(config, env.tmp.path);
 	expect(instance.output[0]).not.toMatch(`missing an "index.html"`);

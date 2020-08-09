@@ -1,13 +1,7 @@
-declare const jestPuppeteer: {
-	debug(): Promise<void>;
-	resetPage(): Promise<void>;
-	resetBrowser(): Promise<void>;
-};
-declare const browser: import('puppeteer').Browser;
-declare const page: import('puppeteer').Page;
-
 declare interface TestEnv {
 	tmp: import('tmp-promise').DirectoryResult;
+	instance: WmrInstance;
+	page: import('puppeteer').Page;
 }
 
 declare interface WmrInstance {

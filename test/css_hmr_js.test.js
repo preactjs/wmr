@@ -1,4 +1,4 @@
-import { setupTest, runWmr, openWmr, getStyle } from './test-helpers.js';
+import { setupTest, getStyle } from './test-helpers.js';
 import { closePage } from 'pentf/browser_utils';
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -12,10 +12,7 @@ export const description = 'should support CSS hmr when linked from js file';
  * @param {import('pentf/runner').TaskConfig} config
  */
 export async function run(config) {
-	const env = await setupTest(config, 'css-hmr');
-
-	const instance = await runWmr(config, env.tmp.path);
-	const page = await openWmr(config, instance);
+	const { page, tmp } = await setupTest(config, 'css-hmr');
 
 	let color = await getStyle(page, '#counter', 'color');
 	expect(color).toEqual('rgb(255, 0, 0)');
@@ -26,7 +23,7 @@ export async function run(config) {
 	});
 
 	// Simulate a user editing a file
-	fs.writeFile(path.join(env.tmp.path, 'public', 'style.css'), '#counter { color: blue; }');
+	fs.writeFile(path.join(tmp.path, 'public', 'style.css'), '#counter { color: blue; }');
 
 	await page.waitForFunction(
 		() => {

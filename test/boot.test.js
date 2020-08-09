@@ -8,7 +8,7 @@ export const description = 'should listen on port';
  * @param {import('pentf/runner').TaskConfig} config
  */
 export async function run(config) {
-	const env = await setupTest(config, 'simple');
+	const env = await setupTest(config, 'simple', { open: false });
 	const instance = await runWmr(config, env.tmp.path);
 	await waitForMessage(instance.output, /(^Listening|^Error)/);
 

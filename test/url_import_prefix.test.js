@@ -1,4 +1,4 @@
-import { setupTest, runWmr, openWmr, __dirname } from './test-helpers.js';
+import { setupTest, __dirname } from './test-helpers.js';
 import { closePage } from 'pentf/browser_utils';
 import expect from 'expect';
 import { promises as fs } from 'fs';
@@ -10,10 +10,8 @@ export const description = 'should print warning for missing index.html file (no
  * @param {import('pentf/runner').TaskConfig} config
  */
 export async function run(config) {
-	const env = await setupTest(config, 'url-prefix');
+	const { page } = await setupTest(config, 'url-prefix');
 
-	const instance = await runWmr(config, env.tmp.path);
-	const page = await openWmr(config, instance);
 	expect(await page.content()).toMatch(/<pre id="out">{.+}<\/pre>/);
 
 	const json = JSON.parse(await page.$eval('#out', el => el.textContent));

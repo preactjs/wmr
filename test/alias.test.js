@@ -1,4 +1,4 @@
-import { setupTest, runWmr, openWmr } from './test-helpers.js';
+import { setupTest } from './test-helpers.js';
 import { closePage } from 'pentf/browser_utils';
 import expect from 'expect';
 
@@ -10,10 +10,7 @@ export const description = 'should use aliases';
  * @param {import('pentf/runner').TaskConfig} config
  */
 export async function run(config) {
-	const env = await setupTest(config, 'alias');
-
-	const instance = await runWmr(config, env.tmp.path);
-	const page = await openWmr(config, instance);
+	const { page } = await setupTest(config, 'alias');
 	const content = await page.$eval('body', el => el.textContent);
 	expect(content).toMatch('Aliasing works.');
 

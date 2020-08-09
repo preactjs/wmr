@@ -15,28 +15,35 @@ const ncp = promisify(ncpCb);
 /**
  * @param {import('pentf/runner').TaskConfig} config
  * @param {string} [fixture]
+ * @param {{open?: boolean}} [options]
  * @returns {Promise<TestEnv>}
  */
-export async function setupTest(config, fixture) {
+export async function setupTest(config, fixture, { open = true } = {}) {
 	const cwd = await tmp.dir({ unsafeCleanup: true });
 	onTeardown(config, () => cwd.cleanup());
 
-	const env = { tmp: cwd };
 	if (fixture) {
-		await loadFixture(fixture, env);
+		await loadFixture(fixture, cwd.path);
 	}
 
-	return env;
+	let instance;
+	let page;
+	if (open) {
+		instance = await runWmr(config, cwd.path);
+		page = await openWmr(config, instance);
+	}
+
+	return { tmp: cwd, instance, page };
 }
 
 /**
  * @param {string} name
- * @param {TestEnv} env
+ * @param {string} tmp Path
  */
-export async function loadFixture(name, env) {
+export async function loadFixture(name, tmp) {
 	// @ts-ignore
 	const fixture = path.join(__dirname(import.meta.url), 'fixtures', name);
-	await ncp(fixture, env.tmp.path);
+	await ncp(fixture, tmp);
 }
 
 /**

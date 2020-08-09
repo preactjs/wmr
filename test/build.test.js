@@ -9,7 +9,7 @@ export const description = 'should create a production build';
  * @param {import('pentf/runner').TaskConfig} config
  */
 export async function run(config) {
-	const env = await setupTest(config, 'simple');
+	const env = await setupTest(config, 'simple', { open: false });
 	const instance = await runWmr(config, env.tmp.path, 'build');
 
 	await waitForMessage(instance.output, /Wrote/);
