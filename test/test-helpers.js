@@ -144,3 +144,19 @@ export async function waitForMessage(haystack, message, timeout = 5000) {
 		throw new Error(`Message ${message} didn't appear in ${timeout}ms`);
 	}
 }
+
+/**
+ * @param {import('puppeteer').Page} page
+ * @param {string} selector
+ * @param {string} property
+ */
+export function getStyle(page, selector, property) {
+	return page.evaluate(
+		(s, p) => {
+			const el = document.querySelector(s);
+			return window.getComputedStyle(el)[p];
+		},
+		selector,
+		property
+	);
+}
