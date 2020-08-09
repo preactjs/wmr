@@ -40,12 +40,19 @@ export async function loadFixture(name, env) {
 }
 
 /**
+ * @param {WmrInstance} instance
+ */
+export async function waitForWmr(instance) {
+	await waitForMessage(instance.output, /^Listening/);
+	return instance.output.join('\n').match(/https?:\/\/localhost:\d+/g)[0];
+}
+
+/**
  * @param {*} config
  * @param {WmrInstance} instance
  */
 export async function openWmr(config, instance) {
-	await waitForMessage(instance.output, /^Listening/);
-	const addr = instance.output.join('\n').match(/https?:\/\/localhost:\d+/g)[0];
+	const addr = await waitForWmr(instance);
 	const page = await newPage(config);
 	await page.goto(addr);
 	return page;
