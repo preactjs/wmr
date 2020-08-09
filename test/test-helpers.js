@@ -3,23 +3,30 @@ import path from 'path';
 import ncpCb from 'ncp';
 import childProcess from 'child_process';
 import { promisify } from 'util';
+import { onTeardown } from 'pentf/runner';
+
+import { fileURLToPath } from 'url';
+import { newPage } from 'pentf/browser_utils';
+
+export const __dirname = url => path.dirname(fileURLToPath(url));
 
 const ncp = promisify(ncpCb);
 
 /**
+ * @param {import('pentf/runner').TaskConfig} config
+ * @param {string} [fixture]
  * @returns {Promise<TestEnv>}
  */
-export async function setupTest() {
-	const cwdPromise = tmp.dir({ unsafeCleanup: true });
-	await jestPuppeteer.resetPage();
-	return { tmp: await cwdPromise, browser, page };
-}
+export async function setupTest(config, fixture) {
+	const cwd = await tmp.dir({ unsafeCleanup: true });
+	onTeardown(config, () => cwd.cleanup());
 
-/**
- * @param {TestEnv} env
- */
-export async function teardown(env) {
-	await env.tmp.cleanup();
+	const env = { tmp: cwd };
+	if (fixture) {
+		await loadFixture(fixture, env);
+	}
+
+	return env;
 }
 
 /**
@@ -27,17 +34,32 @@ export async function teardown(env) {
  * @param {TestEnv} env
  */
 export async function loadFixture(name, env) {
-	const fixture = path.join(__dirname, 'fixtures', name);
+	// @ts-ignore
+	const fixture = path.join(__dirname(import.meta.url), 'fixtures', name);
 	await ncp(fixture, env.tmp.path);
 }
 
 /**
+ * @param {*} config
+ * @param {WmrInstance} instance
+ */
+export async function openWmr(config, instance) {
+	await waitForMessage(instance.output, /^Listening/);
+	const addr = instance.output.join('\n').match(/https?:\/\/localhost:\d+/g)[0];
+	const page = await newPage(config);
+	await page.goto(addr);
+	return page;
+}
+
+/**
+ * @param {import('pentf/runner').TaskConfig} config
  * @param {string} cwd
  * @param {...string} args
  * @returns {Promise<WmrInstance>}
  */
-export async function runWmr(cwd, ...args) {
-	const bin = path.join(__dirname, '..', 'src', 'cli.js');
+export async function runWmr(config, cwd, ...args) {
+	// @ts-ignore
+	const bin = path.join(__dirname(import.meta.url), '..', 'src', 'cli.js');
 	const child = childProcess.spawn('node', ['--experimental-modules', bin, ...args], {
 		cwd
 	});
@@ -61,6 +83,8 @@ export async function runWmr(cwd, ...args) {
 	child.on('close', code => (out.code = code));
 
 	await waitFor(() => out.output.length > 0, 10000);
+
+	onTeardown(config, () => child.kill());
 
 	return out;
 }

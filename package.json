@@ -10,7 +10,9 @@
 		"build": "rollup -c",
 		"ci": "npm run build && cd demo && node ../wmr.cjs build",
 		"prepack": "node --experimental-modules ./src/lib/~publish.js",
-		"test": "eslint src test && jest --runInBand"
+		"test": "eslint src test && npm run test:e2e",
+		"test:e2e": "node run-tests.js --no-pdf --no-screenshots --tests-glob '*.test.js'",
+		"test:e2e:debug": "node --inspect run-tests.js --no-pdf --no-screenshots --tests-glob '*.test.js'"
 	},
 	"author": "The Preact Authors (https://preactjs.com)",
 	"repository": "preactjs/wmr",
@@ -115,6 +117,7 @@
 		"node-fetch": "^2.6.0",
 		"nodemon": "^2.0.4",
 		"npm-merge-driver-install": "^1.1.1",
+		"pentf": "^1.0.95",
 		"polka": "^0.5.2",
 		"postcss": "^7.0.32",
 		"postcss-es6": "github:postcss/postcss#7.0.32",

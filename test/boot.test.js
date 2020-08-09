@@ -1,32 +1,26 @@
-import { setupTest, teardown, runWmr, loadFixture, waitForMessage } from './test-helpers.js';
+import { setupTest, runWmr, waitForMessage } from './test-helpers.js';
+import { newPage, closePage } from 'pentf/browser_utils';
+import expect from 'expect';
 
-jest.setTimeout(30000);
+export const description = 'should listen on port';
 
-describe('boot', () => {
-	/** @type {TestEnv} */
-	let env;
-	/** @type {WmrInstance} */
-	let instance;
+/**
+ * @param {import('pentf/runner').TaskConfig} config
+ */
+export async function run(config) {
+	const env = await setupTest(config, 'simple');
+	const instance = await runWmr(config, env.tmp.path);
+	await waitForMessage(instance.output, /(^Listening|^Error)/);
 
-	beforeEach(async () => {
-		env = await setupTest();
-	});
+	const output = instance.output.join('\n');
 
-	afterEach(async () => {
-		await teardown(env);
-		instance.close();
-	});
+	expect(output).not.toMatch(/^Error/m);
 
-	it('should listen on port', async () => {
-		await loadFixture('simple', env);
-		instance = await runWmr(env.tmp.path);
-		await waitForMessage(instance.output, /(^Listening|^Error)/);
+	expect(output).toMatch(/Listening on http:\/\/localhost:\d+/);
+	expect(output).toMatch(/⌙ http:\/\/\d+.\d+.\d+.\d+:\d+/);
 
-		const output = instance.output.join('\n');
+	const page = await newPage(config);
 
-		expect(output).not.toMatch(/^Error/m);
-
-		expect(output).toMatch(/Listening on http:\/\/localhost:\d+/);
-		expect(output).toMatch(/⌙ http:\/\/\d+.\d+.\d+.\d+:\d+/);
-	});
-});
+	expect(await page.content()).toMatch(/<html>/);
+	await closePage(page);
+}

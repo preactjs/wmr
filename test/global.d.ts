@@ -8,8 +8,6 @@ declare const page: import('puppeteer').Page;
 
 declare interface TestEnv {
 	tmp: import('tmp-promise').DirectoryResult;
-	browser: typeof browser;
-	page: typeof page;
 }
 
 declare interface WmrInstance {
