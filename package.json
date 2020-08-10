@@ -124,7 +124,7 @@
 		"postcss-es6": "github:postcss/postcss#7.0.32",
 		"posthtml": "^0.13.1",
 		"prettier": "^2.0.5",
-		"puppeteer": "^3.3.0",
+		"puppeteer": "^5.2.1",
 		"rollup": "^2.21.0",
 		"rollup-plugin-preserve-shebang": "^1.0.1",
 		"sade": "^1.7.3",
