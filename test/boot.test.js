@@ -1,5 +1,5 @@
 import { setupTest, runWmr, waitForMessage } from './test-helpers.js';
-import { newPage, closePage } from 'pentf/browser_utils';
+import { newPage } from 'pentf/browser_utils';
 import expect from 'expect';
 
 export const description = 'should listen on port';
@@ -22,5 +22,4 @@ export async function run(config) {
 	const page = await newPage(config);
 
 	expect(await page.content()).toMatch(/<html>/);
-	await closePage(page);
 }

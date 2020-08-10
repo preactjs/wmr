@@ -1,5 +1,5 @@
 import { setupTest, runWmr, waitForWmr } from './test-helpers.js';
-import { closePage, newPage, interceptRequest } from 'pentf/browser_utils';
+import { newPage, interceptRequest } from 'pentf/browser_utils';
 import { URL } from 'url';
 import expect from 'expect';
 
@@ -29,5 +29,4 @@ export async function run(config) {
 	await page.waitForSelector('p', { timeout: 2000 });
 
 	expect(files).toEqual(['/index.js', '/bar.js']);
-	await closePage(page);
 }

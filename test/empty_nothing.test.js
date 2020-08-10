@@ -1,5 +1,4 @@
 import { setupTest, runWmr, openWmr } from './test-helpers.js';
-import { closePage } from 'pentf/browser_utils';
 import expect from 'expect';
 
 export const description = 'should print warning for missing index.html file (no public dir)';
@@ -15,5 +14,4 @@ export async function run(config) {
 
 	const page = await openWmr(config, instance);
 	expect(await page.content()).toMatch('Not Found');
-	await closePage(page);
 }

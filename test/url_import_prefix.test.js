@@ -1,5 +1,4 @@
 import { setupTest, __dirname } from './test-helpers.js';
-import { closePage } from 'pentf/browser_utils';
 import expect from 'expect';
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -23,6 +22,4 @@ export async function run(config) {
 		// @ts-ignore
 		await fs.readFile(path.resolve(__dirname(import.meta.url), 'fixtures/url-prefix/index.js'), 'utf-8')
 	);
-
-	await closePage(page);
 }

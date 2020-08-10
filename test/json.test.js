@@ -1,5 +1,4 @@
 import { setupTest } from './test-helpers.js';
-import { closePage } from 'pentf/browser_utils';
 import expect from 'expect';
 
 // This marks the test as a failure, but will ignore it
@@ -16,6 +15,4 @@ export async function run(config) {
 
 	const text = JSON.parse(await page.$eval('#result', el => el.textContent));
 	expect(text).toEqual('{"foo":123}');
-
-	await closePage(page);
 }

@@ -1,5 +1,5 @@
 import { setupTest } from './test-helpers.js';
-import { closePage, waitForText } from 'pentf/browser_utils';
+import { waitForText } from 'pentf/browser_utils';
 
 export const description = 'should support import() statements';
 
@@ -10,5 +10,4 @@ export async function run(config) {
 	const { page } = await setupTest(config, 'dynamic-import');
 
 	await waitForText(page, 'Dynamic import works');
-	await closePage(page);
 }

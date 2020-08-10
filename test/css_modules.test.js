@@ -1,5 +1,5 @@
 import { setupTest, getStyle } from './test-helpers.js';
-import { closePage, getAttribute } from 'pentf/browser_utils';
+import { getAttribute } from 'pentf/browser_utils';
 import expect from 'expect';
 
 export const description = 'should support css modules';
@@ -18,6 +18,4 @@ export async function run(config) {
 
 	const className = await getAttribute(page, 'h1', 'className');
 	expect(className).not.toEqual('heading');
-
-	await closePage(page);
 }

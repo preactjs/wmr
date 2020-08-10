@@ -1,5 +1,4 @@
 import { setupTest, getStyle } from './test-helpers.js';
-import { closePage } from 'pentf/browser_utils';
 import { promises as fs } from 'fs';
 import path from 'path';
 import expect from 'expect';
@@ -32,6 +31,4 @@ export async function run(config) {
 		},
 		{ timeout: 3000 }
 	);
-
-	await closePage(page);
 }
