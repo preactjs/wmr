@@ -205,6 +205,8 @@ const DISK_CACHE = new Map();
  * @param {Module} info
  */
 export async function loadPackageFile({ module, version, path = '' }) {
+	path = path.replace(/^\.?\//g, '');
+
 	// console.log('loadPackageFile: ', module, version, path);
 	// first, check if this file is sitting in the in-memory cache:
 	const files = tarFiles.get(module + '/' + version);

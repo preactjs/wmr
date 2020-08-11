@@ -28,7 +28,7 @@ export async function resolveModule(path, { readFile, hasFile, module }) {
 
 	// path is a bare import of a package, use its legacy exports (module/main):
 	if (!path) {
-		return getLegacyEntry(pkg);
+		path = getLegacyEntry(pkg);
 	}
 
 	// fallback: implement basic commonjs-style resolution
@@ -36,16 +36,16 @@ export async function resolveModule(path, { readFile, hasFile, module }) {
 		return path;
 	}
 
+	// path is a directory, check for package.json:
+	try {
+		const subPkg = JSON.parse(await readFile(path + '/package.json'));
+		path += getLegacyEntry(subPkg);
+	} catch (e) {}
+
 	// extensionless paths:
 	if (await hasFile(path + '.js')) {
 		return path + '.js';
 	}
-
-	// path is a directory, check for package.json:
-	try {
-		const subPkg = JSON.parse(await readFile(path + '/package.json'));
-		return path + getLegacyEntry(subPkg);
-	} catch (e) {}
 
 	// fall back to implicit directory /index.js:
 	if (await hasFile(path + '/index.js')) {
@@ -60,7 +60,7 @@ function getLegacyEntry(pkg) {
 	const entry = String(
 		pkg.esmodules || pkg.modern || pkg.module || pkg['jsnext:main'] || pkg.browser || pkg.main || 'index.js'
 	);
-	return entry.replace(/^\/?/, '/');
+	return '/' + entry.replace(/^\.?\//, '');
 }
 
 const ENV_KEYS = ['esmodules', 'import', 'require', 'browser', 'node', 'default'];
