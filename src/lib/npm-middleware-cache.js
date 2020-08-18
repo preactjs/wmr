@@ -1,14 +1,14 @@
 import { promises as fs } from 'fs';
 import zlib from 'zlib';
 import terser from 'terser';
-import { dirname } from 'path';
+import { dirname, resolve } from 'path';
 
 // TODO: this could be indefinite, since cache keys are deterministic (version+path)
 const CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
 /**
  * @typedef Mem
- * @type {{ module: string, path: string, version: string, brotli, upgrading: boolean, modified: number, code: string }}
+ * @type {{ module: string, path: string, version: string, brotli, upgrading: boolean, modified: number, code: string, cwd: string }}
  */
 
 /**
@@ -54,7 +54,7 @@ function upgradeToBrotli(mem) {
 		} else {
 			mem.code = result.code;
 		}
-		const cacheFile = getCachePath(mem);
+		const cacheFile = getCachePath(mem, mem.cwd);
 		fs.writeFile(cacheFile, result.code);
 		zlib.brotliCompress(mem.code, BROTLI_OPTS, (err, data) => {
 			mem.upgrading = false;
@@ -68,6 +68,7 @@ function upgradeToBrotli(mem) {
 		});
 	});
 }
+
 const compressionQueue = new Set();
 export function enqueueCompress(cacheKey) {
 	compressionQueue.add(cacheKey);
@@ -86,12 +87,14 @@ function compressBackground() {
 		}, 1000);
 	});
 }
+
 /**
  * Get cached code for a bundle from the in-memory or disk caches
  * @param {string} etag the ETag is also used as the in-memory cache key
  * @param {Meta} meta
+ * @param {string} [cwd]
  */
-export async function getCachedBundle(etag, { module, path, version }) {
+export async function getCachedBundle(etag, { module, path, version }, cwd) {
 	if (BUNDLE_CACHE.has(etag)) {
 		const mem = BUNDLE_CACHE.get(etag);
 		if (Date.now() - mem.modified > CACHE_TTL) return;
@@ -101,7 +104,7 @@ export async function getCachedBundle(etag, { module, path, version }) {
 			cacheStatus: 'MEMORY'
 		};
 	}
-	const cacheFile = getCachePath({ module, path, version });
+	const cacheFile = getCachePath({ module, path, version }, cwd);
 	const stat = await fs.stat(cacheFile).catch(() => null);
 	if (!stat || Date.now() - stat.mtimeMs > CACHE_TTL) return;
 	// cached = await fs.readFile(cacheFile, 'utf-8');
@@ -117,7 +120,8 @@ export async function getCachedBundle(etag, { module, path, version }) {
 		brotli,
 		upgrading: false,
 		modified: stat.mtimeMs,
-		code
+		code,
+		cwd
 	});
 	return {
 		code,
@@ -125,13 +129,15 @@ export async function getCachedBundle(etag, { module, path, version }) {
 		cacheStatus: 'DISK'
 	};
 }
+
 /**
  * Store a generated bundle in the in-memory and disk caches
  * @param {string} etag the ETag is also used as the in-memory cache key
  * @param {string} code the generated bundle code
  * @param {Meta} meta
+ * @param {string} [cwd]
  */
-export function setCachedBundle(etag, code, { module, path, version }) {
+export function setCachedBundle(etag, code, { module, path, version }, cwd) {
 	BUNDLE_CACHE.set(etag, {
 		module,
 		path,
@@ -139,11 +145,13 @@ export function setCachedBundle(etag, code, { module, path, version }) {
 		brotli: null,
 		upgrading: false,
 		modified: Date.now(),
-		code
+		code,
+		cwd
 	});
-	const cacheFile = getCachePath({ module, path, version });
+	const cacheFile = getCachePath({ module, path, version }, cwd);
 	fwrite(cacheFile, code);
 }
+
 /**
  * @param {import('http').IncomingMessage} req
  * @param {import('http').ServerResponse} res
@@ -167,16 +175,19 @@ export function sendCachedBundle(req, res, { code, brotli, cacheStatus }) {
 	res.writeHead(200, headers);
 	res.end(brotli || code);
 }
+
 // @TODO: this is basically writeNpmFile from registry.js
 async function fwrite(filename, data) {
 	await fs.mkdir(dirname(filename), { recursive: true });
 	await fs.writeFile(filename, data);
 }
+
 /**
  * Generate a human-readable cache path
  * @param {Meta} meta
+ * @param {string} [cwd = '.']
  */
-function getCachePath({ module, version, path }) {
+function getCachePath({ module, version, path }, cwd) {
 	const tfPath = (path || '').replace(/\//g, '---');
-	return `node_modules/${module}/.cache/${version}--${tfPath}.js`;
+	return resolve(cwd || '.', `node_modules/${module}/.cache/${version}--${tfPath}.js`);
 }

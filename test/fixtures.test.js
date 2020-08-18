@@ -105,4 +105,39 @@ describe('fixtures', () => {
 			expect(out).toEqual(await fs.readFile(path.resolve(__dirname, 'fixtures/url-prefix/index.js'), 'utf-8'));
 		});
 	});
+
+	describe('alias', () => {
+		it('should allow specifying preact/compat alias', async () => {
+			await loadFixture('alias', env);
+			instance = await runWmr(env.tmp.path);
+			const output = await getOutput(env, instance);
+			expect(output).toMatch(/preact was used to render/);
+			expect(await env.page.evaluate(() => window.React === window.preactCompat)).toBe(true);
+			expect(await env.page.evaluate(() => window.ReactDOM === window.preactCompat)).toBe(true);
+		});
+	});
+
+	describe('rmwc', () => {
+		it('should run rmwc demo', async () => {
+			await loadFixture('rmwc', env);
+			instance = await runWmr(env.tmp.path);
+			const output = await getOutput(env, instance);
+			expect(output).toMatch(/Pizza/i);
+			expect(await env.page.evaluate(() => window.didRender)).toBe(true);
+		});
+
+		it('should follow resolutions', async () => {
+			await loadFixture('rmwc', env);
+			const pkg = path.join(env.tmp.path, 'package.json');
+			const pkgJson = JSON.parse(await fs.readFile(pkg, 'utf-8'));
+			pkgJson.resolutions = {
+				'@material/**': '^5.0.0'
+			};
+			await fs.writeFile(pkg, JSON.stringify(pkgJson, null, 2));
+			instance = await runWmr(env.tmp.path);
+			const output = await getOutput(env, instance);
+			expect(output).toMatch(/Pizza/i);
+			expect(await env.page.evaluate(() => window.didRender)).toBe(true);
+		});
+	});
 });
