@@ -1,7 +1,6 @@
 import { resolve, dirname, relative, sep, posix } from 'path';
 import { promises as fs } from 'fs';
 import chokidar from 'chokidar';
-import mime from 'mime/lite.js';
 import htmPlugin from './plugins/htm-plugin.js';
 import sucrasePlugin from './plugins/sucrase-plugin.js';
 import wmrPlugin, { getWmrClient } from './plugins/wmr/plugin.js';
@@ -11,6 +10,7 @@ import { transformImports } from './lib/transform-imports.js';
 import aliasesPlugin from './plugins/aliases-plugin.js';
 import urlPlugin from './plugins/url-plugin.js';
 import { normalizeSpecifier } from './plugins/npm-plugin/index.js';
+import { getMimeType } from './lib/mimetypes.js';
 import bundlePlugin from './plugins/bundle-plugin.js';
 // import { resolvePackageVersion } from './plugins/npm-plugin/registry.js';
 
@@ -139,8 +139,10 @@ export default function wmrMiddleware({
 		file = prefix + file;
 		id = prefix + id;
 
-		const type = mime.getType(file);
-		if (type) res.setHeader('content-type', type);
+		let type = getMimeType(file);
+		if (type) {
+			res.setHeader('content-type', type);
+		}
 
 		const ctx = { req, res, id, file, path, cwd, out, NonRollup, next };
 
@@ -173,7 +175,7 @@ export default function wmrMiddleware({
 				const time = Date.now() - start;
 				// console.log(result);
 				res.writeHead(200, {
-					'content-length': result.length,
+					'content-length': Buffer.byteLength(result, 'utf-8'),
 					'server-timing': `${transform.name};dur=${time}`
 				});
 				res.end(result);
@@ -197,7 +199,7 @@ export const TRANSFORMS = {
 	// Handle individual JavaScript modules
 	/** @param {object} opts @param {ReturnType<createPluginContainer>} [opts.NonRollup] */
 	async js({ id, file, res, cwd, out, NonRollup }) {
-		res.setHeader('content-type', 'application/javascript');
+		res.setHeader('content-type', 'application/javascript;charset=utf-8');
 
 		const cacheKey = id.replace(/^[\0\b]/, '');
 
@@ -278,7 +280,7 @@ export const TRANSFORMS = {
 
 	// Handles "CSS Modules" proxy modules (style.module.css.js)
 	async cssModule({ id, file, cwd, out, res }) {
-		res.setHeader('content-type', 'application/javascript');
+		res.setHeader('content-type', 'application/javascript;charset=utf-8');
 
 		// Cache the generated mapping/proxy module with a .js extension (the CSS itself is also cached)
 		if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
@@ -322,8 +324,10 @@ export const TRANSFORMS = {
 	},
 
 	// Handles CSS Modules (the actual CSS)
-	async css({ id, path, file, cwd, out }) {
+	async css({ id, path, file, cwd, out, res }) {
 		if (!/\.module\.css$/.test(path)) throw null;
+
+		res.setHeader('content-type', 'text/css;charset=utf-8');
 
 		if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
 

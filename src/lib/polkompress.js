@@ -7,8 +7,7 @@ import zlib from 'zlib';
 
 function getChunkSize(chunk, enc) {
 	if (!chunk) return 0;
-	if (Buffer.isBuffer(chunk)) return Buffer.byteLength(chunk, enc);
-	return chunk.length;
+	return Buffer.byteLength(chunk, enc);
 }
 
 const noop = () => {};
