@@ -27,6 +27,7 @@ const pathToPosix = p => p.split(sep).join(posix.sep);
 /**
  * @typedef {Object} BuildOptions
  * @property {string} [cwd = '']
+ * @property {string} [root = ''] cwd without implicit ./public dir
  * @property {string} [publicDir = '']
  * @property {string} [out = '.cache']
  * @property {boolean} [sourcemap]
@@ -51,8 +52,9 @@ const pathToPosix = p => p.split(sep).join(posix.sep);
  * @TODO Refactor to return a customized bundleProd() return value,
  *       to make bundled development mode more useful and reduce complexity.
  */
-export async function bundleDev({ cwd, publicDir, out, sourcemap, aliases, onError, onBuild, profile }) {
+export async function bundleDev({ cwd, root, publicDir, out, sourcemap, aliases, onError, onBuild, profile }) {
 	cwd = cwd || '';
+	root = root || cwd;
 	const changedFiles = new Set();
 
 	const htmlFiles = await glob('**/*.html', {
@@ -113,7 +115,7 @@ export async function bundleDev({ cwd, publicDir, out, sourcemap, aliases, onErr
 			dynamicImportNamesPlugin({
 				// suffix: '~' // avoid collisions with entry modules
 			}),
-			aliasesPlugin({ aliases }),
+			aliasesPlugin({ aliases, cwd: root }),
 			watcherPlugin({
 				cwd,
 				watchedFiles: '**/*.!({js,cjs,mjs,ts,tsx})',
@@ -197,8 +199,9 @@ export async function bundleDev({ cwd, publicDir, out, sourcemap, aliases, onErr
 }
 
 /** @param {BuildOptions & { npmChunks?: boolean }} options */
-export async function bundleProd({ cwd, publicDir, out, sourcemap, aliases, profile, npmChunks = false }) {
+export async function bundleProd({ cwd, root, publicDir, out, sourcemap, aliases, profile, npmChunks = false }) {
 	cwd = cwd || '';
+	root = root || cwd;
 
 	const htmlFiles = await glob('**/*.html', {
 		cwd,
@@ -222,7 +225,7 @@ export async function bundleProd({ cwd, publicDir, out, sourcemap, aliases, prof
 			}),
 			htmlEntriesPlugin({ cwd, publicDir, publicPath: '/' }),
 			publicPathPlugin({ publicPath: '/' }),
-			aliasesPlugin({ aliases }),
+			aliasesPlugin({ aliases, cwd: root }),
 			htmPlugin(),
 			wmrStylesPlugin({ hot: false, cwd }),
 			wmrPlugin({ hot: false }),
