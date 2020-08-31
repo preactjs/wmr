@@ -7,21 +7,20 @@ import { resolvePackageVersion, loadPackageFile } from '../plugins/npm-plugin/re
 import { getCachedBundle, setCachedBundle, sendCachedBundle, enqueueCompress } from './npm-middleware-cache.js';
 import processGlobalPlugin from '../plugins/process-global-plugin.js';
 import aliasesPlugin from '../plugins/aliases-plugin.js';
+import { getMimeType } from './mimetypes.js';
 
 /**
  * Serve a "proxy module" that uses the WMR runtime to load CSS.
  * @param {ReturnType<normalizeSpecifier>} meta
  * @param {import('http').ServerResponse} res
  */
-async function handleCss(meta, res) {
+async function handleAsset(meta, res) {
 	let code = '',
-		type = '';
-	if (meta.path.endsWith('.js')) {
-		type = 'application/javascript';
+		type = getMimeType(meta.path);
+	if (/\.css\.js$/.test(meta.path)) {
 		const specifier = JSON.stringify('/@npm/' + meta.specifier.replace(/\.js$/, ''));
 		code = `import{style}from '/_wmr.js';\nstyle(${specifier});`;
 	} else {
-		type = 'text/css';
 		code = await loadPackageFile(meta);
 	}
 	res.writeHead(200, {
@@ -57,11 +56,11 @@ export default function npmMiddleware({ source = 'npm', aliases, optimize, cwd }
 			res.setHeader('etag', etag);
 
 			// CSS files and proxy modules don't use Rollup.
-			if (meta.path.match(/\.css(\.js)?$/)) {
-				return handleCss(meta, res);
+			if (/\.((css|s[ac]ss)(\.js)?|wasm|txt|json)$/.test(meta.path)) {
+				return handleAsset(meta, res);
 			}
 
-			res.setHeader('content-type', 'application/javascript');
+			res.setHeader('content-type', 'application/javascript;charset=utf-8');
 
 			// serve from memory and disk caches:
 			const cached = await getCachedBundle(etag, meta, cwd);
