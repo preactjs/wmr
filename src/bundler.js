@@ -1,6 +1,5 @@
 import { relative, sep, posix, resolve, dirname } from 'path';
 import * as rollup from 'rollup';
-import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import watcherPlugin from './plugins/watcher-plugin.js';
 import htmPlugin from './plugins/htm-plugin.js';
@@ -18,6 +17,7 @@ import glob from 'tiny-glob';
 import aliasesPlugin from './plugins/aliases-plugin.js';
 import processGlobalPlugin from './plugins/process-global-plugin.js';
 import urlPlugin from './plugins/url-plugin.js';
+import fastCjsPlugin from './plugins/fast-cjs-plugin.js';
 import bundlePlugin from './plugins/bundle-plugin.js';
 // import nodeResolve from '@rollup/plugin-node-resolve';
 
@@ -127,12 +127,7 @@ export async function bundleDev({ cwd, publicDir, out, sourcemap, aliases, onErr
 			processGlobalPlugin({
 				NODE_ENV: 'development'
 			}),
-			commonjs({
-				sourceMap: sourcemap,
-				transformMixedEsModules: false,
-				extensions: ['.js', '.cjs', ''],
-				include: /^[\b]npm\//
-			}),
+			fastCjsPlugin(),
 			// unpkgPlugin()
 			json(),
 			localNpmPlugin(),
@@ -230,11 +225,8 @@ export async function bundleProd({ cwd, publicDir, out, sourcemap, aliases, prof
 			processGlobalPlugin({
 				NODE_ENV: 'production'
 			}),
-			commonjs({
-				sourceMap: sourcemap,
-				transformMixedEsModules: false,
-				extensions: ['.js', '.cjs', ''],
-				include: /^[\b]npm\//
+			fastCjsPlugin({
+				// include: f => !/^[\b]npm\//.test(f)
 			}),
 			json(),
 			npmPlugin({ external: false }),

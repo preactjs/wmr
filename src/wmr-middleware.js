@@ -10,7 +10,9 @@ import { transformImports } from './lib/transform-imports.js';
 import aliasesPlugin from './plugins/aliases-plugin.js';
 import urlPlugin from './plugins/url-plugin.js';
 import { normalizeSpecifier } from './plugins/npm-plugin/index.js';
+import processGlobalPlugin from './plugins/process-global-plugin.js';
 import { getMimeType } from './lib/mimetypes.js';
+import fastCjsPlugin from './plugins/fast-cjs-plugin.js';
 import bundlePlugin from './plugins/bundle-plugin.js';
 // import { resolvePackageVersion } from './plugins/npm-plugin/registry.js';
 
@@ -57,15 +59,10 @@ export default function wmrMiddleware({
 				sourcemap: false,
 				production: false
 			}),
-			aliasesPlugin({ aliases }),
+			processGlobalPlugin({ NODE_ENV: 'development' }),
 			htmPlugin(),
 			wmrPlugin({ hot: true }),
-			{
-				name: 'direct-asset-urls',
-				resolveFileUrl({ fileName }) {
-					return JSON.stringify(`/${fileName}?asset`);
-				}
-			}
+			fastCjsPlugin()
 		],
 		{
 			cwd,

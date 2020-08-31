@@ -133,6 +133,14 @@ async function bundleNpmModule(mod, { source, aliases }) {
 			}),
 			json(),
 			{
+				name: 'no-builtins',
+				load(s) {
+					if (s === 'fs' || s === 'path') {
+						return 'export default {};';
+					}
+				}
+			},
+			{
 				name: 'never-disk',
 				load(s) {
 					throw Error('local access not allowed');
