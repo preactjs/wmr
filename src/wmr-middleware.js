@@ -13,6 +13,7 @@ import { normalizeSpecifier } from './plugins/npm-plugin/index.js';
 import processGlobalPlugin from './plugins/process-global-plugin.js';
 import { getMimeType } from './lib/mimetypes.js';
 import fastCjsPlugin from './plugins/fast-cjs-plugin.js';
+import resolveExtensionsPlugin from './plugins/resolve-extensions-plugin.js';
 import bundlePlugin from './plugins/bundle-plugin.js';
 // import { resolvePackageVersion } from './plugins/npm-plugin/registry.js';
 
@@ -62,7 +63,11 @@ export default function wmrMiddleware({
 			processGlobalPlugin({ NODE_ENV: 'development' }),
 			htmPlugin(),
 			wmrPlugin({ hot: true }),
-			fastCjsPlugin()
+			fastCjsPlugin(),
+			resolveExtensionsPlugin({
+				typescript: true,
+				index: true
+			})
 		],
 		{
 			cwd,

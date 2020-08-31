@@ -17,9 +17,9 @@ import glob from 'tiny-glob';
 import aliasesPlugin from './plugins/aliases-plugin.js';
 import processGlobalPlugin from './plugins/process-global-plugin.js';
 import urlPlugin from './plugins/url-plugin.js';
+import resolveExtensionsPlugin from './plugins/resolve-extensions-plugin.js';
 import fastCjsPlugin from './plugins/fast-cjs-plugin.js';
 import bundlePlugin from './plugins/bundle-plugin.js';
-// import nodeResolve from '@rollup/plugin-node-resolve';
 
 /** @param {string} p */
 const pathToPosix = p => p.split(sep).join(posix.sep);
@@ -127,6 +127,10 @@ export async function bundleDev({ cwd, publicDir, out, sourcemap, aliases, onErr
 			processGlobalPlugin({
 				NODE_ENV: 'development'
 			}),
+			resolveExtensionsPlugin({
+				typescript: true,
+				index: true
+			}),
 			fastCjsPlugin(),
 			// unpkgPlugin()
 			json(),
@@ -224,6 +228,10 @@ export async function bundleProd({ cwd, publicDir, out, sourcemap, aliases, prof
 			wmrPlugin({ hot: false }),
 			processGlobalPlugin({
 				NODE_ENV: 'production'
+			}),
+			resolveExtensionsPlugin({
+				typescript: true,
+				index: true
 			}),
 			fastCjsPlugin({
 				// include: f => !/^[\b]npm\//.test(f)
