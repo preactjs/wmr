@@ -1,4 +1,4 @@
-import { resolve, relative, sep, posix } from 'path';
+import { resolve, relative, dirname, sep, posix } from 'path';
 import { createHash } from 'crypto';
 import { promises as fs } from 'fs';
 import * as acorn from 'acorn';
@@ -59,15 +59,14 @@ export function createPluginContainer(plugins, opts = {}) {
 				...opts
 			});
 		},
-		async resolve(id, importer) {
-			let out = await container.resolveId(id, importer);
+		async resolve(id, importer, { skipSelf = false } = {}) {
+			const toSkip = [];
+			if (skipSelf) toSkip.push(plugin);
+			let out = await container.resolveId(id, importer, toSkip);
 			if (typeof out === 'string') out = { id: out };
 			if (!out || !out.id) out = { id };
 			if (out.id.match(/^\.\.?[/\\]/)) {
-				if (importer && importer.match(/^\.\.?[/\\]/)) {
-					out.id = resolve(importer, out.id);
-				}
-				out.id = resolve(opts.cwd || '.', out.id);
+				out.id = resolve(opts.cwd || '.', importer ? dirname(importer) : '.', out.id);
 			}
 			return out || false;
 		},
@@ -81,11 +80,13 @@ export function createPluginContainer(plugins, opts = {}) {
 			return mod.info;
 		},
 		emitFile({ type, name, fileName, source }) {
-			if (type !== 'asset') throw Error(`Unsupported type ${type}`);
 			const id = String(++ids);
 			const filename = fileName || generateFilename({ type, name, source, fileName });
 			files.set(id, { id, name, filename });
 			if (source) {
+				if (type === 'chunk') {
+					throw Error(`emitFile({ type:"chunk" }) cannot include a source`);
+				}
 				if (opts.writeFile) opts.writeFile(filename, source);
 				else fs.writeFile(filename, source);
 			}
@@ -93,9 +94,15 @@ export function createPluginContainer(plugins, opts = {}) {
 		},
 		setAssetSource(assetId, source) {
 			const asset = files.get(String(assetId));
+			if (asset.type === 'chunk') {
+				throw Error(`setAssetSource() called on a chunk`);
+			}
 			asset.source = source;
 			if (opts.writeFile) opts.writeFile(asset.filename, source);
 			else fs.writeFile(asset.filename, source);
+		},
+		getFileName(referenceId) {
+			return container.resolveFileUrl({ referenceId });
 		},
 		addWatchFile(id) {
 			watchFiles.add(id);
@@ -164,12 +171,14 @@ export function createPluginContainer(plugins, opts = {}) {
 		/**
 		 * @param {string} id
 		 * @param {string} [importer]
+		 * @param {any} [_skip] internal
 		 * @returns {Promise<import('rollup').ResolveIdResult>}
 		 */
-		async resolveId(id, importer) {
+		async resolveId(id, importer, _skip) {
 			const opts = {};
 			for (plugin of plugins) {
 				if (!plugin.resolveId) continue;
+				if (_skip && _skip.includes(plugin)) continue;
 				const result = await plugin.resolveId.call(ctx, id, importer);
 				if (!result) continue;
 				if (typeof result === 'string') {

@@ -11,6 +11,7 @@ import { transformImports } from './lib/transform-imports.js';
 import aliasesPlugin from './plugins/aliases-plugin.js';
 import urlPlugin from './plugins/url-plugin.js';
 import { normalizeSpecifier } from './plugins/npm-plugin/index.js';
+import bundlePlugin from './plugins/bundle-plugin.js';
 // import { resolvePackageVersion } from './plugins/npm-plugin/registry.js';
 
 /**
@@ -48,7 +49,9 @@ export default function wmrMiddleware({
 
 	const NonRollup = createPluginContainer(
 		[
-			urlPlugin({ cwd }),
+			urlPlugin({ inline: true, cwd }),
+			bundlePlugin({ inline: true, cwd }),
+			aliasesPlugin({ aliases, cwd: root }),
 			sucrasePlugin({
 				typescript: true,
 				sourcemap: false,
@@ -69,6 +72,8 @@ export default function wmrMiddleware({
 			writeFile: (filename, source) => writeCacheFile(out, filename, source),
 			output: {
 				// assetFileNames: '@asset/[name][extname]',
+				// chunkFileNames: '[name][extname]',
+				assetFileNames: '[name][extname]?asset',
 				dir: out
 			}
 		}
@@ -215,10 +220,23 @@ export const TRANSFORMS = {
 			async resolveId(spec, importer) {
 				if (spec === 'wmr') return '/_wmr.js';
 
-				const resolved = await NonRollup.resolveId(spec, importer);
+				if (/^(data|https?):/.test(spec)) return spec;
+
+				// const resolved = await NonRollup.resolveId(spec, importer);
+				const resolved = await NonRollup.resolveId(spec, file);
 				if (resolved) {
 					spec = (resolved && resolved.id) || resolved;
+					if (/^(\/|\\|[a-z]:\\)/i.test(spec[0])) {
+						spec = relative(dirname(file), spec).split(sep).join(posix.sep);
+						if (!/^\.?\.?\//.test(spec)) {
+							spec = './' + spec;
+						}
+					}
 					if (resolved && resolved.external) {
+						// console.log('external: ', spec);
+						if (/^(data|https?):/.test(spec)) return spec;
+
+						spec = relative(cwd, spec).split(sep).join(posix.sep);
 						if (!/^(\/|[\w-]+:)/.test(spec)) spec = `/${spec}`;
 						return spec;
 					}
