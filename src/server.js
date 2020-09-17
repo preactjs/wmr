@@ -50,7 +50,7 @@ export default async function server({ cwd, root, overlayDir, middleware, http2,
 			const msg = err ? (process.env.DEBUG && err.stack) || err.message || String(err) : '';
 			res.writeHead(code, { 'content-type': 'text/plain' });
 			res.end(msg);
-			console.error(`${code} ${req.path}${msg ? `: ${msg}` : ''}`);
+			console.error(`\u001b[33m${code} \u001b[37m${req.path}\u001b[0m${msg ? ` - ${msg}` : ''}`);
 		}
 	});
 

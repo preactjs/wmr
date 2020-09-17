@@ -188,6 +188,12 @@ export default function wmrMiddleware({
 			// `throw null` also skips handling
 			if (e == null) return next();
 
+			if (e.code === 'ENOENT') {
+				// e.message = `not found (.${sep}${relative(root, e.path)})`;
+				e.message = `File not found`;
+				e.code = 404;
+			}
+
 			onError(e);
 			next(e);
 		}
