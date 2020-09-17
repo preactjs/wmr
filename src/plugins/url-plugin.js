@@ -20,7 +20,10 @@ export default function urlPlugin({ inline, cwd } = {}) {
 				if (inline) {
 					const url = '/' + relative(cwd, resolved.id).replace(/^\./, '') + '?asset';
 					return {
-						id: `data:text/javascript,export default${JSON.stringify(url)}`.replace(/#/g, '%23'),
+						id: `data:text/javascript,export default${JSON.stringify(url)}`
+							.replace(/#/g, '%23')
+							.replace(/'/g, "\\'")
+							.replace(/"/g, '\\"'),
 						external: true
 					};
 				}
