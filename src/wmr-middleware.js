@@ -1,5 +1,5 @@
 import { resolve, dirname, relative, sep, posix } from 'path';
-import { promises as fs } from 'fs';
+import { promises as fs, createReadStream } from 'fs';
 import chokidar from 'chokidar';
 import htmPlugin from './plugins/htm-plugin.js';
 import sucrasePlugin from './plugins/sucrase-plugin.js';
@@ -145,7 +145,7 @@ export default function wmrMiddleware({
 
 		let type = getMimeType(file);
 		if (type) {
-			res.setHeader('content-type', type);
+			res.setHeader('Content-Type', type);
 		}
 
 		const ctx = { req, res, id, file, path, cwd, out, NonRollup, next };
@@ -177,10 +177,9 @@ export default function wmrMiddleware({
 			// return a value to use it as the response:
 			if (result != null) {
 				const time = Date.now() - start;
-				// console.log(result);
 				res.writeHead(200, {
-					'content-length': Buffer.byteLength(result, 'utf-8'),
-					'server-timing': `${transform.name};dur=${time}`
+					'Content-Length': Buffer.byteLength(result, 'utf-8'),
+					'Server-Timing': `${transform.name};dur=${time}`
 				});
 				res.end(result);
 			}
@@ -202,14 +201,39 @@ export default function wmrMiddleware({
 
 export const TRANSFORMS = {
 	// Handle direct asset requests (/foo?asset)
-	async asset({ file }) {
-		return await fs.readFile(file);
+	async asset({ file, cwd, req, res }) {
+		const filename = resolve(cwd, file);
+		let stats;
+		try {
+			stats = await fs.stat(filename);
+		} catch (e) {
+			if (e.code === 'ENOENT') {
+				res.writeHead(404);
+				res.end();
+				return;
+			}
+			throw e;
+		}
+		if (stats.isDirectory()) {
+			res.writeHead(403);
+			res.end();
+		}
+		const ims = req.headers['if-modified-since'];
+		if (ims && stats.mtime > new Date(ims)) {
+			res.writeHead(304);
+			res.end();
+			return;
+		}
+		res.writeHead(200, {
+			'Content-Length': stats.size,
+			'Last-Modified': stats.mtime.toUTCString()
+		});
+		createReadStream(filename).pipe(res, { end: true });
 	},
 
 	// Handle individual JavaScript modules
-	/** @param {object} opts @param {ReturnType<createPluginContainer>} [opts.NonRollup] */
 	async js({ id, file, res, cwd, out, NonRollup }) {
-		res.setHeader('content-type', 'application/javascript;charset=utf-8');
+		res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
 
 		const cacheKey = id.replace(/^[\0\b]/, '');
 
@@ -290,7 +314,7 @@ export const TRANSFORMS = {
 
 	// Handles "CSS Modules" proxy modules (style.module.css.js)
 	async cssModule({ id, file, cwd, out, res }) {
-		res.setHeader('content-type', 'application/javascript;charset=utf-8');
+		res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
 
 		// Cache the generated mapping/proxy module with a .js extension (the CSS itself is also cached)
 		if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
@@ -341,7 +365,7 @@ export const TRANSFORMS = {
 
 		const isSass = /\.(s[ac]ss)$/.test(path);
 
-		res.setHeader('content-type', 'text/css;charset=utf-8');
+		res.setHeader('Content-Type', 'text/css;charset=utf-8');
 
 		if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
 
