@@ -4,12 +4,13 @@ import chokidar from 'chokidar';
 import htmPlugin from './plugins/htm-plugin.js';
 import sucrasePlugin from './plugins/sucrase-plugin.js';
 import wmrPlugin, { getWmrClient } from './plugins/wmr/plugin.js';
-import wmrStylesPlugin, { modularizeCss } from './plugins/wmr/styles-plugin.js';
+import wmrStylesPlugin, { modularizeCss, processSass } from './plugins/wmr/styles-plugin.js';
 import { createPluginContainer } from './lib/rollup-plugin-container.js';
 import { transformImports } from './lib/transform-imports.js';
 import aliasesPlugin from './plugins/aliases-plugin.js';
 import urlPlugin from './plugins/url-plugin.js';
 import { normalizeSpecifier } from './plugins/npm-plugin/index.js';
+import sassPlugin from './plugins/sass-plugin.js';
 import processGlobalPlugin from './plugins/process-global-plugin.js';
 import { getMimeType } from './lib/mimetypes.js';
 import fastCjsPlugin from './plugins/fast-cjs-plugin.js';
@@ -61,6 +62,7 @@ export default function wmrMiddleware({
 				production: false
 			}),
 			processGlobalPlugin({ NODE_ENV: 'development' }),
+			sassPlugin(),
 			htmPlugin(),
 			wmrPlugin({ hot: true }),
 			fastCjsPlugin(),
@@ -155,7 +157,7 @@ export default function wmrMiddleware({
 			transform = TRANSFORMS.asset;
 		} else if (prefix) {
 			transform = TRANSFORMS.js;
-		} else if (/\.css\.js$/.test(file)) {
+		} else if (/\.(css|s[ac]ss)\.js$/.test(file)) {
 			transform = TRANSFORMS.cssModule;
 		} else if (/\.([mc]js|[tj]sx?)$/.test(file)) {
 			transform = TRANSFORMS.js;
@@ -253,7 +255,7 @@ export const TRANSFORMS = {
 				});
 
 				// foo.css --> foo.css.js (import of CSS Modules proxy module)
-				if (spec.endsWith('.css')) spec += '.js';
+				if (spec.match(/\.(css|s[ac]ss)$/)) spec += '.js';
 
 				// Bare specifiers are npm packages:
 				if (!/^\.?\.?[/\\]/.test(spec)) {
@@ -291,7 +293,7 @@ export const TRANSFORMS = {
 
 		// We create a plugin container for each request to prevent asset referenceId clashes
 		const container = createPluginContainer(
-			[wmrPlugin({ hot: true }), wmrStylesPlugin({ cwd, hot: true, fullPath: true })],
+			[wmrPlugin({ hot: true }), sassPlugin(), wmrStylesPlugin({ cwd, hot: true, fullPath: true })],
 			{
 				cwd,
 				output: {
@@ -304,11 +306,11 @@ export const TRANSFORMS = {
 			}
 		);
 
-		const result = await container.load(file);
+		const result = (await container.load(file)) || (await fs.readFile(resolve(cwd, file), 'utf-8'));
 
 		let code = typeof result === 'string' ? result : result && result.code;
 
-		code = await container.transform(code, id);
+		code = await container.transform(code, file);
 
 		code = await transformImports(code, id, {
 			resolveImportMeta(property) {
@@ -327,15 +329,24 @@ export const TRANSFORMS = {
 
 	// Handles CSS Modules (the actual CSS)
 	async css({ id, path, file, cwd, out, res }) {
-		if (!/\.module\.css$/.test(path)) throw null;
+		if (!/\.(css|s[ac]ss)$/.test(path)) throw null;
+
+		const isModular = /\.module\.(css|s[ac]ss)$/.test(path);
+
+		const isSass = /\.(s[ac]ss)$/.test(path);
 
 		res.setHeader('content-type', 'text/css;charset=utf-8');
 
 		if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
 
-		let code = await fs.readFile(resolve(cwd, file), 'utf-8');
+		const idAbsolute = resolve(cwd, file);
+		let code = await fs.readFile(idAbsolute, 'utf-8');
 
-		code = modularizeCss(code, id);
+		if (isModular) {
+			code = await modularizeCss(code, id, null, idAbsolute);
+		} else if (isSass) {
+			code = processSass(code);
+		}
 
 		// const plugin = wmrStylesPlugin({ cwd, hot: false, fullPath: true });
 		// let code;

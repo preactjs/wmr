@@ -35,6 +35,7 @@
 		"rules": {
 			"no-console": "off",
 			"prefer-rest-params": "off",
+			"prefer-spread": "off",
 			"no-prototype-builtins": "off",
 			"function-call-argument-newline": [
 				"error",

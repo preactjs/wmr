@@ -6,6 +6,7 @@ import htmPlugin from './plugins/htm-plugin.js';
 import sucrasePlugin from './plugins/sucrase-plugin.js';
 import wmrPlugin from './plugins/wmr/plugin.js';
 import wmrStylesPlugin from './plugins/wmr/styles-plugin.js';
+import sassPlugin from './plugins/sass-plugin.js';
 import localNpmPlugin from './plugins/local-npm-plugin.js';
 import terser from './plugins/fast-minify.js';
 import npmPlugin from './plugins/npm-plugin/index.js';
@@ -124,6 +125,7 @@ export async function bundleDev({ cwd, root, publicDir, out, sourcemap, aliases,
 				}
 			}),
 			htmPlugin(),
+			sassPlugin({ production: false }),
 			wmrStylesPlugin({ hot: true, cwd }),
 			wmrPlugin(),
 			processGlobalPlugin({
@@ -227,6 +229,7 @@ export async function bundleProd({ cwd, root, publicDir, out, sourcemap, aliases
 			publicPathPlugin({ publicPath: '/' }),
 			aliasesPlugin({ aliases, cwd: root }),
 			htmPlugin(),
+			sassPlugin({ production: true }),
 			wmrStylesPlugin({ hot: false, cwd }),
 			wmrPlugin({ hot: false }),
 			processGlobalPlugin({
