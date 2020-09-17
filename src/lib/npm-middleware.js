@@ -8,6 +8,7 @@ import { getCachedBundle, setCachedBundle, sendCachedBundle, enqueueCompress } f
 import processGlobalPlugin from '../plugins/process-global-plugin.js';
 import aliasesPlugin from '../plugins/aliases-plugin.js';
 import { getMimeType } from './mimetypes.js';
+import nodeBuiltinsPlugin from '../plugins/node-builtins-plugin.js';
 
 /**
  * Serve a "proxy module" that uses the WMR runtime to load CSS.
@@ -121,6 +122,7 @@ async function bundleNpmModule(mod, { source, aliases }) {
 		// shimMissingExports: true,
 		preserveEntrySignatures: 'allow-extension',
 		plugins: [
+			nodeBuiltinsPlugin({}),
 			aliasesPlugin({ aliases }),
 			npmProviderPlugin,
 			processGlobalPlugin({

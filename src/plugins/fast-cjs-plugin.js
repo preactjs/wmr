@@ -24,7 +24,27 @@ export default function fastCjsPlugin({ include, extensions = ['.js', '.cjs'] } 
 			const hasEsmKeywords = ESM_KEYWORDS.test(code);
 			if (!hasCjsKeywords || hasEsmKeywords) return;
 
-			code = `var module={exports:{}},exports=module.exports;${code}\nexport default module.exports`;
+			let specs = new Map();
+			let ns = new Map();
+			code = code.replace(/([^.\w$])require\s*\((['"])(.*?)\2\)/g, (str, before, quote, specifier) => {
+				let spec = specs.get(specifier);
+				if (!spec) {
+					let id = '$cjs$' + specifier.replace(/[^\w_$]+/g, '_');
+					let count = (ns.get(id) || 0) + 1;
+					ns.set(id, count);
+					if (count > 1) id += count;
+					spec = { id, specifier: quote + specifier + quote };
+					specs.set(specifier, spec);
+				}
+				return `${before}Object.defineProperty(${spec.id}||{},'default',{value:${spec.id}})`;
+			});
+
+			let imports = '';
+			specs.forEach(spec => {
+				imports += `import * as ${spec.id} from ${spec.specifier};`;
+			});
+
+			code = `${imports}var module={exports:{}},exports=module.exports;${code}\nexport default module.exports`;
 			return { code, map: null };
 		}
 	};
