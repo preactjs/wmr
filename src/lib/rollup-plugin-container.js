@@ -41,7 +41,9 @@ export function createPluginContainer(plugins, opts = {}) {
 	let plugin;
 	let parser = Parser;
 	const ctx = {
-		meta: {},
+		meta: {
+			rollupVersion: '2.8.0'
+		},
 		options: {},
 		outputOptions: {
 			dir: opts.output && opts.output.dir,
