@@ -90,6 +90,12 @@ export async function transformImports(code, id, { resolveImportMeta, resolveId,
 			// TODO: Support renderDynamicImport(): https://rollupjs.org/guide/en/#renderdynamicimport
 			// `slice(item.d, item.s)` gives us "import(" to implement this.
 
+			// Strip comments - these are usually Webpack magic comments.
+			spec = spec
+				.replace(/\/\*[\s\S]*\*\//g, '')
+				.replace(/^\s*\/\/.*$/gm, '')
+				.trim();
+
 			// For dynamic imports, spec is a JavaScript expression.
 			// We need to try to convert it to a specifier, or bail if it's not static.
 			quote = (spec.match(/^\s*(['"`])/) || [])[1];
