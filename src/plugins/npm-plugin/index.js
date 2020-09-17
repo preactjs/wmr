@@ -104,7 +104,9 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = '\bnpm/', ext
 				readFile(path)
 					.then(() => true)
 					.catch(() => false);
-			const resolvedPath = (await resolveModule(path, { readFile, hasFile, module })).replace(/^\//, '');
+
+			const internal = !!importer;
+			const resolvedPath = (await resolveModule(path, { readFile, hasFile, module, internal })).replace(/^\//, '');
 
 			// CSS files are not handled by this plugin.
 			if (/\.css$/.test(id) && (await hasFile(resolvedPath))) {

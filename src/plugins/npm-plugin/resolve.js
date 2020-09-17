@@ -1,14 +1,23 @@
 /**
  * @param {string} path
- * @param {{ readFile(f:string): Promise<string>, hasFile(f:string): Promise<boolean>, module?: string }} context
+ * @param {object} context
+ * @param {(f: string) => Promise<string>} context.readFile Reads a file within the package directory
+ * @param {(f: string) => Promise<boolean>} context.hasFile Checks for the existence of a file within the package directory
+ * @param {string} [context.module] The module/package name
+ * @param {boolean} [context.internal = false] Resolve `path` as an internal specifier - obeys Export Map, but falls back to direct resolution.
  */
-export async function resolveModule(path, { readFile, hasFile, module }) {
+export async function resolveModule(path, { readFile, hasFile, module, internal }) {
 	let pkg;
 	try {
 		pkg = JSON.parse(await readFile('package.json'));
 	} catch (e) {
 		throw Error(`Invalid package.json for ${module}: ${e.message}`);
 	}
+
+	// Many early adopters of Export Maps use invalid specifiers,
+	// relying on CommonJS semantics like extensionless imports.
+	// To address this, we resolve extensionless internal imports.
+	const isExportMappedSpecifier = pkg.exports && internal;
 
 	// Package Export Maps
 	if (pkg.exports) {
@@ -20,8 +29,8 @@ export async function resolveModule(path, { readFile, hasFile, module }) {
 			throw Error(`Unknown package export ${entry} in ${module}.\n\n${JSON.stringify(pkg.exports, null, 2)}`);
 		}
 
-		// true means directory access was allowed for this entry, but it was not resolved.
-		if (mapped !== true) {
+		// `mapped:true` means directory access was allowed for this entry, but it was not resolved.
+		if (mapped !== true && !internal) {
 			return mapped.replace(/^\./, '');
 		}
 	}
@@ -37,10 +46,13 @@ export async function resolveModule(path, { readFile, hasFile, module }) {
 	}
 
 	// path is a directory, check for package.json:
-	try {
-		const subPkg = JSON.parse(await readFile(path + '/package.json'));
-		path += getLegacyEntry(subPkg);
-	} catch (e) {}
+	// (this is skipped )
+	if (!isExportMappedSpecifier) {
+		try {
+			const subPkg = JSON.parse(await readFile(path + '/package.json'));
+			path += getLegacyEntry(subPkg);
+		} catch (e) {}
+	}
 
 	// extensionless paths:
 	if (await hasFile(path + '.js')) {
@@ -48,18 +60,20 @@ export async function resolveModule(path, { readFile, hasFile, module }) {
 	}
 
 	// fall back to implicit directory /index.js:
-	if (await hasFile(path + '/index.js')) {
+	if (!isExportMappedSpecifier && (await hasFile(path + '/index.js'))) {
 		return path + '/index.js';
 	}
 
 	return path;
 }
 
-/** Get the best possible entry from a package.json that doesn't have an Export Map */
+/**
+ * Get the best possible entry from a package.json that doesn't have an Export Map
+ * @TODO this does not currently support {"browser":{"./foo.js":"./browser-foo.js"}}
+ */
 function getLegacyEntry(pkg) {
-	const entry = String(
-		pkg.esmodules || pkg.modern || pkg.module || pkg['jsnext:main'] || pkg.browser || pkg.main || 'index.js'
-	);
+	const mainFields = [pkg.esmodules, pkg.modern, pkg.module, pkg['jsnext:main'], pkg.browser, pkg.main, 'index.js'];
+	const entry = mainFields.find(p => p && typeof p === 'string');
 	return '/' + entry.replace(/^\.?\//, '');
 }
 
