@@ -201,6 +201,19 @@ export default function wmrMiddleware({
 	};
 }
 
+/**
+ * @typedef Context
+ * @property {ReturnType<createPluginContainer>} NonRollup
+ * @property {string} id - rollup-style cwd-relative file identifier
+ * @property {string} file - absolute file path
+ * @property {string} path - request path
+ * @property {string} cwd - working directory, including ./public if detected
+ * @property {string} out - output directory
+ * @property {InstanceType<import('http')['IncomingMessage']>} req - HTTP Request object
+ * @property {InstanceType<import('http')['ServerResponse']>} res - HTTP Response object
+ */
+
+/** @type {{ [key: string]: (ctx: Context) => string|false|Buffer|null|void|Promise<string|false|Buffer|null|void> }} */
 export const TRANSFORMS = {
 	// Handle direct asset requests (/foo?asset)
 	async asset({ file, cwd, req, res }) {
