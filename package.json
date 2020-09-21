@@ -101,6 +101,7 @@
 		"cssnano": "^4.1.10",
 		"devcert": "^1.1.2",
 		"es-module-lexer": "^0.3.24",
+		"esbuild": "^0.6.14",
 		"eslint": "^7.4.0",
 		"eslint-config-developit": "^1.2.0",
 		"eslint-config-prettier": "^6.11.0",
