@@ -10,7 +10,8 @@
 		"build": "rollup -c",
 		"ci": "npm run build && cd demo && node ../wmr.cjs build",
 		"prepack": "node --experimental-modules ./src/lib/~publish.js",
-		"test": "eslint src test && jest --runInBand"
+		"test-e2e": "cross-env JEST_PUPPETEER_CONFIG=jest-puppeteer.config.cjs jest --runInBand",
+		"test": "eslint src test && npm run test-e2e"
 	},
 	"author": "The Preact Authors (https://preactjs.com)",
 	"repository": "preactjs/wmr",
@@ -101,6 +102,7 @@
 		"babel-plugin-transform-jsx-to-htm": "^2.0.0",
 		"bufferutil": "^4.0.1",
 		"chokidar": "^3.4.0",
+		"cross-env": "^7.0.2",
 		"cssnano": "^4.1.10",
 		"devcert": "^1.1.2",
 		"es-module-lexer": "^0.3.24",
