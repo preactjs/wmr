@@ -15,5 +15,6 @@ declare interface TestEnv {
 declare interface WmrInstance {
 	output: string[];
 	code: number;
+	address: Promise<string>;
 	close: () => void;
 }

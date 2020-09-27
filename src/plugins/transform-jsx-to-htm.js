@@ -1,3 +1,7 @@
+// This is an alternative to the official transform.
+// It is no longer used.
+
+/** @type {import('../lib/acorn-traverse').Plugin} */
 export default function transformJsxToHtm({ types: t, template }) {
 	const isIdent = name => /(^[A-Z]|[.$])/.test(name);
 	const isRootElement = path => !t.isJSXElement(path.parentPath.parent) && !t.isJSXFragment(path.parentPath.parent);
@@ -46,24 +50,16 @@ export default function transformJsxToHtm({ types: t, template }) {
 					// We take a shortcut that works in Babel and Acorn (but is gross).
 					if (attr.node.value && attr.node.value.value !== true) {
 						str += '=';
-						const value = attr.get('value').getSource();
+						const value = attr.get('value').getOutput();
 						// if it's an ExpressionContainer, all we need to do is prepend "$"
 						if (!t.isLiteral(attr.node.value)) {
 							str += '$';
 						}
 						str += value;
-						// if (t.isLiteral(attr.node.value)) {
-						//   // can use original quotes here to get free escapement:
-						//   str += attr.get('value').getSource();
-						//   // str += JSON.stringify(attr.node.value.value);
-						// }
-						// else {
-						//   str += `\$${attr.get('value').getSource()}`;
-						// }
 					}
 				});
 
-				if (node.selfClosing) str += ' /';
+				if (node.selfClosing) str += '/';
 				str += '>';
 
 				if (isRootElement(path)) {

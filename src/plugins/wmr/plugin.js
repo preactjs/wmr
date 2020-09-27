@@ -1,6 +1,8 @@
 import { promises as fs } from 'fs';
 import MagicString from 'magic-string';
 
+const BYPASS_HMR = process.env.BYPASS_HMR === 'true';
+
 const PREFRESH = `
 import '@prefresh/core';
 if (import.meta.hot) {
@@ -24,6 +26,7 @@ const wmrClientPromise = fs.readFile(new URL('./client.js', __filename), 'utf-8'
 const wmrProdClientPromise = fs.readFile(new URL('./client-prod.js', __filename), 'utf-8');
 
 export function getWmrClient({ hot = true } = {}) {
+	if (BYPASS_HMR) hot = false;
 	return hot ? wmrClientPromise : wmrProdClientPromise;
 }
 
@@ -34,6 +37,7 @@ export function getWmrClient({ hot = true } = {}) {
  * @returns {import('rollup').Plugin}
  */
 export default function wmrPlugin({ hot = true } = {}) {
+	if (BYPASS_HMR) hot = false;
 	return {
 		name: 'wmr',
 		resolveId(s) {
@@ -82,7 +86,8 @@ export default function wmrPlugin({ hot = true } = {}) {
 				s.prepend(
 					`import { createHotContext as $createHotContext$ } from 'wmr';const $IMPORT_META_HOT$ = $createHotContext$(import.meta.url);${before}`
 				);
-			} else {
+			} else if (!BYPASS_HMR) {
+				// TODO: this should be able to be omitted unconditionally.
 				s.prepend(`const $IMPORT_META_HOT$ = undefined;${before}`);
 			}
 			return {

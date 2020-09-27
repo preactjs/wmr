@@ -3,6 +3,7 @@ import path from 'path';
 import ncpCb from 'ncp';
 import childProcess from 'child_process';
 import { promisify } from 'util';
+import { get as httpGet } from 'http';
 
 const ncp = promisify(ncpCb);
 
@@ -37,14 +38,26 @@ export async function loadFixture(name, env) {
  * @returns {Promise<WmrInstance>}
  */
 export async function runWmr(cwd, ...args) {
+	let opts = {};
+	const lastArg = args[args.length - 1];
+	if (lastArg && typeof lastArg === 'object') {
+		opts = args.pop();
+	}
 	const bin = path.join(__dirname, '..', 'src', 'cli.js');
 	const child = childProcess.spawn('node', ['--experimental-modules', bin, ...args], {
-		cwd
+		cwd,
+		...opts,
+		env: {
+			...process.env,
+			DEBUG: 'true',
+			...(opts.env || {})
+		}
 	});
 
 	const out = {
 		output: [],
 		code: 0,
+		address: null,
 		close: () => child.kill()
 	};
 
@@ -55,10 +68,17 @@ export async function runWmr(cwd, ...args) {
 		if (/\b([A-Z][a-z]+)?Error\b/m.test(raw)) {
 			console.error(`Error running "wmr ${args.join(' ')}":\n${raw}`);
 		}
+		if (/^Listening/m.test(raw)) {
+			let m = raw.match(/https?:\/\/localhost:\d+/g);
+			if (m) setAddress(m[0]);
+		}
 	}
 	child.stdout.on('data', onOutput);
 	child.stderr.on('data', onOutput);
 	child.on('close', code => (out.code = code));
+
+	let setAddress;
+	out.address = new Promise(resolve => (setAddress = resolve));
 
 	await waitFor(() => out.output.length > 0, 10000);
 
@@ -119,4 +139,32 @@ export async function waitForMessage(haystack, message, timeout = 5000) {
 	if (!found) {
 		throw new Error(`Message ${message} didn't appear in ${timeout}ms`);
 	}
+}
+
+export async function get(instance, urlPath) {
+	const addr = await instance.address;
+	return new Promise((resolve, reject) => {
+		httpGet(addr + '/' + urlPath.replace(/^\//, ''), res => {
+			let body = '';
+			res.setEncoding('utf-8');
+			res.on('data', chunk => {
+				body += chunk;
+			});
+			res.once('end', () => {
+				if (res.statusCode >= 400) {
+					const err = Error(`${res.statusCode} ${res.statusMessage}: ${urlPath}\n${body}`);
+					err.code = res.statusCode;
+					err.body = body;
+					err.res = res;
+					reject(err);
+					return;
+				}
+				resolve({
+					status: res.statusCode,
+					body,
+					res
+				});
+			});
+		});
+	});
 }
