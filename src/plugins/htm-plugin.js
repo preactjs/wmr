@@ -55,14 +55,6 @@ export default function htmPlugin({ include } = {}) {
 				parse: this.parse
 			});
 
-			// try {
-			// 	this.parse(out.code, { sourceType: 'module' });
-			// } catch (e) {
-			// 	console.log('failed to parse: \n');
-			// 	console.log(out.code);
-			// 	console.log(e.stack);
-			// }
-
 			// Explicitly drop prefresh inclusion hint if we transformed JSX:
 			// if (out.code !== code) {
 			// 	out.code += '\n/*@@prefresh_include*/';

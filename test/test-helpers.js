@@ -152,12 +152,12 @@ export async function get(instance, urlPath) {
 			});
 			res.once('end', () => {
 				if (res.statusCode >= 400) {
-					const err = Error(`${res.statusCode} ${res.statusMessage}: ${urlPath}\n${body}`);
-					err.code = res.statusCode;
-					err.body = body;
-					err.res = res;
-					reject(err);
-					return;
+					const err = Object.assign(Error(`${res.statusCode} ${res.statusMessage}: ${urlPath}\n${body}`), {
+						code: res.statusCode,
+						body,
+						res
+					});
+					return reject(err);
 				}
 				resolve({
 					status: res.statusCode,

@@ -15,7 +15,7 @@ cjsDefault(jsxWalk).extend(walk.base);
 
 /**
  * @typedef Node
- * @type {Omit<import('acorn').Node, 'start'|'end'> & { start?: number, end?: number, value?: any, selfClosing?: boolean, name?: any, computed?: boolean, condition?: Node, expression?: Node, expressions?: Node[], id?: Node, init?: Node, block?: Node, object?: Node, property?: Node, body?: Node[], tag?: Node, quasi?: Node, quasis?: Node[], declarators?: Node[], properties?: Node[], children?: Node[], elements?: Node[], key?: Node, shorthand?: boolean, method?: boolean, imported?: Node, local?: Node, specifiers?: Node[], source?: Node }}
+ * @type {Omit<import('acorn').Node, 'start'|'end'> & { _string?: string, start?: number, end?: number, value?: any, selfClosing?: boolean, name?: any, computed?: boolean, condition?: Node, expression?: Node, expressions?: Node[], id?: Node, init?: Node, block?: Node, object?: Node, property?: Node, body?: Node[], tag?: Node, quasi?: Node, quasis?: Node[], declarators?: Node[], properties?: Node[], children?: Node[], elements?: Node[], key?: Node, shorthand?: boolean, method?: boolean, imported?: Node, local?: Node, specifiers?: Node[], source?: Node, left?: Node, right?: Node, operator?: string, raw?: string, argument?: Node, arguments?: Node[], async?: boolean, params?: Node[], callee?: Node }}
  */
 
 /**
@@ -24,13 +24,18 @@ cjsDefault(jsxWalk).extend(walk.base);
  */
 
 /**
- * @typedef Visitor
+ * @typedef VisitorFn
  * @type {(path: Path, state: State) => void}
  */
 
 /**
+ * @typedef Visitor
+ * @type {VisitorFn | { enter?: VisitorFn, exit?: VisitorFn }}
+ */
+
+/**
  * @typedef PluginContext
- * @type {{ name: string, visitor: Record<string, Visitor | { enter?: Visitor, exit?: Visitor }> }}
+ * @type {{ name: string, visitor: Record<string, Visitor> }}
  */
 
 /**
@@ -69,40 +74,6 @@ function codegen(node) {
 			return ctx.out.slice(node.start, node.end).replace(/;([\s\n]*)/g, '$1');
 		} catch (e) {}
 	}
-
-	// if (skipWs !== true) {
-	// 	getSpacing(ctx, node);
-	// 	if (node._spaceBefore || node._spaceAfter) {
-	// 		return `${node._spaceBefore || ''}${codegen(node, true)}${node._spaceAfter || ''}`;
-	// 	}
-	// }
-
-	// if (skipWs !== true && (node._spaceBefore || node._spaceAfter)) {
-	// 	return `${node._spaceBefore || ''}${codegen(node, true)}${node._spaceAfter || ''}`;
-	// }
-
-	// if (ctx && skipWs !== true) {
-	// 	let before = '',
-	// 		after = '',
-	// 		source,
-	// 		m;
-	// 	// const source = ctx.code.substring(node.start, node.end);
-	// 	// m = source.match(/^([\s\n]*)[\s\S]*?([\s\n]*)$/);
-	// 	// if (m) {
-	// 	// 	before = m[1];
-	// 	// 	after = m[2];
-	// 	// 	return `${before}${codegen(node, true)}${after}`;
-	// 	// }
-	// 	source = ctx.code.substring(0, node.start);
-	// 	m = source.match(/[\s\n]+$/g);
-	// 	if (m) before = m[0];
-	// 	source = ctx.code.substring(node.end);
-	// 	m = source.match(/^[\s\n]+/g);
-	// 	if (m) after = m[0];
-	// 	if (before || after) {
-	// 		return `${before}${codegen(node, true)}${after}`;
-	// 	}
-	// }
 
 	switch (node.type) {
 		case 'Expression':
@@ -166,7 +137,6 @@ function codegen(node) {
 			for (let i = 0, { quasis, expressions } = node; i < quasis.length; i++) {
 				out += quasis[i].value.raw;
 				if (i < expressions.length) {
-					console.log('expression: ', { [expressions[i].type]: expressions[i] });
 					out += '${' + codegen(expressions[i]) + '}';
 				}
 			}
@@ -223,37 +193,6 @@ function def(obj, key, value) {
 	Object.defineProperty(obj, key, { value });
 }
 
-// function preserveSpacing(ctx, str, start, end) {
-// 	let before = '',
-// 		after = '';
-// 	if (start != null) {
-// 		const m = ctx.code.substring(0, start).match(/[\s\n]+$/g);
-// 		if (m) before = m[0];
-// 	}
-// 	if (end != null) {
-// 		const m = ctx.code.substring(end).match(/^[\s\n]+/g);
-// 		if (m) after = m[0];
-// 	}
-// 	if (!before && !after) return str;
-// 	return before + str + after;
-// }
-
-// function getSpacing(ctx, node) {
-// 	if (!('_spaceBefore' in node) && !('_spaceAfter' in node)) {
-// 		let before, after;
-// 		if (node.start != null) {
-// 			const m = ctx.code.substring(0, node.start).match(/[\s\n]+$/g);
-// 			if (m) before = m[0];
-// 		}
-// 		if (node.end != null) {
-// 			const m = ctx.code.substring(node.end).match(/^[\s\n]+/g);
-// 			if (m) after = m[0];
-// 		}
-// 		node._spaceBefore = before;
-// 		node._spaceAfter = after;
-// 	}
-// }
-
 class Path {
 	/**
 	 * @param {Node} node
@@ -300,18 +239,6 @@ class Path {
 			}
 
 			ctx.paths.set(node, this);
-
-			// getSpacing(ctx, node);
-			// if (!('_spaceBefore' in node) && !('_spaceAfter' in node)) {
-			// 	if (node.start != null) {
-			// 		const m = ctx.code.substring(0, node.start).match(/[\s\n]+$/g);
-			// 		if (m) node._spaceBefore = m[0];
-			// 	}
-			// 	if (node.end != null) {
-			// 		const m = ctx.code.substring(node.end).match(/^[\s\n]+/g);
-			// 		if (m) node._spaceAfter = m[0];
-			// 	}
-			// }
 		}
 	}
 
@@ -376,32 +303,16 @@ class Path {
 	replaceWith(node) {
 		if (node instanceof Path) node = node.node;
 
-		// const { start, end } = this.node;
-
-		// to check: need to generate the string *first* so that we don't use .start/.end bypass?
-
-		// if (!('_spaceBefore' in this.node)) {
-		// 	getSpacing(this.ctx, this.node);
-		// 	node._spaceBefore = this.node._spaceBefore;
-		// 	node._spaceAfter = this.node._spaceAfter;
-		// }
 		this.node = node;
 		if (this.inList) this.parent[this.listKey][this.key] = node;
 		else this.parent[this.parentKey] = node;
 		this.ctx.paths.set(node, this);
 
 		if (this._regenerateParent()) {
-			// node.start = this.node.start;
-			// node.end = this.node.end;
 			this._hasString = false;
 		} else {
-			// node._string = null;
 			let str = generate(node, this.ctx);
-			// node.start = this.node.start;
-			// node.end = this.node.end;
 			this._hasString = true;
-			// this.ctx.out.overwrite(this.start, this.end, str);
-			// str = preserveSpacing(this.ctx, str, this.start, this.end);
 			this.ctx.out.overwrite(this.start, this.end, str);
 		}
 		this._requeue();
@@ -416,11 +327,7 @@ class Path {
 			return;
 		}
 		this._hasString = true;
-		// str = preserveSpacing(this.ctx, str, this.start, this.end);
 		this.ctx.out.overwrite(this.start, this.end, str);
-		// this.ctx.out.overwrite(this.node.start, this.node.end, str);
-		// can't requeue if we didn't parse...
-		// this._requeue();
 	}
 
 	remove() {
@@ -429,15 +336,11 @@ class Path {
 
 	/** @param {string} str */
 	prependString(str) {
-		// this.ctx.mods.push(['appendLeft', this.node.start, str]);
-		// this.ctx.out.appendLeft(this.node.start, str);
 		this.ctx.out.appendLeft(this.start, str);
 	}
 
 	/** @param {string} str */
 	appendString(str) {
-		// this.ctx.mods.push(['appendRight', this.node.end, str]);
-		// this.ctx.out.appendRight(this.node.end, str);
 		this.ctx.out.appendRight(this.end, str);
 	}
 
@@ -447,7 +350,6 @@ class Path {
 		let str = generate(this.node, this.ctx);
 		this.node.start = start;
 		this.node.end = end;
-		// str = preserveSpacing(this.ctx, str, start, end);
 		this.replaceWithString(str);
 	}
 
@@ -478,14 +380,12 @@ class Path {
 		if (!this._regenerateParent()) {
 			this._regenerate();
 		}
-		// this.get(property).prependString(generate(node, this.ctx));
 	}
 	pushContainer(property, node) {
 		this.node[property].push(node);
 		if (!this._regenerateParent()) {
 			this._regenerate();
 		}
-		// this.get(property).appendString(generate(node, this.ctx));
 	}
 	_requeue() {
 		this.ctx.queue.add(this);
@@ -571,17 +471,29 @@ const types = new Proxy(TYPES, {
 		}
 
 		const type = key[0].toUpperCase() + key.substring(1);
-		// @TODO fixme (would be nice to avoid inlined defs here)
+		// @TODO this doesn't cover all cases well enough.
+		// Ideally it would be nice to avoid inlined defs here.
 		const prop = /Literal/.test(key) ? 'value' : 'expression';
 		obj[key] = v => ({ type, [prop]: v });
 		return obj[key];
 	}
 });
 
-/** @this {{ ctx: ReturnType<createContext> }} */
+/**
+ * @param {Node} root
+ * @param {Record<string, Visitor>} visitors
+ * @param {object} state
+ * @this {{ ctx: ReturnType<createContext> }}
+ */
 function visit(root, visitors, state) {
 	const { ctx } = this;
 	const afters = [];
+
+	// Check instanceof since that's fastest, but also account for POJO nodes.
+	const Node = root.constructor;
+	function isNode(obj) {
+		return typeof obj === 'object' && obj != null && (obj instanceof Node || 'type' in obj);
+	}
 
 	function enter(node, ancestors, seededPath) {
 		const path = seededPath || new ctx.Path(node, ancestors.slice());
@@ -596,17 +508,17 @@ function visit(root, visitors, state) {
 
 		if (node.type in visitors) {
 			let visitor = visitors[node.type];
-			if (typeof visitor === 'object' && ('enter' in visitor || 'exit' in visitor)) {
+			if (typeof visitor === 'object') {
 				if (visitor.exit) {
 					afters.push([visitor.exit, node, state, ancestors]);
 				}
-				visitor = visitor.enter;
-			}
-			if (visitor) {
+				if (visitor.enter) {
+					visitor.enter(path, state);
+				}
+			} else {
 				visitor(path, state);
 			}
 			if (ctx.queue.has(path)) {
-				// console.log(path.node.type, 'requeued, stopping');
 				return false;
 			}
 			if (path.shouldStop) {
@@ -617,12 +529,15 @@ function visit(root, visitors, state) {
 		ancestors.push(node);
 		outer: for (let i in node) {
 			const v = node[i];
-			if (typeof v !== 'object' || v == null) {
+			if (isNode(v)) {
+				if (enter(v, ancestors) === false) break;
 			} else if (Array.isArray(v)) {
 				for (const child of v) {
-					if (enter(child, ancestors) === false) break outer;
+					if (isNode(child)) {
+						if (enter(child, ancestors) === false) break outer;
+					}
 				}
-			} else if (enter(v, ancestors) === false) break;
+			}
 		}
 		ancestors.pop();
 	}
@@ -637,34 +552,6 @@ function visit(root, visitors, state) {
 		enter(next.node, next.ancestors.slice(), next);
 	}
 
-	// let mod;
-	// while ((mod = ctx.mods.pop())) {
-	// for (let i = 0; i < ctx.mods.length; i++) {
-	// 	const [fn, ...args] = ctx.mods[i];
-	// 	if (fn === 'overwrite') {
-	// 		const start = args[0];
-	// 		const end = typeof args[1] === 'number' ? args[1] : args[0];
-	// 		let firstEnd = end;
-	// 		let firstStart = start;
-	// 		for (let j = 0; j < ctx.mods.length; j++) {
-	// 			const pstart = args[0];
-	// 			const pend = typeof args[1] === 'number' ? args[1] : args[0];
-
-	// 			if (pstart > start && pstart < firstEnd) {
-	// 				firstEnd = pstart;
-	// 			}
-
-	// 			if (pend < end && pend > firstStart) {
-	// 				firstStart = pend;
-	// 			}
-	// 		}
-	// 		ctx.out.overwrite(start, firstEnd, 'before content');
-	// 		ctx.out.overwrite(firstStart, end, 'after content');
-	// 	}
-	// 	// console.log(fn, ...args);
-	// 	ctx.out[fn].apply(ctx.out, args);
-	// }
-
 	let after;
 	while ((after = afters.pop())) {
 		const [visitor, node, state, ancestors] = after;
@@ -672,8 +559,6 @@ function visit(root, visitors, state) {
 		visitor(path, state);
 	}
 }
-
-// /** @typedef {{ [K in keyof MagicString]: MagicString[K] extends Function ? K : never }[keyof MagicString]} MagicStringFunctions */
 
 /**
  * @param {object} options
@@ -686,20 +571,13 @@ function createContext({ code, out, parse }) {
 		paths: new WeakMap(),
 		/** @type {Set<Path>} */
 		queue: new Set(),
-		// /** @type {[MagicStringFunctions, ...Parameters<MagicStringFunctions>][]} */
-		// mods: [],
 		code,
 		out,
 		parse,
 		types,
 		visit,
 		template,
-		// visit: visit.bind(bound),
-		// template: template.bind(bound),
 		Path
-		// Path(node, ancestors) {
-		// 	return new Path(node, ancestors, ctx);
-		// }
 	};
 
 	const bound = { ctx };
@@ -713,13 +591,6 @@ function createContext({ code, out, parse }) {
 	ctx.Path = function (node, ancestors) {
 		return new Path(node, ancestors, ctx);
 	};
-
-	// ctx.Path = class extends Path {
-	// 	constructor(node, accessors) {
-	// 		super(node, accessors, ctx);
-	// 	}
-	// };
-	// ctx.Path.prototype.ctx = ctx;
 
 	return ctx;
 }
@@ -756,6 +627,7 @@ export function transform(code, { presets, plugins, parse, filename, ast, source
 	const allPlugins = [];
 	resolvePreset({ presets, plugins }, allPlugins);
 
+	/** @type {Record<string, ReturnType<createMetaVisitor>>} */
 	const visitors = {};
 
 	for (let i = 0; i < allPlugins.length; i++) {
@@ -780,11 +652,9 @@ export function transform(code, { presets, plugins, parse, filename, ast, source
 	} catch (err) {
 		throw Error(buildError(err, code, filename));
 	}
-	// console.log(`parse(${filename}): ${Date.now()-start}`);
 
 	// start = Date.now();
 	visit(parsed, visitors, new Map());
-	// console.log(`visit(${filename}): ${Date.now()-start}`);
 
 	let map;
 	function getSourceMap() {
@@ -842,7 +712,10 @@ function codeFrame(code, loc) {
 	return frame;
 }
 
-/** @returns {{ enter?(path: Path, state: State):void, exit?(path: Path, state: State):void }} */
+/**
+ * An internal visitor that calls other visitors.
+ * @returns {Visitor & { visitors: ({ stateId: symbol, visitor: Visitor, opts?: any })[] }}
+ */
 function createMetaVisitor() {
 	function getPluginState(state, v) {
 		let pluginState = state.get(v.stateId);
