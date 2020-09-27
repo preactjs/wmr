@@ -44,8 +44,12 @@ export default async function start(options = {}) {
 				type: 'error',
 				error: err.clientMessage || err.message
 			});
+		} else if (((err.code / 200) | 0) === 2) {
+			// skip 400-599 errors, they're net errors logged to console
+		} else if (process.env.DEBUG) {
+			console.error(err);
 		} else {
-			const message = /^Error/.test(err.message) ? err.message : err + '';
+			const message = err.formatted ? err.formatted : /^Error/.test(err.message) ? err.message : err + '';
 			console.error(message);
 		}
 	}

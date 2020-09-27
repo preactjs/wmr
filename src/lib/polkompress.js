@@ -7,13 +7,12 @@ import zlib from 'zlib';
 
 function getChunkSize(chunk, enc) {
 	if (!chunk) return 0;
-	if (Buffer.isBuffer(chunk)) return Buffer.byteLength(chunk, enc);
-	return chunk.length;
+	return Buffer.byteLength(chunk, enc);
 }
 
 const noop = () => {};
 
-const MIMES = /text|javascript|xml/i;
+const MIMES = /text|javascript|\/json|xml/i;
 
 /** @returns {import('polka').Middleware} */
 export default function compress({ threshold = 1024, level = -1, brotli = false, gzip = true, mimes = MIMES } = {}) {
@@ -52,15 +51,17 @@ export default function compress({ threshold = 1024, level = -1, brotli = false,
 					compress = zlib.createGzip(Object.assign({ level }, gzipOpts));
 				}
 				// backpressure
-				compress.on('data', chunk => write.call(res, chunk) === false && compress.pause());
+				compress.on('data', (...args) => write.apply(res, args) === false && compress.pause());
 				on.call(res, 'drain', () => compress.resume());
-				compress.on('end', () => end.call(res));
+				compress.on('end', (...args) => end.apply(res, args));
 				// const start = Date.now();
 				// compress.on('end', () => {
 				// 	console.log(`${req.url}[${(size / 1000) | 0}kb]: ${encoding};dur=${Date.now() - start}`);
 				// });
 			}
-			pendingListeners.forEach(p => on.apply(res, p));
+			const listeners = pendingListeners;
+			pendingListeners = null;
+			listeners.forEach(p => on.apply(res, p));
 			if (pendingStatus) writeHead.call(res, pendingStatus);
 		}
 
@@ -72,17 +73,19 @@ export default function compress({ threshold = 1024, level = -1, brotli = false,
 			pendingStatus = status;
 			return this;
 		};
-		res.write = function (chunk, enc) {
+		res.write = function (chunk, enc, cb) {
 			size += getChunkSize(chunk, enc);
 			if (!started) start();
-			if (!compress) return write.call(this, chunk, enc);
-			return compress.write(chunk, enc);
+			if (!compress) return write.apply(this, arguments);
+			return compress.write.apply(compress, arguments);
 		};
-		res.end = function (chunk, enc) {
-			size += getChunkSize(chunk, enc);
+		res.end = function (chunk, enc, cb) {
+			if (arguments.length > 0 && typeof chunk !== 'function') {
+				size += getChunkSize(chunk, enc);
+			}
 			if (!started) start();
-			if (!compress) return end.call(this, chunk, enc);
-			return compress.end(chunk, enc);
+			if (!compress) return end.apply(this, arguments);
+			return compress.end.apply(compress, arguments);
 		};
 		/** Not currently used. */
 		let pendingListeners = [];

@@ -35,6 +35,7 @@
 		"rules": {
 			"no-console": "off",
 			"prefer-rest-params": "off",
+			"prefer-spread": "off",
 			"no-prototype-builtins": "off",
 			"function-call-argument-newline": [
 				"error",
@@ -56,7 +57,8 @@
 		}
 	},
 	"eslintIgnore": [
-		"wmr.cjs"
+		"wmr.cjs",
+		"test/fixtures/**/*.expected.*"
 	],
 	"prettier": {
 		"singleQuote": true,
@@ -83,7 +85,7 @@
 		"preset": "jest-puppeteer"
 	},
 	"devDependencies": {
-		"@babel/core": "^7.10.4",
+		"@babel/core": "^7.11.6",
 		"@babel/plugin-transform-modules-commonjs": "^7.10.4",
 		"@rollup/plugin-alias": "^3.1.1",
 		"@rollup/plugin-commonjs": "^14.0.0",
@@ -96,6 +98,7 @@
 		"acorn-walk": "^7.2.0",
 		"async-disk-cache": "^2.1.0",
 		"babel-jest": "^26.1.0",
+		"babel-plugin-transform-jsx-to-htm": "^2.0.0",
 		"bufferutil": "^4.0.1",
 		"chokidar": "^3.4.0",
 		"cssnano": "^4.1.10",

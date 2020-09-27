@@ -1,4 +1,4 @@
-import { sep } from 'path';
+import { resolve, sep } from 'path';
 import shebangPlugin from 'rollup-plugin-preserve-shebang';
 import commonjs from '@rollup/plugin-commonjs';
 import nodeResolve from '@rollup/plugin-node-resolve';
@@ -127,8 +127,9 @@ const config = {
 			]
 		}),
 		commonjs({
-			ignore: [f => f.endsWith('.mjs'), ...builtins],
-			ignoreGlobal: true
+			exclude: [/\.mjs$/, /\/rollup\//, resolve('src')],
+			ignore: builtins,
+			transformMixedEsModules: true
 		}),
 		nodeResolve({
 			preferBuiltins: true,

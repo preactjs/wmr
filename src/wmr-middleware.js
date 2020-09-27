@@ -1,16 +1,22 @@
 import { resolve, dirname, relative, sep, posix } from 'path';
-import { promises as fs } from 'fs';
+import { promises as fs, createReadStream } from 'fs';
 import chokidar from 'chokidar';
-import mime from 'mime/lite.js';
 import htmPlugin from './plugins/htm-plugin.js';
 import sucrasePlugin from './plugins/sucrase-plugin.js';
 import wmrPlugin, { getWmrClient } from './plugins/wmr/plugin.js';
-import wmrStylesPlugin, { modularizeCss } from './plugins/wmr/styles-plugin.js';
+import wmrStylesPlugin, { modularizeCss, processSass } from './plugins/wmr/styles-plugin.js';
 import { createPluginContainer } from './lib/rollup-plugin-container.js';
 import { transformImports } from './lib/transform-imports.js';
 import aliasesPlugin from './plugins/aliases-plugin.js';
 import urlPlugin from './plugins/url-plugin.js';
 import { normalizeSpecifier } from './plugins/npm-plugin/index.js';
+import sassPlugin from './plugins/sass-plugin.js';
+import processGlobalPlugin from './plugins/process-global-plugin.js';
+import { getMimeType } from './lib/mimetypes.js';
+import fastCjsPlugin from './plugins/fast-cjs-plugin.js';
+import resolveExtensionsPlugin from './plugins/resolve-extensions-plugin.js';
+import bundlePlugin from './plugins/bundle-plugin.js';
+import nodeBuiltinsPlugin from './plugins/node-builtins-plugin.js';
 // import { resolvePackageVersion } from './plugins/npm-plugin/registry.js';
 
 /**
@@ -48,27 +54,32 @@ export default function wmrMiddleware({
 
 	const NonRollup = createPluginContainer(
 		[
-			urlPlugin({ cwd }),
+			nodeBuiltinsPlugin({}),
+			urlPlugin({ inline: true, cwd }),
+			bundlePlugin({ inline: true, cwd }),
+			aliasesPlugin({ aliases, cwd: root }),
 			sucrasePlugin({
 				typescript: true,
 				sourcemap: false,
 				production: false
 			}),
-			aliasesPlugin({ aliases }),
+			processGlobalPlugin({ NODE_ENV: 'development' }),
+			sassPlugin(),
 			htmPlugin(),
 			wmrPlugin({ hot: true }),
-			{
-				name: 'direct-asset-urls',
-				resolveFileUrl({ fileName }) {
-					return JSON.stringify(`/${fileName}?asset`);
-				}
-			}
+			fastCjsPlugin(),
+			resolveExtensionsPlugin({
+				typescript: true,
+				index: true
+			})
 		],
 		{
 			cwd,
 			writeFile: (filename, source) => writeCacheFile(out, filename, source),
 			output: {
 				// assetFileNames: '@asset/[name][extname]',
+				// chunkFileNames: '[name][extname]',
+				assetFileNames: '[name][extname]?asset',
 				dir: out
 			}
 		}
@@ -134,8 +145,10 @@ export default function wmrMiddleware({
 		file = prefix + file;
 		id = prefix + id;
 
-		const type = mime.getType(file);
-		if (type) res.setHeader('content-type', type);
+		let type = getMimeType(file);
+		if (type) {
+			res.setHeader('Content-Type', type);
+		}
 
 		const ctx = { req, res, id, file, path, cwd, out, NonRollup, next };
 
@@ -146,7 +159,7 @@ export default function wmrMiddleware({
 			transform = TRANSFORMS.asset;
 		} else if (prefix) {
 			transform = TRANSFORMS.js;
-		} else if (/\.css\.js$/.test(file)) {
+		} else if (/\.(css|s[ac]ss)\.js$/.test(file)) {
 			transform = TRANSFORMS.cssModule;
 		} else if (/\.([mc]js|[tj]sx?)$/.test(file)) {
 			transform = TRANSFORMS.js;
@@ -166,10 +179,9 @@ export default function wmrMiddleware({
 			// return a value to use it as the response:
 			if (result != null) {
 				const time = Date.now() - start;
-				// console.log(result);
 				res.writeHead(200, {
-					'content-length': result.length,
-					'server-timing': `${transform.name};dur=${time}`
+					'Content-Length': Buffer.byteLength(result, 'utf-8'),
+					'Server-Timing': `${transform.name};dur=${time}`
 				});
 				res.end(result);
 			}
@@ -177,22 +189,66 @@ export default function wmrMiddleware({
 			// `throw null` also skips handling
 			if (e == null) return next();
 
+			if (e.code === 'ENOENT') {
+				// e.message = `not found (.${sep}${relative(root, e.path)})`;
+				e.message = `File not found`;
+				e.code = 404;
+			}
+
 			onError(e);
 			next(e);
 		}
 	};
 }
 
+/**
+ * @typedef Context
+ * @property {ReturnType<createPluginContainer>} NonRollup
+ * @property {string} id - rollup-style cwd-relative file identifier
+ * @property {string} file - absolute file path
+ * @property {string} path - request path
+ * @property {string} cwd - working directory, including ./public if detected
+ * @property {string} out - output directory
+ * @property {InstanceType<import('http')['IncomingMessage']>} req - HTTP Request object
+ * @property {InstanceType<import('http')['ServerResponse']>} res - HTTP Response object
+ */
+
+/** @type {{ [key: string]: (ctx: Context) => string|false|Buffer|null|void|Promise<string|false|Buffer|null|void> }} */
 export const TRANSFORMS = {
 	// Handle direct asset requests (/foo?asset)
-	async asset({ file }) {
-		return await fs.readFile(file);
+	async asset({ file, cwd, req, res }) {
+		const filename = resolve(cwd, file);
+		let stats;
+		try {
+			stats = await fs.stat(filename);
+		} catch (e) {
+			if (e.code === 'ENOENT') {
+				res.writeHead(404);
+				res.end();
+				return;
+			}
+			throw e;
+		}
+		if (stats.isDirectory()) {
+			res.writeHead(403);
+			res.end();
+		}
+		const ims = req.headers['if-modified-since'];
+		if (ims && stats.mtime > new Date(ims)) {
+			res.writeHead(304);
+			res.end();
+			return;
+		}
+		res.writeHead(200, {
+			'Content-Length': stats.size,
+			'Last-Modified': stats.mtime.toUTCString()
+		});
+		createReadStream(filename).pipe(res, { end: true });
 	},
 
 	// Handle individual JavaScript modules
-	/** @param {object} opts @param {ReturnType<createPluginContainer>} [opts.NonRollup] */
 	async js({ id, file, res, cwd, out, NonRollup }) {
-		res.setHeader('content-type', 'application/javascript');
+		res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
 
 		const cacheKey = id.replace(/^[\0\b]/, '');
 
@@ -215,10 +271,23 @@ export const TRANSFORMS = {
 			async resolveId(spec, importer) {
 				if (spec === 'wmr') return '/_wmr.js';
 
-				const resolved = await NonRollup.resolveId(spec, importer);
+				if (/^(data|https?):/.test(spec)) return spec;
+
+				// const resolved = await NonRollup.resolveId(spec, importer);
+				const resolved = await NonRollup.resolveId(spec, file);
 				if (resolved) {
 					spec = (resolved && resolved.id) || resolved;
+					if (/^(\/|\\|[a-z]:\\)/i.test(spec[0])) {
+						spec = relative(dirname(file), spec).split(sep).join(posix.sep);
+						if (!/^\.?\.?\//.test(spec)) {
+							spec = './' + spec;
+						}
+					}
 					if (resolved && resolved.external) {
+						// console.log('external: ', spec);
+						if (/^(data|https?):/.test(spec)) return spec;
+
+						spec = relative(cwd, spec).split(sep).join(posix.sep);
 						if (!/^(\/|[\w-]+:)/.test(spec)) spec = `/${spec}`;
 						return spec;
 					}
@@ -231,7 +300,7 @@ export const TRANSFORMS = {
 				});
 
 				// foo.css --> foo.css.js (import of CSS Modules proxy module)
-				if (spec.endsWith('.css')) spec += '.js';
+				if (spec.match(/\.(css|s[ac]ss)$/)) spec += '.js';
 
 				// Bare specifiers are npm packages:
 				if (!/^\.?\.?[/\\]/.test(spec)) {
@@ -260,7 +329,7 @@ export const TRANSFORMS = {
 
 	// Handles "CSS Modules" proxy modules (style.module.css.js)
 	async cssModule({ id, file, cwd, out, res }) {
-		res.setHeader('content-type', 'application/javascript');
+		res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
 
 		// Cache the generated mapping/proxy module with a .js extension (the CSS itself is also cached)
 		if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
@@ -269,7 +338,7 @@ export const TRANSFORMS = {
 
 		// We create a plugin container for each request to prevent asset referenceId clashes
 		const container = createPluginContainer(
-			[wmrPlugin({ hot: true }), wmrStylesPlugin({ cwd, hot: true, fullPath: true })],
+			[wmrPlugin({ hot: true }), sassPlugin(), wmrStylesPlugin({ cwd, hot: true, fullPath: true })],
 			{
 				cwd,
 				output: {
@@ -282,11 +351,11 @@ export const TRANSFORMS = {
 			}
 		);
 
-		const result = await container.load(file);
+		const result = (await container.load(file)) || (await fs.readFile(resolve(cwd, file), 'utf-8'));
 
 		let code = typeof result === 'string' ? result : result && result.code;
 
-		code = await container.transform(code, id);
+		code = await container.transform(code, file);
 
 		code = await transformImports(code, id, {
 			resolveImportMeta(property) {
@@ -304,14 +373,25 @@ export const TRANSFORMS = {
 	},
 
 	// Handles CSS Modules (the actual CSS)
-	async css({ id, path, file, cwd, out }) {
-		if (!/\.module\.css$/.test(path)) throw null;
+	async css({ id, path, file, cwd, out, res }) {
+		if (!/\.(css|s[ac]ss)$/.test(path)) throw null;
+
+		const isModular = /\.module\.(css|s[ac]ss)$/.test(path);
+
+		const isSass = /\.(s[ac]ss)$/.test(path);
+
+		res.setHeader('Content-Type', 'text/css;charset=utf-8');
 
 		if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
 
-		let code = await fs.readFile(resolve(cwd, file), 'utf-8');
+		const idAbsolute = resolve(cwd, file);
+		let code = await fs.readFile(idAbsolute, 'utf-8');
 
-		code = modularizeCss(code, id);
+		if (isModular) {
+			code = await modularizeCss(code, id, null, idAbsolute);
+		} else if (isSass) {
+			code = processSass(code);
+		}
 
 		// const plugin = wmrStylesPlugin({ cwd, hot: false, fullPath: true });
 		// let code;

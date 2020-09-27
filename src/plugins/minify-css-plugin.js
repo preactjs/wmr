@@ -22,7 +22,7 @@ export default function minifyCssPlugin({ sourcemap } = {}) {
 		async generateBundle(_, bundle) {
 			await Promise.all(
 				Object.values(bundle).map(async asset => {
-					if (asset.type !== 'asset' || !/\.css$/.test(asset.fileName)) return;
+					if (asset.type !== 'asset' || !/\.(css|s[ac]ss)$/.test(asset.fileName)) return;
 					const id = asset.fileName;
 					const mapFile = asset.fileName + '.map';
 					const result = await processor.process(asset.source, {

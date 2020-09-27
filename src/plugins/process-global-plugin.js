@@ -36,6 +36,9 @@ export default function processGlobalPlugin({ NODE_ENV = 'development' } = {}) {
 					code = `var process=${processObj};${code}`;
 				}
 			}
+
+			code = code.replace(/typeof(\s+|\s*\(+\s*)process([^a-zA-Z$_])/g, 'typeof$1undefined$2');
+
 			if (code !== orig) {
 				return { code, map: null };
 			}

@@ -1,6 +1,6 @@
 import acornJsx from 'acorn-jsx';
 import { transform } from '../lib/acorn-traverse.js';
-import transformJsxToHtm from './transform-jsx-to-htm.js';
+import transformJsxToHtm from 'babel-plugin-transform-jsx-to-htm';
 
 /**
  * Convert JSX to HTM
@@ -39,7 +39,17 @@ export default function htmPlugin({ include } = {}) {
 			const start = Date.now();
 
 			const out = transform(code, {
-				plugins: [transformJsxToHtm],
+				plugins: [
+					[
+						transformJsxToHtm,
+						{
+							import: {
+								module: 'htm/preact'
+							},
+							terse: true
+						}
+					]
+				],
 				filename,
 				sourceMaps: true,
 				parse: this.parse

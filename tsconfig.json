@@ -6,6 +6,7 @@
 		"checkJs": true,
 		"noEmit": true,
 		"moduleResolution": "node",
+		"module": "esnext",
 		"allowSyntheticDefaultImports": true,
 		"downlevelIteration": true,
 		"target": "ESNext"

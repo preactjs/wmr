@@ -1,12 +1,12 @@
 import { relative, sep, posix, resolve, dirname } from 'path';
 import * as rollup from 'rollup';
-import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import watcherPlugin from './plugins/watcher-plugin.js';
 import htmPlugin from './plugins/htm-plugin.js';
 import sucrasePlugin from './plugins/sucrase-plugin.js';
 import wmrPlugin from './plugins/wmr/plugin.js';
 import wmrStylesPlugin from './plugins/wmr/styles-plugin.js';
+import sassPlugin from './plugins/sass-plugin.js';
 import localNpmPlugin from './plugins/local-npm-plugin.js';
 import terser from './plugins/fast-minify.js';
 import npmPlugin from './plugins/npm-plugin/index.js';
@@ -18,6 +18,9 @@ import glob from 'tiny-glob';
 import aliasesPlugin from './plugins/aliases-plugin.js';
 import processGlobalPlugin from './plugins/process-global-plugin.js';
 import urlPlugin from './plugins/url-plugin.js';
+import resolveExtensionsPlugin from './plugins/resolve-extensions-plugin.js';
+import fastCjsPlugin from './plugins/fast-cjs-plugin.js';
+import bundlePlugin from './plugins/bundle-plugin.js';
 
 /** @param {string} p */
 const pathToPosix = p => p.split(sep).join(posix.sep);
@@ -25,6 +28,7 @@ const pathToPosix = p => p.split(sep).join(posix.sep);
 /**
  * @typedef {Object} BuildOptions
  * @property {string} [cwd = '']
+ * @property {string} [root = ''] cwd without implicit ./public dir
  * @property {string} [publicDir = '']
  * @property {string} [out = '.cache']
  * @property {boolean} [sourcemap]
@@ -49,8 +53,9 @@ const pathToPosix = p => p.split(sep).join(posix.sep);
  * @TODO Refactor to return a customized bundleProd() return value,
  *       to make bundled development mode more useful and reduce complexity.
  */
-export async function bundleDev({ cwd, publicDir, out, sourcemap, aliases, onError, onBuild, profile }) {
+export async function bundleDev({ cwd, root, publicDir, out, sourcemap, aliases, onError, onBuild, profile }) {
 	cwd = cwd || '';
+	root = root || cwd;
 	const changedFiles = new Set();
 
 	const htmlFiles = await glob('**/*.html', {
@@ -111,7 +116,7 @@ export async function bundleDev({ cwd, publicDir, out, sourcemap, aliases, onErr
 			dynamicImportNamesPlugin({
 				// suffix: '~' // avoid collisions with entry modules
 			}),
-			aliasesPlugin({ aliases }),
+			aliasesPlugin({ aliases, cwd: root }),
 			watcherPlugin({
 				cwd,
 				watchedFiles: '**/*.!({js,cjs,mjs,ts,tsx})',
@@ -120,21 +125,22 @@ export async function bundleDev({ cwd, publicDir, out, sourcemap, aliases, onErr
 				}
 			}),
 			htmPlugin(),
+			sassPlugin({ production: false }),
 			wmrStylesPlugin({ hot: true, cwd }),
 			wmrPlugin(),
 			processGlobalPlugin({
 				NODE_ENV: 'development'
 			}),
-			commonjs({
-				sourceMap: sourcemap,
-				transformMixedEsModules: false,
-				extensions: ['.js', '.cjs', ''],
-				include: /^[\b]npm\//
+			resolveExtensionsPlugin({
+				typescript: true,
+				index: true
 			}),
+			fastCjsPlugin(),
 			// unpkgPlugin()
 			json(),
 			localNpmPlugin(),
-			urlPlugin()
+			urlPlugin(),
+			bundlePlugin({ cwd })
 		].filter(Boolean)
 	});
 
@@ -195,8 +201,9 @@ export async function bundleDev({ cwd, publicDir, out, sourcemap, aliases, onErr
 }
 
 /** @param {BuildOptions & { npmChunks?: boolean }} options */
-export async function bundleProd({ cwd, publicDir, out, sourcemap, aliases, profile, npmChunks = false }) {
+export async function bundleProd({ cwd, root, publicDir, out, sourcemap, aliases, profile, npmChunks = false }) {
 	cwd = cwd || '';
+	root = root || cwd;
 
 	const htmlFiles = await glob('**/*.html', {
 		cwd,
@@ -220,23 +227,26 @@ export async function bundleProd({ cwd, publicDir, out, sourcemap, aliases, prof
 			}),
 			htmlEntriesPlugin({ cwd, publicDir, publicPath: '/' }),
 			publicPathPlugin({ publicPath: '/' }),
-			aliasesPlugin({ aliases }),
+			aliasesPlugin({ aliases, cwd: root }),
 			htmPlugin(),
+			sassPlugin({ production: true }),
 			wmrStylesPlugin({ hot: false, cwd }),
 			wmrPlugin({ hot: false }),
 			processGlobalPlugin({
 				NODE_ENV: 'production'
 			}),
-			commonjs({
-				sourceMap: sourcemap,
-				transformMixedEsModules: false,
-				extensions: ['.js', '.cjs', ''],
-				include: /^[\b]npm\//
+			resolveExtensionsPlugin({
+				typescript: true,
+				index: true
+			}),
+			fastCjsPlugin({
+				// include: f => !/^[\b]npm\//.test(f)
 			}),
 			json(),
 			npmPlugin({ external: false }),
 			minifyCssPlugin({ sourcemap }),
-			urlPlugin()
+			urlPlugin(),
+			bundlePlugin({ cwd })
 		]
 	});
 
