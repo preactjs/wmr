@@ -40,6 +40,7 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = '\bnpm/', ext
 			const importerMeta = importer && !isDiskPath(importer) && normalizeSpecifier(importer);
 
 			let isExternal = false;
+			let isEntry = false;
 
 			// A relative import from within a module (resolve based on importer):
 			if (isDiskPath(id)) {
@@ -51,6 +52,11 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = '\bnpm/', ext
 			} else {
 				// An absolute, self or bare import
 				meta = normalizeSpecifier(id);
+
+				// not imported by an npm module, or imported by a _different_ module
+				if (!importerMeta || meta.specifier !== importerMeta.specifier) {
+					isEntry = true;
+				}
 
 				if (external && importerMeta && meta.specifier !== importerMeta.specifier) {
 					isExternal = true;
@@ -97,7 +103,6 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = '\bnpm/', ext
 			}
 
 			// Compute the final path
-			// const resolvedPath = await resolveModule(meta);
 			const { module, version, path } = meta;
 			const readFile = (path = '') => loadPackageFile({ module, version, path });
 			const hasFile = path =>
@@ -105,8 +110,16 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = '\bnpm/', ext
 					.then(() => true)
 					.catch(() => false);
 
-			const internal = !!importer;
-			const resolvedPath = (await resolveModule(path, { readFile, hasFile, module, internal })).replace(/^\//, '');
+			// If external=true, we're bundling a single module, so "no importer" means an entry
+			// If external=false, we're bundling a whole app, so "different importer" means an entry
+			const isInternalImport = external ? !!importer : !isEntry;
+			let resolvedPath = await resolveModule(path, {
+				readFile,
+				hasFile,
+				module,
+				internal: isInternalImport
+			});
+			resolvedPath = resolvedPath.replace(/^\//, '');
 
 			// CSS files are not handled by this plugin.
 			if (/\.css$/.test(id) && (await hasFile(resolvedPath))) {
