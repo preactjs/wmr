@@ -3,7 +3,7 @@ const CJS_KEYWORDS = /\b(module\.exports|exports)\b/;
 const ESM_KEYWORDS = /(\bimport\s*(\{|\s['"\w_$])|[\s;]export(\s+(default|const|var|let)[^\w$]|\s*\{))/;
 
 /**
- * Extremely loose (but fast) conversion from CJS to ESM
+ * Extremely loose and questionable (but fast) conversion from CJS to ESM.
  * @param {object} [options]
  * @param {RegExp | ((filename: string) => boolean)} [options.include] Controls which files are processed.
  * @param {string[]} [options.extensions=['.js','.cjs']] Only process CJS in files with these extensions
@@ -26,6 +26,9 @@ export default function fastCjsPlugin({ include, extensions = ['.js', '.cjs'] } 
 
 			let specs = new Map();
 			let ns = new Map();
+			// This is a regex being used to parse code, which is of course horrible.
+			// It needs to be replaced with https://github.com/guybedford/cjs-module-lexer
+			code = code.replace(/\/\*[\s\S]*?\*\//g, '');
 			code = code.replace(/([^.\w$])require\s*\((['"])(.*?)\2\)/g, (str, before, quote, specifier) => {
 				let spec = specs.get(specifier);
 				if (!spec) {
