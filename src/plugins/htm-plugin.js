@@ -1,14 +1,16 @@
 import acornJsx from 'acorn-jsx';
 import { transform } from '../lib/acorn-traverse.js';
 import transformJsxToHtm from 'babel-plugin-transform-jsx-to-htm';
+import transformJsxToHtmLite from '../lib/transform-jsx-to-htm-lite.js';
 
 /**
  * Convert JSX to HTM
  * @param {object} [options]
  * @param {RegExp | ((filename: string) => boolean)} [options.include] Controls whether files are processed to transform JSX.
+ * @param {boolean} [options.production = true] If `false`, a simpler whitespace-preserving transform is used.
  * @returns {import('rollup').Plugin}
  */
-export default function htmPlugin({ include } = {}) {
+export default function htmPlugin({ include, production = true } = {}) {
 	return {
 		name: 'htm-plugin',
 
@@ -38,14 +40,18 @@ export default function htmPlugin({ include } = {}) {
 
 			const start = Date.now();
 
+			const jsxTransform = production ? transformJsxToHtm : transformJsxToHtmLite;
+
 			const out = transform(code, {
 				plugins: [
 					[
-						transformJsxToHtm,
+						jsxTransform,
 						{
 							import: {
 								module: 'htm/preact'
 							},
+							// @TODO: enable this to avoid a likely variable collision:
+							// tag: '$$html',
 							terse: true
 						}
 					]
