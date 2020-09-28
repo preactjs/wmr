@@ -39,7 +39,7 @@ export default function fastCjsPlugin({ include, extensions = ['.js', '.cjs'] } 
 					spec = { id, specifier: quote + specifier + quote };
 					specs.set(specifier, spec);
 				}
-				return `${before}Object.defineProperty(${spec.id}||{},'default',{value:${spec.id}})`;
+				return `${before}(${spec.id}&&${spec.id}.default||Object.defineProperty(${spec.id}||{},'default',{configurable:true,value:${spec.id}}))`;
 			});
 
 			let imports = '';
