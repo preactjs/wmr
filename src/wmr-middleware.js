@@ -65,7 +65,7 @@ export default function wmrMiddleware({
 			}),
 			processGlobalPlugin({ NODE_ENV: 'development' }),
 			sassPlugin(),
-			htmPlugin(),
+			htmPlugin({ production: false }),
 			wmrPlugin({ hot: true }),
 			fastCjsPlugin(),
 			resolveExtensionsPlugin({

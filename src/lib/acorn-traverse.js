@@ -370,10 +370,10 @@ class Path {
 		this.shouldSkip = true;
 	}
 	getOutput() {
-		return this.ctx.out.slice(this.node.start, this.node.end);
+		return this.ctx.out.slice(this.start, this.end);
 	}
 	getSource() {
-		return this.ctx.code.substring(this.node.start, this.node.end);
+		return this.ctx.code.substring(this.start, this.end);
 	}
 	unshiftContainer(property, node) {
 		this.node[property].unshift(node);
@@ -519,7 +519,8 @@ function visit(root, visitors, state) {
 				visitor(path, state);
 			}
 			if (ctx.queue.has(path)) {
-				return false;
+				// node was requeued, skip (but don't stop)
+				return;
 			}
 			if (path.shouldStop) {
 				return false;
