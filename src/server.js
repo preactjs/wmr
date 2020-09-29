@@ -1,4 +1,4 @@
-import { resolve } from 'path';
+import { resolve, relative, join } from 'path';
 import { promises as fs } from 'fs';
 import { createServer } from 'http';
 import { createHttp2Server } from './lib/http2.js';
@@ -36,21 +36,31 @@ export default async function server({ cwd, root, overlayDir, middleware, http2,
 	const app = polka({
 		onError(err, req, res) {
 			// ignore missing favicon requests
-			if (req.path == '/favicon.ico') return res.end('');
+			if (req.path == '/favicon.ico') {
+				res.writeHead(200, { 'content-type': 'image/x-icon', 'content-length': '0' });
+				return res.end('');
+			}
 
 			// @ts-ignore
 			const code = typeof err.code === 'number' ? err.code : 500;
 
-			if (code === 404 && /text\/html/.test(req.headers.accept)) {
-				res.writeHead(404, { 'content-type': 'text/html' });
-				res.end('Not Found');
-				return;
+			let msg = '';
+			if (err) {
+				if (process.env.DEBUG && err.stack) {
+					msg = err.stack;
+				} else if (err.message) {
+					msg = err.message;
+				} else if (String(Object.keys(err)) === 'code') {
+					// sirv throws a `{code:404}` POJO
+					msg = code === 404 ? 'Not Found' : `Error ${code}`;
+				} else {
+					msg = String(err);
+				}
 			}
-
-			const msg = err ? (process.env.DEBUG && err.stack) || err.message || String(err) : '';
 			res.writeHead(code, { 'content-type': 'text/plain' });
 			res.end(msg);
-			console.error(`\u001b[33m${code} \u001b[37m${req.path}\u001b[0m${msg ? ` - ${msg}` : ''}`);
+			const relativePath = './' + join(relative(root, cwd), req.path.replace(/^\//, ''));
+			console.error(`\u001b[33m${code} \u001b[37m${relativePath}\u001b[0m${msg ? ` - ${msg}` : ''}`);
 		}
 	});
 
