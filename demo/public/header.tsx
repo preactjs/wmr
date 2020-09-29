@@ -9,6 +9,7 @@ export default function Header() {
 				<a href="/about">About</a>
 				<a href="/compat">Compat</a>
 				<a href="/error">Error</a>
+				<a href="/landing">Landing</a>
 			</nav>
 			<label>
 				URL:

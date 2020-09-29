@@ -4,7 +4,7 @@
 	"bin": "wmr.cjs",
 	"type": "module",
 	"scripts": {
-		"demo": "cd demo && node --experimental-modules ../src/cli.js 2>&1",
+		"demo": "cd demo && cross-env DEBUG=true node --experimental-modules ../src/cli.js 2>&1",
 		"demo:prod": "cd demo && node --experimental-modules ../src/cli.js build 2>&1",
 		"dev": "PROFILE=true nodemon -w src --exec \"npm run -s demo\"",
 		"build": "rollup -c",

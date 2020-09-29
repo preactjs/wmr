@@ -5,6 +5,7 @@ import Home from './pages/home.js';
 // import About from './pages/about/index.js';
 import NotFound from './pages/_404.js';
 import Header from './header.tsx';
+import { Landing } from './pages/landing/index.js';
 // import './style.css';
 
 const About = lazy(() => import('./pages/about/index.js'));
@@ -19,6 +20,7 @@ export function App() {
 					<Home path="/" />
 					<About path="/about" />
 					<CompatPage path="/compat" />
+					<Landing path="/landing" />
 					<NotFound default />
 				</Router>
 			</div>

@@ -1,0 +1,96 @@
+<svg width="720" height="1024"
+	xmlns="http://www.w3.org/2000/svg"
+	xmlns:xlink="http://www.w3.org/1999/xlink">
+	<defs>
+		<linearGradient x1="61.033%" y1="8.427%" x2="35.245%" y2="99.039%" id="a">
+			<stop stop-color="#CF1346" offset="0%"/>
+			<stop stop-color="#6706A3" offset="70.995%"/>
+			<stop stop-color="#6E34F5" offset="100%"/>
+		</linearGradient>
+		<linearGradient x1="66.289%" y1="8.074%" x2="25.947%" y2="88.468%" id="d">
+			<stop stop-color="#F400FF" offset="0%"/>
+			<stop stop-color="#75003C" offset="90.349%"/>
+			<stop stop-color="#680027" offset="100%"/>
+		</linearGradient>
+		<linearGradient x1="69.339%" y1="3.086%" x2="32.723%" y2="105.6%" id="g">
+			<stop stop-color="#C70CFF" offset="0%"/>
+			<stop stop-color="#D20B95" stop-opacity=".751" offset="49.828%"/>
+			<stop stop-color="#DF25FF" stop-opacity=".5" offset="100%"/>
+		</linearGradient>
+		<linearGradient x1="84.449%" y1="10.162%" x2="40.545%" y2="74.068%" id="j">
+			<stop stop-color="#EA4949" offset="0%"/>
+			<stop stop-color="#D0AC3F" offset="100%"/>
+		</linearGradient>
+		<linearGradient x1="67.271%" y1="4.543%" x2="50%" y2="100%" id="m">
+			<stop stop-color="#9804F8" offset="0%"/>
+			<stop stop-color="#3187F1" offset="99.954%"/>
+		</linearGradient>
+		<linearGradient x1="50%" y1=".145%" x2="50%" y2="100%" id="p">
+			<stop stop-color="#4AB5F9" offset="0%"/>
+			<stop stop-color="#3B66F5" offset="100%"/>
+		</linearGradient>
+		<linearGradient x1="50.795%" y1="39.192%" x2="49.771%" y2="89.756%" id="s">
+			<stop stop-color="#5EFF8B" offset="0%"/>
+			<stop stop-color="#65E4CA" offset="37.882%"/>
+			<stop stop-color="#6A73F1" offset="100%"/>
+		</linearGradient>
+		<filter x="-9.9%" y="-5.7%" width="119.8%" height="115.9%" filterUnits="objectBoundingBox" id="b">
+			<feOffset dy="20" in="SourceAlpha" result="shadowOffsetOuter1"/>
+			<feGaussianBlur stdDeviation="20" in="shadowOffsetOuter1" result="shadowBlurOuter1"/>
+			<feColorMatrix values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.5 0" in="shadowBlurOuter1"/>
+		</filter>
+		<filter x="-11.4%" y="-8.4%" width="122.7%" height="117.4%" filterUnits="objectBoundingBox" id="e">
+			<feOffset dy="2" in="SourceAlpha" result="shadowOffsetOuter1"/>
+			<feGaussianBlur stdDeviation="19.5" in="shadowOffsetOuter1" result="shadowBlurOuter1"/>
+			<feColorMatrix values="0 0 0 0 0.199642329 0 0 0 0 0.113325347 0 0 0 0 0.588235294 0 0 0 1 0" in="shadowBlurOuter1"/>
+		</filter>
+		<filter x="-9.2%" y="-10.8%" width="126.9%" height="122.4%" filterUnits="objectBoundingBox" id="h">
+			<feOffset dx="20" dy="2" in="SourceAlpha" result="shadowOffsetOuter1"/>
+			<feGaussianBlur stdDeviation="17.5" in="shadowOffsetOuter1" result="shadowBlurOuter1"/>
+			<feColorMatrix values="0 0 0 0 0.283910779 0 0 0 0 0.135409807 0 0 0 0 0 0 0 0 0.324956294 0" in="shadowBlurOuter1"/>
+		</filter>
+		<filter x="-7.6%" y="-5.9%" width="115.2%" height="112.1%" filterUnits="objectBoundingBox" id="k">
+			<feOffset dy="2" in="SourceAlpha" result="shadowOffsetOuter1"/>
+			<feGaussianBlur stdDeviation="25" in="shadowOffsetOuter1" result="shadowBlurOuter1"/>
+			<feColorMatrix values="0 0 0 0 0.102783432 0 0 0 0 0.108466944 0 0 0 0 0.112233922 0 0 0 0.700857736 0" in="shadowBlurOuter1"/>
+		</filter>
+		<filter x="-24.1%" y="-20.6%" width="148.2%" height="133.4%" filterUnits="objectBoundingBox" id="n">
+			<feOffset dy="-40" in="SourceAlpha" result="shadowOffsetOuter1"/>
+			<feGaussianBlur stdDeviation="50" in="shadowOffsetOuter1" result="shadowBlurOuter1"/>
+			<feColorMatrix values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.5 0" in="shadowBlurOuter1"/>
+		</filter>
+		<filter x="-23.3%" y="-11.8%" width="146.5%" height="115.8%" filterUnits="objectBoundingBox" id="q">
+			<feOffset dy="-50" in="SourceAlpha" result="shadowOffsetOuter1"/>
+			<feGaussianBlur stdDeviation="25" in="shadowOffsetOuter1" result="shadowBlurOuter1"/>
+			<feColorMatrix values="0 0 0 0 0.306764222 0 0 0 0 0.0640556133 0 0 0 0 0.799818841 0 0 0 0.624344406 0" in="shadowBlurOuter1"/>
+		</filter>
+		<path d="M631.293-74.227c-53.4 8.693-121.547 61.298-204.44 157.817-124.339 144.779-125.777 382.59-195.58 479.403C161.473 659.807 89.56 646.403 0 740.603c-59.707 62.801-65.613 78.796-17.72 47.986l-58.085-11.397 9.134-838.38 697.964-13.039z" id="c"/>
+		<path d="M382.327-70.12c32.147 21.215 38.174 53.105 18.08 95.67-30.142 63.848-86.677 43.087-121.493 95.451-34.815 52.364-10.415 79.403-51.772 175.957-41.357 96.554-175.573 94.574-199.892 206.135-16.212 74.374-52.321 102.604-108.327 84.692L-112-90l494.327 19.88z" id="f"/>
+		<path d="M-100.805-44.187H278c-17.616-9.002-34.44 3.605-50.472 37.82-24.048 51.325-.649 73.117-24.048 130.216-23.399 57.098-80.588 42.099-110.131 86.717-29.544 44.618 0 66.279-38.108 148.532-23.277 50.243-369.2 306.062-189.87 18.644 18.58-29.779 29.855-170.422 33.824-421.93z" id="i"/>
+		<path d="M584.487-29.164c-73.01 170.85-50.57 246.482-90.705 352.181-40.135 105.7-87.79 75.338-143.318 152.16-55.53 76.821-42.1 165.278-169.885 326.963C95.39 909.93 6.281 988.133-86.744 1036.748l693.714 95.935 303.114-44.64L766.215-48.13c-72.479-101.256-133.055-94.934-181.728 18.966z" id="l"/>
+		<path d="M748.785 85.67c-88.894 46.946-141 102.223-156.317 165.83-22.976 95.41-14.965 138.104-47.238 260.5-32.273 122.396-150.762 80.571-205.32 205.796-54.557 125.224 21.503 125.406-20.332 215.805-41.834 90.399-150.12 22.996-177.778 111.941-18.438 59.297 205.06 72.132 670.494 38.505 61.8-702.94 40.631-1035.732-63.51-998.378z" id="o"/>
+		<path d="M843.5-82.012c-86.282 66.285-118.874 369.383-136.7 514.175-17.827 144.793-76.123 74.787-106.258 222.925-30.135 148.138 28.993 159.047 5.886 265.988-23.107 106.94-122.863 109.473-138.14 214.693-10.185 70.147 126.58 57.908 410.292-36.718C912.716 267.486 901.023-126.201 843.5-82.012z" id="r"/>
+	</defs>
+	<g fill="none" fill-rule="evenodd">
+		<path fill="#263445" d="M0 0h720v1024H0z"/>
+		<path fill="url(#a)" d="M457.478-48.13L-56.82 627.485l22.078 457.729 503.535-537.61 241.78-683.161z"/>
+		<use fill="#000" filter="url(#b)" xlink:href="#c"/>
+		<use fill="url(#d)" xlink:href="#c"/>
+		<use fill="#000" filter="url(#e)" xlink:href="#f"/>
+		<use fill="url(#g)" xlink:href="#f"/>
+		<use fill="#000" filter="url(#h)" xlink:href="#i"/>
+		<use fill="url(#j)" xlink:href="#i"/>
+		<g>
+			<use fill="#000" filter="url(#k)" xlink:href="#l"/>
+			<use fill="url(#m)" xlink:href="#l"/>
+		</g>
+		<g>
+			<use fill="#000" filter="url(#n)" xlink:href="#o"/>
+			<use fill="url(#p)" xlink:href="#o"/>
+		</g>
+		<g transform="rotate(11 682.704 547.604)">
+			<use fill="#000" filter="url(#q)" xlink:href="#r"/>
+			<use fill="url(#s)" xlink:href="#r"/>
+		</g>
+	</g>
+</svg>

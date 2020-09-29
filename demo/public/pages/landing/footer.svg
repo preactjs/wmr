@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1147px" height="277px" viewBox="0 0 1147 277" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>Artboard</title>
+    <defs>
+        <linearGradient x1="50%" y1="48.1568537%" x2="12.9015991%" y2="51.6639092%" id="linearGradient-1">
+            <stop stop-color="#DF3626" offset="0%"></stop>
+            <stop stop-color="#E5B426" offset="100%"></stop>
+        </linearGradient>
+        <path d="M3.55271368e-15,138.5 C58.6009247,88.7302861 129.207411,63.8454291 211.819459,63.8454291 C335.737531,63.8454291 441.558224,182.329362 606.574367,190.22063 C771.59051,198.111897 965.807626,147.043029 1081.73593,147.043029 C1159.02146,147.043029 1251.33433,169.044087 1358.67454,213.046203 L1310.123,328.449149 L-19.4898976,305.869836 L3.55271368e-15,138.5 Z" id="path-2"></path>
+        <filter x="-4.4%" y="-22.3%" width="108.9%" height="146.1%" filterUnits="objectBoundingBox" id="filter-3">
+            <feOffset dx="0" dy="2" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="20" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feColorMatrix values="0 0 0 0 1   0 0 0 0 0.448979752   0 0 0 0 0.020788872  0 0 0 1 0" type="matrix" in="shadowBlurOuter1"></feColorMatrix>
+        </filter>
+    </defs>
+    <g id="Artboard" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Path-7">
+            <use fill="black" fill-opacity="1" filter="url(#filter-3)" xlink:href="#path-2"></use>
+            <use fill="url(#linearGradient-1)" fill-rule="evenodd" xlink:href="#path-2"></use>
+        </g>
+    </g>
+</svg>
