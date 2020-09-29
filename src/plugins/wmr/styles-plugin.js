@@ -152,7 +152,8 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath } = {}) {
 			let code = `
 				import { style } from 'wmr';
 				style(import.meta.ROLLUP_FILE_URL_${ref}, ${JSON.stringify(idRelative)});
-				export default {${mappings.join(',')}};
+				const styles = {${mappings.join(',')}};
+				export default styles;
 				${named ? `export const ${named};` : ''}
 			`;
 
