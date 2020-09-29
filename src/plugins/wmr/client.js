@@ -132,7 +132,7 @@ export function style(filename, id) {
 	id = resolve(id || filename);
 	let node = styles.get(id);
 	if (node) {
-		node.href = filename;
+		node.href = filename + '?t=' + Date.now();
 	} else {
 		const node = document.createElement('link');
 		node.rel = 'stylesheet';
