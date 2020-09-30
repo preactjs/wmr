@@ -39,7 +39,11 @@ function upgradeToBrotli(mem) {
 		// const start = Date.now();
 		mem.upgrading = true;
 		const result = terser.minify(mem.code, {
-			mangle: true,
+			mangle: {
+				// Temporary workaround for duplicate identifier bug in Terser 4/5:
+				// https://github.com/terser/terser/issues/800#issuecomment-701017137
+				keep_fnames: true
+			},
 			compress: true,
 			module: true,
 			ecma: 9,
