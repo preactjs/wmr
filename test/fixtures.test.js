@@ -142,4 +142,13 @@ describe('fixtures', () => {
 			expect(await env.page.evaluate(() => window.didRender)).toBe(true);
 		});
 	});
+
+	describe('process', () => {
+		it('should support process.env.NODE_ENV', async () => {
+			await loadFixture('process', env);
+			instance = await runWmrFast(env.tmp.path);
+			const output = await getOutput(env, instance);
+			expect(output).toMatch(/development/i);
+		});
+	});
 });
