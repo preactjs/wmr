@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs';
 import zlib from 'zlib';
-import terser from 'terser';
+import * as terser from 'terser';
 import { dirname, resolve } from 'path';
 
 // TODO: this could be indefinite, since cache keys are deterministic (version+path)
@@ -38,34 +38,43 @@ function upgradeToBrotli(mem) {
 		// console.log(`Upgrading ${mem.module}/${mem.path} to compressed version...`);
 		// const start = Date.now();
 		mem.upgrading = true;
-		const result = terser.minify(mem.code, {
-			mangle: true,
-			compress: true,
-			module: true,
-			ecma: 9,
-			safari10: true,
-			sourceMap: false
-		});
-		if (result.warnings) {
-			console.warn(result.warnings.join('\n'));
-		}
-		if (result.error) {
-			console.error(result.error);
-		} else {
-			mem.code = result.code;
-		}
-		const cacheFile = getCachePath(mem, mem.cwd);
-		fs.writeFile(cacheFile, result.code);
-		zlib.brotliCompress(mem.code, BROTLI_OPTS, (err, data) => {
-			mem.upgrading = false;
-			if (err && result.error) {
-				return reject(Error(`Minification and Brotli compression failed for ${mem.module}/${mem.path}.`));
-			}
-			mem.brotli = data;
-			fs.writeFile(cacheFile + '.br', data);
-			// console.log(`  > ${mem.module}/${mem.path} upgraded in ${Date.now() - start}ms`);
-			resolve();
-		});
+		Promise.resolve()
+			.then(() =>
+				terser.minify(mem.code, {
+					mangle: {
+						// workaround for Terser 4/5 duplicate identifier bug:
+						// https://github.com/terser/terser/issues/800#issuecomment-701017137
+						keep_fnames: true
+					},
+					compress: true,
+					module: true,
+					ecma: 9,
+					safari10: true,
+					sourceMap: false
+				})
+			)
+			.then(result => {
+				if (result.warnings) {
+					console.warn(result.warnings.join('\n'));
+				}
+				if (result.error) {
+					console.error(result.error);
+				} else {
+					mem.code = result.code;
+				}
+				const cacheFile = getCachePath(mem, mem.cwd);
+				fs.writeFile(cacheFile, result.code);
+				zlib.brotliCompress(mem.code, BROTLI_OPTS, (err, data) => {
+					mem.upgrading = false;
+					if (err && result.error) {
+						return reject(Error(`Minification and Brotli compression failed for ${mem.module}/${mem.path}.`));
+					}
+					mem.brotli = data;
+					fs.writeFile(cacheFile + '.br', data);
+					// console.log(`  > ${mem.module}/${mem.path} upgraded in ${Date.now() - start}ms`);
+					resolve();
+				});
+			});
 	});
 }
 

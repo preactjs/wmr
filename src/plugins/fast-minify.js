@@ -1,12 +1,12 @@
-import terser from 'terser';
+import * as terser from 'terser';
 
 /** @returns {import('rollup').Plugin} */
 export default function fastMinifyPlugin({ sourcemap = false, warnThreshold = 50, compress = false } = {}) {
 	return {
 		name: 'fast-minify',
-		renderChunk(code, chunk) {
+		async renderChunk(code, chunk) {
 			const start = Date.now();
-			const out = terser.minify(code, {
+			const out = await terser.minify(code, {
 				sourceMap: sourcemap,
 				mangle: true,
 				compress,
