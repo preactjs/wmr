@@ -4,8 +4,22 @@ import ncpCb from 'ncp';
 import childProcess from 'child_process';
 import { promisify } from 'util';
 import { get as httpGet } from 'http';
+import polka from 'polka';
+import sirv from 'sirv';
 
 const ncp = promisify(ncpCb);
+
+export function serveStatic(dir) {
+	const app = polka()
+		.use(sirv(dir, { dev: true, single: true }))
+		.listen(0);
+	// @ts-ignore-next
+	const server = app.server;
+	return {
+		address: `http://localhost:${server.address().port}`,
+		stop: () => server.close()
+	};
+}
 
 /**
  * @returns {Promise<TestEnv>}
@@ -58,6 +72,7 @@ export async function runWmr(cwd, ...args) {
 		output: [],
 		code: 0,
 		address: null,
+		done: null,
 		close: () => child.kill()
 	};
 
@@ -75,7 +90,9 @@ export async function runWmr(cwd, ...args) {
 	}
 	child.stdout.on('data', onOutput);
 	child.stderr.on('data', onOutput);
-	child.on('close', code => (out.code = code));
+	out.done = new Promise(resolve => {
+		child.on('close', code => resolve((out.code = code)));
+	});
 
 	let setAddress;
 	out.address = new Promise(resolve => (setAddress = resolve));

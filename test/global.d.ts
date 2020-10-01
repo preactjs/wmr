@@ -17,4 +17,5 @@ declare interface WmrInstance {
 	code: number;
 	address: Promise<string>;
 	close: () => void;
+	done: Promise<this['code']>;
 }
