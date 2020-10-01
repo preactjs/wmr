@@ -114,8 +114,8 @@ describe('fixtures', () => {
 			instance = await runWmrFast(env.tmp.path);
 			const output = await getOutput(env, instance);
 			expect(output).toMatch(/preact was used to render/);
-			expect(await env.page.evaluate(() => window.React === window.preactCompat)).toBe(true);
-			expect(await env.page.evaluate(() => window.ReactDOM === window.preactCompat)).toBe(true);
+			expect(await env.page.evaluate(`window.React === window.preactCompat`)).toBe(true);
+			expect(await env.page.evaluate(`window.ReactDOM === window.preactCompat`)).toBe(true);
 		});
 	});
 
@@ -125,7 +125,7 @@ describe('fixtures', () => {
 			instance = await runWmrFast(env.tmp.path);
 			const output = await getOutput(env, instance);
 			expect(output).toMatch(/Pizza/i);
-			expect(await env.page.evaluate(() => window.didRender)).toBe(true);
+			expect(await env.page.evaluate(`window.didRender`)).toBe(true);
 		});
 
 		it('should follow resolutions', async () => {
@@ -139,7 +139,68 @@ describe('fixtures', () => {
 			instance = await runWmrFast(env.tmp.path);
 			const output = await getOutput(env, instance);
 			expect(output).toMatch(/Pizza/i);
-			expect(await env.page.evaluate(() => window.didRender)).toBe(true);
+			expect(await env.page.evaluate(`window.didRender`)).toBe(true);
+		});
+	});
+
+	describe('external scripts', () => {
+		it('should not transpile CJS', async () => {
+			await loadFixture('external-scripts', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+			expect(await env.page.$eval('h1', el => el.textContent)).toBe('EXTERNAL SCRIPT LOADED');
+		});
+
+		it('should use ?asset to bypass transforms', async () => {
+			await loadFixture('external-scripts', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+			expect(await env.page.$eval('h1', el => el.textContent)).toBe('EXTERNAL SCRIPT LOADED');
+		});
+	});
+
+	describe('commonjs', () => {
+		it('should transpile .cjs files', async () => {
+			await loadFixture('commonjs', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+			expect(await env.page.evaluate(`import('/foo.cjs')`)).toEqual({
+				default: {
+					a: 'one',
+					b: 'two'
+				}
+			});
+		});
+
+		// NOTE: This test actually verifies an over-simplified version of CJS that is not ideal.
+		// We will want to update these tests to assert that named exports are inferred once
+		// WMR has been switched over to using cjs-module-lexer (#101).
+		it('should pass smoke test', async () => {
+			await loadFixture('commonjs', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			// import * as foo from './foo.cjs'
+			expect(await env.page.$eval('#cjs', el => JSON.parse(el.textContent))).toEqual({
+				default: {
+					a: 'one',
+					b: 'two'
+				}
+			});
+
+			// import foo from './foo.cjs'
+			expect(await env.page.$eval('#cjsdefault', el => JSON.parse(el.textContent))).toEqual({
+				a: 'one',
+				b: 'two'
+			});
+
+			// const foo = require('./esm.js')
+			expect(await env.page.$eval('#cjsimport', el => JSON.parse(el.textContent))).toEqual({
+				default: 'default export',
+				a: 1,
+				b: 2,
+				c: 3
+			});
 		});
 	});
 });
