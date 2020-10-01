@@ -174,7 +174,7 @@ describe('fixtures', () => {
 
 		// NOTE: This test actually verifies an over-simplified version of CJS that is not ideal.
 		// We will want to update these tests to assert that named exports are inferred once
-		// WMR has been switched over to using cjs-module-lexer (#101).
+		// WMR has been switched over to using cjs-module-lexer (#109).
 		it('should pass smoke test', async () => {
 			await loadFixture('commonjs', env);
 			instance = await runWmrFast(env.tmp.path);
