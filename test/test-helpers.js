@@ -85,6 +85,22 @@ export async function runWmr(cwd, ...args) {
 	return out;
 }
 
+export const runWmrFast = (cwd, ...args) => runWmr(cwd, '--no-optimize', '--no-compress', ...args);
+
+const addrs = new WeakMap();
+
+export async function getOutput(env, instance) {
+	let address = addrs.get(instance);
+	if (!address) {
+		await waitForMessage(instance.output, /^Listening/);
+		address = instance.output.join('\n').match(/https?:\/\/localhost:\d+/g)[0];
+		addrs.set(instance, address);
+	}
+
+	await env.page.goto(address);
+	return await env.page.content();
+}
+
 // eslint-disable-next-line no-control-regex
 const stripColors = str => str.replace(/\x1b\[(?:[0-9]{1,3}(?:;[0-9]{1,3})*)?[m|K]/g, '');
 
