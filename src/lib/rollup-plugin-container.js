@@ -214,7 +214,7 @@ export function createPluginContainer(plugins, opts = {}) {
 
 		/**
 		 * @param {string} id
-		 * @returns {Promise<string | { code: string, map?: any } | null>}
+		 * @returns {Promise<import('rollup').LoadResult>}
 		 */
 		async load(id) {
 			for (plugin of plugins) {

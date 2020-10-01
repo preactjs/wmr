@@ -153,7 +153,7 @@ export default function wmrMiddleware({
 			res.setHeader('Content-Type', type);
 		}
 
-		const ctx = { req, res, id, file, path, cwd, out, NonRollup, next };
+		const ctx = { req, res, id, file, path, prefix, cwd, out, NonRollup, next };
 
 		let transform;
 		if (path === '/_wmr.js') {
@@ -210,6 +210,7 @@ export default function wmrMiddleware({
  * @property {string} id - rollup-style cwd-relative file identifier
  * @property {string} file - absolute file path
  * @property {string} path - request path
+ * @property {string} prefix - a `\NULLprefix:` path prefix, if the URL was `/@prefix:..`
  * @property {string} cwd - working directory, including ./public if detected
  * @property {string} out - output directory
  * @property {InstanceType<import('http')['IncomingMessage']>} req - HTTP Request object
@@ -250,18 +251,21 @@ export const TRANSFORMS = {
 	},
 
 	// Handle individual JavaScript modules
-	async js({ id, file, res, cwd, out, NonRollup }) {
+	async js({ id, file, prefix, res, cwd, out, NonRollup }) {
 		res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
 
 		const cacheKey = id.replace(/^[\0\b]/, '');
 
 		if (WRITE_CACHE.has(cacheKey)) return WRITE_CACHE.get(cacheKey);
 
-		const result = await NonRollup.load(file);
+		const resolved = await NonRollup.resolveId(id);
+		const resolvedId = typeof resolved == 'object' && resolved != null ? resolved.id : resolved;
+		let result = resolvedId && (await NonRollup.load(resolvedId));
 
-		let code = (result && result.code) || result;
+		let code = typeof result == 'object' && result != null ? result.code : result;
 
 		if (code == null || code === false) {
+			if (prefix) file = file.replace(prefix, '');
 			code = await fs.readFile(resolve(cwd, file), 'utf-8');
 		}
 
