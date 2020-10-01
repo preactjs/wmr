@@ -240,7 +240,8 @@ export async function bundleProd({ cwd, root, publicDir, out, sourcemap, aliases
 				index: true
 			}),
 			fastCjsPlugin({
-				// include: f => !/^[\b]npm\//.test(f)
+				// Only transpile CommonJS in node_modules and explicit .cjs files:
+				include: /(?:^[\b]npm\/|[/\\]node_modules[/\\]|\.cjs$)/
 			}),
 			json(),
 			npmPlugin({ external: false }),

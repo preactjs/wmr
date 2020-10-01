@@ -2,6 +2,8 @@ const CJS_KEYWORDS = /\b(module\.exports|exports)\b/;
 
 const ESM_KEYWORDS = /(\bimport\s*(\{|\s['"\w_$])|[\s;]export(\s+(default|const|var|let)[^\w$]|\s*\{))/;
 
+const HELPER = `function $$cjs_default$$(m){try{'default'in m||Object.defineProperty(m,'default',{configurable:true,value:m})}catch(e){}return m}`;
+
 /**
  * Extremely loose and questionable (but fast) conversion from CJS to ESM.
  * @param {object} [options]
@@ -24,6 +26,7 @@ export default function fastCjsPlugin({ include, extensions = ['.js', '.cjs'] } 
 			const hasEsmKeywords = ESM_KEYWORDS.test(code);
 			if (!hasCjsKeywords || hasEsmKeywords) return;
 
+			let insertHelper = false;
 			let specs = new Map();
 			let ns = new Map();
 			// This is a regex being used to parse code, which is of course horrible.
@@ -39,7 +42,8 @@ export default function fastCjsPlugin({ include, extensions = ['.js', '.cjs'] } 
 					spec = { id, specifier: quote + specifier + quote };
 					specs.set(specifier, spec);
 				}
-				return `${before}(${spec.id}&&${spec.id}.default||Object.defineProperty(${spec.id}||{},'default',{configurable:true,value:${spec.id}}))`;
+				insertHelper = true;
+				return `${before}$$cjs_default$$(${spec.id})`;
 			});
 
 			let imports = '';
@@ -47,7 +51,10 @@ export default function fastCjsPlugin({ include, extensions = ['.js', '.cjs'] } 
 				imports += `import * as ${spec.id} from ${spec.specifier};`;
 			});
 
-			code = `${imports}var module={exports:{}},exports=module.exports;${code}\nexport default module.exports`;
+			let preamble = imports;
+			if (insertHelper) preamble += HELPER;
+
+			code = `${preamble}var module={exports:{}},exports=module.exports;${code}\nexport default module.exports`;
 			return { code, map: null };
 		}
 	};

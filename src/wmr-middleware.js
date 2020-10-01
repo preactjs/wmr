@@ -67,7 +67,10 @@ export default function wmrMiddleware({
 			sassPlugin(),
 			htmPlugin({ production: false }),
 			wmrPlugin({ hot: true }),
-			fastCjsPlugin(),
+			fastCjsPlugin({
+				// Only transpile CommonJS in node_modules and explicit .cjs files:
+				include: /(?:[/\\]node_modules[/\\]|\.cjs$)/
+			}),
 			resolveExtensionsPlugin({
 				typescript: true,
 				index: true
