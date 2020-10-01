@@ -140,10 +140,16 @@ export default function wmrMiddleware({
 		// convert to OS path
 		const osPath = path.slice(1).split(posix.sep).join(sep);
 
-		let file = resolve(cwd, osPath);
+		let file, id;
+		if (prefix === '\0builtins:') {
+			file = path.replace(/^\/+/, '');
+			id = file;
+		} else {
+			file = resolve(cwd, osPath);
 
-		// Rollup-style CWD-relative path "id"
-		let id = relative(cwd, file).replace(/^\.\//, '');
+			// Rollup-style CWD-relative path "id"
+			id = relative(cwd, file).replace(/^\.\//, '');
+		}
 
 		file = prefix + file;
 		id = prefix + id;

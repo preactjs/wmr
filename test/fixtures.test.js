@@ -172,5 +172,12 @@ describe('fixtures', () => {
 			const output = await getOutput(env, instance);
 			expect(output).toMatch(/development/i);
 		});
+
+		it('should import builtins:process.js', async () => {
+			await loadFixture('process-import', env);
+			instance = await runWmrFast(env.tmp.path);
+			const output = await getOutput(env, instance);
+			expect(output).toMatch(/development/i);
+		});
 	});
 });

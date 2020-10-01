@@ -10,10 +10,10 @@ export default function processGlobalPlugin({ NODE_ENV = 'development' } = {}) {
 	return {
 		name: 'process-global',
 		resolveId(id) {
-			if (id === '\0process.js') return id;
+			if (id === '\0builtins:process.js') return id;
 		},
 		load(id) {
-			if (id === '\0process.js') return `export default ${processObj};`;
+			if (id === '\0builtins:process.js') return `export default ${processObj};`;
 		},
 		transform(code) {
 			const orig = code;
@@ -31,7 +31,7 @@ export default function processGlobalPlugin({ NODE_ENV = 'development' } = {}) {
 			if (code.match(/[^a-zA-Z0-9]process\.env/)) {
 				// hack: avoid injecting imports into commonjs modules
 				if (code.match(/[^\w-]import[\s{]/)) {
-					code = `import process from '\0process.js';${code}`;
+					code = `import process from '\0builtins:process.js';${code}`;
 				} else {
 					code = `var process=${processObj};${code}`;
 				}
