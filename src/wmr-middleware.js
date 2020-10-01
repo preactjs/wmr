@@ -306,7 +306,7 @@ export const TRANSFORMS = {
 				if (spec.match(/\.(css|s[ac]ss)$/)) spec += '.js';
 
 				// Bare specifiers are npm packages:
-				if (!/^\0\.?\.?[/\\]/.test(spec)) {
+				if (!/^\0?\.?\.?[/\\]/.test(spec)) {
 					const meta = normalizeSpecifier(spec);
 
 					// // Option 1: resolve all package verions (note: adds non-trivial delay to imports)

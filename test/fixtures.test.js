@@ -19,6 +19,12 @@ describe('fixtures', () => {
 		instance.close();
 	});
 
+	it('should import relative file', async () => {
+		await loadFixture('import-relative', env);
+		instance = await runWmrFast(env.tmp.path);
+		expect(await getOutput(env, instance)).toMatch(`foo`);
+	});
+
 	describe('empty', () => {
 		it('should print warning for missing index.html file in public dir', async () => {
 			await loadFixture('empty', env);
