@@ -1,24 +1,8 @@
 import path from 'path';
 import { promises as fs } from 'fs';
-import { setupTest, teardown, runWmr, loadFixture, waitForMessage } from './test-helpers.js';
+import { setupTest, teardown, loadFixture, runWmrFast, getOutput } from './test-helpers.js';
 
 jest.setTimeout(30000);
-
-const addrs = new WeakMap();
-
-const runWmrFast = (cwd, ...args) => runWmr(cwd, '--no-optimize', '--no-compress', ...args);
-
-async function getOutput(env, instance) {
-	let address = addrs.get(instance);
-	if (!address) {
-		await waitForMessage(instance.output, /^Listening/);
-		address = instance.output.join('\n').match(/https?:\/\/localhost:\d+/g)[0];
-		addrs.set(instance, address);
-	}
-
-	await env.page.goto(address);
-	return await env.page.content();
-}
 
 describe('fixtures', () => {
 	/** @type {TestEnv} */
@@ -33,35 +17,6 @@ describe('fixtures', () => {
 	afterEach(async () => {
 		await teardown(env);
 		instance.close();
-	});
-
-	it('should listen on port', async () => {
-		await loadFixture('htmlonly', env);
-		instance = await runWmrFast(env.tmp.path);
-
-		// await waitForMessage(instance.output, /^Listening/);
-
-		// const address = instance.output.join('\n').match(/https?:\/\/localhost:\d+/g)[0];
-
-		// await env.page.goto(address);
-
-		// expect(await env.page.content()).toMatch(`<h1>Hello wmr</h1>`);
-
-		const content = await getOutput(env, instance);
-		expect(content).toMatch(`<h1>Hello wmr</h1>`);
-	});
-
-	it('should build', async () => {
-		await loadFixture('simple', env);
-		instance = await runWmrFast(env.tmp.path, 'build');
-
-		await waitForMessage(instance.output, /Wrote/);
-
-		const files = await fs.readdir(env.tmp.path);
-		expect(files).toEqual(['dist', 'public']);
-
-		const dist = await fs.readdir(path.join(env.tmp.path, 'dist'));
-		expect(dist).toContainEqual(expect.stringMatching(/^index\.[a-z0-9]+\.js$/));
 	});
 
 	describe('empty', () => {
