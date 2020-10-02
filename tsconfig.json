@@ -7,6 +7,7 @@
 		"noEmit": true,
 		"moduleResolution": "node",
 		"module": "esnext",
+		"resolveJsonModule": true,
 		"allowSyntheticDefaultImports": true,
 		"downlevelIteration": true,
 		"target": "ESNext",
