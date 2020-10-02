@@ -2,15 +2,30 @@ import { resolve, relative, dirname, sep, posix } from 'path';
 import { createHash } from 'crypto';
 import { promises as fs } from 'fs';
 import * as acorn from 'acorn';
+
 // Rollup respects "module", Node 14 doesn't.
 const cjsDefault = m => ('default' in m ? m.default : m);
+/** @type acorn */
 const { Parser } = cjsDefault(acorn);
 
 const toPosixPath = path => path.split(sep).join(posix.sep);
 
 /**
+ * @typedef PluginContainerOptions
+ * @property {import('rollup').OutputOptions} [output]
+ * @property {string} [cwd]
+ * @property {Map<string, { info: import('rollup').ModuleInfo }>} [modules]
+ * @property {(name: string, source: string | Uint8Array) => void} [writeFile]
+ */
+
+/**
+ * @typedef PluginContainerContext
+ * @type {(import('rollup').PluginContext | {}) & { options: PluginContainerOptions, outputOptions: import('rollup').OutputOptions }}
+ */
+
+/**
  * @param {import('rollup').Plugin[]} plugins
- * @param {import('rollup').InputOptions & { output?: import('rollup').OutputOptions, cwd?: string, modules?: Map, writeFile?(name: string, source: string):void }} [opts]
+ * @param {import('rollup').InputOptions & PluginContainerOptions} [opts]
  */
 export function createPluginContainer(plugins, opts = {}) {
 	if (!Array.isArray(plugins)) plugins = [plugins];
@@ -40,11 +55,14 @@ export function createPluginContainer(plugins, opts = {}) {
 
 	let plugin;
 	let parser = Parser;
+
+	/** @type {PluginContainerContext} */
 	const ctx = {
 		meta: {
-			rollupVersion: '2.8.0'
+			rollupVersion: '2.8.0',
+			watchMode: true
 		},
-		options: {},
+		options: { ...opts },
 		outputOptions: {
 			dir: opts.output && opts.output.dir,
 			file: opts.output && opts.output.file,
@@ -76,12 +94,16 @@ export function createPluginContainer(plugins, opts = {}) {
 			let mod = MODULES.get(id);
 			if (mod) return mod.info;
 			mod = {
+				/** @type {import('rollup').ModuleInfo} */
+				// @ts-ignore-next
 				info: {}
 			};
 			MODULES.set(id, mod);
 			return mod.info;
 		},
-		emitFile({ type, name, fileName, source }) {
+		emitFile(assetOrFile) {
+			const { type, name, fileName } = assetOrFile;
+			const source = assetOrFile.type === 'asset' && assetOrFile.source;
 			const id = String(++ids);
 			const filename = fileName || generateFilename({ type, name, source, fileName });
 			files.set(id, { id, name, filename });
@@ -119,7 +141,8 @@ export function createPluginContainer(plugins, opts = {}) {
 
 		/**
 		 * @todo this is now an async series hook in rollup, need to find a way to allow for that here.
-		 * @type {OmitThisParameter<import('rollup').PluginHooks['options']>}
+		 * @param {import('rollup').InputOptions} options
+		 * @returns {import('rollup').InputOptions}
 		 */
 		options(options) {
 			for (plugin of plugins) {
@@ -127,6 +150,7 @@ export function createPluginContainer(plugins, opts = {}) {
 				options = plugin.options.call(ctx, options) || options;
 			}
 			if (options.acornInjectPlugins) {
+				// @ts-ignore-next
 				parser = Parser.extend(...[].concat(options.acornInjectPlugins));
 			}
 			return options;
@@ -137,7 +161,7 @@ export function createPluginContainer(plugins, opts = {}) {
 			await Promise.all(
 				plugins.map(plugin => {
 					if (plugin.buildStart) {
-						plugin.buildStart.call(ctx, ctx.options);
+						plugin.buildStart.call(ctx, container.options);
 					}
 				})
 			);

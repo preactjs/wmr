@@ -6,7 +6,7 @@ import { compile, serialize, stringify, middleware, tokenize } from 'stylis';
  *
  * @param {string} css StyleSheet text
  * @param {(className: string, additionalClasses?: string, specifier?: string) => string} [transformClassName] A function to remap classNames to namespaced version
- * @param {(element: object) => boolean} [filter] Optionally filter returned rules
+ * @param {(element: object) => boolean | empty} [filter] Optionally filter returned rules
  * @returns {string}
  */
 export function transformCss(css, transformClassName, filter) {
