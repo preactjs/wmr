@@ -56,9 +56,6 @@ export function createPluginContainer(plugins, opts = {}) {
 	let plugin;
 	let parser = Parser;
 
-	// plugin instances to skip in resolveId
-	let resolveSkipPlugins = [];
-
 	/** @type {PluginContainerContext} */
 	const ctx = {
 		meta: {
@@ -83,12 +80,9 @@ export function createPluginContainer(plugins, opts = {}) {
 			});
 		},
 		async resolve(id, importer, { skipSelf = false } = { skipSelf: false }) {
-			if (skipSelf) resolveSkipPlugins.push(plugin);
-			let out = await container.resolveId(id, importer);
-			if (skipSelf) {
-				const i = resolveSkipPlugins.indexOf(plugin);
-				if (i !== -1) resolveSkipPlugins.splice(i, 1);
-			}
+			const skip = [];
+			if (skipSelf && plugin) skip.push(plugin);
+			let out = await container.resolveId(id, importer, skip);
 			if (typeof out === 'string') out = { id: out };
 			if (!out || !out.id) out = { id };
 			if (out.id.match(/^\.\.?[/\\]/)) {
@@ -203,13 +197,14 @@ export function createPluginContainer(plugins, opts = {}) {
 		/**
 		 * @param {string} id
 		 * @param {string} [importer]
+		 * @param {import('rollup').Plugin[]} [_skip] internal
 		 * @returns {Promise<import('rollup').ResolveIdResult>}
 		 */
-		async resolveId(id, importer) {
+		async resolveId(id, importer, _skip) {
 			const opts = {};
 			for (plugin of plugins) {
 				if (!plugin.resolveId) continue;
-				if (resolveSkipPlugins && resolveSkipPlugins.includes(plugin)) {
+				if (_skip && _skip.includes(plugin)) {
 					continue;
 				}
 				const result = await plugin.resolveId.call(ctx, id, importer);
@@ -220,6 +215,8 @@ export function createPluginContainer(plugins, opts = {}) {
 					id = result.id;
 					Object.assign(opts, result);
 				}
+				// resolveId() is hookFirst - first non-null result is returned.
+				break;
 			}
 			opts.id = id;
 			return Object.keys(opts).length > 1 ? opts : id;
