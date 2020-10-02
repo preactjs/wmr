@@ -82,7 +82,7 @@ const ENV_KEYS = ['esmodules', 'import', 'require', 'browser', 'node', 'default'
 /** Get the best resolution for an entry from an Export Map
  * @param {Object} exp `package.exports`
  * @param {string} entry `./foo` or `.`
- * @param {string[]} [envKeys=ENV_KEYS] package environment keys
+ * @param {string[]} envKeys package environment keys
  * @returns {string | boolean} a resolved path, or a boolean indicating if the given entry is exposed
  */
 function resolveExportMap(exp, entry, envKeys) {
