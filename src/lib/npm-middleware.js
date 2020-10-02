@@ -25,7 +25,7 @@ async function handleAsset(meta, res) {
 		code = await loadPackageFile(meta);
 	}
 	res.writeHead(200, {
-		'content-type': type,
+		'content-type': type || 'text/plain',
 		'content-length': code.length
 	});
 	res.end(code);
@@ -44,10 +44,15 @@ export default function npmMiddleware({ source = 'npm', aliases, optimize, cwd }
 		// @ts-ignore
 		const mod = req.path.replace(/^\//, '');
 
-		try {
-			const meta = normalizeSpecifier(mod);
-			await resolvePackageVersion(meta);
+		const meta = normalizeSpecifier(mod);
 
+		try {
+			await resolvePackageVersion(meta);
+		} catch (e) {
+			return next(e);
+		}
+
+		try {
 			// The package name + path + version is a strong ETag since versions are immutable
 			const etag = Buffer.from(`${meta.specifier}${meta.version}`).toString('base64');
 			const ifNoneMatch = String(req.headers['if-none-match']).replace(/-(gz|br)$/g, '');
