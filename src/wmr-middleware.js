@@ -21,7 +21,7 @@ import nodeBuiltinsPlugin from './plugins/node-builtins-plugin.js';
 
 /**
  * In-memory cache of files that have been generated and written to .cache/
- * @type {Map<string, string | Buffer>}
+ * @type {Map<string, string | Buffer | Uint8Array>}
  */
 const WRITE_CACHE = new Map();
 
@@ -137,14 +137,15 @@ export default function wmrMiddleware({
 			path = prefixMatches[2];
 		}
 
-		// convert to OS path
+		// convert to OS path:
 		const osPath = path.slice(1).split(posix.sep).join(sep);
 
 		let file = resolve(cwd, osPath);
 
-		// Rollup-style CWD-relative path "id"
+		// Rollup-style CWD-relative path "id":
 		let id = relative(cwd, file).replace(/^\.\//, '');
 
+		// add back any prefix if there was one:
 		file = prefix + file;
 		id = prefix + id;
 
@@ -207,17 +208,19 @@ export default function wmrMiddleware({
 /**
  * @typedef Context
  * @property {ReturnType<createPluginContainer>} NonRollup
- * @property {string} id - rollup-style cwd-relative file identifier
- * @property {string} file - absolute file path
- * @property {string} path - request path
- * @property {string} prefix - a `\NULLprefix:` path prefix, if the URL was `/@prefix:..`
- * @property {string} cwd - working directory, including ./public if detected
- * @property {string} out - output directory
- * @property {InstanceType<import('http')['IncomingMessage']>} req - HTTP Request object
- * @property {InstanceType<import('http')['ServerResponse']>} res - HTTP Response object
+ * @property {string} id rollup-style cwd-relative file identifier
+ * @property {string} file absolute file path
+ * @property {string} path request path
+ * @property {string} prefix a Rollup plugin -style path `\0prefix:`, if the URL was `/＠prefix/*`
+ * @property {string} cwd working directory, including ./public if detected
+ * @property {string} out output directory
+ * @property {InstanceType<import('http')['IncomingMessage']>} req HTTP Request object
+ * @property {InstanceType<import('http')['ServerResponse']>} res HTTP Response object
  */
 
-/** @type {{ [key: string]: (ctx: Context) => string|false|Buffer|null|void|Promise<string|false|Buffer|null|void> }} */
+/** @typedef {string|false|Buffer|Uint8Array|null|void} Result */
+
+/** @type {{ [key: string]: (ctx: Context) => Result|Promise<Result> }} */
 export const TRANSFORMS = {
 	// Handle direct asset requests (/foo?asset)
 	async asset({ file, cwd, req, res }) {
@@ -259,10 +262,10 @@ export const TRANSFORMS = {
 		if (WRITE_CACHE.has(cacheKey)) return WRITE_CACHE.get(cacheKey);
 
 		const resolved = await NonRollup.resolveId(id);
-		const resolvedId = typeof resolved == 'object' && resolved != null ? resolved.id : resolved;
+		const resolvedId = typeof resolved == 'object' ? resolved && resolved.id : resolved;
 		let result = resolvedId && (await NonRollup.load(resolvedId));
 
-		let code = typeof result == 'object' && result != null ? result.code : result;
+		let code = typeof result == 'object' ? result && result.code : result;
 
 		if (code == null || code === false) {
 			if (prefix) file = file.replace(prefix, '');
@@ -283,14 +286,14 @@ export const TRANSFORMS = {
 				// const resolved = await NonRollup.resolveId(spec, importer);
 				const resolved = await NonRollup.resolveId(spec, file);
 				if (resolved) {
-					spec = (resolved && resolved.id) || resolved;
+					spec = typeof resolved == 'object' ? resolved.id : resolved;
 					if (/^(\/|\\|[a-z]:\\)/i.test(spec[0])) {
 						spec = relative(dirname(file), spec).split(sep).join(posix.sep);
 						if (!/^\.?\.?\//.test(spec)) {
 							spec = './' + spec;
 						}
 					}
-					if (resolved && resolved.external) {
+					if (typeof resolved == 'object' && resolved.external) {
 						// console.log('external: ', spec);
 						if (/^(data|https?):/.test(spec)) return spec;
 
@@ -371,6 +374,7 @@ export const TRANSFORMS = {
 			resolveId(spec) {
 				if (spec === 'wmr') return '/_wmr.js';
 				console.warn('unresolved specifier: ', spec);
+				return null;
 			}
 		});
 
@@ -434,7 +438,7 @@ export const TRANSFORMS = {
  * Write a file to a directory, ensuring any nested paths exist
  * @param {string} rootDir
  * @param {string} fileName
- * @param {string|Buffer} data
+ * @param {string|Buffer|Uint8Array} data
  */
 async function writeCacheFile(rootDir, fileName, data) {
 	WRITE_CACHE.set(fileName, data);

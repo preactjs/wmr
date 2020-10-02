@@ -9,7 +9,8 @@
 		"module": "esnext",
 		"allowSyntheticDefaultImports": true,
 		"downlevelIteration": true,
-		"target": "ESNext"
+		"target": "ESNext",
+		"strictNullChecks": true
 	},
 	"typeAcquisition": {
 		"enable": true

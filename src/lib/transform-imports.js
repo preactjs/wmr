@@ -2,13 +2,15 @@ import { parse } from 'es-module-lexer/dist/lexer.js';
 
 /** @template T @typedef {Promise<T>|T} MaybePromise */
 
+/** @typedef {(specifier: string, id?: string) => MaybePromise<string|false|null|void>} ResolveFn */
+
 /**
  * @param {string} code Module code
  * @param {string} id Source module specifier
  * @param {object} [options]
- * @param {(specifier: string) => MaybePromise<string|null|false>} [options.resolveImportMeta] Replace `import.meta.FIELD` with a JS string. Return `false`/`null` preserve.
- * @param {(specifier: string, id?: string) => MaybePromise<string|null|false>} [options.resolveId] Return a replacement for import specifiers
- * @param {(specifier: string, id?: string) => MaybePromise<string|null|false>} [options.resolveDynamicImport] `false` preserves, `null` falls back to resolveId()
+ * @param {ResolveFn?} [options.resolveImportMeta] Replace `import.meta.FIELD` with a JS string. Return `false`/`null` preserve.
+ * @param {ResolveFn?} [options.resolveId] Return a replacement for import specifiers
+ * @param {ResolveFn?} [options.resolveDynamicImport] `false` preserves, `null` falls back to resolveId()
  */
 export async function transformImports(code, id, { resolveImportMeta, resolveId, resolveDynamicImport } = {}) {
 	const [imports] = await parse(code, id);
@@ -35,7 +37,7 @@ export async function transformImports(code, id, { resolveImportMeta, resolveId,
 
 	// Falls through to resolveId() if null, preserves spec if false
 	const doResolveDynamicImport = async (spec, id) => {
-		let f = await resolveDynamicImport(spec, id);
+		let f = resolveDynamicImport && (await resolveDynamicImport(spec, id));
 		if (f == null && resolveId) f = await resolveId(spec, id);
 		return f;
 	};
