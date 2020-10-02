@@ -17,6 +17,7 @@ import fastCjsPlugin from './plugins/fast-cjs-plugin.js';
 import resolveExtensionsPlugin from './plugins/resolve-extensions-plugin.js';
 import bundlePlugin from './plugins/bundle-plugin.js';
 import nodeBuiltinsPlugin from './plugins/node-builtins-plugin.js';
+import jsonPlugin from './plugins/json-plugin.js';
 // import { resolvePackageVersion } from './plugins/npm-plugin/registry.js';
 
 /**
@@ -56,6 +57,7 @@ export default function wmrMiddleware({
 		[
 			nodeBuiltinsPlugin({}),
 			urlPlugin({ inline: true, cwd }),
+			jsonPlugin(),
 			bundlePlugin({ inline: true, cwd }),
 			aliasesPlugin({ aliases, cwd: root }),
 			sucrasePlugin({
