@@ -19,3 +19,5 @@ declare interface WmrInstance {
 	close: () => void;
 	done: Promise<this['code']>;
 }
+
+declare module 'json:*' {}

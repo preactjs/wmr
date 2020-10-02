@@ -180,4 +180,29 @@ describe('fixtures', () => {
 			expect(output).toMatch(/development/i);
 		});
 	});
+
+	describe('json', () => {
+		it('should allow importing .json files', async () => {
+			await loadFixture('json', env);
+			instance = await runWmrFast(env.tmp.path);
+			await env.page.goto(await instance.address);
+			expect(await env.page.evaluate(`import('/index.js')`)).toEqual({
+				default: {
+					name: 'foo'
+				}
+			});
+		});
+
+		it('should handle "json:" import prefix', async () => {
+			await loadFixture('json', env);
+			instance = await runWmrFast(env.tmp.path);
+			await env.page.goto(await instance.address);
+			expect(await env.page.evaluate(`import('/using-prefix.js')`)).toEqual({
+				default: {
+					second: 'file',
+					a: 42
+				}
+			});
+		});
+	});
 });

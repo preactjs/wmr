@@ -21,6 +21,7 @@ import urlPlugin from './plugins/url-plugin.js';
 import resolveExtensionsPlugin from './plugins/resolve-extensions-plugin.js';
 import fastCjsPlugin from './plugins/fast-cjs-plugin.js';
 import bundlePlugin from './plugins/bundle-plugin.js';
+import jsonPlugin from './plugins/json-plugin.js';
 
 /** @param {string} p */
 const pathToPosix = p => p.split(sep).join(posix.sep);
@@ -247,6 +248,7 @@ export async function bundleProd({ cwd, root, publicDir, out, sourcemap, aliases
 			npmPlugin({ external: false }),
 			minifyCssPlugin({ sourcemap }),
 			urlPlugin(),
+			jsonPlugin(),
 			bundlePlugin({ cwd })
 		]
 	});

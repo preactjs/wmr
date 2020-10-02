@@ -79,10 +79,10 @@ export function createPluginContainer(plugins, opts = {}) {
 				...opts
 			});
 		},
-		async resolve(id, importer, { skipSelf = false } = {}) {
-			const toSkip = [];
-			if (skipSelf) toSkip.push(plugin);
-			let out = await container.resolveId(id, importer, toSkip);
+		async resolve(id, importer, { skipSelf = false } = { skipSelf: false }) {
+			const skip = [];
+			if (skipSelf && plugin) skip.push(plugin);
+			let out = await container.resolveId(id, importer, skip);
 			if (typeof out === 'string') out = { id: out };
 			if (!out || !out.id) out = { id };
 			if (out.id.match(/^\.\.?[/\\]/)) {
@@ -197,14 +197,16 @@ export function createPluginContainer(plugins, opts = {}) {
 		/**
 		 * @param {string} id
 		 * @param {string} [importer]
-		 * @param {any} [_skip] internal
+		 * @param {import('rollup').Plugin[]} [_skip] internal
 		 * @returns {Promise<import('rollup').ResolveIdResult>}
 		 */
 		async resolveId(id, importer, _skip) {
 			const opts = {};
 			for (plugin of plugins) {
 				if (!plugin.resolveId) continue;
-				if (_skip && _skip.includes(plugin)) continue;
+				if (_skip && _skip.includes(plugin)) {
+					continue;
+				}
 				const result = await plugin.resolveId.call(ctx, id, importer);
 				if (!result) continue;
 				if (typeof result === 'string') {
@@ -213,6 +215,8 @@ export function createPluginContainer(plugins, opts = {}) {
 					id = result.id;
 					Object.assign(opts, result);
 				}
+				// resolveId() is hookFirst - first non-null result is returned.
+				break;
 			}
 			opts.id = id;
 			return Object.keys(opts).length > 1 ? opts : id;
