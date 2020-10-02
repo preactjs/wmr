@@ -3,7 +3,7 @@ import { promises as fs } from 'fs';
 import tar from 'tar-stream';
 import zlib from 'zlib';
 import semverMaxSatisfying from 'semver/ranges/max-satisfying.js';
-import { getJson, getStream, memo, streamToString } from './utils.js';
+import { getJson, getStream, memo, streamToString, friendlyNetworkError } from './utils.js';
 import stripPackageJsonProperties from './package-strip-plugin.js';
 import sizeWarningPlugin from './size-warning-plugin.js';
 
@@ -178,8 +178,12 @@ const SLIM_REQ = {
  * Fetch the npm metadata for a module
  * @returns {Promise<Meta>}
  */
-const getPackageMeta = memo(module => {
-	return getJson(`${API}/${module}`, SLIM_REQ);
+const getPackageMeta = memo(async module => {
+	try {
+		return await getJson(`${API}/${module}`, SLIM_REQ);
+	} catch (e) {
+		throw friendlyNetworkError(e, `npm registry lookup failed for "${module}"`);
+	}
 });
 
 /**
@@ -227,8 +231,9 @@ export async function loadPackageFile({ module, version, path = '' }) {
 			DISK_CACHE.set(module + '/' + version, diskFiles);
 		}
 		// console.log(`  > ${diskFiles.has(path) ? 'in DISK_CACHE' : 'not in DISK_CACHE'}`);
-		if (diskFiles.has(path)) {
-			return diskFiles.get(path);
+		const diskCached = diskFiles.get(path);
+		if (diskCached != null) {
+			return diskCached;
 		}
 
 		const contents = await fs.readFile(localPath, 'utf-8');
@@ -272,15 +277,16 @@ const whenFiles = new Map();
  * @param {Module} info
  * @returns {Promise<string>}
  */
-function whenFile({ module, version, path }) {
+function whenFile({ module, version, path = '' }) {
 	// const f = module + '@' + version + ' :: ' + path;
 	const packageSpecifier = module + '/' + version;
 	let files = tarFiles.get(packageSpecifier);
 	let whens = whenFiles.get(packageSpecifier);
 	if (files) {
-		if (files.has(path)) {
+		const cached = files.get(path);
+		if (cached != null) {
 			// console.log(`when(${f}): already available`);
-			return Promise.resolve(files.get(path));
+			return Promise.resolve(cached);
 		}
 		// we already have a completed files listing and this file wasn't in it.
 		if (!whens) {
@@ -319,7 +325,12 @@ const getTarFiles = memo(async (tarballUrl, packageName, version) => {
 	tarFiles.set(packageSpecifier, files);
 
 	// console.log('streaming tarball for ' + packageName + '@' + version + ': ' + tarballUrl);
-	const tarStream = await getStream(tarballUrl);
+	let tarStream;
+	try {
+		tarStream = await getStream(tarballUrl);
+	} catch (e) {
+		throw friendlyNetworkError(e, `npm download failed for "${packageName}"`);
+	}
 
 	// console.log('getting files for ' + packageName);
 	await parseTarball(tarStream, async (name, stream) => {

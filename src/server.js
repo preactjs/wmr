@@ -35,8 +35,10 @@ export default async function server({ cwd, root, overlayDir, middleware, http2,
 	/** @type {CustomServer} */
 	const app = polka({
 		onError(err, req, res) {
+			const fullPath = req.originalUrl.replace(/\?.+$/, '');
+
 			// ignore missing favicon requests
-			if (req.path == '/favicon.ico') {
+			if (fullPath == '/favicon.ico') {
 				res.writeHead(200, { 'content-type': 'image/x-icon', 'content-length': '0' });
 				return res.end('');
 			}
@@ -59,8 +61,10 @@ export default async function server({ cwd, root, overlayDir, middleware, http2,
 			}
 			res.writeHead(code, { 'content-type': 'text/plain' });
 			res.end(msg);
-			const relativePath = './' + join(relative(root, cwd), req.path.replace(/^\//, ''));
-			console.error(`\u001b[33m${code} \u001b[37m${relativePath}\u001b[0m${msg ? ` - ${msg}` : ''}`);
+			const displayPath = fullPath.startsWith('/@')
+				? fullPath
+				: './' + join(relative(root, cwd), fullPath.replace(/^\//, ''));
+			console.error(`\u001b[33m${code} \u001b[37m${displayPath}\u001b[0m${msg ? ` - ${msg}` : ''}`);
 		}
 	});
 

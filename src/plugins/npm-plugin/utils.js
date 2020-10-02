@@ -1,6 +1,19 @@
 import { get } from 'https';
 
 /**
+ * User-friendly registry/network error messages.
+ * @param {Error & { code: any }} err
+ * @param {string} text
+ */
+export function friendlyNetworkError(err, text) {
+	let help = err.message;
+	if (err.code === 'ENOTFOUND') help = `It looks like you're offline.`;
+	else if (err.code === 404) help = `Package doesn't exist.`;
+	const friendlyErr = Error(`${text}: ${help}`);
+	throw Object.assign(friendlyErr, { code: err.code });
+}
+
+/**
  * @param {string} url
  * @param {Parameters<get>[1]} [config]
  */
@@ -15,11 +28,19 @@ export function getJson(url, config) {
  */
 export function getStream(url, config) {
 	return new Promise((resolve, reject) => {
-		get(url, config || {}, res => {
-			const status = res.statusCode;
-			if (status < 200 || status >= 400) reject(Error(`${res.statusMessage}: ${url}`));
-			else resolve(res);
+		const req = get(url, config || {}, res => {
+			const status = res.statusCode || 0;
+			if (status >= 200 && status < 400) {
+				return resolve(res);
+			}
+			const err = Object.assign(Error(`${res.statusMessage}: ${url}`), {
+				code: status,
+				status,
+				res
+			});
+			reject(err);
 		});
+		req.on('error', reject);
 	});
 }
 
@@ -35,10 +56,10 @@ export function streamToString(stream) {
 			if (typeof data !== 'string') data = data.toString('utf-8');
 			buffer += data;
 		});
-		stream.on('end', () => {
+		stream.once('end', () => {
 			resolve(buffer);
 		});
-		stream.on('error', reject);
+		stream.once('error', reject);
 	});
 }
 
