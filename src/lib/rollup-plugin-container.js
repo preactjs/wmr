@@ -54,6 +54,19 @@ export function createPluginContainer(plugins, opts = {}) {
 
 	let watchFiles = new Set();
 
+	/** @type {Map<string, WeakMap<import('rollup').Plugin, number>>} */
+	const skipResolutions = new Map();
+
+	// Get a Set of plugin instances to skip when resolving an ID pair
+	function getResolveSkipList(id, importer) {
+		const key = id + '\n' + importer;
+		let globalSkip = skipResolutions.get(key);
+		if (globalSkip) return globalSkip;
+		globalSkip = new WeakMap();
+		skipResolutions.set(key, globalSkip);
+		return globalSkip;
+	}
+
 	let plugin;
 	let parser = Parser;
 
@@ -198,17 +211,27 @@ export function createPluginContainer(plugins, opts = {}) {
 		/**
 		 * @param {string} id
 		 * @param {string} [importer]
-		 * @param {import('rollup').Plugin[]} [_skip] internal
+		 * @param {[import('rollup').Plugin]} [_skip] internal
 		 * @returns {Promise<import('rollup').ResolveIdResult>}
 		 */
 		async resolveId(id, importer, _skip) {
+			const globalSkip = getResolveSkipList(id, importer);
+			if (_skip) {
+				globalSkip.set(_skip[0], (globalSkip.get(_skip[0]) || 0) + 1);
+			}
+
 			const opts = {};
 			for (plugin of plugins) {
 				if (!plugin.resolveId) continue;
-				if (_skip && _skip.includes(plugin)) {
-					continue;
-				}
+
+				const skipCount = globalSkip.get(plugin) || 0;
+				if (skipCount) continue;
+				globalSkip.set(plugin, skipCount + 1);
+
 				const result = await plugin.resolveId.call(ctx, id, importer);
+
+				globalSkip.set(plugin, (globalSkip.get(plugin) || 0) - 1);
+
 				if (!result) continue;
 				if (typeof result === 'string') {
 					id = result;
@@ -219,6 +242,7 @@ export function createPluginContainer(plugins, opts = {}) {
 				// resolveId() is hookFirst - first non-null result is returned.
 				break;
 			}
+
 			opts.id = id;
 			return Object.keys(opts).length > 1 ? opts : id;
 		},
