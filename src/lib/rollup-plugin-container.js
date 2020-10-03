@@ -11,6 +11,24 @@ const { Parser } = cjsDefault(acorn);
 
 const toPosixPath = path => path.split(sep).join(posix.sep);
 
+/** Fast splice(x,1) when order doesn't matter (h/t Rich)
+ *  @param {Array} array @param {number} index
+ */
+function popIndex(array, index) {
+	const tail = array.pop();
+	if (index !== array.length) array[index] = tail;
+}
+
+/** Get a unique key for a (id,importer) resolve pair
+ *  @param {string} id @param {string} [importer]
+ */
+function identifierPair(id, importer) {
+	if (importer) return id + '\n' + importer;
+	return id;
+}
+
+/** @typedef {import('rollup').Plugin} Plugin */
+
 /**
  * @typedef PluginContainerOptions
  * @property {import('rollup').OutputOptions} [output]
@@ -25,7 +43,7 @@ const toPosixPath = path => path.split(sep).join(posix.sep);
  */
 
 /**
- * @param {import('rollup').Plugin[]} plugins
+ * @param {Plugin[]} plugins
  * @param {import('rollup').InputOptions & PluginContainerOptions} [opts]
  */
 export function createPluginContainer(plugins, opts = {}) {
@@ -198,17 +216,31 @@ export function createPluginContainer(plugins, opts = {}) {
 		/**
 		 * @param {string} id
 		 * @param {string} [importer]
-		 * @param {import('rollup').Plugin[]} [_skip] internal
+		 * @param {[Plugin]} [_skip] internal
 		 * @returns {Promise<import('rollup').ResolveIdResult>}
 		 */
 		async resolveId(id, importer, _skip) {
+			const key = identifierPair(id, importer);
+
 			const opts = {};
-			for (plugin of plugins) {
-				if (!plugin.resolveId) continue;
-				if (_skip && _skip.includes(plugin)) {
-					continue;
+			for (const p of plugins) {
+				if (!p.resolveId) continue;
+
+				if (_skip) {
+					if (_skip.includes(p)) continue;
+					if (resolveSkips.has(p, key)) continue;
+					resolveSkips.add(p, key);
 				}
-				const result = await plugin.resolveId.call(ctx, id, importer);
+
+				plugin = p;
+
+				let result;
+				try {
+					result = await p.resolveId.call(ctx, id, importer);
+				} finally {
+					if (_skip) resolveSkips.delete(p, key);
+				}
+
 				if (!result) continue;
 				if (typeof result === 'string') {
 					id = result;
@@ -219,6 +251,7 @@ export function createPluginContainer(plugins, opts = {}) {
 				// resolveId() is hookFirst - first non-null result is returned.
 				break;
 			}
+
 			opts.id = id;
 			return Object.keys(opts).length > 1 ? opts : id;
 		},
@@ -276,6 +309,30 @@ export function createPluginContainer(plugins, opts = {}) {
 				}
 			}
 			return JSON.stringify('/' + fileName.split(sep).join(posix.sep));
+		}
+	};
+
+	// Tracks recursive resolveId calls
+	const resolveSkips = {
+		/** @type {Map<Plugin, string[]>} */
+		skip: new Map(),
+		/** @param {Plugin} plugin @param {string} key */
+		has(plugin, key) {
+			const skips = this.skip.get(plugin);
+			return skips ? skips.includes(key) : false;
+		},
+		/** @param {Plugin} plugin @param {string} key */
+		add(plugin, key) {
+			const skips = this.skip.get(plugin);
+			if (skips) skips.push(key);
+			else this.skip.set(plugin, [key]);
+		},
+		/** @param {Plugin} plugin @param {string} key */
+		delete(plugin, key) {
+			const skips = this.skip.get(plugin);
+			if (!skips) return;
+			const i = skips.indexOf(key);
+			if (i !== -1) popIndex(skips, i);
 		}
 	};
 
