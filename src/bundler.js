@@ -1,6 +1,7 @@
 import { relative, sep, posix, resolve, dirname } from 'path';
 import * as rollup from 'rollup';
 import json from '@rollup/plugin-json';
+import rollupUrlPlugin from '@rollup/plugin-url';
 import htmPlugin from './plugins/htm-plugin.js';
 import sucrasePlugin from './plugins/sucrase-plugin.js';
 import wmrPlugin from './plugins/wmr/plugin.js';
@@ -91,6 +92,7 @@ export async function bundleProd({ cwd, root, publicDir, out, sourcemap, aliases
 			}),
 			json(),
 			npmPlugin({ external: false }),
+			rollupUrlPlugin(),
 			minifyCssPlugin({ sourcemap }),
 			urlPlugin(),
 			jsonPlugin(),
