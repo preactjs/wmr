@@ -8,6 +8,7 @@ export default function Header() {
 				<a href="/">Home</a>
 				<a href="/about">About</a>
 				<a href="/compat">Compat</a>
+				<a href="/class-fields">Class-Fields</a>
 				<a href="/error">Error</a>
 			</nav>
 			<label>
