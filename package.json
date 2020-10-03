@@ -59,7 +59,9 @@
 	},
 	"eslintIgnore": [
 		"wmr.cjs",
-		"test/fixtures/**/*.expected.*"
+		"test/fixtures/**/*.expected.*",
+		"test/fixtures/*/dist",
+		"test/fixtures/*/.cache"
 	],
 	"prettier": {
 		"singleQuote": true,
