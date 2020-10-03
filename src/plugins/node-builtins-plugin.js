@@ -1,6 +1,10 @@
 const BUILTINS = {
 	fs: `export default {}`,
-	util: `export default {}`
+	http: `export default {}`,
+	https: `export default {}`,
+	url: `export default {}`,
+	util: `export default {}`,
+	zlib: `export default {}`
 };
 
 /**
