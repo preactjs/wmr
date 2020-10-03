@@ -308,7 +308,10 @@ export const TRANSFORMS = {
 				// \0abc:./x --> /@abc/x
 				spec = spec.replace(/^\0?([a-z-]+):(.+)$/, (s, prefix, spec) => {
 					// console.log(spec, relative(cwd, spec).split(sep).join(posix.sep));
-					return '/@' + prefix + '/' + relative(cwd, spec).split(sep).join(posix.sep);
+					// Careful: `builtins:` imports must not be resolved, the full path acts
+					// as a string identifier.
+					const pathname = prefix === 'builtins' ? spec : relative(cwd, spec);
+					return '/@' + prefix + '/' + pathname.split(sep).join(posix.sep);
 				});
 
 				// foo.css --> foo.css.js (import of CSS Modules proxy module)
