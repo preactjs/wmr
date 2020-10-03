@@ -1,5 +1,4 @@
 import server from './server.js';
-import { bundleDev } from './bundler.js';
 import wmrMiddleware from './wmr-middleware.js';
 import { getFreePort, getServerAddresses } from './lib/net-utils.js';
 import { normalizeOptions } from './lib/normalize-options.js';
@@ -7,7 +6,6 @@ import { setCwd } from './plugins/npm-plugin/registry.js';
 
 /**
  * @typedef OtherOptions
- * @property {boolean} [prebuild = false]
  * @property {string} [host]
  * @property {string} [port]
  */
@@ -21,21 +19,13 @@ export default async function start(options = {}) {
 
 	options = await normalizeOptions(options);
 
-	if (options.prebuild) {
-		await bundleDev({
+	options.middleware = [
+		wmrMiddleware({
 			...options,
 			onError: sendError,
-			onBuild: sendChanges
-		});
-	} else {
-		options.middleware = [
-			wmrMiddleware({
-				...options,
-				onError: sendError,
-				onChange: sendChanges
-			})
-		];
-	}
+			onChange: sendChanges
+		})
+	];
 
 	// eslint-disable-next-line
 	function sendError(err) {
