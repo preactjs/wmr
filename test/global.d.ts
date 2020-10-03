@@ -21,3 +21,4 @@ declare interface WmrInstance {
 }
 
 declare module 'json:*' {}
+declare module '*.jpg' {}

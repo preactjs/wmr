@@ -1,4 +1,4 @@
-import { relative, basename } from 'path';
+import { relative, basename, extname } from 'path';
 import { promises as fs } from 'fs';
 
 /**
@@ -12,7 +12,10 @@ export default function urlPlugin({ inline, cwd } = {}) {
 		name: 'url-plugin',
 		async resolveId(id, importer) {
 			if (id[0] === '\0') return;
-			if (/\.wasm$/.test(id) && !id.startsWith('url:')) id = `url:${id}`;
+
+			if (!/\.(js|cjs|mjs|jsx|ts|tsx|html|json)$/.test(id) && !id.startsWith('url:') && extname(id)) {
+				id = `url:${id}`;
+			}
 			if (!id.startsWith('url:')) return;
 			const resolved = await this.resolve(id.slice(4), importer, { skipSelf: true });
 			if (resolved) {
