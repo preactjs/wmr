@@ -5,15 +5,23 @@ import { promises as fs } from 'fs';
  * @param {object} [options]
  * @param {object} [options.inline = false] Emit a Data URL module exporting the URL string.
  * @param {object} [options.cwd] Used to resolve the URL when `inline` is `true`.
+ * @param {object} [options.mode] Either "development" or "production"
  * @returns {import('rollup').Plugin}
  */
-export default function urlPlugin({ inline, cwd } = {}) {
+export default function urlPlugin({ inline, cwd, mode = 'development' } = {}) {
 	return {
 		name: 'url-plugin',
 		async resolveId(id, importer) {
 			if (id[0] === '\0') return;
 
-			if (!/\.(js|cjs|mjs|jsx|ts|tsx|html|json)$/.test(id) && !id.startsWith('url:') && extname(id)) {
+			// We'll let `@rollup/plugin-url` take care of non-js imports for
+			// production builds. See: bundler.js
+			if (
+				mode !== 'production' &&
+				!/\.(js|cjs|mjs|jsx|ts|tsx|html|json)$/.test(id) &&
+				!id.startsWith('url:') &&
+				extname(id)
+			) {
 				id = `url:${id}`;
 			}
 			if (!id.startsWith('url:')) return;
