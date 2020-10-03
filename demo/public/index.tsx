@@ -9,6 +9,7 @@ import Header from './header.tsx';
 
 const About = lazy(() => import('./pages/about/index.js'));
 const CompatPage = lazy(() => import('./pages/compat.js'));
+const ClassFields = lazy(() => import('./pages/class-fields.js'));
 
 export function App() {
 	return (
@@ -19,6 +20,7 @@ export function App() {
 					<Home path="/" />
 					<About path="/about" />
 					<CompatPage path="/compat" />
+					<ClassFields path="/class-fields" />
 					<NotFound default />
 				</Router>
 			</div>

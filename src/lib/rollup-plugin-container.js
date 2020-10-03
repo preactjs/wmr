@@ -2,6 +2,7 @@ import { resolve, relative, dirname, sep, posix } from 'path';
 import { createHash } from 'crypto';
 import { promises as fs } from 'fs';
 import * as acorn from 'acorn';
+import acornClassFields from 'acorn-class-fields';
 
 // Rollup respects "module", Node 14 doesn't.
 const cjsDefault = m => ('default' in m ? m.default : m);
@@ -151,7 +152,7 @@ export function createPluginContainer(plugins, opts = {}) {
 			}
 			if (options.acornInjectPlugins) {
 				// @ts-ignore-next
-				parser = Parser.extend(...[].concat(options.acornInjectPlugins));
+				parser = Parser.extend(...[acornClassFields].concat(options.acornInjectPlugins));
 			}
 			return options;
 		},

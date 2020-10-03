@@ -25,6 +25,12 @@ describe('fixtures', () => {
 		expect(await getOutput(env, instance)).toMatch(`foo`);
 	});
 
+	it('should support class-fields', async () => {
+		await loadFixture('class-fields', env);
+		instance = await runWmrFast(env.tmp.path);
+		expect(await getOutput(env, instance)).toMatch(`class fields work`);
+	});
+
 	describe('empty', () => {
 		it('should print warning for missing index.html file in public dir', async () => {
 			await loadFixture('empty', env);
