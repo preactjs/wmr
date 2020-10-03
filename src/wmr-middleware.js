@@ -305,10 +305,13 @@ export const TRANSFORMS = {
 					}
 				}
 
-				// \0abc:./x --> /@abc/x
+				// \0abc:foo --> /@abc/foo
 				spec = spec.replace(/^\0?([a-z-]+):(.+)$/, (s, prefix, spec) => {
-					// console.log(spec, relative(cwd, spec).split(sep).join(posix.sep));
-					return '/@' + prefix + '/' + relative(cwd, spec).split(sep).join(posix.sep);
+					// \0abc:/abs/disk/path --> /@abc/cwd-relative-path
+					if (spec[0] === '/' || spec[0] === sep) {
+						spec = relative(cwd, spec).split(sep).join(posix.sep);
+					}
+					return '/@' + prefix + '/' + spec;
 				});
 
 				// foo.css --> foo.css.js (import of CSS Modules proxy module)

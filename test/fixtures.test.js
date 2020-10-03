@@ -185,6 +185,13 @@ describe('fixtures', () => {
 			const output = await getOutput(env, instance);
 			expect(output).toMatch(/development/i);
 		});
+
+		it('should import builtins:process.js #2', async () => {
+			await loadFixture('process-import2', env);
+			instance = await runWmrFast(env.tmp.path);
+			const output = await getOutput(env, instance);
+			expect(output).toMatch(/it works/i);
+		});
 	});
 
 	describe('json', () => {

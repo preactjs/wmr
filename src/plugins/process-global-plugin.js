@@ -30,7 +30,7 @@ export default function processGlobalPlugin({ NODE_ENV = 'development' } = {}) {
 			// if that wasn't the only way `process.env` was referenced...
 			if (code.match(/[^a-zA-Z0-9]process\.env/)) {
 				// hack: avoid injecting imports into commonjs modules
-				if (code.match(/[^\w-]import[\s{]/)) {
+				if (/^\s*(import|export)[\s{]/gm.test(code)) {
 					code = `import process from '\0builtins:process.js';${code}`;
 				} else {
 					code = `var process=${processObj};${code}`;
