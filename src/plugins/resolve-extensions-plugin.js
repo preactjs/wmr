@@ -48,6 +48,7 @@ export default function resolveExtensionsPlugin({
 	return {
 		name: 'resolve-extensions-plugin',
 		async resolveId(id, importer) {
+			if (id[0] === '\0') return;
 			if (/\.(tsx?|css|s[ac]ss|wasm)$/.test(id)) return;
 
 			let resolved;

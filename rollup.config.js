@@ -24,7 +24,7 @@ const config = {
 			{
 				name: 'minify',
 				renderChunk(code) {
-					return terser.minify(code, {
+					const result = terser.minify(code, {
 						ecma: 2019,
 						module: true,
 						compress: {
@@ -39,13 +39,13 @@ const config = {
 							inline_script: false,
 							ecma: 2019
 						}
-					}).code;
+					});
+					return result.code || null;
 				}
 			}
 		]
 	},
-	// external: ['fsevents'].concat(builtins),
-	external: [].concat(builtins),
+	external: [...builtins],
 	// /* Logs all included npm dependencies: */
 	// external(source, importer) {
 	// 	const ch = source[0];

@@ -218,4 +218,13 @@ describe('fixtures', () => {
 			});
 		});
 	});
+
+	describe('file urls', () => {
+		it('should load .jpg files', async () => {
+			await loadFixture('file-import', env);
+			instance = await runWmrFast(env.tmp.path);
+			const output = await getOutput(env, instance);
+			expect(output).toMatch(/\/img.jpg\?asset/i);
+		});
+	});
 });

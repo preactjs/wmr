@@ -92,7 +92,7 @@ export async function bundleProd({ cwd, root, publicDir, out, sourcemap, aliases
 			json(),
 			npmPlugin({ external: false }),
 			minifyCssPlugin({ sourcemap }),
-			urlPlugin(),
+			urlPlugin({}),
 			jsonPlugin(),
 			bundlePlugin({ cwd })
 		]
