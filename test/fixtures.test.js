@@ -31,6 +31,12 @@ describe('fixtures', () => {
 		expect(await getOutput(env, instance)).toMatch(`class fields work`);
 	});
 
+	it.only('should not if sub-import is not in export map', async () => {
+		await loadFixture('package-export', env);
+		instance = await runWmrFast(env.tmp.path);
+		expect(await getOutput(env, instance)).toMatch(`class fields work`);
+	});
+
 	describe('empty', () => {
 		it('should print warning for missing index.html file in public dir', async () => {
 			await loadFixture('empty', env);
