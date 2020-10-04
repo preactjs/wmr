@@ -10,6 +10,7 @@ export default function Header() {
 				<a href="/compat">Compat</a>
 				<a href="/class-fields">Class-Fields</a>
 				<a href="/files">Files</a>
+				<a href="/node-resolve">Node Resolution</a>
 				<a href="/error">Error</a>
 			</nav>
 			<label>

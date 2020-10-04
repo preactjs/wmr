@@ -227,4 +227,56 @@ describe('fixtures', () => {
 			expect(output).toMatch(/\/img.jpg\?asset/i);
 		});
 	});
+
+	describe('node resolution', () => {
+		it('should resolve /foo -> /foo.js', async () => {
+			await loadFixture('node-resolve-js', env);
+			instance = await runWmrFast(env.tmp.path);
+			expect(await getOutput(env, instance)).toMatch(`foo.js`);
+		});
+
+		it('should resolve /foo -> /foo.jsx', async () => {
+			await loadFixture('node-resolve-jsx', env);
+			instance = await runWmrFast(env.tmp.path);
+			expect(await getOutput(env, instance)).toMatch(`foo.jsx`);
+		});
+
+		it('should resolve /foo -> /foo.ts', async () => {
+			await loadFixture('node-resolve-ts', env);
+			instance = await runWmrFast(env.tmp.path);
+			expect(await getOutput(env, instance)).toMatch(`foo.ts`);
+		});
+
+		it('should resolve /foo -> /foo.tsx', async () => {
+			await loadFixture('node-resolve-tsx', env);
+			instance = await runWmrFast(env.tmp.path);
+			expect(await getOutput(env, instance)).toMatch(`foo.tsx`);
+		});
+
+		describe('index', () => {
+			it('should resolve /foo -> /foo/index.js', async () => {
+				await loadFixture('node-resolve-index-js', env);
+				instance = await runWmrFast(env.tmp.path);
+				expect(await getOutput(env, instance)).toMatch(`index.js`);
+			});
+
+			it('should resolve /foo -> /foo/index.jsx', async () => {
+				await loadFixture('node-resolve-index-jsx', env);
+				instance = await runWmrFast(env.tmp.path);
+				expect(await getOutput(env, instance)).toMatch(`index.jsx`);
+			});
+
+			it('should resolve /foo -> /foo/index.ts', async () => {
+				await loadFixture('node-resolve-index-ts', env);
+				instance = await runWmrFast(env.tmp.path);
+				expect(await getOutput(env, instance)).toMatch(`index.ts`);
+			});
+
+			it('should resolve /foo -> /foo/index.tsx', async () => {
+				await loadFixture('node-resolve-index-tsx', env);
+				instance = await runWmrFast(env.tmp.path);
+				expect(await getOutput(env, instance)).toMatch(`index.tsx`);
+			});
+		});
+	});
 });

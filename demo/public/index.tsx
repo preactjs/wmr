@@ -11,6 +11,7 @@ const About = lazy(() => import('./pages/about/index.js'));
 const CompatPage = lazy(() => import('./pages/compat.js'));
 const ClassFields = lazy(() => import('./pages/class-fields.js'));
 const Files = lazy(() => import('./pages/files/index.js'));
+const NodeResolve = lazy(() => import('./pages/node-resolve/index.js'));
 
 export function App() {
 	return (
@@ -23,6 +24,7 @@ export function App() {
 					<CompatPage path="/compat" />
 					<ClassFields path="/class-fields" />
 					<Files path="/files" />
+					<NodeResolve path="/node-resolve" />
 					<NotFound default />
 				</Router>
 			</div>
