@@ -1,6 +1,6 @@
 import path from 'path';
 import { promises as fs } from 'fs';
-import { setupTest, teardown, loadFixture, runWmrFast, getOutput } from './test-helpers.js';
+import { setupTest, teardown, loadFixture, runWmrFast, getOutput, get } from './test-helpers.js';
 
 jest.setTimeout(30000);
 
@@ -67,7 +67,7 @@ describe('fixtures', () => {
 			instance = await runWmrFast(env.tmp.path);
 			const output = await getOutput(env, instance);
 			expect(output).toMatch(/<pre id="out">{.+}<\/pre>/);
-			const json = JSON.parse(await env.page.$eval('#out', el => el.textContent));
+			const json = JSON.parse(await env.page.$eval('#out', el => el.textContent || ''));
 			expect(json).toHaveProperty('htmlUrl', '/index.html?asset');
 			expect(json).toHaveProperty('selfUrl', '/index.js?asset');
 			const out = await env.page.evaluate(async () => await (await fetch('/index.js?asset')).text());
@@ -148,7 +148,7 @@ describe('fixtures', () => {
 			await getOutput(env, instance);
 
 			// import * as foo from './foo.cjs'
-			expect(await env.page.$eval('#cjs', el => JSON.parse(el.textContent))).toEqual({
+			expect(await env.page.$eval('#cjs', el => JSON.parse(el.textContent || ''))).toEqual({
 				default: {
 					a: 'one',
 					b: 'two'
@@ -156,13 +156,13 @@ describe('fixtures', () => {
 			});
 
 			// import foo from './foo.cjs'
-			expect(await env.page.$eval('#cjsdefault', el => JSON.parse(el.textContent))).toEqual({
+			expect(await env.page.$eval('#cjsdefault', el => JSON.parse(el.textContent || ''))).toEqual({
 				a: 'one',
 				b: 'two'
 			});
 
 			// const foo = require('./esm.js')
-			expect(await env.page.$eval('#cjsimport', el => JSON.parse(el.textContent))).toEqual({
+			expect(await env.page.$eval('#cjsimport', el => JSON.parse(el.textContent || ''))).toEqual({
 				default: 'default export',
 				a: 1,
 				b: 2,
@@ -219,12 +219,16 @@ describe('fixtures', () => {
 		});
 	});
 
-	describe('file urls', () => {
-		it('should load .jpg files', async () => {
+	describe('implicit import of files as URLs', () => {
+		it('importing a .jpg should produce its URL', async () => {
 			await loadFixture('file-import', env);
 			instance = await runWmrFast(env.tmp.path);
 			const output = await getOutput(env, instance);
-			expect(output).toMatch(/\/img.jpg\?asset/i);
+			expect(output).toMatch(/\/img\.jpg\?asset/i);
+
+			const expected = await fs.readFile(path.resolve(__dirname, 'fixtures/file-import/fake-font.ttf'), 'utf-8');
+			const served = await get(instance, '/fake-font.ttf');
+			expect(served.body).toEqual(expected);
 		});
 	});
 });
