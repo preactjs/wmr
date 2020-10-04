@@ -52,7 +52,7 @@ export default function resolveExtensionsPlugin({
 			// Bail out on `\bnpm`
 			if (importer && importer[0] === '\b') return;
 			if (/\.(tsx?|css|s[ac]ss|wasm)$/.test(id)) return;
-			if (!/^(\.|\/)/.test(id)) return;
+			if (!/^[./\\]/.test(id)) return;
 
 			if (importer) {
 				id = resolve(dirname(importer), id);
