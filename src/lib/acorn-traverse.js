@@ -112,6 +112,8 @@ function codegen(node) {
 			return `${codegenParens(node.left)}${node.operator}${codegenParens(node.right)}`;
 		case 'UnaryExpression':
 			return `${node.operator}${codegenParens(node.argument)}`;
+		case 'ReturnStatement':
+			return `return ${codegenParens(node.argument)}`;
 		case 'Identifier':
 			return node.name;
 		case 'Literal':
