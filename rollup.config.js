@@ -23,8 +23,8 @@ const config = {
 		plugins: [
 			{
 				name: 'minify',
-				renderChunk(code) {
-					return terser.minify(code, {
+				async renderChunk(code) {
+					return (await terser.minify(code, {
 						ecma: 2019,
 						module: true,
 						compress: {
@@ -39,7 +39,7 @@ const config = {
 							inline_script: false,
 							ecma: 2019
 						}
-					}).code;
+					})).code;
 				}
 			}
 		]
