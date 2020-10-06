@@ -1,8 +1,9 @@
 import { resolve, join } from 'path';
 import { promises as fs } from 'fs';
+import { readEnvFiles } from './environment.js';
 
 /**
- * @template {{ cwd?: string, root?: string, out?: string, overlayDir?: string, aliases?: Record<string, string> }} T
+ * @template {{ cwd?: string, root?: string, out?: string, overlayDir?: string, aliases?: Record<string, string>, env?: Record<string, string> }} T
  * @param {T} options
  * @returns {Promise<T>}
  */
@@ -10,6 +11,9 @@ export async function normalizeOptions(options) {
 	options.cwd = resolve(options.cwd || '');
 
 	options.root = options.cwd;
+
+	const { NODE_ENV = 'development' } = process.env;
+	options.env = await readEnvFiles(options.root, ['.env', '.env.local', `.env.${NODE_ENV}`, `.env.${NODE_ENV}.local`]);
 
 	// Output directory is relative to CWD *before* ./public is detected + appended:
 	options.out = resolve(options.cwd, options.out || '.cache');

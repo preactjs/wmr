@@ -5,6 +5,7 @@ import Home from './pages/home.js';
 // import About from './pages/about/index.js';
 import NotFound from './pages/_404.js';
 import Header from './header.tsx';
+import { Environment } from './pages/environment.js';
 // import './style.css';
 
 const About = lazy(() => import('./pages/about/index.js'));
@@ -23,6 +24,7 @@ export function App() {
 					<CompatPage path="/compat" />
 					<ClassFields path="/class-fields" />
 					<Files path="/files" />
+					<Environment path="/env" />
 					<NotFound default />
 				</Router>
 			</div>
