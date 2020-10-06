@@ -6,7 +6,7 @@ import { relative } from 'path';
  * @param {boolean} [options.inline] Resolve bundle: imports to an inline module as a data URL.
  * @returns {import('rollup').Plugin}
  */
-export default function bundlePlugin({ cwd, inline } = {}) {
+export default function bundlePlugin({ cwd = '.', inline } = {}) {
 	return {
 		name: 'bundle-plugin',
 		async resolveId(id, importer) {

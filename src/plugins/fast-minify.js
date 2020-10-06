@@ -17,6 +17,10 @@ export default function fastMinifyPlugin({ sourcemap = false, warnThreshold = 50
 					comments: false
 				}
 			});
+
+			// TODO: Check if tersers typings are wrong
+			if (!out.code) out.code = '';
+
 			const duration = Date.now() - start;
 			if (out.error) this.error(out.error);
 			if (out.warnings) for (const warn of out.warnings) this.warn(warn);
