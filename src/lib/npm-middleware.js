@@ -69,7 +69,7 @@ export default function npmMiddleware({ source = 'npm', aliases, optimize, cwd }
 
 			res.setHeader('content-type', 'application/javascript;charset=utf-8');
 			if (process.env.DEBUG) {
-				console.log(`  ${kl.dim('middleware:') + kl.bold(kl.magenta('npm'))}  ${meta.specifier}`);
+				console.log(`  ${kl.dim('middleware:') + kl.bold(kl.magenta('npm'))}  ${JSON.stringify(meta.specifier)}`);
 			}
 			// serve from memory and disk caches:
 			const cached = await getCachedBundle(etag, meta, cwd);

@@ -251,7 +251,7 @@ export function createPluginContainer(plugins, opts = {}) {
 				}
 
 				if (process.env.DEBUG) {
-					console.log(`  ${kl.dim('plugin:') + kl.bold(kl.yellow(p.name))}  ${id}`);
+					console.log(`  ${kl.dim('plugin:') + kl.bold(kl.yellow(p.name))}  ${JSON.stringify(id)}`);
 				}
 				// resolveId() is hookFirst - first non-null result is returned.
 				break;
