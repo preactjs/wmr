@@ -5,27 +5,44 @@ body {
 	font-family: system-ui, sans-serif;
 }
 
+table {
+	margin: 4rem;
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+
+td,
+th {
+	padding: 0.5rem 0.75rem;
+	border: 0.0625rem solid #d0d0d0;
+	text-align: left;
+}
+
+tbody tr:nth-child(even) {
+	background: #eee;
+}
+
 header {
 	display: flex;
 	background: #ddd;
 }
 
-header>nav {
+header > nav {
 	flex: 1;
 	display: flex;
 }
 
-header>nav a {
+header > nav a {
 	padding: 10px;
 	color: #673ab8;
 	text-decoration: none;
 }
 
-header>nav a:hover {
+header > nav a:hover {
 	background-color: #f1e9ff;
 }
 
-header>label {
+header > label {
 	display: flex;
 	align-items: center;
 	padding: 10px;
@@ -40,6 +57,6 @@ header input {
 	font-size: 100%;
 }
 
-.app>section {
+.app > section {
 	padding: 20px;
 }

@@ -8,10 +8,11 @@ import { setCwd } from './plugins/npm-plugin/registry.js';
  * @typedef OtherOptions
  * @property {string} [host]
  * @property {string} [port]
+ * @property {Record<string, string>} [env]
  */
 
 /**
- * @param {Parameters<server>[0] & Parameters<bundleDev>[0] & OtherOptions} options
+ * @param {Parameters<server>[0] & OtherOptions} options
  */
 export default async function start(options = {}) {
 	// @todo remove this hack once registry.js is instantiable
