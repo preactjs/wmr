@@ -48,7 +48,7 @@ describe('.env files', () => {
 			instance.close();
 		});
 
-		it('should import relative file', async () => {
+		it('should load env files into process.env', async () => {
 			await loadFixture('env', env);
 			instance = await runWmrFast(env.tmp.path);
 			const values = { FOO: 'bar', OVERRIDE: '11', EMPTY: '', FOO_LOCAL: 'bar', NODE_ENV: 'development' };

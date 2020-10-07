@@ -44,13 +44,6 @@ export async function teardown(env) {
 export async function loadFixture(name, env) {
 	const fixture = path.join(__dirname, 'fixtures', name);
 	await ncp(fixture, env.tmp.path);
-
-	const envs = ['.env', '.env.development', '.env.development.local', '.env.local'];
-	await Promise.all(
-		envs.map(fileName => {
-			return ncp(path.join(__dirname, '..', fileName), path.join(env.tmp.path, fileName));
-		})
-	);
 }
 
 /**
