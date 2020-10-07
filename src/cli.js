@@ -3,6 +3,7 @@
 import sade from 'sade';
 import build from './build.js';
 import start from './start.js';
+import * as kl from 'kolorist';
 
 const prog = sade('wmr');
 
@@ -32,7 +33,7 @@ prog.parse(process.argv);
 function run(p) {
 	p.catch(err => {
 		const text = (process.env.DEBUG ? err.stack : err.message) || err + '';
-		process.stderr.write(`\u001b[31m${text}\u001b[0m\n`);
+		process.stderr.write(`${kl.red(text)}\n`);
 		process.exit(p.code || 1);
 	});
 }
