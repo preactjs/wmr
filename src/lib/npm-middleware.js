@@ -9,6 +9,7 @@ import processGlobalPlugin from '../plugins/process-global-plugin.js';
 import aliasesPlugin from '../plugins/aliases-plugin.js';
 import { getMimeType } from './mimetypes.js';
 import nodeBuiltinsPlugin from '../plugins/node-builtins-plugin.js';
+import * as kl from 'kolorist';
 
 /**
  * Serve a "proxy module" that uses the WMR runtime to load CSS.
@@ -67,7 +68,9 @@ export default function npmMiddleware({ source = 'npm', aliases, optimize, cwd }
 			}
 
 			res.setHeader('content-type', 'application/javascript;charset=utf-8');
-
+			if (process.env.DEBUG) {
+				console.log(`  ${kl.dim('middleware:') + kl.bold(kl.magenta('npm'))}  ${JSON.stringify(meta.specifier)}`);
+			}
 			// serve from memory and disk caches:
 			const cached = await getCachedBundle(etag, meta, cwd);
 			if (cached) return sendCachedBundle(req, res, cached);
