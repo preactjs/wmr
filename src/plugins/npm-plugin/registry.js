@@ -274,7 +274,7 @@ async function whenFile({ module, version, path = '' }) {
 		// we already have a completed files listing and this file wasn't in it.
 		if (!whens) {
 			// console.log(`when(${f}): confirmed missing`);
-			throw 'no such file';
+			throw new Error(`File ${path} not found in package ${module}@${version}`);
 		}
 	}
 	// console.log(`when(${f}): pending (${files ? 'has' : 'no'} files, ${whens ? 'has' : 'no'} whens)`);
