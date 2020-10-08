@@ -187,21 +187,6 @@ const getPackageMeta = memo(async module => {
 });
 
 /**
- * Get a map of files from an npm package
- * @param {Module} info
- */
-export async function loadPackageFiles({ module, version }) {
-	const meta = await getPackageMeta(module);
-	const exactVersion = resolveVersion(meta, version);
-	if (!exactVersion) {
-		throw Error(`Unknown package version: ${module}@${version}`);
-	}
-
-	const info = meta.versions[exactVersion];
-	return await getTarFiles(info.dist.tarball, module, version);
-}
-
-/**
  * Cache file contents of package files for quick access.
  * Example:
  *   `my-module@1.0.0 :: /index.js` -> `console.log("hello world")`
@@ -253,15 +238,15 @@ export async function loadPackageFile({ module, version, path = '' }) {
 
 	// console.log(`${module}/${path} using tar stream strategy`);
 	// trigger package fetch, and resolve as soon as the file passes through the tar stream:
-	loadPackageFiles({ module, version });
-	return whenFile({ module, version, path });
+	const meta = await getPackageMeta(module);
+	const exactVersion = resolveVersion(meta, version);
+	if (!exactVersion) {
+		throw Error(`Unknown package version: ${module}@${version}`);
+	}
 
-	// OLD: get all files, then return the requested one
-	// const files = await loadPackageFiles({ module, version });
-	// if (!files.has(path)) {
-	// 	throw Error(`Package ${module} does not contain file ${path}`);
-	// }
-	// return files.get(path);
+	const info = meta.versions[exactVersion];
+	await getTarFiles(info.dist.tarball, module, version);
+	return whenFile({ module, version, path });
 }
 
 /** @type {Map<string, Map<string, string>>} */
