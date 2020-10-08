@@ -299,6 +299,7 @@ function whenFile({ module, version, path = '' }) {
 		whenFiles.set(packageSpecifier, whens);
 	}
 	return new Promise((resolve, reject) => {
+		// @ts-ignore
 		whens.add({ path, resolve, reject });
 	});
 }

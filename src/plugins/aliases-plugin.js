@@ -8,7 +8,7 @@ import { promises as fs } from 'fs';
  * @param {string} [options.cwd]
  * @returns {import('rollup').Plugin}
  */
-export default function aliasesPlugin({ aliases, cwd } = {}) {
+export default function aliasesPlugin({ aliases = {}, cwd } = {}) {
 	let pkgFilename;
 	let aliasesLoaded;
 	async function fromPackageJson() {
