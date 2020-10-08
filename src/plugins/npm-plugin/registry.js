@@ -364,6 +364,7 @@ export async function writeNpmFile(packageName, filename, data) {
 }
 
 /**
+ * Extract tarball and call a callback function on each file
  * @param {import('stream').Readable} bodyStream
  * @param {(name: string, stream: import('stream').PassThrough) => Promise} onFile
  */
