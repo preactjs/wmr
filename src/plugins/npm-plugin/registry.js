@@ -227,7 +227,7 @@ export async function loadPackageFile({ module, version, path = '' }) {
 	}
 
 	// otherwise, check if it's available in node_modules:
-	const cacheKey = `${module}@${version} :: ${path}`;
+	const cacheKey = `${module}@${version} :: \n${path}`;
 	let file = DISK_CACHE.get(cacheKey);
 	if (file != null) {
 		return file;
