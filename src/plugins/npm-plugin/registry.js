@@ -201,7 +201,7 @@ export async function loadPackageFiles({ module, version }) {
 	return await getTarFiles(info.dist.tarball, module, version);
 }
 
-/** @type {Map<string, Map<string, string>>} */
+/** @type {Map<string, string>} */
 const DISK_CACHE = new Map();
 
 /**
@@ -222,23 +222,16 @@ export async function loadPackageFile({ module, version, path = '' }) {
 	}
 
 	// otherwise, check if it's available in node_modules:
-	const localPath = resolve(NODE_MODULES, module, path);
-	// console.log(`${path} using disk strategy ${localPath}`);
-	try {
-		let diskFiles = DISK_CACHE.get(module + '/' + version);
-		if (!diskFiles) {
-			diskFiles = new Map();
-			DISK_CACHE.set(module + '/' + version, diskFiles);
-		}
-		// console.log(`  > ${diskFiles.has(path) ? 'in DISK_CACHE' : 'not in DISK_CACHE'}`);
-		const diskCached = diskFiles.get(path);
-		if (diskCached != null) {
-			return diskCached;
-		}
+	const cacheKey = `${module}@${version} :: ${path}`;
+	let file = DISK_CACHE.get(cacheKey);
+	if (file != null) {
+		return file;
+	}
 
+	try {
+		const localPath = resolve(NODE_MODULES, module, path);
 		const contents = await fs.readFile(localPath, 'utf-8');
-		// console.log(`${path}: read ${contents.length}b from disk`);
-		diskFiles.set(path, contents);
+		DISK_CACHE.set(cacheKey, contents);
 		return contents;
 	} catch (e) {
 		const packageExists = await fs.stat(resolve(NODE_MODULES, module)).catch(() => null);
