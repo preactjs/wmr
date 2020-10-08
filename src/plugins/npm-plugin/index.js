@@ -19,6 +19,7 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = '\bnpm/', ext
 			if (importer) {
 				if (importer[0] === '\0') importer = '';
 
+				// FIXME: Windows paths should not leak into plugins
 				// replace windows paths
 				importer = importer
 					.replace(/^[A-Z]:/, '')
@@ -42,6 +43,7 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = '\bnpm/', ext
 			let isExternal = false;
 			let isEntry = false;
 
+			// Q: How can the importer be a disk path?
 			// A relative import from within a module (resolve based on importer):
 			if (isDiskPath(id)) {
 				// not an npm module
@@ -88,6 +90,7 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = '\bnpm/', ext
 			// Versions that resolve to the root are removed
 			// (see "Option 3" in wmr-middleware.jsL247)
 			let emitVersion = true;
+			// Q: Why do we call `resolvePackageVersion()` again?
 			if ((await resolvePackageVersion({ module: meta.module, version: '' })).version === meta.version) {
 				emitVersion = false;
 				// meta.version = '';
@@ -123,6 +126,7 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = '\bnpm/', ext
 
 			// CSS files are not handled by this plugin.
 			if (/\.css$/.test(id) && (await hasFile(resolvedPath))) {
+				// TODO: Check if this assumption holds true in monorepos
 				return `./node_modules/${meta.module}/${resolvedPath}`;
 			}
 

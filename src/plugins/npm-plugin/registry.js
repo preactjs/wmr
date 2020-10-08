@@ -8,6 +8,15 @@ import stripPackageJsonProperties from './package-strip-plugin.js';
 import sizeWarningPlugin from './size-warning-plugin.js';
 
 // @TODO: this whole module should be instantiable
+// FIXME: This file is hard to read and took me a few hours to
+// understand what's going on. Split up responsibilities:
+//  1. Fetch tarball
+//  2. Extract tarball (keep streaming? Is it worth the complexity?)
+//  3. Write to disk + fullfill requests
+//
+// The `whenFile` abstraction is hard to read and is a lot of code.
+// I'm betting that we can replace that via a simple Promise + multiple
+// listeners.
 
 /**
  * @typedef Meta
@@ -47,6 +56,7 @@ export function setCwd(cwd) {
  * @type {{ name?: string, transform?(contents: string, filename: string): string|void }}
  */
 
+// TODO: The plugins are pretty important, but easy to miss
 /** @type {Array<Plugin>} */
 const plugins = [stripPackageJsonProperties(), sizeWarningPlugin()];
 
@@ -56,6 +66,7 @@ const API = 'https://registry.npmjs.org';
 /** How long to cache npm dist-tag version lookups before requerying the registry */
 const DIST_TAG_TTL = 60000;
 
+// FIXME: State variable bound to module instantiation, harder to test
 /** @type {Map<string, { time: number, version: string }>} */
 const DIST_TAG_CACHE = new Map();
 
@@ -65,9 +76,11 @@ async function readPackageJson(filename) {
 	} catch (e) {}
 }
 
+// FIXME: Stateful variable bound to module instantiation
 /** @type {PackageJson} */
 let appPackageJson;
 
+// FIXME: Inline
 /** @param {PackageJson} pkg */
 export function getPackageVersionFromDeps(pkg, name) {
 	return (
@@ -77,6 +90,7 @@ export function getPackageVersionFromDeps(pkg, name) {
 	);
 }
 
+// FIXME: Inline
 function getPackageVersionFromResolutions(pkg, name) {
 	if (pkg.resolutions) {
 		for (const pattern in pkg.resolutions) {
@@ -112,6 +126,7 @@ export async function resolvePackageVersion(info) {
 	// If not specified, use any version constraints from the project's package.json:
 	if (!info.version) {
 		if (!appPackageJson) {
+			// FIXME: Assumption about folder structure
 			appPackageJson = (await readPackageJson(resolve(NODE_MODULES, '..', 'package.json'))) || {};
 		}
 		const resolvedVersion =
@@ -120,6 +135,7 @@ export async function resolvePackageVersion(info) {
 		info.version = resolvedVersion || 'latest';
 	}
 
+	// FIXME: Assumption about folder structure
 	const pkg = await readPackageJson(resolve(NODE_MODULES, info.module, 'package.json'));
 	if (pkg) {
 		DIST_TAG_CACHE.set(key, { time: Date.now(), version: pkg.version });
@@ -155,6 +171,7 @@ async function manuallyResolvePackageVersion(info) {
  */
 function resolveVersion(meta, version) {
 	const distTags = meta['dist-tags'];
+	// Q: Why use `hasOwnProperty()` checks here?
 	if (distTags.hasOwnProperty(version)) {
 		return distTags[version];
 	}
@@ -174,6 +191,7 @@ const SLIM_REQ = {
 	}
 };
 
+// FIXME: memo masks side effect, hard to test
 /**
  * Fetch the npm metadata for a module
  * @returns {Promise<Meta>}
@@ -186,6 +204,7 @@ const getPackageMeta = memo(async module => {
 	}
 });
 
+// TODO: Choose a different name, easy to mistake for `loadPackageFile`
 /**
  * Get a map of files from an npm package
  * @param {Module} info
@@ -201,6 +220,7 @@ export async function loadPackageFiles({ module, version }) {
 	return await getTarFiles(info.dist.tarball, module, version);
 }
 
+// FIXME: Stateful variable bound to module instantiation, harder to test
 /** @type {Map<string, Map<string, string>>} */
 const DISK_CACHE = new Map();
 
@@ -209,6 +229,7 @@ const DISK_CACHE = new Map();
  * @param {Module} info
  */
 export async function loadPackageFile({ module, version, path = '' }) {
+	// Q: Why do we need to strip the leading dot/slash?
 	path = path.replace(/^\.?\//g, '');
 
 	// console.log('loadPackageFile: ', module, version, path);
@@ -222,9 +243,11 @@ export async function loadPackageFile({ module, version, path = '' }) {
 	}
 
 	// otherwise, check if it's available in node_modules:
+	// FIXME: Assumption about folder structure
 	const localPath = resolve(NODE_MODULES, module, path);
 	// console.log(`${path} using disk strategy ${localPath}`);
 	try {
+		// FIXME: Remove nested maps by using `module@version:file` as the key
 		let diskFiles = DISK_CACHE.get(module + '/' + version);
 		if (!diskFiles) {
 			diskFiles = new Map();
@@ -241,6 +264,7 @@ export async function loadPackageFile({ module, version, path = '' }) {
 		diskFiles.set(path, contents);
 		return contents;
 	} catch (e) {
+		// FIXME: Assumption about folder structure
 		const packageExists = await fs.stat(resolve(NODE_MODULES, module)).catch(() => null);
 		// console.log(
 		// 	`${path} not found, there is ${packageExists ? 'a' : 'no'} package at ${resolve(NODE_MODULES, module)}:\n${
@@ -256,6 +280,7 @@ export async function loadPackageFile({ module, version, path = '' }) {
 	// console.log(`${module}/${path} using tar stream strategy`);
 	// trigger package fetch, and resolve as soon as the file passes through the tar stream:
 	loadPackageFiles({ module, version });
+	// FIXME: Cleanup whenFile
 	return whenFile({ module, version, path });
 
 	// OLD: get all files, then return the requested one
@@ -266,12 +291,16 @@ export async function loadPackageFile({ module, version, path = '' }) {
 	// return files.get(path);
 }
 
+// FIXME: Module state
 /** @type {Map<string, Map<string, string>>} */
 const tarFiles = new Map();
 
+// FIXME: Module state
 /** @type {Map<string, Set<{path:string,resolve(d),reject(e?)}>>} */
 const whenFiles = new Map();
 
+// FIXME: Replace with Promise, which can have multiple "listeners".
+// No need for a separate data structure.
 /**
  * Get a promise that resolves once a package file as early as possible
  * @param {Module} info
@@ -305,6 +334,7 @@ function whenFile({ module, version, path = '' }) {
 	});
 }
 
+// TODO: memo masks side effect, hard to test
 const getTarFiles = memo(async (tarballUrl, packageName, version) => {
 	const packageSpecifier = packageName + '/' + version;
 	// @TODO: pull from cacache
@@ -349,6 +379,8 @@ const getTarFiles = memo(async (tarballUrl, packageName, version) => {
 
 		// console.log(`file ${name} in package ${packageName}: `);
 
+		// FIXME: Shouldn't we await the call here? Otherwise we may
+		// have a race condition here
 		writeNpmFile(packageName, name, data);
 
 		files.set(name, data);
@@ -376,7 +408,9 @@ const getTarFiles = memo(async (tarballUrl, packageName, version) => {
 
 /** Asynchronously write a file to node_modules */
 export async function writeNpmFile(packageName, filename, data) {
+	// FIXME: Assumptions about folder structure
 	await fs.mkdir(resolve(NODE_MODULES, packageName, dirname(filename)), { recursive: true });
+	// FIXME: Assumptions about folder structure
 	await fs.writeFile(resolve(NODE_MODULES, packageName, filename), data);
 }
 

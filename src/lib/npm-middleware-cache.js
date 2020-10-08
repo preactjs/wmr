@@ -73,6 +73,7 @@ function upgradeToBrotli(mem) {
 	});
 }
 
+// FIXME: Module state, hard to test
 const compressionQueue = new Set();
 export function enqueueCompress(cacheKey) {
 	compressionQueue.add(cacheKey);
@@ -125,6 +126,7 @@ export async function getCachedBundle(etag, { module, path, version }, cwd) {
 		upgrading: false,
 		modified: stat.mtimeMs,
 		code,
+		// FIXME: Potential error, may be undefined
 		cwd
 	});
 	return {
@@ -150,6 +152,7 @@ export function setCachedBundle(etag, code, { module, path, version }, cwd) {
 		upgrading: false,
 		modified: Date.now(),
 		code,
+		// FIXME: Potential error, may be undefined
 		cwd
 	});
 	const cacheFile = getCachePath({ module, path, version }, cwd);
@@ -192,6 +195,9 @@ async function fwrite(filename, data) {
  * @param {string} [cwd = '.']
  */
 function getCachePath({ module, version, path }, cwd) {
+	// Q: what is tf?
 	const tfPath = (path || '').replace(/\//g, '---');
+	// TODO: Investigate if we can put that into `.cache/[module]`
+	// instead of messing with node_modules
 	return resolve(cwd || '.', `node_modules/${module}/.cache/${version}--${tfPath}.js`);
 }
