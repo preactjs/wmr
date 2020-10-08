@@ -201,7 +201,12 @@ export async function loadPackageFiles({ module, version }) {
 	return await getTarFiles(info.dist.tarball, module, version);
 }
 
-/** @type {Map<string, string>} */
+/**
+ * Cache file contents of package files for quick access.
+ * Example:
+ *   `my-module@1.0.0 :: /index.js` -> `console.log("hello world")`
+ * @type {Map<string, string>}
+ */
 const DISK_CACHE = new Map();
 
 /**
