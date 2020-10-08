@@ -147,11 +147,8 @@ function updateStyleSheet(url) {
 	const sheets = document.styleSheets;
 	for (let i = 0; i < sheets.length; i++) {
 		if (strip(sheets[i].href) === url) {
-			const ownerNode = sheets[i].ownerNode;
-			if (ownerNode) {
-				// @ts-ignore
-				ownerNode.href = strip(url) + '?t=' + Date.now();
-			}
+			// @ts-ignore
+			sheets[i].ownerNode.href = strip(url) + '?t=' + Date.now();
 			return true;
 		}
 	}
