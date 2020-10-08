@@ -275,7 +275,7 @@ const whenFiles = new Map();
  * @param {Module} info
  * @returns {Promise<string>}
  */
-function whenFile({ module, version, path = '' }) {
+async function whenFile({ module, version, path = '' }) {
 	// const f = module + '@' + version + ' :: ' + path;
 	const packageSpecifier = module + '/' + version;
 	let files = tarFiles.get(packageSpecifier);
@@ -284,12 +284,12 @@ function whenFile({ module, version, path = '' }) {
 		const cached = files.get(path);
 		if (cached != null) {
 			// console.log(`when(${f}): already available`);
-			return Promise.resolve(cached);
+			return cached;
 		}
 		// we already have a completed files listing and this file wasn't in it.
 		if (!whens) {
 			// console.log(`when(${f}): confirmed missing`);
-			return Promise.reject('no such file');
+			throw 'no such file';
 		}
 	}
 	// console.log(`when(${f}): pending (${files ? 'has' : 'no'} files, ${whens ? 'has' : 'no'} whens)`);
