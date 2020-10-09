@@ -25,15 +25,34 @@ export default function minifyCssPlugin({ sourcemap } = {}) {
 					if (asset.type !== 'asset' || !/\.(css|s[ac]ss)$/.test(asset.fileName)) return;
 					const id = asset.fileName;
 					const mapFile = asset.fileName + '.map';
-					const result = await processor.process(asset.source, {
-						from: id,
-						to: id,
-						map: sourcemap && {
-							annotation: posix.basename(mapFile),
-							from: posix.basename(mapFile),
-							sourcesContent: false
+					let result;
+					try {
+						result = await processor.process(asset.source, {
+							from: id,
+							to: id,
+							map: sourcemap && {
+								annotation: posix.basename(mapFile),
+								from: posix.basename(mapFile),
+								sourcesContent: false
+							}
+						});
+					} catch (e) {
+						if (e.line != null && e.column != null) {
+							const lines = e.source.split('\n');
+							const line = e.line - 1;
+							const frame = [
+								lines[line - 2] || '',
+								lines[line - 1] || '',
+								lines[line],
+								'-'.repeat(e.column - 1) + '^',
+								lines[line + 1] || '',
+								lines[line + 2] || ''
+							];
+							const err = Error(e.message + '\n> ' + frame.join('\n> '));
+							return this.error(err, { line: e.line, column: e.column });
 						}
-					});
+						throw e;
+					}
 					if (result.map) {
 						this.emitFile({
 							type: 'asset',
