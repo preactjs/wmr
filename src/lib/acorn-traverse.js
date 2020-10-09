@@ -15,7 +15,7 @@ cjsDefault(jsxWalk).extend(walk.base);
 
 /**
  * @typedef Node
- * @type {Omit<import('acorn').Node, 'start'|'end'> & { _string?: string, start?: number, end?: number, value?: any, selfClosing?: boolean, name?: any, computed?: boolean, condition?: Node, expression?: Node, expressions?: Node[], id?: Node, init?: Node, block?: Node, object?: Node, property?: Node, body?: Node[], tag?: Node, quasi?: Node, quasis?: Node[], declarators?: Node[], properties?: Node[], children?: Node[], elements?: Node[], key?: Node, shorthand?: boolean, method?: boolean, imported?: Node, local?: Node, specifiers?: Node[], source?: Node, left?: Node, right?: Node, operator?: string, raw?: string, argument?: Node, arguments?: Node[], async?: boolean, params?: Node[], callee?: Node }}
+ * @type {Omit<import('acorn').Node, 'start'|'end'> & { _string?: string, start?: number, end?: number, value?: any, selfClosing?: boolean, name?: any, computed?: boolean, test?: Node, consequent?: Node, expression?: Node, expressions?: Node[], id?: Node, init?: Node, block?: Node, object?: Node, property?: Node, body?: Node[], tag?: Node, quasi?: Node, quasis?: Node[], declarations?: Node[], properties?: Node[], children?: Node[], elements?: Node[], key?: Node, shorthand?: boolean, method?: boolean, imported?: Node, local?: Node, specifiers?: Node[], source?: Node, left?: Node, right?: Node, operator?: string, raw?: string, argument?: Node, arguments?: Node[], async?: boolean, params?: Node[], callee?: Node }}
  */
 
 /**
@@ -71,7 +71,7 @@ function codegen(node) {
 	}
 	if (ctx && node.start != null && node.end != null) {
 		try {
-			return ctx.out.slice(node.start, node.end).replace(/;([\s\n]*)/g, '$1');
+			return ctx.out.slice(node.start, node.end);
 		} catch (e) {}
 	}
 
@@ -82,7 +82,9 @@ function codegen(node) {
 		case 'SequenceExpression':
 			return node.expressions.map(codegenParens).join(',');
 		case 'IfStatement':
-			return `if(${codegen(node.condition)})${codegen(node.block)}`;
+			return `if(${codegen(node.test)})${codegen(node.consequent)}`;
+		case 'ConditionalExpression':
+			return `${codegen(node.test)}?${codegen(node.consequent)}:${codegen(node.alternate)}`;
 		case 'Program':
 			return node.body.map(codegen).join(';\n');
 		case 'BlockStatement':
@@ -112,6 +114,8 @@ function codegen(node) {
 			return `${codegenParens(node.left)}${node.operator}${codegenParens(node.right)}`;
 		case 'UnaryExpression':
 			return `${node.operator}${codegenParens(node.argument)}`;
+		case 'ReturnStatement':
+			return `return ${codegenParens(node.argument)}`;
 		case 'Identifier':
 			return node.name;
 		case 'Literal':
@@ -142,8 +146,10 @@ function codegen(node) {
 			}
 			return out + '`';
 		}
+		case 'ThisExpression':
+			return 'this';
 		case 'VariableDeclaration':
-			return node.type + ' ' + node.declarators.map(codegen).join(',');
+			return node.kind + ' ' + node.declarations.map(codegen).join(',');
 		case 'VariableDeclarator':
 			return codegen(node.id) + (node.init ? '=' + codegen(node.init) : '');
 		case 'ImportSpecifier':
