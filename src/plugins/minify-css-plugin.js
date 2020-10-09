@@ -15,8 +15,10 @@ export default function minifyCssPlugin({ sourcemap } = {}) {
 		async resolveId(id, importer) {
 			if (id.startsWith('css:')) {
 				const resolved = await this.resolve(id.substring(4), importer);
-				resolved.id = 'css:' + resolved.id;
-				return resolved;
+				if (resolved) {
+					resolved.id = 'css:' + resolved.id;
+					return resolved;
+				}
 			}
 		},
 		async generateBundle(_, bundle) {

@@ -40,7 +40,7 @@ export default function unpkgPlugin({ resolutions = new Map(), publicPath = '@np
 
 			if (isRelativeImport) {
 				// resolve relative imports from within a package:
-				if (isRelativeToPackage) {
+				if (from && isRelativeToPackage) {
 					s = path.join(path.dirname(from), s);
 				} else {
 					// otherwise it's a local import, don't process it:
@@ -174,7 +174,7 @@ const getPackageInfo = withCache(PACKAGE_CACHE, async id => {
  * @param {string} id
  */
 async function unpkgResolve(id) {
-	let [, name, path = ''] = id.match(/^((?:@[^@/?]+\/)?[^@/?]+)(?:@[^/?]+)?(?:\/([^?]+))?(?:\?.*)?$/);
+	let [, name, path = ''] = id.match(/^((?:@[^@/?]+\/)?[^@/?]+)(?:@[^/?]+)?(?:\/([^?]+))?(?:\?.*)?$/) || [];
 	const info = await getPackageInfo(name);
 
 	if (!info.exports && EXPORTMAPS.hasOwnProperty(name)) {

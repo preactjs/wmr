@@ -3,15 +3,17 @@ import wmrMiddleware from './wmr-middleware.js';
 import { getFreePort, getServerAddresses } from './lib/net-utils.js';
 import { normalizeOptions } from './lib/normalize-options.js';
 import { setCwd } from './plugins/npm-plugin/registry.js';
+import * as kl from 'kolorist';
 
 /**
  * @typedef OtherOptions
  * @property {string} [host]
  * @property {string} [port]
+ * @property {Record<string, string>} [env]
  */
 
 /**
- * @param {Parameters<server>[0] & Parameters<bundleDev>[0] & OtherOptions} options
+ * @param {Parameters<server>[0] & OtherOptions} options
  */
 export default async function start(options = {}) {
 	// @todo remove this hack once registry.js is instantiable
@@ -57,5 +59,5 @@ export default async function start(options = {}) {
 	const host = options.host || process.env.HOST;
 	app.listen(port, host);
 	const addresses = getServerAddresses(app.server.address(), { https: app.http2 });
-	process.stdout.write(`\u001b[36mListening on ${addresses}\u001b[0m\n`);
+	process.stdout.write(kl.cyan(`Listening on ${addresses}`) + '\n');
 }

@@ -24,6 +24,7 @@ const toSystemPath = p => p.split(posix.sep).join(sep);
  * @returns {import('rollup').Plugin}
  */
 export default function htmlEntriesPlugin({ cwd, publicDir, publicPath } = {}) {
+	const root = publicDir || cwd || '.';
 	const ENTRIES = [];
 
 	/** @this {import('rollup').PluginContext} */
@@ -31,7 +32,9 @@ export default function htmlEntriesPlugin({ cwd, publicDir, publicPath } = {}) {
 		if (!/\.html$/.test(id)) return id;
 
 		this.addWatchFile(id);
-		id = (await this.resolve(id, null, { skipSelf: true })).id;
+		const resolved = await this.resolve(id, undefined, { skipSelf: true });
+		if (!resolved) return;
+		id = resolved.id;
 
 		const html = await fs.readFile(id, 'utf-8');
 		const waiting = [];
@@ -39,23 +42,23 @@ export default function htmlEntriesPlugin({ cwd, publicDir, publicPath } = {}) {
 
 		const transformed = await transformHtml(html, {
 			transformUrl: (url, attr, tag, { attrs }) => {
-				if (!isLocalFile(url)) return;
+				if (!isLocalFile(url)) return null;
 
 				let abs = url;
 				if (url[0] === '/') {
 					url = './' + url.substring(1);
-					abs = join(publicDir || cwd, toSystemPath(url));
+					abs = join(root, toSystemPath(url));
 				} else {
 					if (!/^\.?\.\//.test(url)) url = './' + url;
 					abs = resolve(dirname(id), toSystemPath(url));
 				}
 
-				if (tag === 'script' && /^module$/i.test(attrs.type)) {
+				if (tag === 'script' && attrs && attrs.type && /^module$/i.test(attrs.type)) {
 					const id = ENTRIES.push(abs) - 1;
 					scripts.push(abs);
 					return `/__ENTRY__/${id}`;
 				}
-				if (tag === 'link' && /^stylesheet$/i.test(attrs.rel)) {
+				if (tag === 'link' && attrs && attrs.rel && /^stylesheet$/i.test(attrs.rel)) {
 					const ref = this.emitFile({
 						type: 'asset',
 						name: url.replace(/^\.\//, '')
@@ -67,6 +70,8 @@ export default function htmlEntriesPlugin({ cwd, publicDir, publicPath } = {}) {
 					);
 					return `/__ASSET__/${ref}`;
 				}
+
+				return null;
 			}
 		});
 
@@ -74,7 +79,7 @@ export default function htmlEntriesPlugin({ cwd, publicDir, publicPath } = {}) {
 
 		this.emitFile({
 			type: 'asset',
-			fileName: relative(publicDir || cwd, id),
+			fileName: relative(root, id),
 			source: transformed
 		});
 

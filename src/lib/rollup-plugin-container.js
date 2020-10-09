@@ -3,6 +3,7 @@ import { createHash } from 'crypto';
 import { promises as fs } from 'fs';
 import * as acorn from 'acorn';
 import acornClassFields from 'acorn-class-fields';
+import * as kl from 'kolorist';
 
 // Rollup respects "module", Node 14 doesn't.
 const cjsDefault = m => ('default' in m ? m.default : m);
@@ -247,6 +248,10 @@ export function createPluginContainer(plugins, opts = {}) {
 				} else {
 					id = result.id;
 					Object.assign(opts, result);
+				}
+
+				if (process.env.DEBUG) {
+					console.log(`  ${kl.dim('plugin:') + kl.bold(kl.yellow(p.name))}  ${JSON.stringify(id)}`);
 				}
 				// resolveId() is hookFirst - first non-null result is returned.
 				break;

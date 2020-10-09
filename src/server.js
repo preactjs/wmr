@@ -7,6 +7,7 @@ import sirv from 'sirv';
 import compression from './lib/polkompress.js';
 import npmMiddleware from './lib/npm-middleware.js';
 import WebSocketServer from './lib/websocket-server.js';
+import * as kl from 'kolorist';
 
 /**
  * @typedef CustomServer
@@ -29,7 +30,7 @@ export default async function server({ cwd, root, overlayDir, middleware, http2,
 	try {
 		await fs.access(resolve(cwd, 'index.html'));
 	} catch (e) {
-		process.stderr.write(`\u001b[33mWarning: missing "index.html" file \u001b[33;2m(in ${cwd})\u001b[0m\n`);
+		process.stderr.write(kl.yellow(`Warning: missing "index.html" file ${kl.dim(`(in ${cwd}))`)}`) + '\n');
 	}
 
 	/** @type {CustomServer} */
@@ -64,7 +65,7 @@ export default async function server({ cwd, root, overlayDir, middleware, http2,
 			const displayPath = fullPath.startsWith('/@')
 				? fullPath
 				: './' + join(relative(root, cwd), fullPath.replace(/^\//, ''));
-			console.error(`\u001b[33m${code} \u001b[37m${displayPath}\u001b[0m${msg ? ` - ${msg}` : ''}`);
+			console.error(`${kl.yellow(code)} ${kl.bold(displayPath)} ${msg ? ` - ${msg}` : ''}`);
 		}
 	});
 

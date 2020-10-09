@@ -32,6 +32,7 @@ const pathToPosix = p => p.split(sep).join(posix.sep);
  * @property {boolean} [sourcemap]
  * @property {Record<string, string>} [aliases] module aliases
  * @property {boolean} [profile] Enable bundler performance profiling
+ * @property {Record<string, string>} [env]
  * @property {(error: BuildError)=>void} [onError]
  * @property {(error: BuildEvent)=>void} [onBuild]
  */
@@ -47,7 +48,17 @@ const pathToPosix = p => p.split(sep).join(posix.sep);
  */
 
 /** @param {BuildOptions & { npmChunks?: boolean }} options */
-export async function bundleProd({ cwd, root, publicDir, out, sourcemap, aliases, profile, npmChunks = false }) {
+export async function bundleProd({
+	cwd,
+	root,
+	publicDir,
+	out,
+	sourcemap,
+	aliases,
+	profile,
+	env = {},
+	npmChunks = false
+}) {
 	cwd = cwd || '';
 	root = root || cwd;
 
@@ -79,6 +90,7 @@ export async function bundleProd({ cwd, root, publicDir, out, sourcemap, aliases
 			wmrStylesPlugin({ hot: false, cwd }),
 			wmrPlugin({ hot: false }),
 			processGlobalPlugin({
+				env,
 				NODE_ENV: 'production'
 			}),
 			resolveExtensionsPlugin({
