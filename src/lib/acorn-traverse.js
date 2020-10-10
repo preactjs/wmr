@@ -94,7 +94,7 @@ function codegen(node) {
 			return codegen(node.object) + '.' + codegen(node.property);
 		case 'ArrayExpression':
 		case 'ArrayPattern':
-			return `{${node.elements.map(codegen).join(',')}}`;
+			return `[${node.elements.map(codegen).join(',')}]`;
 		case 'ObjectExpression':
 		case 'ObjectPattern':
 			return `{${node.properties.map(codegen).join(',')}}`;
@@ -111,7 +111,7 @@ function codegen(node) {
 			return `${codegen(node.left)}=${codegen(node.right)}`;
 		case 'LogicalExpression':
 		case 'BinaryExpression':
-			return `${codegenParens(node.left)}${node.operator}${codegenParens(node.right)}`;
+			return `${codegenParens(node.left)} ${node.operator} ${codegenParens(node.right)}`;
 		case 'UnaryExpression':
 			return `${node.operator}${codegenParens(node.argument)}`;
 		case 'ReturnStatement':
@@ -399,10 +399,21 @@ class Path {
 }
 
 const TYPES = {
+	clone(node, deep) {
+		// TODO: deep
+		const clone = { type: node.type };
+		for (let i in node) {
+			if (i !== '_string' && i !== 'start' && i !== 'end' && i !== 'loc') {
+				clone[i] = node[i];
+			}
+		}
+		return clone;
+	},
 	identifier: name => ({ type: 'Identifier', name }),
 	stringLiteral: value => ({ type: 'StringLiteral', value }),
 	booleanLiteral: value => ({ type: 'BooleanLiteral', value }),
 	numericLiteral: value => ({ type: 'NumericLiteral', value }),
+	callExpression: (callee, args) => ({ type: 'CallExpression', callee, arguments: args }),
 	memberExpression: (object, property) => ({ type: 'MemberExpression', object, property }),
 	expressionStatement: expression => ({ type: 'ExpressionStatement', expression }),
 	taggedTemplateExpression: (tag, quasi) => ({ type: 'TaggedTemplateExpression', tag, quasi }),
