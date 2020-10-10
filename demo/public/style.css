@@ -5,23 +5,6 @@ body {
 	font-family: system-ui, sans-serif;
 }
 
-table {
-	margin: 4rem;
-	border-collapse: collapse;
-	border-spacing: 0;
-}
-
-td,
-th {
-	padding: 0.5rem 0.75rem;
-	border: 0.0625rem solid #d0d0d0;
-	text-align: left;
-}
-
-tbody tr:nth-child(even) {
-	background: #eee;
-}
-
 header {
 	display: flex;
 	background: #ddd;
