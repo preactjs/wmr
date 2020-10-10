@@ -94,7 +94,7 @@ function codegen(node) {
 			return codegen(node.object) + '.' + codegen(node.property);
 		case 'ArrayExpression':
 		case 'ArrayPattern':
-			return `{${node.elements.map(codegen).join(',')}}`;
+			return `[${node.elements.map(codegen).join(',')}]`;
 		case 'ObjectExpression':
 		case 'ObjectPattern':
 			return `{${node.properties.map(codegen).join(',')}}`;
