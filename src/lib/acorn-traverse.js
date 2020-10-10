@@ -111,7 +111,7 @@ function codegen(node) {
 			return `${codegen(node.left)}=${codegen(node.right)}`;
 		case 'LogicalExpression':
 		case 'BinaryExpression':
-			return `${codegenParens(node.left)}${node.operator}${codegenParens(node.right)}`;
+			return `${codegenParens(node.left)} ${node.operator} ${codegenParens(node.right)}`;
 		case 'UnaryExpression':
 			return `${node.operator}${codegenParens(node.argument)}`;
 		case 'ReturnStatement':
