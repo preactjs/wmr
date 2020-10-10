@@ -5,13 +5,13 @@ import Home from './pages/home.js';
 // import About from './pages/about/index.js';
 import NotFound from './pages/_404.js';
 import Header from './header.tsx';
-import { Environment } from './pages/environment.js';
 // import './style.css';
 
 const About = lazy(() => import('./pages/about/index.js'));
 const CompatPage = lazy(() => import('./pages/compat.js'));
 const ClassFields = lazy(() => import('./pages/class-fields.js'));
 const Files = lazy(() => import('./pages/files/index.js'));
+const Environment = lazy(async () => (await import('./pages/environment/index.js')).Environment);
 
 export function App() {
 	return (
