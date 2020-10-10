@@ -70,6 +70,7 @@ export async function runWmr(cwd, ...args) {
 		env: {
 			...process.env,
 			DEBUG: 'true',
+			PORT: '0',
 			...(opts.env || {})
 		}
 	});
