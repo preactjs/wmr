@@ -413,6 +413,7 @@ const TYPES = {
 	stringLiteral: value => ({ type: 'StringLiteral', value }),
 	booleanLiteral: value => ({ type: 'BooleanLiteral', value }),
 	numericLiteral: value => ({ type: 'NumericLiteral', value }),
+	callExpression: (callee, args) => ({ type: 'CallExpression', callee, arguments: args }),
 	memberExpression: (object, property) => ({ type: 'MemberExpression', object, property }),
 	expressionStatement: expression => ({ type: 'ExpressionStatement', expression }),
 	taggedTemplateExpression: (tag, quasi) => ({ type: 'TaggedTemplateExpression', tag, quasi }),
