@@ -399,6 +399,16 @@ class Path {
 }
 
 const TYPES = {
+	clone(node, deep) {
+		// TODO: deep
+		const clone = { type: node.type };
+		for (let i in node) {
+			if (i !== '_string' && i !== 'start' && i !== 'end' && i !== 'loc') {
+				clone[i] = node[i];
+			}
+		}
+		return clone;
+	},
 	identifier: name => ({ type: 'Identifier', name }),
 	stringLiteral: value => ({ type: 'StringLiteral', value }),
 	booleanLiteral: value => ({ type: 'BooleanLiteral', value }),
