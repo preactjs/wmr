@@ -7,6 +7,12 @@ import { get as httpGet } from 'http';
 import polka from 'polka';
 import sirv from 'sirv';
 
+export function dent(str) {
+	str = String(str);
+	const leading = str.match(/^\n+([\t ]+)/)[1];
+	return str.replace(new RegExp('^' + leading, 'gm'), '').trim();
+}
+
 const ncp = promisify(ncpCb);
 
 export function serveStatic(dir) {
