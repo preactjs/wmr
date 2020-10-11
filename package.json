@@ -100,6 +100,7 @@
 		"acorn-jsx": "^5.2.0",
 		"acorn-jsx-walk": "^2.0.0",
 		"acorn-walk": "^7.2.0",
+		"astring": "^1.4.3",
 		"async-disk-cache": "^2.1.0",
 		"babel-jest": "^26.1.0",
 		"babel-plugin-transform-jsx-to-htm": "^2.0.0",
