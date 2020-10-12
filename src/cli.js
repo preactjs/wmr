@@ -3,6 +3,7 @@
 import sade from 'sade';
 import build from './build.js';
 import start from './start.js';
+import serve from './serve.js';
 import * as kl from 'kolorist';
 
 const prog = sade('wmr');
@@ -13,6 +14,16 @@ prog
 	.command('build', 'make a production build')
 	.action(opts => {
 		run(build(opts));
+	})
+	.command('serve', 'Start a production server')
+	.option('--out', 'Directory to serve (default: ./dist)')
+	.option('--port, -p', 'HTTP port to listen on (default: $PORT or 8080)')
+	.option('--host', 'HTTP host to listen on (default: localhost)')
+	.option('--http2', 'Use HTTP/2 (default: false)')
+	.option('--compress', 'Enable compression (default: enabled)')
+	.action(opts => {
+		opts.compress = /true|false/.test(opts.compress) ? opts.compress !== 'false' : opts.compress || true;
+		run(serve(opts));
 	})
 	.command('start', 'Start a development server', { default: true })
 	.option('--port, -p', 'HTTP port to listen on (default: $PORT or 8080)')

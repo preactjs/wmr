@@ -134,7 +134,7 @@
 		"rollup-plugin-preserve-shebang": "^1.0.1",
 		"sade": "^1.7.3",
 		"semver": "^7.3.2",
-		"sirv": "^1.0.1",
+		"sirv": "^1.0.6",
 		"stylis": "^4.0.2",
 		"sucrase": "^3.15.0",
 		"tar-stream": "^2.1.3",
