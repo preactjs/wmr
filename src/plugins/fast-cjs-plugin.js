@@ -2,7 +2,7 @@ const CJS_KEYWORDS = /\b(module\.exports|exports)\b/;
 
 const ESM_KEYWORDS = /(\bimport\s*(\{|\s['"\w_$])|[\s;]export(\s+(default|const|var|let)[^\w$]|\s*\{))/;
 
-const HELPER = `function $$cjs_default$$(m){try{'default'in m||Object.defineProperty(m,'default',{configurable:true,value:m})}catch(e){}return m}`;
+const HELPER = `function $$cjs_default$$(m){try{'default'in m||Object.defineProperty(m,'default',{configurable:true,value:m})}catch(e){}return m.default}`;
 
 /**
  * Extremely loose and questionable (but fast) conversion from CJS to ESM.
