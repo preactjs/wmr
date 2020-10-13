@@ -9,6 +9,7 @@ import { readEnvFiles } from './environment.js';
  */
 export async function normalizeOptions(options) {
 	options.cwd = resolve(options.cwd || '');
+	process.chdir(options.cwd);
 
 	options.root = options.cwd;
 
