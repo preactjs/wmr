@@ -148,7 +148,7 @@ describe('fixtures', () => {
 			await getOutput(env, instance);
 
 			// import * as foo from './foo.cjs'
-			expect(await env.page.$eval('#cjs', el => JSON.parse(el.textContent || ''))).toEqual({
+			expect(await env.page.$eval('#cjs', el => JSON.parse(el.textContent || 'null'))).toEqual({
 				default: {
 					a: 'one',
 					b: 'two'
@@ -156,7 +156,7 @@ describe('fixtures', () => {
 			});
 
 			// import foo from './foo.cjs'
-			expect(await env.page.$eval('#cjsdefault', el => JSON.parse(el.textContent || ''))).toEqual({
+			expect(await env.page.$eval('#cjsdefault', el => JSON.parse(el.textContent || 'null'))).toEqual({
 				a: 'one',
 				b: 'two'
 			});
@@ -165,8 +165,45 @@ describe('fixtures', () => {
 			expect(await env.page.$eval('#cjsimport', el => JSON.parse(el.textContent || ''))).toEqual({
 				default: 'default export',
 				a: 1,
-				b: 2,
-				c: 3
+				b: 2
+			});
+
+			const imports = /** @type{object} */ (await env.page.evaluate(`import('/cjs-imports.cjs')`)).default;
+
+			// requiring a CJS module with (`exports.a=..`) exports should return its named exports:
+			expect(imports.namedCjs).toEqual({
+				a: 1,
+				b: 2
+			});
+			// requiring an ES module with only named exports should return its named exports:
+			expect(imports.namedEsm).toEqual({
+				a: 1,
+				b: 2
+			});
+
+			// requiring a CJS module with `module.exports=..` exports should return that default export:
+			expect(imports.defaultCjs).toEqual({
+				a: 1,
+				b: 2
+			});
+			// requiring an ES module with only a default export should return its default export:
+			expect(imports.defaultEsm).toEqual({
+				a: 1,
+				b: 2
+			});
+
+			// requiring an ES module with both named+default exports should return its default export:
+			expect(imports.mixedEsm).toEqual({
+				default: 'default export',
+				a: 1,
+				b: 2
+			});
+			// requiring a CJS module with transpiled named+default exports should return its faux ModuleRecord:
+			expect(imports.mixedCjs).toEqual({
+				__esModule: true,
+				default: 'default export',
+				a: 1,
+				b: 2
 			});
 		});
 	});
