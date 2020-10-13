@@ -3,9 +3,11 @@ import { readdirSync, promises as fs } from 'fs';
 import { dent } from './test-helpers.js';
 import * as acorn from 'acorn';
 import acornJsx from 'acorn-jsx';
-import { transform } from '../src/lib/acorn-traverse.js';
+import { transform, generate } from '../src/lib/acorn-traverse.js';
 import transformJsxToHtm from 'babel-plugin-transform-jsx-to-htm';
 // import transformJsxToHtmLite from '../src/lib/transform-jsx-to-htm-lite.js';
+
+const fixtures = path.join(__dirname, 'fixtures/_unit');
 
 const Parser = acorn.Parser.extend(acornJsx());
 const parse = (code, opts) => Parser.parse(code, { ecmaVersion: 2020, sourceType: 'module', ...opts });
@@ -31,6 +33,20 @@ function transformWithPlugin(code, plugin) {
 const withVisitor = visitor => code => transformWithPlugin(code, api => ({ name: '', visitor: visitor(api.types) }));
 
 describe('acorn-traverse', () => {
+	describe('code generation', () => {
+		it('should parse and regenerate ES2020 syntax', async () => {
+			// While we try to avoid doing (full) codegen for performance reasons,
+			// it needs to account for 100% of the es2020 spec (plus JSX for good measure).
+
+			let source = await fs.readFile(path.join(fixtures, 'es2020.js'), 'utf-8');
+			// normalize to 2-space and remove comments
+			source = source.replace(/\t/g, '  ').replace(/(?<=^|\n)(?:\/\/[^\n]*|\/\*[\s\S]*?\*\/)(\n|$)/g, '');
+			const ast = parse(source);
+			const generated = generate(ast);
+			expect(generated).toBe(source);
+		});
+	});
+
 	describe('transform()', () => {
 		it('should regenerate destructured parameters', () => {
 			const transform = withVisitor(t => ({
@@ -65,13 +81,17 @@ describe('acorn-traverse', () => {
 
 				expect(doTransform('const fn = ([a]) => a;')).toMatchInlineSnapshot(`"const fn = ([a]) => a;"`);
 
-				expect(doTransform('<>${x.map(a => <a>{a}</a>)}</>;')).toMatchInlineSnapshot(
-					`"html\`$\${x.map((a) => html\`<a>\${a}</a>\`)}\`;"`
+				expect(doTransform('<>{x.map(a => <a>{a}</a>)}</>;')).toMatchInlineSnapshot(
+					`"html\`\${x.map(a => html\`<a>\${a}</a>\`)}\`;"`
 				);
 
-				expect(doTransform('<>${x.map(([a,b,c]) => <a>{{a,b,c}}</a>)}</>;')).toMatchInlineSnapshot(
-					`"html\`$\${x.map(([a,b,c]) => html\`<a>\${{a,b,c}}</a>\`)}\`;"`
-				);
+				expect(doTransform('<>${x.map(([a,b,c]) => <a>{{a,b,c}}</a>)}</>;')).toMatchInlineSnapshot(`
+			"html\`$\${x.map(([a, b, c]) => html\`<a>\${{
+			  a,
+			  b,
+			  c
+			}}</a>\`)}$\`;"
+		`);
 
 				expect(
 					doTransform(dent`
@@ -86,20 +106,19 @@ describe('acorn-traverse', () => {
 						);
 					`)
 				).toMatchInlineSnapshot(`
-					"(
-						html\`
-							\${y.map(([k,v]) => html\`<li>
-									\${k}: \${v}
-								</li>\`)}
-						\`
-					);"
-				`);
+			"(
+				html\`
+					\${y.map(([k, v]) => html\`<li>
+							\${k}: \${v}
+						</li>\`)}
+				\`
+			);"
+		`);
 			});
 		});
 	});
 
 	describe('fixtures', () => {
-		const fixtures = path.join(__dirname, 'fixtures/_unit');
 		const cases = readdirSync(fixtures).filter(f => f[0] !== '.');
 		it.each(cases.filter(f => f.match(/\.expected/)))('fixtures', async expectedFile => {
 			const expected = await fs.readFile(path.join(fixtures, expectedFile), 'utf-8');
