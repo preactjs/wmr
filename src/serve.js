@@ -36,11 +36,10 @@ export default async function serve(options = {}) {
 		onError(err, req, res) {
 			const fullPath = req.originalUrl.replace(/\?.+$/, '');
 
-			// @ts-ignore
-			const code = typeof err.code === 'number' ? err.code : 500;
-
+			let code = 500;
 			let msg = '';
 			if (err) {
+				if (typeof err.code === 'number') code = err.code;
 				if (err.message) {
 					msg = err.message;
 				} else if (String(Object.keys(err)) === 'code') {
