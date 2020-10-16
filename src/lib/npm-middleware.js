@@ -27,7 +27,7 @@ async function handleAsset(meta, res) {
 	}
 	res.writeHead(200, {
 		'content-type': type || 'text/plain',
-		'content-length': code.length
+		'content-length': Buffer.byteLength(code)
 	});
 	res.end(code);
 }
@@ -80,7 +80,7 @@ export default function npmMiddleware({ source = 'npm', aliases, optimize, cwd }
 			// console.log(`Bundle dep: ${mod}: ${Date.now() - start}ms`);
 
 			// send it!
-			res.writeHead(200, { 'content-length': code.length }).end(code);
+			res.writeHead(200, { 'content-length': Buffer.byteLength(code) }).end(code);
 
 			// store the bundle in memory and disk caches
 			setCachedBundle(etag, code, meta, cwd);
