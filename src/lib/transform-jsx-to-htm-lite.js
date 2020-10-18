@@ -126,7 +126,12 @@ export default function transformJsxToHtmLite({ types: t }, options = {}) {
 			// JSX Text is "unwrapped" to a String literal:
 			// <div>a</div> --> <div>a</div>
 			JSXText(path) {
-				path.replaceWithString(path.node.value);
+				const text = path.node.value;
+				if (/[<>&"]/.test(text)) {
+					path.replaceWithString(`\${\`${text}\`}`);
+				} else {
+					path.replaceWithString(text);
+				}
 			},
 
 			// JSX Expressions only need a "$" prefix to become tagged template expressions:

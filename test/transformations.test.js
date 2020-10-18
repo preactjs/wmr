@@ -38,5 +38,10 @@ describe('transformations', () => {
 			const expected = await readFile(env, 'jsx-member.expected.js');
 			expect((await get(instance, 'jsx-member.js')).body).toEqual(expected);
 		});
+
+		it('should not change escaped HTML characters', async () => {
+			const expected = await readFile(env, 'jsx-escaped.expected.js');
+			expect((await get(instance, 'jsx-escaped.js')).body).toEqual(expected);
+		});
 	});
 });
