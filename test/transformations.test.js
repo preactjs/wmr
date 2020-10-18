@@ -1,6 +1,7 @@
 import path from 'path';
 import { promises as fs } from 'fs';
 import { setupTest, teardown, runWmr, loadFixture, get } from './test-helpers.js';
+import { modularizeCss } from '../src/plugins/wmr/styles-plugin.js';
 
 const runWmrFast = (cwd, ...args) => runWmr(cwd, '--no-optimize', '--no-compress', ...args);
 
@@ -32,6 +33,15 @@ describe('transformations', () => {
 		it('should transform JSX', async () => {
 			const expected = await readFile(env, 'jsx.expected.js');
 			expect((await get(instance, 'jsx.js')).body).toEqual(expected);
+		});
+	});
+
+	describe('css', () => {
+		// wmr/162
+		it('should transform pseudo selector class argument', async () => {
+			const css = `.foo {}\n.bar {}\n.bar:not(.foo) { padding: 0; }`;
+			const expected = `.bar_375o4j:not(.foo_375o4j){padding:0;}`;
+			expect(await modularizeCss(css, 'foo')).toEqual(expected);
 		});
 	});
 });

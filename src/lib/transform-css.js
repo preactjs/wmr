@@ -57,6 +57,30 @@ function applySuffix(str, before, className) {
 	return before + className;
 }
 
+// CSS selectors which can have arguments: `.foo:nth-of-type(div)`
+// Taken from: https://developer.mozilla.org/en-US/docs/Web/CSS/Pseudo-classes#Index_of_standard_pseudo-classes
+const pseudoClassWithArgs = new Set([
+	'lang',
+	'not',
+	'nth-child',
+	'nth-last-child',
+	'nth-last-of-type',
+	'nth-of-type',
+
+	// experimental
+	'dir',
+	'has',
+	'host',
+	'host-context',
+	'is',
+	'nth-col',
+	'nth-last-col',
+	'where',
+
+	// CSS Modules
+	'global'
+]);
+
 function processSelector(value, global = false) {
 	let out = '';
 	const tokens = tokenize(value);
@@ -81,9 +105,9 @@ function processSelector(value, global = false) {
 					if (next === ' ') i++;
 					global = false;
 				}
-			} else if (modifier === 'not') {
+			} else if (pseudoClassWithArgs.has(modifier)) {
 				i++;
-				out += `:not(${processSelector(next.slice(1, -1), global)})`;
+				out += `:${modifier}(${processSelector(next.slice(1, -1), global)})`;
 			} else {
 				out += ':' + modifier;
 			}
