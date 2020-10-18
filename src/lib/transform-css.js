@@ -112,12 +112,12 @@ function processSelector(value, global = false) {
 				// `([foo="bar"`+ `]` + `[a="b" + `]` + `)`
 				if (next.startsWith('([')) {
 					let nextToken = tokens[i + 1];
-					while (nextToken === ']' || nextToken.startsWith('[') || nextToken === ')') {
+					while (nextToken && (nextToken === ']' || nextToken.startsWith('[') || nextToken === ')')) {
 						i++;
 						next += nextToken;
-						// Lookahead, but don't increase index to keep the tokenizer
-						// state correct
-						nextToken = tokens[i + 1];
+						// Lookahead, but don't increase index to keep the parser
+						// state intact
+						nextToken = i + 1 < tokens.length ? tokens[i + 1] : '';
 					}
 				}
 				out += `:${modifier}(${processSelector(next.slice(1, -1), global)})`;
