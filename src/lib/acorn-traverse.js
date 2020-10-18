@@ -135,6 +135,7 @@ let codeGenerator = {
 		state.write('}');
 	},
 	JSXIdentifier(node, state) {
+		// eslint-disable-next-line new-cap
 		this.Identifier(node, state);
 	},
 	JSXAttribute(node, state) {
