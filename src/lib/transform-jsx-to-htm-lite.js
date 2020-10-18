@@ -13,7 +13,16 @@
  * @type {import('../lib/acorn-traverse').Plugin}
  */
 export default function transformJsxToHtmLite({ types: t }, options = {}) {
-	const isIdent = name => /(^[A-Z]|[.$])/.test(name);
+	const isIdent = node => {
+		if (t.isJSXIdentifier(node)) {
+			return /(^[A-Z]|[.$])/.test(node.name);
+		} else if (t.isJSXMemberExpression(node)) {
+			// <Ctx.Provider>...<//>
+			return true;
+		}
+
+		return false;
+	};
 	const isRootElement = path => !t.isJSXElement(path.parentPath.parent) && !t.isJSXFragment(path.parentPath.parent);
 	const tagString = options.tag || 'html';
 	const tagImport = options.import || false;
@@ -47,7 +56,7 @@ export default function transformJsxToHtmLite({ types: t }, options = {}) {
 				// "component" elements have their name identifier turned into an expression:
 				// <A /> --> html`<${A} />`
 				const name = path.get('name');
-				if (isIdent(name.node.name)) {
+				if (isIdent(name.node)) {
 					name.prependString('${');
 					name.appendString('}');
 				}
@@ -65,7 +74,7 @@ export default function transformJsxToHtmLite({ types: t }, options = {}) {
 				// handle Component end tags:
 				//   terse: </A> --> <//>
 				//   normal: </A> --> </${A}>
-				if (isIdent(name)) {
+				if (isIdent(path.node.name)) {
 					if (options.terse) name = '/';
 					else name = '${' + name + '}';
 				}
