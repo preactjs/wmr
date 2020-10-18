@@ -43,5 +43,15 @@ describe('transformations', () => {
 			const expected = `.bar_375o4j:not(.foo_375o4j){padding:0;}`;
 			expect(await modularizeCss(css, 'foo')).toEqual(expected);
 		});
+
+		it('should not cut off attribute selectors', async () => {
+			let css = `.name:not([data-type="empty"])::after { padding: 0 }`;
+			let expected = `.name_375o4j:not([data-type="empty"])::after{padding:0;}`;
+			expect(await modularizeCss(css, 'foo')).toEqual(expected);
+
+			css = `.name:not([data-type="empty"][a^="b"])::after { padding: 0 }`;
+			expected = `.name_375o4j:not([data-type="empty"][a^="b"])::after{padding:0;}`;
+			expect(await modularizeCss(css, 'foo')).toEqual(expected);
+		});
 	});
 });

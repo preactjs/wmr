@@ -88,7 +88,7 @@ function processSelector(value, global = false) {
 		const token = tokens[i];
 		if (token === ':') {
 			const modifier = tokens[++i];
-			const next = tokens[i + 1];
+			let next = tokens[i + 1];
 			if (modifier === 'global') {
 				if (next && next[0] === '(') {
 					i++;
@@ -107,6 +107,19 @@ function processSelector(value, global = false) {
 				}
 			} else if (pseudoClassWithArgs.has(modifier)) {
 				i++;
+				// Stylis parses the closing bracket of attribute selectors
+				// as a separate token, so we need to stich them back together.
+				// `([foo="bar"`+ `]` + `[a="b" + `]` + `)`
+				if (next.startsWith('([')) {
+					let nextToken = tokens[i + 1];
+					while (nextToken === ']' || nextToken.startsWith('[') || nextToken === ')') {
+						i++;
+						next += nextToken;
+						// Lookahead, but don't increase index to keep the tokenizer
+						// state correct
+						nextToken = tokens[i + 1];
+					}
+				}
 				out += `:${modifier}(${processSelector(next.slice(1, -1), global)})`;
 			} else {
 				out += ':' + modifier;
