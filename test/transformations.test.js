@@ -33,5 +33,10 @@ describe('transformations', () => {
 			const expected = await readFile(env, 'jsx.expected.js');
 			expect((await get(instance, 'jsx.js')).body).toEqual(expected);
 		});
+
+		it('should transform JSXMemberExpression', async () => {
+			const expected = await readFile(env, 'jsx-member.expected.js');
+			expect((await get(instance, 'jsx-member.js')).body).toEqual(expected);
+		});
 	});
 });
