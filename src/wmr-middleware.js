@@ -426,7 +426,7 @@ export const TRANSFORMS = {
 	},
 
 	// Falls through to sirv
-	generic(ctx) {
+	async generic(ctx) {
 		// ~/200.html fallback for requests with no extension
 		const missing = () => false;
 		if (!/\.[a-z]+$/gi.test(ctx.path)) {
