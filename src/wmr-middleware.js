@@ -291,7 +291,7 @@ export const TRANSFORMS = {
 				const resolved = await NonRollup.resolveId(spec, file);
 				if (resolved) {
 					spec = typeof resolved == 'object' ? resolved.id : resolved;
-					if (/^(\/|\\|[a-z]:\\)/i.test(spec[0])) {
+					if (/^(\/|\\|[a-z]:\\)/i.test(spec)) {
 						spec = relative(dirname(file), spec).split(sep).join(posix.sep);
 						if (!/^\.?\.?\//.test(spec)) {
 							spec = './' + spec;
