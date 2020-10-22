@@ -427,15 +427,16 @@ export const TRANSFORMS = {
 
 	// Falls through to sirv
 	async generic(ctx) {
-		// ~/200.html fallback for requests with no extension
-		const missing = () => false;
+		// Serve ~/200.html fallback for requests with no extension
 		if (!/\.[a-z]+$/gi.test(ctx.path)) {
-			if (await fs.lstat(ctx.file).then(s => s.isDirectory()).catch(missing)) {
-				const fallback = resolve(ctx.cwd, '200.html');
-				if (await fs.lstat(fallback).catch(missing)) {
-					ctx.file = fallback;
-					return TRANSFORMS.asset(ctx);
-				}
+			const fallback = resolve(ctx.cwd, '200.html');
+			let use200 = false;
+			try {
+				use200 = (await fs.lstat(ctx.file)).isDirectory() && await fs.lstat(fallback);
+			} catch (e) {}
+			if (use200) {
+				ctx.file = fallback;
+				return TRANSFORMS.asset(ctx);
 			}
 		}
 
