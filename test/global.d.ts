@@ -15,5 +15,10 @@ declare interface TestEnv {
 declare interface WmrInstance {
 	output: string[];
 	code: number;
+	address: Promise<string>;
 	close: () => void;
+	done: Promise<this['code']>;
 }
+
+declare module 'json:*' {}
+declare module '*.jpg' {}

@@ -1,23 +1,24 @@
 import { relative, sep, posix, resolve, dirname } from 'path';
 import * as rollup from 'rollup';
-import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
-import watcherPlugin from './plugins/watcher-plugin.js';
 import htmPlugin from './plugins/htm-plugin.js';
 import sucrasePlugin from './plugins/sucrase-plugin.js';
 import wmrPlugin from './plugins/wmr/plugin.js';
 import wmrStylesPlugin from './plugins/wmr/styles-plugin.js';
-import localNpmPlugin from './plugins/local-npm-plugin.js';
+import sassPlugin from './plugins/sass-plugin.js';
 import terser from './plugins/fast-minify.js';
 import npmPlugin from './plugins/npm-plugin/index.js';
 import publicPathPlugin from './plugins/public-path-plugin.js';
-import dynamicImportNamesPlugin from './plugins/dynamic-import-names-plugin.js';
 import minifyCssPlugin from './plugins/minify-css-plugin.js';
 import htmlEntriesPlugin from './plugins/html-entries-plugin.js';
 import glob from 'tiny-glob';
 import aliasesPlugin from './plugins/aliases-plugin.js';
 import processGlobalPlugin from './plugins/process-global-plugin.js';
 import urlPlugin from './plugins/url-plugin.js';
+import resolveExtensionsPlugin from './plugins/resolve-extensions-plugin.js';
+import fastCjsPlugin from './plugins/fast-cjs-plugin.js';
+import bundlePlugin from './plugins/bundle-plugin.js';
+import jsonPlugin from './plugins/json-plugin.js';
 
 /** @param {string} p */
 const pathToPosix = p => p.split(sep).join(posix.sep);
@@ -25,11 +26,13 @@ const pathToPosix = p => p.split(sep).join(posix.sep);
 /**
  * @typedef {Object} BuildOptions
  * @property {string} [cwd = '']
+ * @property {string} [root = ''] cwd without implicit ./public dir
  * @property {string} [publicDir = '']
- * @property {string} [out = '.dist']
+ * @property {string} [out = '.cache']
  * @property {boolean} [sourcemap]
  * @property {Record<string, string>} [aliases] module aliases
  * @property {boolean} [profile] Enable bundler performance profiling
+ * @property {Record<string, string>} [env]
  * @property {(error: BuildError)=>void} [onError]
  * @property {(error: BuildEvent)=>void} [onBuild]
  */
@@ -44,146 +47,20 @@ const pathToPosix = p => p.split(sep).join(posix.sep);
  * @type {rollup.RollupError & { clientMessage?: string }}
  */
 
-/**
- * @param {BuildOptions} options
- * @TODO Refactor to return a customized bundleProd() return value,
- *       to make bundled development mode more useful and reduce complexity.
- */
-export function bundleDev({ cwd, out, sourcemap, aliases, onError, onBuild, profile }) {
-	cwd = cwd || '';
-	const changedFiles = new Set();
-	const input = './' + posix.relative('.', posix.join(cwd, 'index.js'));
-
-	const watcher = rollup.watch({
-		input, //'./' + join(cwd, 'index.js'),
-		output: {
-			sourcemap,
-			sourcemapPathTransform(p, mapPath) {
-				let url = pathToPosix(relative(cwd, resolve(dirname(mapPath), p)));
-				// strip leading relative path
-				url = url.replace(/^\.\//g, '');
-				// replace internal npm prefix
-				url = url.replace(/^(\.?\.?\/)?[\b]npm\//, '@npm/');
-				return 'source:///' + url;
-			},
-			preferConst: true,
-			minifyInternalExports: false,
-			dir: out,
-			entryFileNames: '[name].js',
-			chunkFileNames: '[name].js',
-			assetFileNames: '[name][extname]'
-		},
-		perf: !!profile,
-		treeshake: false,
-		preserveEntrySignatures: 'allow-extension',
-		manualChunks(filename) {
-			// Internal modules get an underscore prefix:
-			if (filename[0] === '\0' || filename[0] === '\b') {
-				filename = '_' + filename.substring(1);
-				// return '_' + stripExt(filename.substring(1));
-			} else {
-				filename = posix.relative(cwd, filename);
-			}
-			// Source modules get normalized file extensions
-			// return stripExt(relative(cwd, filename).replace(/^[\\/]/gi, ''));
-
-			return filename.replace(/(^[\\/]|\.([cm]js|[tj]sx?)$)/gi, '');
-		},
-		plugins: [
-			sucrasePlugin({
-				typescript: true,
-				sourcemap,
-				production: false
-			}),
-			dynamicImportNamesPlugin({
-				// suffix: '~' // avoid collisions with entry modules
-			}),
-			aliasesPlugin({ aliases }),
-			watcherPlugin({
-				cwd,
-				watchedFiles: '**/*.!({js,cjs,mjs,ts,tsx})',
-				onChange(filename) {
-					changedFiles.add(filename);
-				}
-			}),
-			htmPlugin(),
-			wmrStylesPlugin({ hot: true, cwd }),
-			wmrPlugin(),
-			processGlobalPlugin({
-				NODE_ENV: 'development'
-			}),
-			commonjs({
-				sourceMap: sourcemap,
-				transformMixedEsModules: false,
-				extensions: ['.js', '.cjs', ''],
-				include: /^[\b]npm\//
-			}),
-			// unpkgPlugin()
-			json(),
-			localNpmPlugin(),
-			urlPlugin()
-		].filter(Boolean)
-	});
-
-	/** @param {BuildError} error */
-	function handleError(error) {
-		let { code, plugin, message } = error;
-
-		let preamble = 'Error';
-		if (code === 'PLUGIN_ERROR') preamble += `(${plugin}): `;
-		else if (code) preamble += `(${code.replace('_ERROR', '')}): `;
-
-		let err = `${preamble}${message}`;
-
-		error.message = err;
-
-		// normalize source paths for use on the client
-		error.clientMessage = err.replace(/ \(([^(]+):(\d+):(\d+)\)/, (s, file, line, col) => {
-			let relativePath = '/' + posix.relative(cwd, file);
-			// if sourcemaps are enabled, link to them in the client error:
-			if (sourcemap) relativePath = 'source://' + relativePath;
-			return ` (${relativePath}:${line}:${col})`;
-		});
-
-		if (onError) onError(error);
-	}
-
-	let builtChanges = [];
-	watcher.on('event', event => {
-		switch (event.code) {
-			case 'ERROR':
-				handleError(event.error);
-				break;
-
-			case 'START':
-				builtChanges = [...changedFiles];
-				changedFiles.clear();
-				break;
-
-			case 'BUNDLE_END':
-				console.info(`Bundled in ${event.duration}ms`);
-				if (profile) {
-					console.info(
-						Object.entries(event.result.getTimings()).reduce((s, [k, v]) => {
-							return `${s}\n${k.replace(/^(#*)/g, s => ' '.repeat((s.length || 3) * 2 - 2))}: ${v[0] | 0}ms`;
-						}, '')
-					);
-				}
-				if (onBuild)
-					onBuild({
-						changes: builtChanges,
-						...event
-					});
-				break;
-		}
-	});
-
-	return watcher;
-}
-
 /** @param {BuildOptions & { npmChunks?: boolean }} options */
-export async function bundleProd({ cwd, publicDir, out, sourcemap, aliases, profile, npmChunks = false }) {
+export async function bundleProd({
+	cwd,
+	root,
+	publicDir,
+	out,
+	sourcemap,
+	aliases,
+	profile,
+	env = {},
+	npmChunks = false
+}) {
 	cwd = cwd || '';
+	root = root || cwd;
 
 	const htmlFiles = await glob('**/*.html', {
 		cwd,
@@ -207,23 +84,29 @@ export async function bundleProd({ cwd, publicDir, out, sourcemap, aliases, prof
 			}),
 			htmlEntriesPlugin({ cwd, publicDir, publicPath: '/' }),
 			publicPathPlugin({ publicPath: '/' }),
-			aliasesPlugin({ aliases }),
+			aliasesPlugin({ aliases, cwd: root }),
 			htmPlugin(),
+			sassPlugin({ production: true }),
 			wmrStylesPlugin({ hot: false, cwd }),
 			wmrPlugin({ hot: false }),
 			processGlobalPlugin({
+				env,
 				NODE_ENV: 'production'
 			}),
-			commonjs({
-				sourceMap: sourcemap,
-				transformMixedEsModules: false,
-				extensions: ['.js', '.cjs', ''],
-				include: /^[\b]npm\//
+			resolveExtensionsPlugin({
+				typescript: true,
+				index: true
+			}),
+			fastCjsPlugin({
+				// Only transpile CommonJS in node_modules and explicit .cjs files:
+				include: /(?:^[\b]npm\/|[/\\]node_modules[/\\]|\.cjs$)/
 			}),
 			json(),
 			npmPlugin({ external: false }),
 			minifyCssPlugin({ sourcemap }),
-			urlPlugin()
+			urlPlugin({}),
+			jsonPlugin(),
+			bundlePlugin({ cwd })
 		]
 	});
 
@@ -232,7 +115,7 @@ export async function bundleProd({ cwd, publicDir, out, sourcemap, aliases, prof
 		chunkFileNames: 'chunks/[name].[hash].js',
 		assetFileNames: 'assets/[name].[hash][extname]',
 		compact: true,
-		plugins: [terser({ compress: false, sourcemap })],
+		plugins: [terser({ compress: true, sourcemap })],
 		sourcemap,
 		sourcemapPathTransform(p, mapPath) {
 			let url = pathToPosix(relative(cwd, resolve(dirname(mapPath), p)));

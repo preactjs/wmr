@@ -12,9 +12,12 @@ export default function dynamicImportNamesPlugin({ prefix = '', suffix = '' } = 
 
 			// "./pages/about/index.js" --> "pages/about/index"
 			const name = prefix + source.replace(/(^\.?\/|\.([cm]js|[tj]sx?)$)/gi, '') + suffix;
-			const { id } = await this.resolve(source, importer);
-			this.emitFile({ type: 'chunk', id, name });
-			return id;
+			const resolved = await this.resolve(source, importer);
+			if (resolved) {
+				const { id } = resolved;
+				this.emitFile({ type: 'chunk', id, name });
+				return id;
+			}
 		}
 	};
 }

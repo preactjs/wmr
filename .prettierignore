@@ -1,2 +1,6 @@
 wmr.cjs
 package-lock.json
+test/fixtures/**/*.expected.*
+test/fixtures/*/dist
+test/fixtures/*/.cache
+test/fixtures/_unit

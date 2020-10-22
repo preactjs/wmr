@@ -2,18 +2,19 @@
  * Inject process globals and inline process.env.NODE_ENV.
  * @param {object} [options]
  * @param {string} [options.NODE_ENV] constant to inline for `process.env.NODE_ENV`
+ * @param {Record<string, string>} [options.env]
  * @returns {import('rollup').Plugin}
  */
-export default function processGlobalPlugin({ NODE_ENV = 'development' } = {}) {
-	const processObj = `{env:{NODE_ENV:${JSON.stringify(NODE_ENV)}}}`;
+export default function processGlobalPlugin({ NODE_ENV = 'development', env = {} } = {}) {
+	const processObj = `{env:${JSON.stringify({ ...env, NODE_ENV })}}`;
 
 	return {
 		name: 'process-global',
 		resolveId(id) {
-			if (id === '\0process.js') return id;
+			if (id === '\0builtins:process.js') return id;
 		},
 		load(id) {
-			if (id === '\0process.js') return `export default ${processObj};`;
+			if (id === '\0builtins:process.js') return `export default ${processObj};`;
 		},
 		transform(code) {
 			const orig = code;
@@ -30,12 +31,15 @@ export default function processGlobalPlugin({ NODE_ENV = 'development' } = {}) {
 			// if that wasn't the only way `process.env` was referenced...
 			if (code.match(/[^a-zA-Z0-9]process\.env/)) {
 				// hack: avoid injecting imports into commonjs modules
-				if (code.match(/[^\w-]import[\s{]/)) {
-					code = `import process from '\0process.js';${code}`;
+				if (/^\s*(import|export)[\s{]/gm.test(code)) {
+					code = `import process from '\0builtins:process.js';${code}`;
 				} else {
 					code = `var process=${processObj};${code}`;
 				}
 			}
+
+			code = code.replace(/typeof(\s+|\s*\(+\s*)process([^a-zA-Z$_])/g, 'typeof$1undefined$2');
+
 			if (code !== orig) {
 				return { code, map: null };
 			}

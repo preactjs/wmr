@@ -1,6 +1,8 @@
 import { promises as fs } from 'fs';
 import MagicString from 'magic-string';
 
+const BYPASS_HMR = process.env.BYPASS_HMR === 'true';
+
 const PREFRESH = `
 import '@prefresh/core';
 if (import.meta.hot) {
@@ -24,6 +26,7 @@ const wmrClientPromise = fs.readFile(new URL('./client.js', __filename), 'utf-8'
 const wmrProdClientPromise = fs.readFile(new URL('./client-prod.js', __filename), 'utf-8');
 
 export function getWmrClient({ hot = true } = {}) {
+	if (BYPASS_HMR) hot = false;
 	return hot ? wmrClientPromise : wmrProdClientPromise;
 }
 
@@ -34,6 +37,7 @@ export function getWmrClient({ hot = true } = {}) {
  * @returns {import('rollup').Plugin}
  */
 export default function wmrPlugin({ hot = true } = {}) {
+	if (BYPASS_HMR) hot = false;
 	return {
 		name: 'wmr',
 		resolveId(s) {
@@ -44,7 +48,7 @@ export default function wmrPlugin({ hot = true } = {}) {
 		},
 		resolveImportMeta(property) {
 			if (property === 'hot') {
-				return hot ? `$IMPORT_META_HOT$` : 'null';
+				return hot ? `$IMPORT_META_HOT$` : 'undefined';
 			}
 			return null;
 		},
@@ -58,7 +62,7 @@ export default function wmrPlugin({ hot = true } = {}) {
 			// stub webpack-style `module.hot` using `import.meta.hot`:
 			if (code.match(/module\.hot/)) {
 				hasHot = true;
-				before += 'const module={hot:import.meta.hot};\n';
+				before += `const module={${hot ? 'hot:import.meta.hot' : ''}};\n`;
 			}
 
 			// Detect modules that appear to have both JSX and an export, and inject prefresh:
@@ -75,6 +79,8 @@ export default function wmrPlugin({ hot = true } = {}) {
 
 			const s = new MagicString(code, {
 				filename: id,
+				// Typings from MagicString are wrong, see: https://github.com/Rich-Harris/magic-string/pull/182
+				// @ts-ignore
 				indentExclusionRanges: undefined
 			});
 			if (hot) {
@@ -82,8 +88,9 @@ export default function wmrPlugin({ hot = true } = {}) {
 				s.prepend(
 					`import { createHotContext as $createHotContext$ } from 'wmr';const $IMPORT_META_HOT$ = $createHotContext$(import.meta.url);${before}`
 				);
-			} else {
-				s.prepend(`const $IMPORT_META_HOT$ = null;${before}`);
+			} else if (!BYPASS_HMR) {
+				// TODO: this should be able to be omitted unconditionally.
+				s.prepend(`const $IMPORT_META_HOT$ = undefined;${before}`);
 			}
 			return {
 				code: s.toString(),

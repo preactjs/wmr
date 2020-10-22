@@ -6,9 +6,12 @@
 		"checkJs": true,
 		"noEmit": true,
 		"moduleResolution": "node",
+		"module": "esnext",
+		"resolveJsonModule": true,
 		"allowSyntheticDefaultImports": true,
 		"downlevelIteration": true,
-		"target": "ESNext"
+		"target": "ESNext",
+		"strictNullChecks": true
 	},
 	"typeAcquisition": {
 		"enable": true

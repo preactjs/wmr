@@ -1,5 +1,8 @@
 .dist
+.cache
 dist
 node_modules
 wmr.cjs
 yarn.lock
+!node_modules/fake-lib
+.DS_Store

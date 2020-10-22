@@ -7,6 +7,7 @@ export default function Home() {
 		<>
 			<section>
 				<h1>Home</h1>
+				{/* Note: the string below is used in E2E tests */}
 				<p>This is the home page.</p>
 				<>
 					<button style={{ width: 30 }} onClick={() => setCount(count - 1)}>

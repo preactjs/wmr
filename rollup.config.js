@@ -1,4 +1,4 @@
-import { sep } from 'path';
+import { resolve, sep } from 'path';
 import shebangPlugin from 'rollup-plugin-preserve-shebang';
 import commonjs from '@rollup/plugin-commonjs';
 import nodeResolve from '@rollup/plugin-node-resolve';
@@ -24,7 +24,7 @@ const config = {
 			{
 				name: 'minify',
 				renderChunk(code) {
-					return terser.minify(code, {
+					const result = terser.minify(code, {
 						ecma: 2019,
 						module: true,
 						compress: {
@@ -39,13 +39,13 @@ const config = {
 							inline_script: false,
 							ecma: 2019
 						}
-					}).code;
+					});
+					return result.code || null;
 				}
 			}
 		]
 	},
-	// external: ['fsevents'].concat(builtins),
-	external: [].concat(builtins),
+	external: [...builtins],
 	// /* Logs all included npm dependencies: */
 	// external(source, importer) {
 	// 	const ch = source[0];
@@ -127,8 +127,9 @@ const config = {
 			]
 		}),
 		commonjs({
-			ignore: [f => f.endsWith('.mjs'), ...builtins],
-			ignoreGlobal: true
+			exclude: [/\.mjs$/, /\/rollup\//, resolve('src')],
+			ignore: builtins,
+			transformMixedEsModules: true
 		}),
 		nodeResolve({
 			preferBuiltins: true,

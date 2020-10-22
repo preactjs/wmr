@@ -9,6 +9,9 @@ import Header from './header.tsx';
 
 const About = lazy(() => import('./pages/about/index.js'));
 const CompatPage = lazy(() => import('./pages/compat.js'));
+const ClassFields = lazy(() => import('./pages/class-fields.js'));
+const Files = lazy(() => import('./pages/files/index.js'));
+const Environment = lazy(async () => (await import('./pages/environment/index.js')).Environment);
 
 export function App() {
 	return (
@@ -19,6 +22,9 @@ export function App() {
 					<Home path="/" />
 					<About path="/about" />
 					<CompatPage path="/compat" />
+					<ClassFields path="/class-fields" />
+					<Files path="/files" />
+					<Environment path="/env" />
 					<NotFound default />
 				</Router>
 			</div>

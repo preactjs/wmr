@@ -36,7 +36,7 @@ export default function watcherPlugin({ cwd = '.', watchedFiles, onChange } = {}
 		watchChange(id) {
 			// console.log('watchChange', id);
 			const filename = '/' + relative(cwd, id.replace(/\.save\..*$/g, ''));
-			onChange(filename);
+			if (onChange) onChange(filename);
 		}
 	};
 }

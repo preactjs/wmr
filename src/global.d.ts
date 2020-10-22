@@ -1,0 +1,1 @@
+type empty = null | undefined;

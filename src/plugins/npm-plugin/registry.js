@@ -3,7 +3,7 @@ import { promises as fs } from 'fs';
 import tar from 'tar-stream';
 import zlib from 'zlib';
 import semverMaxSatisfying from 'semver/ranges/max-satisfying.js';
-import { getJson, getStream, memo, streamToString } from './utils.js';
+import { getJson, getStream, memo, streamToString, friendlyNetworkError } from './utils.js';
 import stripPackageJsonProperties from './package-strip-plugin.js';
 import sizeWarningPlugin from './size-warning-plugin.js';
 
@@ -22,6 +22,11 @@ import sizeWarningPlugin from './size-warning-plugin.js';
 /**
  * @typedef Module
  * @type {{ module: string, version: string, path?: string }}
+ */
+
+/**
+ * @typedef PackageJson
+ * @type {{ dependencies?:Record<string,string>, devDependencies?: Record<string,string>, peerDependencies?: Record<string, string>, resolutions?: Record<string, string> }}
  */
 
 /** Files that should be included when storing packages */
@@ -54,6 +59,40 @@ const DIST_TAG_TTL = 60000;
 /** @type {Map<string, { time: number, version: string }>} */
 const DIST_TAG_CACHE = new Map();
 
+async function readPackageJson(filename) {
+	try {
+		return JSON.parse(await fs.readFile(filename, 'utf-8'));
+	} catch (e) {}
+}
+
+/** @type {PackageJson} */
+let appPackageJson;
+
+/** @param {PackageJson} pkg */
+export function getPackageVersionFromDeps(pkg, name) {
+	return (
+		(pkg.dependencies && pkg.dependencies[name]) ||
+		(pkg.devDependencies && pkg.devDependencies[name]) ||
+		(pkg.peerDependencies && pkg.peerDependencies[name])
+	);
+}
+
+function getPackageVersionFromResolutions(pkg, name) {
+	if (pkg.resolutions) {
+		for (const pattern in pkg.resolutions) {
+			const escaped = pattern
+				.replace(/([.\\^$[]{}()?!])/g, '$1')
+				.replace(/\*\*/g, '.+')
+				.replace(/\*/g, '[^/]+');
+			const reg = new RegExp('^' + escaped + '$', 'gi');
+			if (reg.test(name)) {
+				// console.log(`using resolution: ${pattern} (${escaped})`);
+				return pkg.resolutions[pattern];
+			}
+		}
+	}
+}
+
 /**
  * Resolve a (possible) dist-tag version
  * @template {Module} T
@@ -70,15 +109,26 @@ export async function resolvePackageVersion(info) {
 		}
 	}
 
-	try {
-		const pkg = JSON.parse(await fs.readFile(resolve(NODE_MODULES, info.module, 'package.json'), 'utf-8'));
+	// If not specified, use any version constraints from the project's package.json:
+	if (!info.version) {
+		if (!appPackageJson) {
+			appPackageJson = (await readPackageJson(resolve(NODE_MODULES, '..', 'package.json'))) || {};
+		}
+		const resolvedVersion =
+			getPackageVersionFromDeps(appPackageJson, info.module) ||
+			getPackageVersionFromResolutions(appPackageJson, info.module);
+		info.version = resolvedVersion || 'latest';
+	}
+
+	const pkg = await readPackageJson(resolve(NODE_MODULES, info.module, 'package.json'));
+	if (pkg) {
 		DIST_TAG_CACHE.set(key, { time: Date.now(), version: pkg.version });
 		info.version = pkg.version;
 		return info;
-	} catch (e) {}
+	}
 
 	const r = await manuallyResolvePackageVersion(info);
-	DIST_TAG_CACHE.set(key, { time: Date.now(), version: info.version });
+	DIST_TAG_CACHE.set(key, { time: Date.now(), version: r.version });
 	return r;
 }
 
@@ -128,8 +178,12 @@ const SLIM_REQ = {
  * Fetch the npm metadata for a module
  * @returns {Promise<Meta>}
  */
-const getPackageMeta = memo(module => {
-	return getJson(`${API}/${module}`, SLIM_REQ);
+const getPackageMeta = memo(async module => {
+	try {
+		return await getJson(`${API}/${module}`, SLIM_REQ);
+	} catch (e) {
+		throw friendlyNetworkError(e, `npm registry lookup failed for "${module}"`);
+	}
 });
 
 /**
@@ -147,7 +201,12 @@ export async function loadPackageFiles({ module, version }) {
 	return await getTarFiles(info.dist.tarball, module, version);
 }
 
-/** @type {Map<string, Map<string, string>>} */
+/**
+ * Cache file contents of package files for quick access.
+ * Example:
+ *   `my-module@1.0.0 :: /index.js` -> `console.log("hello world")`
+ * @type {Map<string, string>}
+ */
 const DISK_CACHE = new Map();
 
 /**
@@ -155,6 +214,8 @@ const DISK_CACHE = new Map();
  * @param {Module} info
  */
 export async function loadPackageFile({ module, version, path = '' }) {
+	path = path.replace(/^\.?\//g, '');
+
 	// console.log('loadPackageFile: ', module, version, path);
 	// first, check if this file is sitting in the in-memory cache:
 	const files = tarFiles.get(module + '/' + version);
@@ -166,22 +227,16 @@ export async function loadPackageFile({ module, version, path = '' }) {
 	}
 
 	// otherwise, check if it's available in node_modules:
-	const localPath = resolve(NODE_MODULES, module, path);
-	// console.log(`${path} using disk strategy ${localPath}`);
-	try {
-		let diskFiles = DISK_CACHE.get(module + '/' + version);
-		if (!diskFiles) {
-			diskFiles = new Map();
-			DISK_CACHE.set(module + '/' + version, diskFiles);
-		}
-		// console.log(`  > ${diskFiles.has(path) ? 'in DISK_CACHE' : 'not in DISK_CACHE'}`);
-		if (diskFiles.has(path)) {
-			return diskFiles.get(path);
-		}
+	const cacheKey = `${module}@${version} :: \n${path}`;
+	let file = DISK_CACHE.get(cacheKey);
+	if (file != null) {
+		return file;
+	}
 
+	try {
+		const localPath = resolve(NODE_MODULES, module, path);
 		const contents = await fs.readFile(localPath, 'utf-8');
-		// console.log(`${path}: read ${contents.length}b from disk`);
-		diskFiles.set(path, contents);
+		DISK_CACHE.set(cacheKey, contents);
 		return contents;
 	} catch (e) {
 		const packageExists = await fs.stat(resolve(NODE_MODULES, module)).catch(() => null);
@@ -220,15 +275,16 @@ const whenFiles = new Map();
  * @param {Module} info
  * @returns {Promise<string>}
  */
-function whenFile({ module, version, path }) {
+function whenFile({ module, version, path = '' }) {
 	// const f = module + '@' + version + ' :: ' + path;
 	const packageSpecifier = module + '/' + version;
 	let files = tarFiles.get(packageSpecifier);
 	let whens = whenFiles.get(packageSpecifier);
 	if (files) {
-		if (files.has(path)) {
+		const cached = files.get(path);
+		if (cached != null) {
 			// console.log(`when(${f}): already available`);
-			return Promise.resolve(files.get(path));
+			return Promise.resolve(cached);
 		}
 		// we already have a completed files listing and this file wasn't in it.
 		if (!whens) {
@@ -243,6 +299,7 @@ function whenFile({ module, version, path }) {
 		whenFiles.set(packageSpecifier, whens);
 	}
 	return new Promise((resolve, reject) => {
+		// @ts-ignore
 		whens.add({ path, resolve, reject });
 	});
 }
@@ -267,7 +324,12 @@ const getTarFiles = memo(async (tarballUrl, packageName, version) => {
 	tarFiles.set(packageSpecifier, files);
 
 	// console.log('streaming tarball for ' + packageName + '@' + version + ': ' + tarballUrl);
-	const tarStream = await getStream(tarballUrl);
+	let tarStream;
+	try {
+		tarStream = await getStream(tarballUrl);
+	} catch (e) {
+		throw friendlyNetworkError(e, `npm download failed for "${packageName}"`);
+	}
 
 	// console.log('getting files for ' + packageName);
 	await parseTarball(tarStream, async (name, stream) => {

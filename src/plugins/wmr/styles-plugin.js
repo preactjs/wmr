@@ -1,29 +1,92 @@
 import { promises as fs } from 'fs';
 import { basename, dirname, relative, resolve, sep, posix } from 'path';
-// import { transformCss } from '../../lib/transform-css.js';
+import { transformCss } from '../../lib/transform-css.js';
+
+/**
+ * @param {string} sass
+ * @returns {string} css
+ */
+export function processSass(sass) {
+	return transformCss(sass);
+}
 
 /**
  * @param {string} css
  * @param {string} id cwd-relative path to the stylesheet, no leading `./`
  * @param {string[]} [mappings] an array to populate with object property code
- * @returns {string}
+ * @param {string} [idAbsolute] absolute filepath to the CSS file
+ * @returns {Promise<string>}
  */
-export function modularizeCss(css, id, mappings) {
-	const classNames = new Set();
+export async function modularizeCss(css, id, mappings = [], idAbsolute) {
+	// normalize to posix id for consistent hashing
+	if (id.match(/^[^/]*\\/)) id = id.split(sep).join(posix.sep);
+
 	const suffix = '_' + hash(id);
-	const applyClassSuffix = className => {
-		const mapped = className + suffix;
-		if (mappings && !classNames.has(className)) {
-			// quote keys only if necessary:
-			const q = /^\d|[^a-z0-9_$]/gi.test(className) ? `'` : ``;
-			mappings.push(`${q + className + q}:'${mapped}'`);
+
+	let currentMappings = new Map();
+	const toCompose = new Map();
+
+	let result = transformCss(css, (className, additionalClasses, specifier) => {
+		let currentSuffix = suffix;
+		// Inline external composed styles (composes: foo from './other.css')
+		if (specifier) {
+			const relativeImportee = posix.join(posix.dirname(id), specifier);
+			currentSuffix = '_' + hash(relativeImportee);
+			// addComposedCss(posix.join(posix.dirname(idAbsolute || id), specifier), relativeImportee, className);
+			const filename = posix.join(posix.dirname(idAbsolute || id), specifier);
+			let entry = toCompose.get(filename);
+			if (!entry) {
+				entry = { filename, classNames: new Set(), id: relativeImportee, suffix: currentSuffix };
+				toCompose.set(filename, entry);
+			}
+			entry.classNames.add(className);
+		}
+		const mapped = className + currentSuffix;
+		let m = currentMappings.get(className);
+		if (!m) {
+			m = new Set([mapped]);
+			currentMappings.set(className, m);
+		}
+		// {button:"button_abcde another-composed-class_12345"}
+		if (additionalClasses) {
+			for (const c of additionalClasses.trim().split(' ')) {
+				m.add(c);
+			}
 		}
 		return mapped;
-	};
-	// return transformCss(css, applyClassSuffix);
-	return css.replace(/(?:\/\*[\s\S]*?\*\/|\[.*?\]|{[\s\S]*?}|\.([^[\]:.{}()\s]+))/gi, (str, className) => {
-		return className ? '.' + applyClassSuffix(className) : str;
 	});
+
+	result += (
+		await Promise.all(
+			Array.from(toCompose.values()).map(async entry => {
+				let css = await fs.readFile(entry.filename, 'utf-8');
+				return transformCss(
+					css,
+					(c, additionalClasses, specifier) => {
+						if (specifier || additionalClasses) {
+							console.error(`Recursive/nested ICSS "composes:" is not currently supported.`);
+						}
+						return c + entry.suffix;
+					},
+					rule => {
+						// only include rules that were composed
+						for (const c of entry.classNames) {
+							if (rule.value.split(/[: ()[\],>&+*]/).indexOf('.' + c)) return true;
+						}
+					}
+				);
+			})
+		)
+	).join('');
+
+	currentMappings.forEach((value, key) => {
+		// quote keys only if necessary:
+		const q = /^\d|[^a-z0-9_$]/gi.test(key) ? `'` : ``;
+		const mapped = Array.from(value).join(' ');
+		mappings.push(`${q + key + q}:'${mapped}'`);
+	});
+
+	return result;
 }
 
 /**
@@ -47,31 +110,51 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath } = {}) {
 			});
 			return opts;
 		},
-		async load(id) {
-			if (!id.match(/\.css$/)) return;
+		async transform(source, id) {
+			if (!id.match(/\.(css|s[ac]ss)$/)) return;
 			if (id[0] === '\b' || id[0] === '\0') return;
+
+			const isSass = /\.s[ac]ss$/.test(id);
+			const isIcss = /(composes:|:global|:local)/.test(source);
+			const isModular = /\.module\.(css|s[ac]ss)$/.test(id);
 
 			let idRelative = cwd ? relative(cwd || '', resolve(cwd, id)) : multiRelative(cwds, id);
 			if (idRelative.match(/^[^/]*\\/)) idRelative = idRelative.split(sep).join(posix.sep);
-			// this.addWatchFile(id);
-			let source = await fs.readFile(id, 'utf-8');
+
 			const mappings = [];
-			if (id.match(/\.module\.css$/)) {
-				source = modularizeCss(source, idRelative, mappings);
+			if (isModular) {
+				source = await modularizeCss(source, idRelative, mappings, id);
+			} else if (isSass || isIcss) {
+				if (isIcss) {
+					console.warn(`Warning: ICSS ("composes:") is only supported in CSS Modules.`);
+				}
+				source = transformCss(source);
 			}
 
 			const ref = this.emitFile({
 				type: 'asset',
-				name: fullPath ? undefined : basename(id),
+				name: fullPath ? undefined : basename(id).replace(/\.s[ac]ss$/, '.css'),
 				fileName: fullPath ? idRelative : undefined,
 				source
 			});
+
+			const named = mappings
+				.map(m => {
+					const matches = m.match(/^(['"]?)([^:'"]+?)\1:(.+)$/);
+					if (!matches) return;
+					let name = matches[2].replace(/-[a-z]/gi, s => s[1].toUpperCase());
+					if (name.match(/^\d/)) name = '$' + name;
+					return name + '=' + matches[3];
+				})
+				.filter(Boolean)
+				.join(',');
 
 			let code = `
 				import { style } from 'wmr';
 				style(import.meta.ROLLUP_FILE_URL_${ref}, ${JSON.stringify(idRelative)});
 				const styles = {${mappings.join(',')}};
 				export default styles;
+				${named ? `export const ${named};` : ''}
 			`;
 
 			if (hot) {
@@ -80,7 +163,8 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath } = {}) {
 				// 	for (let i in styles) if (!(i in m.default)) delete[i];
 				// });
 				code += `
-					import.meta.hot.accept(({ module: { default: s } }) => {
+					import { createHotContext } from 'wmr';
+					createHotContext(import.meta.url).accept(({ module: { default: s } }) => {
 						for (let i in s) styles[i] = s[i];
 					});
 				`;

@@ -7,26 +7,27 @@ import { resolvePackageVersion, loadPackageFile } from '../plugins/npm-plugin/re
 import { getCachedBundle, setCachedBundle, sendCachedBundle, enqueueCompress } from './npm-middleware-cache.js';
 import processGlobalPlugin from '../plugins/process-global-plugin.js';
 import aliasesPlugin from '../plugins/aliases-plugin.js';
+import { getMimeType } from './mimetypes.js';
+import nodeBuiltinsPlugin from '../plugins/node-builtins-plugin.js';
+import * as kl from 'kolorist';
 
 /**
  * Serve a "proxy module" that uses the WMR runtime to load CSS.
  * @param {ReturnType<normalizeSpecifier>} meta
  * @param {import('http').ServerResponse} res
  */
-async function handleCss(meta, res) {
+async function handleAsset(meta, res) {
 	let code = '',
-		type = '';
-	if (meta.path.endsWith('.js')) {
-		type = 'application/javascript';
+		type = getMimeType(meta.path);
+	if (/\.css\.js$/.test(meta.path)) {
 		const specifier = JSON.stringify('/@npm/' + meta.specifier.replace(/\.js$/, ''));
 		code = `import{style}from '/_wmr.js';\nstyle(${specifier});`;
 	} else {
-		type = 'text/css';
 		code = await loadPackageFile(meta);
 	}
 	res.writeHead(200, {
-		'content-type': type,
-		'content-length': code.length
+		'content-type': type || 'text/plain',
+		'content-length': Buffer.byteLength(code)
 	});
 	res.end(code);
 }
@@ -36,17 +37,23 @@ async function handleCss(meta, res) {
  * @param {'npm'|'unpkg'} [options.source = 'npm'] How to fetch package files
  * @param {Record<string,string>} [options.aliases]
  * @param {boolean} [options.optimize = true] Progressively minify and compress dependency bundles?
+ * @param {string} [options.cwd] Virtual cwd
  * @returns {import('polka').Middleware}
  */
-export default function npmMiddleware({ source = 'npm', aliases, optimize } = {}) {
+export default function npmMiddleware({ source = 'npm', aliases, optimize, cwd } = {}) {
 	return async (req, res, next) => {
 		// @ts-ignore
 		const mod = req.path.replace(/^\//, '');
 
-		try {
-			const meta = normalizeSpecifier(mod);
-			await resolvePackageVersion(meta);
+		const meta = normalizeSpecifier(mod);
 
+		try {
+			await resolvePackageVersion(meta);
+		} catch (e) {
+			return next(e);
+		}
+
+		try {
 			// The package name + path + version is a strong ETag since versions are immutable
 			const etag = Buffer.from(`${meta.specifier}${meta.version}`).toString('base64');
 			const ifNoneMatch = String(req.headers['if-none-match']).replace(/-(gz|br)$/g, '');
@@ -56,14 +63,16 @@ export default function npmMiddleware({ source = 'npm', aliases, optimize } = {}
 			res.setHeader('etag', etag);
 
 			// CSS files and proxy modules don't use Rollup.
-			if (meta.path.match(/\.css(\.js)?$/)) {
-				return handleCss(meta, res);
+			if (/\.((css|s[ac]ss)(\.js)?|wasm|txt|json)$/.test(meta.path)) {
+				return handleAsset(meta, res);
 			}
 
-			res.setHeader('content-type', 'application/javascript');
-
+			res.setHeader('content-type', 'application/javascript;charset=utf-8');
+			if (process.env.DEBUG) {
+				console.log(`  ${kl.dim('middleware:') + kl.bold(kl.magenta('npm'))}  ${JSON.stringify(meta.specifier)}`);
+			}
 			// serve from memory and disk caches:
-			const cached = await getCachedBundle(etag, meta);
+			const cached = await getCachedBundle(etag, meta, cwd);
 			if (cached) return sendCachedBundle(req, res, cached);
 
 			// const start = Date.now();
@@ -71,10 +80,10 @@ export default function npmMiddleware({ source = 'npm', aliases, optimize } = {}
 			// console.log(`Bundle dep: ${mod}: ${Date.now() - start}ms`);
 
 			// send it!
-			res.writeHead(200, { 'content-length': code.length }).end(code);
+			res.writeHead(200, { 'content-length': Buffer.byteLength(code) }).end(code);
 
 			// store the bundle in memory and disk caches
-			setCachedBundle(etag, code, meta);
+			setCachedBundle(etag, code, meta, cwd);
 
 			// this is a new bundle, we'll compress it with terser and brotli shortly
 			if (optimize !== false) {
@@ -121,6 +130,7 @@ async function bundleNpmModule(mod, { source, aliases }) {
 		// shimMissingExports: true,
 		preserveEntrySignatures: 'allow-extension',
 		plugins: [
+			nodeBuiltinsPlugin({}),
 			aliasesPlugin({ aliases }),
 			npmProviderPlugin,
 			processGlobalPlugin({
@@ -132,6 +142,14 @@ async function bundleNpmModule(mod, { source, aliases }) {
 				transformMixedEsModules: true
 			}),
 			json(),
+			{
+				name: 'no-builtins',
+				load(s) {
+					if (s === 'fs' || s === 'path') {
+						return 'export default {};';
+					}
+				}
+			},
 			{
 				name: 'never-disk',
 				load(s) {

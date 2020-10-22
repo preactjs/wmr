@@ -4,7 +4,12 @@ export default function localNpmPlugin({ publicPath = '/@npm' } = {}) {
 		name: 'localNpmPlugin',
 		options(opts) {
 			// opts.external = [/^\/@module\//].concat(opts.external || []);
-			opts.external = [new RegExp(`^${publicPath.replace(/([[\]()-.*+])/g, '\\$1')}`)].concat(opts.external || []);
+			/** @type {import('rollup').InputOptions["external"]} */
+			const external = [new RegExp(`^${publicPath.replace(/([[\]()-.*+])/g, '\\$1')}`)];
+			if (opts.external && typeof opts.external !== 'function') {
+				external.concat(opts.external || []);
+			}
+			opts.external = external;
 			return opts;
 		},
 		outputOptions(opts) {
@@ -17,6 +22,8 @@ export default function localNpmPlugin({ publicPath = '/@npm' } = {}) {
 					if (typeof oldPaths === 'function') return oldPaths(id);
 					return oldPaths[id];
 				}
+
+				return id;
 			};
 			return opts;
 		},
@@ -26,7 +33,8 @@ export default function localNpmPlugin({ publicPath = '/@npm' } = {}) {
 			return {
 				id: `${publicPath}/${s}`,
 				external: true,
-				moduleSideEffects: true
+				moduleSideEffects: true,
+				syntheticNamedExports: true
 			};
 		}
 	};

@@ -3,8 +3,29 @@ import path from 'path';
 import ncpCb from 'ncp';
 import childProcess from 'child_process';
 import { promisify } from 'util';
+import { get as httpGet } from 'http';
+import polka from 'polka';
+import sirv from 'sirv';
+
+export function dent(str) {
+	str = String(str);
+	const leading = str.match(/^\n+([\t ]+)/)[1];
+	return str.replace(new RegExp('^' + leading, 'gm'), '').trim();
+}
 
 const ncp = promisify(ncpCb);
+
+export function serveStatic(dir) {
+	const app = polka()
+		.use(sirv(dir, { dev: true, single: true }))
+		.listen(0);
+	// @ts-ignore-next
+	const server = app.server;
+	return {
+		address: `http://localhost:${server.address().port}`,
+		stop: () => server.close()
+	};
+}
 
 /**
  * @returns {Promise<TestEnv>}
@@ -37,39 +58,72 @@ export async function loadFixture(name, env) {
  * @returns {Promise<WmrInstance>}
  */
 export async function runWmr(cwd, ...args) {
+	let opts = {};
+	const lastArg = args[args.length - 1];
+	if (lastArg && typeof lastArg === 'object') {
+		opts = args.pop() || opts;
+	}
 	const bin = path.join(__dirname, '..', 'src', 'cli.js');
 	const child = childProcess.spawn('node', ['--experimental-modules', bin, ...args], {
-		cwd
+		cwd,
+		...opts,
+		env: {
+			...process.env,
+			DEBUG: 'true',
+			PORT: '0',
+			...(opts.env || {})
+		}
 	});
 
-	const out = {
-		output: [],
-		code: 0,
-		close: () => child.kill()
-	};
+	const out = {};
+	out.output = [];
+	out.code = 0;
+	out.close = () => child.kill();
 
-	child.stdout.on('data', buffer => {
-		const raw = buffer.toString('utf-8');
-		const lines = raw.split('\n');
+	function onOutput(buffer) {
+		const raw = stripColors(buffer.toString('utf-8'));
+		const lines = raw.split('\n').filter(line => !/\(node:\d+\) ExperimentalWarning:/.test(line) && line);
 		out.output.push(...lines);
 		if (/\b([A-Z][a-z]+)?Error\b/m.test(raw)) {
 			console.error(`Error running "wmr ${args.join(' ')}":\n${raw}`);
 		}
-	});
-	child.stderr.on('data', buffer => {
-		const raw = buffer.toString('utf-8');
-		const lines = raw.split('\n');
-		out.output.push(...lines);
-		if (/\b([A-Z][a-z]+)?Error\b/m.test(raw)) {
-			console.error(`Error running "wmr ${args.join(' ')}":\n${raw}`);
+		if (/^Listening/m.test(raw)) {
+			let m = raw.match(/https?:\/\/localhost:\d+/g);
+			if (m) setAddress(m[0]);
 		}
+	}
+	child.stdout.on('data', onOutput);
+	child.stderr.on('data', onOutput);
+	out.done = new Promise(resolve => {
+		child.on('close', code => resolve((out.code = code)));
 	});
-	child.on('close', code => (out.code = code));
+
+	let setAddress;
+	out.address = new Promise(resolve => (setAddress = resolve));
 
 	await waitFor(() => out.output.length > 0, 10000);
 
 	return out;
 }
+
+export const runWmrFast = (cwd, ...args) => runWmr(cwd, '--no-optimize', '--no-compress', ...args);
+
+const addrs = new WeakMap();
+
+export async function getOutput(env, instance) {
+	let address = addrs.get(instance);
+	if (!address) {
+		await waitForMessage(instance.output, /^Listening/);
+		address = instance.output.join('\n').match(/https?:\/\/localhost:\d+/g)[0];
+		addrs.set(instance, address);
+	}
+
+	await env.page.goto(address);
+	return await env.page.content();
+}
+
+// eslint-disable-next-line no-control-regex
+const stripColors = str => str.replace(/\x1b\[(?:[0-9]{1,3}(?:;[0-9]{1,3})*)?[m|K]/g, '');
 
 /**
  * @param {number} ms
@@ -122,4 +176,37 @@ export async function waitForMessage(haystack, message, timeout = 5000) {
 	if (!found) {
 		throw new Error(`Message ${message} didn't appear in ${timeout}ms`);
 	}
+}
+
+/**
+ * @param {WmrInstance} instance
+ * @param {string} urlPath
+ * @returns {Promise<{status?: number, body: string, res: import('http').IncomingMessage }>}
+ */
+export async function get(instance, urlPath) {
+	const addr = await instance.address;
+	return new Promise((resolve, reject) => {
+		httpGet(addr + '/' + urlPath.replace(/^\//, ''), res => {
+			let body = '';
+			res.setEncoding('utf-8');
+			res.on('data', chunk => {
+				body += chunk;
+			});
+			res.once('end', () => {
+				if (!res.statusCode || res.statusCode >= 400) {
+					const err = Object.assign(Error(`${res.statusCode} ${res.statusMessage}: ${urlPath}\n${body}`), {
+						code: res.statusCode,
+						body,
+						res
+					});
+					return reject(err);
+				}
+				resolve({
+					status: res.statusCode,
+					body,
+					res
+				});
+			});
+		});
+	});
 }
