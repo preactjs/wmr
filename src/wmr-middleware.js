@@ -177,13 +177,6 @@ export default function wmrMiddleware({
 			transform = TRANSFORMS.generic;
 		}
 
-		const missing = () => false;
-		if (await fs.lstat(file).then(s => s.isDirectory()).catch(missing)) {
-			if (await fs.lstat(resolve(cwd, '200.html')).catch(missing)) {
-				path = '200.html';
-			}
-		}
-
 		try {
 			const start = Date.now();
 			const result = await transform(ctx);
@@ -433,7 +426,19 @@ export const TRANSFORMS = {
 	},
 
 	// Falls through to sirv
-	generic() {
+	generic(ctx) {
+		// ~/200.html fallback for requests with no extension
+		const missing = () => false;
+		if (!/\.[a-z]+$/gi.test(ctx.path)) {
+			if (await fs.lstat(ctx.file).then(s => s.isDirectory()).catch(missing)) {
+				const fallback = resolve(ctx.cwd, '200.html');
+				if (await fs.lstat(fallback).catch(missing)) {
+					ctx.file = fallback;
+					return TRANSFORMS.asset(ctx);
+				}
+			}
+		}
+
 		return false;
 		// return new Promise((resolve, reject) => {
 		// 	if (file.endsWith('/') || !file.match(/[^/]\.[a-z0-9]+$/gi)) {
