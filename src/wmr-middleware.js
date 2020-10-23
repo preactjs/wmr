@@ -432,7 +432,7 @@ export const TRANSFORMS = {
 			const fallback = resolve(ctx.cwd, '200.html');
 			let use200 = false;
 			try {
-				use200 = (await fs.lstat(ctx.file)).isDirectory() && await fs.lstat(fallback);
+				use200 = (await fs.lstat(ctx.file)).isDirectory() && (await fs.lstat(fallback));
 			} catch (e) {}
 			if (use200) {
 				ctx.file = fallback;
