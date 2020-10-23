@@ -32,7 +32,9 @@ export function App() {
 	);
 }
 
-render(<App />, document.body);
+if (typeof document !== 'undefined') {
+	render(<App />, document.body);
+}
 
 // @ts-ignore
 if (module.hot) module.hot.accept(u => render(<u.module.App />, document.body));
