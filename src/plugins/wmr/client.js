@@ -134,10 +134,16 @@ export function style(filename, id) {
 	if (node) {
 		node.href = filename + '?t=' + Date.now();
 	} else {
-		const node = document.createElement('link');
-		node.rel = 'stylesheet';
-		node.href = filename;
-		document.head.appendChild(node);
+		let node = document.querySelector('link[rel=stylesheet][href="' + filename + '"]');
+		if (node) {
+			console.log('reusing existing <link> for ', filename);
+		}
+		if (!node) {
+			node = document.createElement('link');
+			node.rel = 'stylesheet';
+			node.href = filename;
+			document.head.appendChild(node);
+		}
 		styles.set(id, node);
 	}
 }

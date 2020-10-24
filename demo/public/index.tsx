@@ -1,6 +1,6 @@
 import { h, render } from 'preact';
 import { Loc, Router } from './loc.js';
-import lazy from './lazy.js';
+import lazy, { ErrorBoundary } from './lazy.js';
 import Home from './pages/home.js';
 // import About from './pages/about/index.js';
 import NotFound from './pages/_404.js';
@@ -13,20 +13,24 @@ const ClassFields = lazy(() => import('./pages/class-fields.js'));
 const Files = lazy(() => import('./pages/files/index.js'));
 const Environment = lazy(async () => (await import('./pages/environment/index.js')).Environment);
 
+
+
 export function App() {
 	return (
 		<Loc>
 			<div class="app">
 				<Header />
-				<Router>
-					<Home path="/" />
-					<About path="/about" />
-					<CompatPage path="/compat" />
-					<ClassFields path="/class-fields" />
-					<Files path="/files" />
-					<Environment path="/env" />
-					<NotFound default />
-				</Router>
+				<ErrorBoundary>
+					<Router>
+						<Home path="/" />
+						<About path="/about" />
+						<CompatPage path="/compat" />
+						<ClassFields path="/class-fields" />
+						<Files path="/files" />
+						<Environment path="/env" />
+						<NotFound default />
+					</Router>
+				</ErrorBoundary>
 			</div>
 		</Loc>
 	);

@@ -1,9 +1,11 @@
+import { builtinModules } from 'module';
 import { join } from 'path';
 import { statSync } from 'fs';
 import { URL, pathToFileURL, fileURLToPath } from 'url';
 import { get as getHttp } from 'http';
 import { get as getHttps } from 'https';
 import { fork } from 'child_process';
+// import { setupMaster, fork } from 'cluster';
 // import { Worker } from 'worker_threads';
 
 const cwd = pathToFileURL(`${process.cwd()}/`).href;
@@ -32,6 +34,10 @@ process.on('beforeExit', () => {
 if (process.env.WMRSSR_HOST) {
 	baseURL = process.env.WMRSSR_HOST;
 } else {
+	setupMaster({
+		exec: fileURLToPath(new URL(`./src/cli.js`, import.meta.url))
+	});
+	proc = fork();
 	proc = fork(fileURLToPath(new URL(`./src/cli.js`, import.meta.url)), [], {
 		stdio: 'pipe'
 	});
@@ -53,12 +59,6 @@ if (process.env.WMRSSR_HOST) {
 			process.stderr.write(`No file specified:\n  wmr ssr path/to/file.js\n`);
 			return process.exit(1);
 		}
-		// console.log({
-		// 	file: process.argv[2],
-		// 	path: fileURLToPath(new URL('./' + process.argv[2], root)),
-		// 	root,
-		// 	cwd
-		// });
 
 		// import(process.argv[2]);
 		ssr = fork(fileURLToPath(new URL('./' + process.argv[2], root)), [], {
@@ -72,14 +72,37 @@ if (process.env.WMRSSR_HOST) {
 		ssr.once('exit', process.exit);
 
 		let c = 0;
+		const p = new Map();
+		function deferred() {
+			const deferred = {};
+			deferred.promise = new Promise((resolve, reject) => {
+				deferred.resolve = resolve;
+				deferred.reject = reject;
+			});
+			return deferred;
+		}
+		const ready = deferred();
+		ssr.rpc = (fn, ...args) =>
+			ready.promise.then(() => {
+				const id = ++c;
+				const controller = deferred();
+				p.set(id, controller);
+				ssr.send([id, fn, ...args]);
+				return controller.promise;
+			});
 		ssr.on('message', data => {
-			console.log('parent message: ', data);
+			// console.log('parent message: ', data);
 			if (data === 'init') {
-				ssr.send([++c, { url: '/' }]);
-			} else {
-				console.log(data);
-			}
+				// ssr.send([++c, { url: '/' }]);
+				ready.resolve();
+			} else if (!Array.isArray(data)) return console.log('unknown message: ', data);
+			// console.log(data);
+			const [id, fn, ...args] = data;
+			if (fn === '$resolve$') p.get(id).resolve(args[0]);
+			else if (fn === '$reject$') p.get(id).reject(args[0]);
+			else console.log('missed RPC: ', fn, '(', ...args, ') [', id, ']');
 		});
+		ssr.on('error', ready.reject);
 
 		// const workerCode = `
 		// 	import("${fileURLToPath(new URL('./' + process.argv[2], root))}").then(m => {
@@ -123,39 +146,210 @@ const fetch = url =>
 
 const CACHE = new Map();
 
-console.log(process.env.WMRSSR_HOST, process.argv);
-
-// console.log(root);
-
 export function getGlobalPreloadCode() {
-	const loc = new URL(baseURL);
-	let location = {};
-	for (let i in loc) {
-		try {
-			if (typeof loc[i] === 'string') {
-				location[i] = String(loc[i]);
-			}
-		} catch (e) {}
-	}
 	return `
 		const require = getBuiltin('module').createRequire(process.cwd());
 		globalThis.WebSocket = require('ws');
 		globalThis.self = globalThis;
-		globalThis.location = ${JSON.stringify(location)};
+		globalThis.location = {
+			reload() {
+				console.warn("Skipping location.reload()");
+			}
+		};
+		const baseURL = ${JSON.stringify(baseURL)};
+		function setLocation(url) {
+			const loc = new URL(url, baseURL);
+			for (let i in loc) {
+				try {
+					if (typeof loc[i] === 'string') {
+						globalThis.location[i] = String(loc[i]);
+					}
+				} catch (e) {}
+			}
+		}
+		setLocation(baseURL);
+
+		const has = (s, n) => s ===n || Array.isArray(s) && s.includes(n);
+
+		let started = false;
+
+		// scripts and styles imported/injected by the current SSR process
+		let injects = new Map();
+
+		// imports that were resolved prior to ssr() being called, so are not necessarily client-side
+		const globalInjects = new Map();
+
+		const urlInjects = new Map();
+
+		function expandModuleGraph(resources, graph) {
+			const seen = new Set();
+			for (const entry of resources) seen.add(entry.url);
+			for (const entry of resources) {
+				const meta = graph.get(entry.url);
+				if (!meta) continue;
+				for (const dep of meta.imports) {
+					const depMeta = graph.get(dep);
+					if (!seen.has(dep)) {
+						seen.add(dep);
+						resources.push(depMeta);
+					}
+				}
+			}
+		}
+
+		function prepare(opts) {
+			const { requestId, url } = opts;
+			opts.res = new Response(opts.requestId);
+			started = true;
+			setLocation(url);
+			injects.clear();
+			injects = new Map();
+
+			const ui = urlInjects.get(url);
+			if (ui && ui.size) {
+				opts.res.setHeader('Link', Array.from(ui.values()).map(i => \`<\${i.url}>;rel=preload;as=\${i.type};crossorigin\`).join(', '));
+			}
+
+			// let preload = [...new Map(urlInjects.get(url)).values()].map(i => \`<\${i.url}>;rel=preload;as=\${i.type};crossorigin\`);
+			// let preload = [...new Map(urlInjects.get(url)).values()].filter(i=>i.type=='style').map(i => \`<\${i.url}>;rel=preload;as=\${i.type};crossorigin\`);
+			// preload.push(...[...new Map(urlInjects.get(url)).values()].filter(i=>i.type=='script').map(i => \`<\${i.url}>;rel=modulepreload\`));
+			// injects = new Map(urlInjects.get(url));
+			// let preload = [...injects.values()].map(i => \`<\${i.url}>;rel=preload;as=\${i.type};crossorigin\`);
+			// if (preload.length) {
+			// 	opts.res.setHeader('Link', preload.join(', '));
+			// }
+		}
+		const REQ = Symbol('requestId');
+		class Response {
+			constructor(requestId) {
+				this[REQ] = requestId;
+			}
+			setHeader(name, value) {
+				process.send([-1, 'setHeader', this[REQ], name, value]);
+			}
+			flush() {
+				process.send([-1, 'flush', this[REQ]]);
+			}
+		}
+		function finish({ url, res }, result) {
+			if (result instanceof Error) return;
+
+			// if this is the first time rendering this URL, store import/inject mappings
+			if (!urlInjects.get(url)) {
+				urlInjects.set(url, new Map(injects));
+			}
+
+			const resources = [...injects.values()];
+			injects.clear();
+			const before = resources.map(r => r.url);
+
+			expandModuleGraph(resources, globalThis._GRAPH);
+
+			console.log('  ' + resources.map(x => x.type + ' : ' + x.url + (before.includes(x.url)?'':' (inferred from dep graph)')).join('\\n  '));
+
+			const styles = resources.filter(s => s.type === 'style');
+			const scripts = resources.filter(s => s.type === 'script');
+			let head = '';
+			let body = '';
+			for (const style of styles) {
+				head += \`<link rel="stylesheet" href="\${style.url}" data-id="\${style.id}">\`;
+			}
+			//process.send([-1, 'setHeader', requestId, 'Link', scripts.map(script => \`<\${script.url}>;rel=preload;as=script;crossorigin\`).join(', ')]);
+			// for (const script of scripts) {
+			// 	head += \`<link rel="preload" as="script" href="\${script.url}" crossorigin>\`;
+			// 	body += \`<script type="module" src="\${script.url}"></script>\`;
+			// }
+			if (/<\\/head>/i.test(result)) result = result.replace(/(<\\/head>)/i, head + '$1');
+			else result = head + result;
+			if (/<\\/body>/i.test(result)) result = result.replace(/(<\\/body>)/i, body + '$1');
+			else result += body;
+
+			result = result.replace(/<script type="module"/g, '<script type="not-module"');
+			return result;
+		}
+		globalThis.wmrssr = {
+			cleanup() {},
+			collect(type, url, id) {
+				url = url.replace(/\\?t=\\d+/g, '');
+				const key = type + ':' + url;
+				const inject = { type, url, id };
+				if (started) injects.set(key, inject);
+				else globalInjects.set(key, inject);
+			},
+			before(method, args) {
+				if (has(method, 'ssr')) prepare(args[0]);
+			},
+			commitSync(method, args, result) {
+			},
+			after(method, args, result) {
+				if (has(method, 'ssr')) {
+					const r = finish(args[0], result[1] === '$reject$' ? Error(result[2]) : result[2]);
+					if (r != null) result[2] = r;
+				}
+			}
+		};
 	`;
 }
 
+const isBuiltIn = specifier =>
+	specifier.startsWith('node:') || specifier.startsWith('nodejs:') || builtinModules.includes(specifier);
+
+// Node 15 switched from `nodejs:fs` to `node:fs` as a scheme for for built-in modules, so we detect it.
+const prefix = import('node:fs')
+	.then(() => 'node:')
+	.catch(() => 'nodejs:');
+
+const GRAPH = new Map();
+// gross: expose module graph data for use in the injected preload script
+global._GRAPH = GRAPH;
+
 let first = true;
 export async function resolve(specifier, context, defaultResolve) {
-	// console.log(specifier, process.argv[1]);
+	const pfx = await prefix;
+	if (specifier.startsWith('/@node/')) {
+		// return { url: specifier.slice(7) };
+		return { url: pfx + specifier.slice(7) };
+		//return defaultResolve(specifier.slice(7), context, defaultResolve);
+	}
+	if (specifier.startsWith('/@npm/') && isBuiltIn(specifier.slice(6))) {
+		// return { url: specifier.slice(6) };
+		return { url: pfx + specifier.slice(6) };
+		// return defaultResolve(specifier, context, defaultResolve);
+	}
+
+	if (specifier.startsWith('data:')) {
+		return { url: specifier };
+	}
+
 	if (specifier.startsWith(root)) {
 		// console.log(specifier, specifier.slice(root.length));
 		specifier = specifier.slice(root.length);
 	}
 	const url = new URL(specifier, context.parentURL || baseURL).href;
-	// console.log('RESOLVE', specifier, context.parentURL, url);
+	let relativeUrl = url;
+	if (relativeUrl.startsWith(baseURL)) relativeUrl = relativeUrl.slice(baseURL.length);
+	if (globalThis.wmrssr) {
+		globalThis.wmrssr.collect('script', relativeUrl);
+	}
+
+	// build up module graph
+	const isDynamicImport = globalThis.wmrssr._committed;
+	let p = context.parentURL || baseURL;
+	if (p.startsWith(baseURL)) p = p.slice(baseURL.length);
+	if (isDynamicImport) {
+		console.log('dynamic import(): ', relativeUrl, p);
+	}
+	let parent = GRAPH.get(p);
+	if (!parent) GRAPH.set(p, (parent = { type: 'script', url: p, imports: [], dynamicImports: [] }));
+	parent[isDynamicImport ? 'dynamicImports' : 'imports'].push(relativeUrl);
+	let self = GRAPH.get(relativeUrl);
+	if (!self) GRAPH.set(relativeUrl, { type: 'script', url: relativeUrl, imports: [], dynamicImports: [] });
+	// self[isDynamicImport ? 'imports' : 'dynamicImports'].push(url);
+
+	console.log('RESOLVE', specifier, p);
 	const res = await fetch(url);
 	const resolvedUrl = res.url || url;
+	// console.log('RESOLVE: ', specifier, resolvedUrl.replace(baseURL, ''), context);
 	CACHE.set(resolvedUrl, res);
 	return { url: resolvedUrl };
 	// return { url };
@@ -163,7 +357,9 @@ export async function resolve(specifier, context, defaultResolve) {
 }
 
 export function getFormat(url, context, defaultGetFormat) {
-	// console.log('GET FORMAT', url);
+	if (isBuiltIn(url)) {
+		return { format: 'builtin' };
+	}
 	return {
 		format: 'module'
 	};
@@ -171,6 +367,19 @@ export function getFormat(url, context, defaultGetFormat) {
 }
 
 export async function getSource(url, context, defaultGetSource) {
+	if (isBuiltIn(url)) {
+		return defaultGetSource(url, context, defaultGetSource);
+	}
+
+	if (url.startsWith('data:')) {
+		const i = url.indexOf(',');
+		let source = url.substring(i + 1);
+		if (/;\s*base64$/.test(url.substring(0, i))) {
+			source = Buffer.from(source, 'base64').toString('utf-8');
+		}
+		return { source };
+	}
+
 	// console.log('GET SOURCE', url);
 	const spec = url.replace(baseURL, '');
 	// const res = await fetch(url);
@@ -178,29 +387,68 @@ export async function getSource(url, context, defaultGetSource) {
 	let source = await res.text();
 	if (res.status === 404) throw Error(`Module ${spec} not found`);
 	if (!res.ok) throw Error(spec + ': ' + res.status + '\n' + source);
+	if (new URL(url).pathname === '/_wmr.js') {
+		source += `
+			style = function(url, id) {
+				const line = new Error().stack.split('\\n')[2];
+				const index = line.indexOf(${JSON.stringify(baseURL)});
+				if (index !== -1) {
+					const p = line.substring(index + ${baseURL.length}).replace(/\\:\\d+\\:\\d+$/g, '');
+					let parent = globalThis._GRAPH.get(p);
+					if (!parent) globalThis._GRAPH.set(p, (parent = { type: 'script', url: p, imports: [], dynamicImports: [] }));
+					parent.imports.push(url);
+					if (!globalThis._GRAPH.get(url)) {
+						globalThis._GRAPH.set(url, { type: 'style', imports: [], dynamicImports: [] });
+					}
+				}
+				globalThis.wmrssr.collect('style', url, id);
+			};
+		`;
+	}
 	if (first) {
 		// console.log('first', globalThis.location);
 		first = false;
 		source += `
 			import { createHotContext as $$$cc } from '/_wmr.js';
+			// import * as $$$WMR from '/_wmr.js';
+			// const $$$cc = $$$WMR.createHotContext;
+
 			(function() {
 				const hot = $$$cc(import.meta.url);
-				let ssr;
+				let mod;
 				process.send('init');
-				process.on('message', async ([id, data]) => {
-					let s = await ssr;
-					console.log("got message", id, data);
+				process.on('message', async ([id, method, ...args]) => {
+					let m, fn;
+					if (/^WMRSSR:/.test(method)) {
+						fn = globalThis.wmrssr[method.slice(7)];
+					} else {
+						m = await mod;
+						if (Array.isArray(method)) for (let name of method) if (name in m) {
+							fn = m[name];
+							break;
+						} else {
+							fn = m[method];
+						}
+					}
+					await globalThis.wmrssr.before(method, args);
+					const result = [id, '', null];
 					try {
-						process.send([id, 1, await s(data)]);
+						// process.send([id, '$resolve$', await fn(...args)]);
+						const r = fn(...args);
+						globalThis.wmrssr.commitSync(method, args, result);
+						result[2] = await r;
+						result[1] = '$resolve$';
 					} catch (e) {
-						process.send([id, 0, String(e)]);
+						// process.send([id, '$reject$', String(e)]);
+						result[2] = String(e);
+						result[1] = '$reject$';
+					} finally {
+						await globalThis.wmrssr.after(method, args, result);
+						process.send(result);
 					}
 				});
 				function reload() {
-					ssr = import(import.meta.url).then(m => {
-						ssr = m.ssr || m.default;
-						return ssr;
-					});
+					mod = import(import.meta.url).then(m => mod = m);
 				}
 				hot.accept(reload);
 				reload();

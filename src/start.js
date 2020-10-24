@@ -4,6 +4,7 @@ import { getFreePort, getServerAddresses } from './lib/net-utils.js';
 import { normalizeOptions } from './lib/normalize-options.js';
 import { setCwd } from './plugins/npm-plugin/registry.js';
 import * as kl from 'kolorist';
+import ssrMiddleware from './lib/ssr-middleware.js';
 
 /**
  * @typedef OtherOptions
@@ -28,6 +29,10 @@ export default async function start(options = {}) {
 			onChange: sendChanges
 		})
 	];
+
+	if (options.ssr) {
+		options.middleware.unshift(ssrMiddleware(options));
+	}
 
 	// eslint-disable-next-line
 	function sendError(err) {

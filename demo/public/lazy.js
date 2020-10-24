@@ -1,4 +1,4 @@
-import { h } from 'preact';
+import { h, Component } from 'preact';
 import { useState, useRef } from 'preact/hooks';
 
 export default function lazy(load) {
@@ -8,6 +8,26 @@ export default function lazy(load) {
 		const [, update] = useState(0);
 		const r = useRef(c);
 		if (!r.current) r.current = p.then(update);
+		if (c === undefined) throw p;
 		return h(c, props);
 	};
 }
+
+export class ErrorBoundary extends Component {
+	componentDidCatch(e) {
+		// if (this.__d) throw e;
+		if (e && e.then) this.__d = true;
+	}
+	render(props) {
+		return props.children;
+	}
+}
+
+// export function ErrorBoundary(props) {
+// 	this.componentDidCatch = absorb;
+// 	return props.children;
+// }
+// function absorb(e) {
+// 	console.log('did catch ', e);
+// 	if (e && e.then) this.__d = true;
+// }
