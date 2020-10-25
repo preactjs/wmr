@@ -72,7 +72,10 @@ export default function ssrMiddleware({ cwd, root, port, http2 }) {
 			return;
 		} else if (fn === 'flush') {
 			const res = responses.get(args[0]);
-			if (res && !res.headersSent && res.flush) setTimeout(res.flush, 1);
+			if (res && !res.headersSent && res.flush) {
+				res.writeHead(200);
+				setTimeout(res.flush, 1);
+			}
 			return;
 		} else {
 			console.log('[SSR] Unknown RPC host method: ', fn, '(', ...args, ') [', id, ']');

@@ -1,4 +1,4 @@
-import { h, render } from 'preact';
+import { h, hydrate, render } from 'preact';
 import { Loc, Router } from './loc.js';
 import lazy, { ErrorBoundary } from './lazy.js';
 import Home from './pages/home.js';
@@ -12,8 +12,6 @@ const CompatPage = lazy(() => import('./pages/compat.js'));
 const ClassFields = lazy(() => import('./pages/class-fields.js'));
 const Files = lazy(() => import('./pages/files/index.js'));
 const Environment = lazy(async () => (await import('./pages/environment/index.js')).Environment);
-
-
 
 export function App() {
 	return (
@@ -37,8 +35,12 @@ export function App() {
 }
 
 if (typeof document !== 'undefined') {
-	render(<App />, document.body);
-}
+	if (document.body.hasAttribute('ssr')) {
+		hydrate(<App />, document.body);
+	} else {
+		render(<App />, document.body);
+	}
 
-// @ts-ignore
-if (module.hot) module.hot.accept(u => render(<u.module.App />, document.body));
+	// @ts-ignore
+	if (module.hot) module.hot.accept(u => render(<u.module.App />, document.body));
+}

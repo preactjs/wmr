@@ -23,6 +23,7 @@ export async function ssr({ url }) {
 	// const u = new URL(url, location.href).href;
 	try {
 		const html = await fs.readFile('./public/index.html', 'utf-8');
+		// body = html.replace(/(<div id="app_root">)<\/div>/, '$1' + body + '</div>');
 		if (/<body(?:\s[^>]*?)?>/.test(html)) {
 			body = html.replace(/(<body(?:\s[^>]*?)?)>/, '$1 ssr>' + body);
 		} else {

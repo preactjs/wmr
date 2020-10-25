@@ -135,9 +135,6 @@ export function style(filename, id) {
 		node.href = filename + '?t=' + Date.now();
 	} else {
 		let node = document.querySelector('link[rel=stylesheet][href="' + filename + '"]');
-		if (node) {
-			console.log('reusing existing <link> for ', filename);
-		}
 		if (!node) {
 			node = document.createElement('link');
 			node.rel = 'stylesheet';

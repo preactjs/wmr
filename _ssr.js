@@ -127,6 +127,8 @@ if (process.env.WMRSSR_HOST) {
 
 const fetch = url =>
 	new Promise((resolve, reject) => {
+		// console.log('fetch(', url, ')');
+		// url = url.replace('0.0.0.0', 'localhost');
 		(url.startsWith('https://') ? getHttps : getHttp)(url, res => {
 			const text = new Promise(r => {
 				let text = '';
@@ -191,6 +193,9 @@ export function getGlobalPreloadCode() {
 					const depMeta = graph.get(dep);
 					if (!seen.has(dep)) {
 						seen.add(dep);
+						// if (!depMeta.url || depMeta.url === 'undefined') {
+						// 	console.log('miss', depMeta, entry.url);
+						// }
 						resources.push(depMeta);
 					}
 				}
@@ -205,10 +210,11 @@ export function getGlobalPreloadCode() {
 			injects.clear();
 			injects = new Map();
 
-			const ui = urlInjects.get(url);
-			if (ui && ui.size) {
-				opts.res.setHeader('Link', Array.from(ui.values()).map(i => \`<\${i.url}>;rel=preload;as=\${i.type};crossorigin\`).join(', '));
-			}
+			// const ui = urlInjects.get(url);
+			// if (ui && ui.size) {
+			// 	opts.res.setHeader('Link', Array.from(ui.values()).map(i => \`<\${i.url}>;rel=preload;as=\${i.type};crossorigin\`).join(', '));
+			// 	// opts.res.flush();
+			// }
 
 			// let preload = [...new Map(urlInjects.get(url)).values()].map(i => \`<\${i.url}>;rel=preload;as=\${i.type};crossorigin\`);
 			// let preload = [...new Map(urlInjects.get(url)).values()].filter(i=>i.type=='style').map(i => \`<\${i.url}>;rel=preload;as=\${i.type};crossorigin\`);
@@ -240,31 +246,41 @@ export function getGlobalPreloadCode() {
 			}
 
 			const resources = [...injects.values()];
+			const ui = urlInjects.get(url);
+			const resourceUrls = resources.map(r => r.url);
+			if (ui) for (const m of ui.values()) {
+				if (!resourceUrls.includes(m.url)) {
+					resources.push(m);
+					// console.log('injected script: ', m.url);
+				}
+			}
 			injects.clear();
-			const before = resources.map(r => r.url);
+			// const before = resources.map(r => r.url);
 
 			expandModuleGraph(resources, globalThis._GRAPH);
 
-			console.log('  ' + resources.map(x => x.type + ' : ' + x.url + (before.includes(x.url)?'':' (inferred from dep graph)')).join('\\n  '));
+			// console.log('  ' + resources.map(x => x.type + ' : ' + x.url + (before.includes(x.url)?'':' (inferred from dep graph)')).join('\\n  '));
 
 			const styles = resources.filter(s => s.type === 'style');
 			const scripts = resources.filter(s => s.type === 'script');
 			let head = '';
 			let body = '';
 			for (const style of styles) {
-				head += \`<link rel="stylesheet" href="\${style.url}" data-id="\${style.id}">\`;
+				head += \`<link rel="stylesheet" href="\${style.url}">\`;
 			}
-			//process.send([-1, 'setHeader', requestId, 'Link', scripts.map(script => \`<\${script.url}>;rel=preload;as=script;crossorigin\`).join(', ')]);
-			// for (const script of scripts) {
-			// 	head += \`<link rel="preload" as="script" href="\${script.url}" crossorigin>\`;
-			// 	body += \`<script type="module" src="\${script.url}"></script>\`;
-			// }
+			// res.setHeader('Link', scripts.map(script => \`<\${script.url}>;rel=preload;as=script;crossorigin\`).join(', '));
+
+			for (const script of scripts) {
+				// head += \`<link rel="preload" as="script" href="\${script.url}" crossorigin>\`;
+				body += \`<script type="module" src="\${script.url}"></script>\`;
+			}
+
 			if (/<\\/head>/i.test(result)) result = result.replace(/(<\\/head>)/i, head + '$1');
 			else result = head + result;
 			if (/<\\/body>/i.test(result)) result = result.replace(/(<\\/body>)/i, body + '$1');
 			else result += body;
 
-			result = result.replace(/<script type="module"/g, '<script type="not-module"');
+			// result = result.replace(/<script type="module"/g, '<script type="not-module"');
 			return result;
 		}
 		globalThis.wmrssr = {
@@ -280,6 +296,7 @@ export function getGlobalPreloadCode() {
 				if (has(method, 'ssr')) prepare(args[0]);
 			},
 			commitSync(method, args, result) {
+				// for (const item of globalThis._GRAPH.values()) 	item.completed = true;
 			},
 			after(method, args, result) {
 				if (has(method, 'ssr')) {
@@ -295,13 +312,53 @@ const isBuiltIn = specifier =>
 	specifier.startsWith('node:') || specifier.startsWith('nodejs:') || builtinModules.includes(specifier);
 
 // Node 15 switched from `nodejs:fs` to `node:fs` as a scheme for for built-in modules, so we detect it.
+// @ts-ignore-next
 const prefix = import('node:fs')
 	.then(() => 'node:')
 	.catch(() => 'nodejs:');
 
 const GRAPH = new Map();
 // gross: expose module graph data for use in the injected preload script
-global._GRAPH = GRAPH;
+globalThis._GRAPH = GRAPH;
+GRAPH.getModule = function (url, type) {
+	let mod = GRAPH.get(url);
+	if (mod) return mod;
+	mod = {
+		type: type || 'script',
+		url,
+		imports: [],
+		dynamicImports: [],
+		completed: false
+	};
+	GRAPH.set(url, mod);
+	return mod;
+};
+GRAPH.addDependency = function (url, type, importer) {
+	GRAPH.getModule(url, type);
+	const parent = GRAPH.getModule(importer);
+	// if (!parent.completed && parent.imports.length) {
+	// 	// if (parent.imports.find(countDeps)) {
+	// 	if (parent.imports.filter(countDeps).length === parent.imports.length) {
+	// 		console.log(
+	// 			'marking ' +
+	// 				importer +
+	// 				' as completed because all ' +
+	// 				parent.imports.length +
+	// 				' of its children has dependencies'
+	// 		);
+	// 		parent.completed = true;
+	// 	}
+	// }
+	const group = parent.completed ? parent.dynamicImports : parent.imports;
+	if (!group.includes(url)) {
+		// console.log(url, parent.completed ? 'lazy' : 'static');
+		group.push(url);
+	}
+};
+// function countDeps(url) {
+// 	const m = GRAPH.get(url);
+// 	return m && m.imports.length;
+// }
 
 let first = true;
 export async function resolve(specifier, context, defaultResolve) {
@@ -333,9 +390,27 @@ export async function resolve(specifier, context, defaultResolve) {
 	}
 
 	// build up module graph
-	const isDynamicImport = globalThis.wmrssr._committed;
+	// const isDynamicImport = globalThis.wmrssr._committed;
 	let p = context.parentURL || baseURL;
 	if (p.startsWith(baseURL)) p = p.slice(baseURL.length);
+
+	// console.log(relativeUrl, { ...context });
+
+	// const parent = GRAPH.getModule(p, 'script');
+	// if (!parent.completed) {
+	// 	const childHasDeps = parent.imports.find(imp => {
+	// 		const m = GRAPH.get(imp);
+	// 		return m && m.imports.length;
+	// 	});
+	// 	if (childHasDeps) {
+	// 		console.log('marking ' + p + ' as completed because one of its children has dependencies');
+	// 		parent.completed = true;
+	// 	}
+	// }
+
+	GRAPH.addDependency(relativeUrl, 'script', p);
+
+	/*
 	if (isDynamicImport) {
 		console.log('dynamic import(): ', relativeUrl, p);
 	}
@@ -345,8 +420,9 @@ export async function resolve(specifier, context, defaultResolve) {
 	let self = GRAPH.get(relativeUrl);
 	if (!self) GRAPH.set(relativeUrl, { type: 'script', url: relativeUrl, imports: [], dynamicImports: [] });
 	// self[isDynamicImport ? 'imports' : 'dynamicImports'].push(url);
+	*/
 
-	console.log('RESOLVE', specifier, p);
+	// console.log('RESOLVE', specifier, p);
 	const res = await fetch(url);
 	const resolvedUrl = res.url || url;
 	// console.log('RESOLVE: ', specifier, resolvedUrl.replace(baseURL, ''), context);
@@ -382,6 +458,15 @@ export async function getSource(url, context, defaultGetSource) {
 
 	// console.log('GET SOURCE', url);
 	const spec = url.replace(baseURL, '');
+
+	for (const m of GRAPH.values()) {
+		if (m.imports.includes(spec)) {
+			m.completed = true;
+			// console.log(`Marking ${m.url.replace(baseURL, '')} as complete because a child is being loaded`);
+			// break;
+		}
+	}
+
 	// const res = await fetch(url);
 	const res = CACHE.get(url) || (await fetch(url));
 	let source = await res.text();
@@ -394,12 +479,15 @@ export async function getSource(url, context, defaultGetSource) {
 				const index = line.indexOf(${JSON.stringify(baseURL)});
 				if (index !== -1) {
 					const p = line.substring(index + ${baseURL.length}).replace(/\\:\\d+\\:\\d+$/g, '');
+					globalThis._GRAPH.addDependency(url, 'style', p);
+					/*
 					let parent = globalThis._GRAPH.get(p);
 					if (!parent) globalThis._GRAPH.set(p, (parent = { type: 'script', url: p, imports: [], dynamicImports: [] }));
 					parent.imports.push(url);
 					if (!globalThis._GRAPH.get(url)) {
-						globalThis._GRAPH.set(url, { type: 'style', imports: [], dynamicImports: [] });
+						globalThis._GRAPH.set(url, { type: 'style', url, imports: [], dynamicImports: [] });
 					}
+					*/
 				}
 				globalThis.wmrssr.collect('style', url, id);
 			};
@@ -431,11 +519,11 @@ export async function getSource(url, context, defaultGetSource) {
 						}
 					}
 					await globalThis.wmrssr.before(method, args);
+					globalThis.wmrssr.commitSync(method, args);
 					const result = [id, '', null];
 					try {
 						// process.send([id, '$resolve$', await fn(...args)]);
 						const r = fn(...args);
-						globalThis.wmrssr.commitSync(method, args, result);
 						result[2] = await r;
 						result[1] = '$resolve$';
 					} catch (e) {
