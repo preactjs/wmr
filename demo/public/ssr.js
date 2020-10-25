@@ -20,7 +20,6 @@ async function prepass(vnode, maxDepth = 20, maxTime = 5000) {
 export async function ssr({ url }) {
 	const { App } = await import('./index.tsx');
 	let body = await prepass(<App />, 20, 5000);
-	// const u = new URL(url, location.href).href;
 	try {
 		const html = await fs.readFile('./public/index.html', 'utf-8');
 		// body = html.replace(/(<div id="app_root">)<\/div>/, '$1' + body + '</div>');
@@ -32,6 +31,7 @@ export async function ssr({ url }) {
 	} catch (e) {
 		console.warn('Failed to load HTML template: ', e);
 	}
+	// await new Promise(f => setTimeout(f, 4000));
 	return body;
 	// let attempts = 0;
 	// const start = Date.now();

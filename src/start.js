@@ -4,7 +4,7 @@ import { getFreePort, getServerAddresses } from './lib/net-utils.js';
 import { normalizeOptions } from './lib/normalize-options.js';
 import { setCwd } from './plugins/npm-plugin/registry.js';
 import * as kl from 'kolorist';
-import ssrMiddleware from './lib/ssr-middleware.js';
+// import ssrMiddleware from './lib/ssr-middleware.js';
 
 /**
  * @typedef OtherOptions
@@ -25,17 +25,16 @@ export default async function start(options = {}) {
 	options.port = await getFreePort(options.port || process.env.PORT || 8080);
 	options.host = options.host || process.env.HOST;
 
-	options.middleware = [
+	options.middleware = [].concat(
+		// @ts-ignore-next
+		options.middleware || [],
+
 		wmrMiddleware({
 			...options,
 			onError: sendError,
 			onChange: sendChanges
 		})
-	];
-
-	if (options.ssr) {
-		options.middleware.unshift(ssrMiddleware(options));
-	}
+	);
 
 	// eslint-disable-next-line
 	function sendError(err) {
