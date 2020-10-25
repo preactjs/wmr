@@ -22,12 +22,3 @@ export class ErrorBoundary extends Component {
 		return props.children;
 	}
 }
-
-// export function ErrorBoundary(props) {
-// 	this.componentDidCatch = absorb;
-// 	return props.children;
-// }
-// function absorb(e) {
-// 	console.log('did catch ', e);
-// 	if (e && e.then) this.__d = true;
-// }
