@@ -1,7 +1,6 @@
 import parse from './cjs-module-lexer.js';
 
 const CJS_KEYWORDS = /\b(module\.exports|exports)\b/;
-
 const ESM_KEYWORDS = /(\bimport\s*(\{|\s['"\w_$])|[\s;]export(\s+(default|const|var|let)[^\w$]|\s*\{))/;
 
 /** @template T @typedef {Promise<T>|T} MaybePromise */
@@ -19,20 +18,16 @@ export async function transformRequires(code, id) {
 	const hasEsmKeywords = ESM_KEYWORDS.test(code);
 	if (!hasCjsKeywords || hasEsmKeywords) return code;
 
-	const { requires, exports, reexports } = await parse(code, id);
-	let out = code;
-
-	console.log('transforming', exports, reexports, requires);
+	const { requires, exports } = await parse(code, id);
 
 	for (const item of requires) {
 		const spec = code.substr(item.s, item.e - 2);
-		code = code.replace('require(' + spec + ')', 'from ' + spec);
-		// TODO: figure out how to get the imported token.
+		code = code.replace("require('" + spec + "')", "from '" + spec + "'");
+		// TODO: get the imported token which should go from <variableDeclarator> token --> import token
 	}
 
 	for (const item of exports) {
-		// TODO: this is just the exported name, how will we use this to transform anything without doing a textual lookup...
-		console.log('export', item);
+		code = code.replace(`exports.${item} =`, `export const ${item} =`);
 	}
 
 	// TODO: this is not picked up by cjs-module-lexer
@@ -40,5 +35,5 @@ export async function transformRequires(code, id) {
 		code = code.replace('module.exports =', 'export default');
 	}
 
-	return out;
+	return code;
 }
