@@ -43,7 +43,7 @@ prog.parse(process.argv);
 
 function run(p) {
 	p.catch(err => {
-		const text = (process.env.DEBUG ? err.stack : err.message) || err + '';
+		const text = err.stack;
 		process.stderr.write(`${kl.red(text)}\n`);
 		process.exit(p.code || 1);
 	});

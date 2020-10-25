@@ -1,5 +1,9 @@
 import parse from './cjs-module-lexer.js';
 
+const CJS_KEYWORDS = /\b(module\.exports|exports)\b/;
+
+const ESM_KEYWORDS = /(\bimport\s*(\{|\s['"\w_$])|[\s;]export(\s+(default|const|var|let)[^\w$]|\s*\{))/;
+
 /** @template T @typedef {Promise<T>|T} MaybePromise */
 
 /** @typedef {(specifier: string, id?: string) => MaybePromise<string|false|null|void>} ResolveFn */
@@ -7,47 +11,34 @@ import parse from './cjs-module-lexer.js';
 /**
  * @param {string} code Module code
  * @param {string} id Source module specifier
- * @param {object} [options]
- * @param {ResolveFn?} [options.resolveId] Return a replacement for require specifiers
  */
-export async function transformRequires(code, id, { resolveId } = {}) {
-	const { requires } = await parse(code, id);
-	let out = '';
+export async function transformRequires(code, id) {
+	if (!['js', 'cjs'].some(ext => id.endsWith(ext))) return code;
 
-	let resolveIds = 0;
-	const toResolve = new Map();
+	const hasCjsKeywords = CJS_KEYWORDS.test(code);
+	const hasEsmKeywords = ESM_KEYWORDS.test(code);
+	if (!hasCjsKeywords || hasEsmKeywords) return code;
 
-	const field = (spec, resolver, a, b) => {
-		const match = toResolve.get(spec);
-		if (match) return match.placeholder;
-		const placeholder = `%%_RESOLVE_#${++resolveIds}#_%%`;
-		toResolve.set(spec, {
-			placeholder,
-			spec,
-			p: resolver(a, b)
-		});
-		return placeholder;
-	};
+	const { requires, exports, reexports } = await parse(code, id);
+	let out = code;
+
+	console.log('transforming', exports, reexports, requires);
 
 	for (const item of requires) {
-		// TODO: go over every item and resolve it through rollup
-		let spec = code.substring(item.s, item.e);
-		if (resolveId) {
-			spec = field(spec, resolveId, spec, id);
-		}
-
-		out += spec;
+		const spec = code.substr(item.s, item.e - 2);
+		code = code.replace('require(' + spec + ')', 'from ' + spec);
+		// TODO: figure out how to get the imported token.
 	}
 
-	// Wait for all resolutions to finish and map them to placeholders
-	const mapping = new Map();
-	await Promise.all(
-		Array.from(toResolve.values()).map(async v => {
-			mapping.set(v.placeholder, (await v.p) || v.spec);
-		})
-	);
+	for (const item of exports) {
+		// TODO: this is just the exported name, how will we use this to transform anything without doing a textual lookup...
+		console.log('export', item);
+	}
 
-	out = out.replace(/%%_RESOLVE_#\d+#_%%/g, s => mapping.get(s));
+	// TODO: this is not picked up by cjs-module-lexer
+	if (code.includes('module.exports =')) {
+		code = code.replace('module.exports =', 'export default');
+	}
 
 	return out;
 }

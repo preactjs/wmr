@@ -16,7 +16,6 @@ import aliasesPlugin from './plugins/aliases-plugin.js';
 import processGlobalPlugin from './plugins/process-global-plugin.js';
 import urlPlugin from './plugins/url-plugin.js';
 import resolveExtensionsPlugin from './plugins/resolve-extensions-plugin.js';
-import fastCjsPlugin from './plugins/fast-cjs-plugin.js';
 import bundlePlugin from './plugins/bundle-plugin.js';
 import jsonPlugin from './plugins/json-plugin.js';
 
@@ -96,10 +95,6 @@ export async function bundleProd({
 			resolveExtensionsPlugin({
 				typescript: true,
 				index: true
-			}),
-			fastCjsPlugin({
-				// Only transpile CommonJS in node_modules and explicit .cjs files:
-				include: /(?:^[\b]npm\/|[/\\]node_modules[/\\]|\.cjs$)/
 			}),
 			json(),
 			npmPlugin({ external: false }),

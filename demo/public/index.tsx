@@ -1,3 +1,4 @@
+import test, { Test } from './cjs';
 import { h, render } from 'preact';
 import { Loc, Router } from './loc.js';
 import lazy from './lazy.js';
@@ -14,6 +15,7 @@ const Files = lazy(() => import('./pages/files/index.js'));
 const Environment = lazy(async () => (await import('./pages/environment/index.js')).Environment);
 
 export function App() {
+	console.log(test, Test);
 	return (
 		<Loc>
 			<div class="app">

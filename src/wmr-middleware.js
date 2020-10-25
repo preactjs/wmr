@@ -7,13 +7,13 @@ import wmrPlugin, { getWmrClient } from './plugins/wmr/plugin.js';
 import wmrStylesPlugin, { modularizeCss, processSass } from './plugins/wmr/styles-plugin.js';
 import { createPluginContainer } from './lib/rollup-plugin-container.js';
 import { transformImports } from './lib/transform-imports.js';
+import { transformRequires } from './lib/transform-requires.js';
 import aliasesPlugin from './plugins/aliases-plugin.js';
 import urlPlugin from './plugins/url-plugin.js';
 import { normalizeSpecifier } from './plugins/npm-plugin/index.js';
 import sassPlugin from './plugins/sass-plugin.js';
 import processGlobalPlugin from './plugins/process-global-plugin.js';
 import { getMimeType } from './lib/mimetypes.js';
-import fastCjsPlugin from './plugins/fast-cjs-plugin.js';
 import resolveExtensionsPlugin from './plugins/resolve-extensions-plugin.js';
 import bundlePlugin from './plugins/bundle-plugin.js';
 import nodeBuiltinsPlugin from './plugins/node-builtins-plugin.js';
@@ -71,10 +71,6 @@ export default function wmrMiddleware({
 			sassPlugin(),
 			htmPlugin({ production: false }),
 			wmrPlugin({ hot: true }),
-			fastCjsPlugin({
-				// Only transpile CommonJS in node_modules and explicit .cjs files:
-				include: /(?:[/\\]node_modules[/\\]|\.cjs$)/
-			}),
 			resolveExtensionsPlugin({
 				typescript: true,
 				index: true
@@ -277,6 +273,8 @@ export const TRANSFORMS = {
 		}
 
 		code = await NonRollup.transform(code, id);
+
+		code = await transformRequires(code, id);
 
 		code = await transformImports(code, id, {
 			resolveImportMeta(property) {
