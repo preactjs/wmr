@@ -19,22 +19,29 @@ export function App() {
 			<div class="app">
 				<Header />
 				<ErrorBoundary>
-				<Router>
-					<Home path="/" />
-					<About path="/about" />
-					<CompatPage path="/compat" />
-					<ClassFields path="/class-fields" />
-					<Files path="/files" />
-					<Environment path="/env" />
-					<NotFound default />
-				</Router>
+					<Router>
+						<Home path="/" />
+						<About path="/about" />
+						<CompatPage path="/compat" />
+						<ClassFields path="/class-fields" />
+						<Files path="/files" />
+						<Environment path="/env" />
+						<NotFound default />
+					</Router>
 				</ErrorBoundary>
 			</div>
 		</Loc>
 	);
 }
 
-render(<App />, document.body);
+if (typeof window !== 'undefined') {
+	render(<App />, document.body);
+}
+
+export async function prerender(data) {
+	const { prerender } = await import('./lib/prerender.js');
+	return await prerender(<App {...data} />);
+}
 
 // @ts-ignore
 if (module.hot) module.hot.accept(u => render(<u.module.App />, document.body));
