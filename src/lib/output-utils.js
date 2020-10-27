@@ -1,3 +1,5 @@
+import * as kl from 'kolorist';
+
 /** @param {import('rollup').RollupOutput} bundle */
 export function bundleStats(bundle) {
 	let total = 0;
@@ -9,7 +11,12 @@ export function bundleStats(bundle) {
 		const content = output.type === 'asset' ? output.source : output.code;
 		const size = content.length;
 		total += content.length;
-		return `${str}\n  ${output.fileName} ${prettyBytes(size)}`;
+		let sizeText = prettyBytes(size);
+		if (size > 50e3) sizeText = kl.lightRed(sizeText);
+		else if (size > 10e3) sizeText = kl.lightYellow(sizeText);
+		else if (size > 5e3) sizeText = kl.lightBlue(sizeText);
+		else sizeText = kl.lightGreen(sizeText);
+		return `${str}\n  ${output.fileName} ${sizeText}`;
 	}, '');
 
 	const totalText = prettyBytes(total);
@@ -40,5 +47,5 @@ export function prettyBytes(size) {
 		size /= 1000;
 		unit = 'Mb';
 	}
-	return `${size < 1 ? size.toFixed(2) : size < 10 ? size.toFixed(1) : size}${unit}`;
+	return `${size < 1 ? size.toFixed(2) : size < 10 ? size.toFixed(1) : size | 0}${unit}`;
 }

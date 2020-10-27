@@ -1,3 +1,4 @@
+import * as kl from 'kolorist';
 import { bundleProd } from './bundler.js';
 import { bundleStats } from './lib/output-utils.js';
 import { normalizeOptions } from './lib/normalize-options.js';
@@ -17,5 +18,6 @@ export default async function build(options = {}) {
 	const bundleOutput = await bundleProd(options);
 
 	const stats = bundleStats(bundleOutput);
+	process.stdout.write(kl.bold(`Wrote ${stats.totalText} to disk:`) + stats.assetsText + '\n');
 	console.log(`Wrote ${stats.totalText} to disk:${stats.assetsText}`);
 }
