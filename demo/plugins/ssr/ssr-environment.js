@@ -103,10 +103,10 @@ function finish({ url, res }, result) {
 	}
 	res.setHeader('Link', scripts.map(script => `<${script.url}>;rel=preload;as=script;crossorigin`).join(', '));
 
-	for (const script of scripts) {
-		// head += `<link rel="preload" as="script" href="${script.url}" crossorigin>`;
-		body += `<script type="module" src="${script.url}"></script>`;
-	}
+	// for (const script of scripts) {
+	// 	// head += `<link rel="preload" as="script" href="${script.url}" crossorigin>`;
+	// 	body += `<script type="module" src="${script.url}"></script>`;
+	// }
 
 	if (/<\/head>/i.test(result)) result = result.replace(/(<\/head>)/i, head + '$1');
 	else result = head + result;
