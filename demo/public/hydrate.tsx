@@ -1,13 +1,30 @@
-import { hydrate as preactHydrate } from 'preact';
+import { h, hydrate as preactHydrate } from 'preact';
 
-export function hydrate(targetSelector, Component) {
-	Array.from(document.querySelectorAll(targetSelector)).forEach(el => {
-		const dataEl = document.querySelector(
-			`script[type="application/hydration-data"][data-hydration-data-id="${el.dataset.hydrationDataId}"]`
-		) as HTMLScriptElement | undefined;
+export function hydrate(components: Record<string, any>) {
+	Array.from(document.querySelectorAll('script[type="application/hydrate"]')).forEach((startEl: HTMLElement) => {
+		const props = JSON.parse(startEl.innerHTML);
+		const endEl = document.querySelector(
+			'script[type="application/hydrate-end"][data-hydration-instance-id="' + startEl.dataset.hydrationInstanceId + '"]'
+		);
 
-		const props = (dataEl && JSON.parse(dataEl.innerHTML)) ?? {};
+		if (!endEl) {
+			return;
+		}
 
-		preactHydrate(<Component {...props} />, el);
+		const childNodes: ChildNode[] = [];
+		let currentNode = startEl.nextSibling;
+		while (currentNode != null && currentNode !== endEl) {
+			childNodes.push(currentNode);
+			currentNode = currentNode.nextSibling;
+		}
+
+		preactHydrate(h(components[startEl.dataset.hydrationComponentId!], props), {
+			// @ts-expect-error
+			childNodes,
+			// @ts-expect-error
+			appendChild: function (c) {
+				startEl.parentNode?.insertBefore?.(c, endEl);
+			}
+		});
 	});
 }

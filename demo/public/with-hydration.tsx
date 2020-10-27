@@ -1,14 +1,18 @@
 import { h, createContext } from 'preact';
 import { useContext, useMemo } from 'preact/hooks';
 
+let id = 0;
+function uuid() {
+	return String(id++);
+}
+
 interface ComponentRegistration {
 	script: string;
 	specifier: string;
-	targetSelector: string;
+	componentId: string;
 }
 
 let hydrationComponentIdCounter = 0;
-let hydrationDataIdCounter = 0;
 
 interface HydrationContext {
 	registerComponent(component: ComponentRegistration): void;
@@ -21,7 +25,7 @@ export function HydrationContextProvider({ req, children }) {
 
 		return {
 			registerComponent(comp: ComponentRegistration) {
-				if (components.find(c => c.targetSelector === comp.targetSelector)) {
+				if (components.find(c => c.componentId === comp.componentId)) {
 					return;
 				}
 
@@ -56,21 +60,21 @@ export function withHydration({ specifier, importUrl }: { specifier: string; imp
 			ctx?.registerComponent?.({
 				script: importUrl.replace('http://0.0.0.0:8080', ''),
 				specifier,
-				targetSelector: `[data-hydration-component-id="${componentId}"]`
+				componentId
 			});
 
-			const dataId = String(hydrationDataIdCounter++);
+			const instanceId = uuid();
 
 			return (
 				<>
-					<div data-hydration-component-id={componentId} data-hydration-data-id={dataId}>
-						<Component {...props} />
-					</div>
 					<script
-						type="application/hydration-data"
-						data-hydration-data-id={dataId}
+						type="application/hydrate"
+						data-hydration-component-id={componentId}
+						data-hydration-instance-id={instanceId}
 						dangerouslySetInnerHTML={{ __html: JSON.stringify(props) }}
 					/>
+					<Component {...props} />
+					<script type="application/hydrate-end" data-hydration-instance-id={instanceId} />
 				</>
 			);
 		};
