@@ -9,16 +9,14 @@ const UPDATE = (state, url, push) => {
 		push = true;
 		url = link.href.replace(location.origin, '');
 	} else if (typeof url !== 'string') url = location.pathname + location.search;
-	if (push === true) history.pushState(null, null, url);
-	else if (push === false) history.replaceState(null, null, url);
+	if (push === true) history.pushState(null, '', url);
+	else if (push === false) history.replaceState(null, '', url);
 	return url;
 };
 
 export function Loc(props) {
 	const [url, route] = useReducer(UPDATE, location.pathname + location.search);
 	const value = useMemo(() => {
-		// const [, path, query] = url.match(/^([^?]+?)(\?.*)$/);
-		// return { url, path, query: Object.fromEntries(new URLSearchParams(query)), route };
 		const u = new URL(url, location.origin);
 		return { url, path: u.pathname, query: Object.fromEntries(u.searchParams), route };
 	}, [url]);
@@ -33,7 +31,7 @@ export function Loc(props) {
 	return h(Loc.ctx.Provider, { value }, props.children);
 }
 
-export const Router = (Loc.Router = function (props) {
+export function Router(props) {
 	const [, update] = useReducer(c => c + 1, 0);
 	const loc = useLoc();
 	const { url, path, query } = loc;
@@ -69,8 +67,10 @@ export const Router = (Loc.Router = function (props) {
 	if (a.length == 0) a = children.filter(c => c.props.default);
 	curChildren.current = a.map((p, i) => cloneElement(p, { path, query }));
 	return curChildren.current.concat(prevChildren.current || []);
-});
+}
 
-Loc.ctx = createContext();
+Loc.Router = Router;
+
+Loc.ctx = createContext(/** @type {{ url: string, path: string, query: object, route }} */ ({}));
 
 export const useLoc = () => useContext(Loc.ctx);
