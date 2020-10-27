@@ -1,7 +1,5 @@
 import { h, createContext, cloneElement } from 'preact';
-import { useContext, useMemo, useReducer, useEffect } from 'preact/hooks';
-
-// console.log('hello 6');
+import { useContext, useMemo, useReducer, useEffect, useRef } from 'preact/hooks';
 
 const UPDATE = (state, url, push) => {
 	if (url && url.type === 'click') {
@@ -35,13 +33,42 @@ export function Loc(props) {
 	return h(Loc.ctx.Provider, { value }, props.children);
 }
 
-export const Router = (Loc.Router = props => {
-	const { path, query } = useLoc();
+export const Router = (Loc.Router = function (props) {
+	const [, update] = useReducer(c => c + 1, 0);
+	const loc = useLoc();
+	const { url, path, query } = loc;
+	const cur = useRef(loc);
+	const prev = useRef();
+	const curChildren = useRef();
+	const prevChildren = useRef();
+	const pending = useRef();
+	if (url !== cur.current.url) {
+		pending.current = null;
+		prev.current = cur.current;
+		prevChildren.current = curChildren.current;
+		cur.current = loc;
+	}
+	this.componentDidCatch = err => {
+		if (err && err.then) pending.current = err;
+	};
+	useEffect(() => {
+		let p = pending.current;
+		const commit = () => {
+			if (cur.current.url !== url || pending.current !== p) return;
+			if (props.onLoadEnd) props.onLoadEnd(url);
+			prev.current = prevChildren.current = null;
+			update(0);
+		};
+		if (p) {
+			if (props.onLoadStart) props.onLoadStart(url);
+			p.then(commit);
+		} else commit();
+	}, [url]);
 	const children = [].concat(...props.children);
 	let a = children.filter(c => c.props.path === path);
 	if (a.length == 0) a = children.filter(c => c.props.default);
-	// @TODO: this is probably unnecessary, since anyone can just use `useLoc().query`?
-	return a.map(p => cloneElement(p, { path, query }));
+	curChildren.current = a.map((p, i) => cloneElement(p, { path, query }));
+	return curChildren.current.concat(prevChildren.current || []);
 });
 
 Loc.ctx = createContext();

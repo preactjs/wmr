@@ -8,6 +8,16 @@ export default function lazy(load) {
 		const [, update] = useState(0);
 		const r = useRef(c);
 		if (!r.current) r.current = p.then(update);
+		if (c === undefined) throw p;
 		return h(c, props);
 	};
+}
+
+export function ErrorBoundary(props) {
+	this.componentDidCatch = absorb;
+	return props.children;
+}
+function absorb(err) {
+	if (err && err.then) this.__d = true;
+	else if (this.props.onError) this.props.onError(err);
 }

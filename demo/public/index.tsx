@@ -1,6 +1,6 @@
 import { h, render } from 'preact';
-import { Loc, Router } from './loc.js';
-import lazy from './lazy.js';
+import { Loc, Router } from './lib/loc.js';
+import lazy, { ErrorBoundary } from './lib/lazy.js';
 import Home from './pages/home.js';
 // import About from './pages/about/index.js';
 import NotFound from './pages/_404.js';
@@ -18,6 +18,7 @@ export function App() {
 		<Loc>
 			<div class="app">
 				<Header />
+				<ErrorBoundary>
 				<Router>
 					<Home path="/" />
 					<About path="/about" />
@@ -27,6 +28,7 @@ export function App() {
 					<Environment path="/env" />
 					<NotFound default />
 				</Router>
+				</ErrorBoundary>
 			</div>
 		</Loc>
 	);
