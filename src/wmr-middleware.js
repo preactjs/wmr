@@ -432,10 +432,13 @@ export const TRANSFORMS = {
 			const fallback = resolve(ctx.cwd, '200.html');
 			let use200 = false;
 			try {
-				use200 = (await fs.lstat(ctx.file)).isDirectory() && (await fs.lstat(fallback));
+				const hasFile = await fs.lstat(ctx.file).catch(() => false);
+				use200 = !hasFile && !!(await fs.lstat(fallback));
 			} catch (e) {}
 			if (use200) {
 				ctx.file = fallback;
+				const mime = getMimeType(ctx.file) || 'text/html;charset=utf-8';
+				ctx.res.setHeader('Content-Type', mime);
 				return TRANSFORMS.asset(ctx);
 			}
 		}
