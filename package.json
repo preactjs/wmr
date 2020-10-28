@@ -5,7 +5,8 @@
 	"type": "module",
 	"scripts": {
 		"demo": "cd demo && node --experimental-modules ../src/cli.js 2>&1",
-		"demo:prod": "cd demo && node --experimental-modules ../src/cli.js build 2>&1",
+		"demo:prod": "cd demo && node --experimental-modules ../src/cli.js build --prerender 2>&1",
+		"demo:serve": "cd demo && node --experimental-modules ../src/cli.js serve --http2",
 		"dev": "PROFILE=true nodemon -w src --exec \"npm run -s demo\"",
 		"build": "rollup -c",
 		"ci": "npm run build && cd demo && node ../wmr.cjs build",
