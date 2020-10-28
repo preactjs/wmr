@@ -426,7 +426,23 @@ export const TRANSFORMS = {
 	},
 
 	// Falls through to sirv
-	generic() {
+	async generic(ctx) {
+		// Serve ~/200.html fallback for requests with no extension
+		if (!/\.[a-z]+$/gi.test(ctx.path)) {
+			const fallback = resolve(ctx.cwd, '200.html');
+			let use200 = false;
+			try {
+				const hasFile = await fs.lstat(ctx.file).catch(() => false);
+				use200 = !hasFile && !!(await fs.lstat(fallback));
+			} catch (e) {}
+			if (use200) {
+				ctx.file = fallback;
+				const mime = getMimeType(ctx.file) || 'text/html;charset=utf-8';
+				ctx.res.setHeader('Content-Type', mime);
+				return TRANSFORMS.asset(ctx);
+			}
+		}
+
 		return false;
 		// return new Promise((resolve, reject) => {
 		// 	if (file.endsWith('/') || !file.match(/[^/]\.[a-z0-9]+$/gi)) {

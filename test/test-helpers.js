@@ -84,7 +84,8 @@ export async function runWmr(cwd, ...args) {
 		const raw = stripColors(buffer.toString('utf-8'));
 		const lines = raw.split('\n').filter(line => !/\(node:\d+\) ExperimentalWarning:/.test(line) && line);
 		out.output.push(...lines);
-		if (/\b([A-Z][a-z]+)?Error\b/m.test(raw)) {
+		// Bubble up errors, but not 404's
+		if (/\b([A-Z][a-z]+)?Error\b/m.test(raw) && !/^404 /.test(raw)) {
 			console.error(`Error running "wmr ${args.join(' ')}":\n${raw}`);
 		}
 		if (/^Listening/m.test(raw)) {

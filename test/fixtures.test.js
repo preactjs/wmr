@@ -61,6 +61,37 @@ describe('fixtures', () => {
 		});
 	});
 
+	describe('client-side routing fallbacks', () => {
+		it('should return index.html for missing navigate requests', async () => {
+			await loadFixture('index-fallback', env);
+			instance = await runWmrFast(env.tmp.path);
+
+			await getOutput(env, instance);
+			expect(await env.page.$eval('h1', el => el.textContent)).toBe('/');
+			expect(await env.page.title()).toBe('index.html');
+
+			await env.page.goto(`${await instance.address}/foo`, { waitUntil: 'networkidle0' });
+			expect(await env.page.$eval('h1', el => el.textContent)).toBe('/foo');
+			expect(await env.page.title()).toBe('index.html');
+
+			expect(await env.page.evaluate(async () => (await fetch('/foo.js')).status)).toBe(404);
+			expect(await env.page.evaluate(async () => await (await fetch('/foo.js')).text())).toMatch(/not found/i);
+		});
+
+		it('should use 200.html for fallback if present', async () => {
+			await loadFixture('200', env);
+			instance = await runWmrFast(env.tmp.path);
+
+			await getOutput(env, instance);
+			expect(await env.page.$eval('h1', el => el.textContent)).toBe('/');
+			expect(await env.page.title()).toBe('index.html');
+
+			await env.page.goto(`${await instance.address}/foo`, { waitUntil: 'networkidle0' });
+			expect(await env.page.$eval('h1', el => el.textContent)).toBe('/foo');
+			expect(await env.page.title()).toBe('200.html');
+		});
+	});
+
 	describe('url: import prefix', () => {
 		it('should return ?asset URLs in development', async () => {
 			await loadFixture('url-prefix', env);
