@@ -65,7 +65,17 @@ export default async function serve(options = {}) {
 			single: true,
 			etag: true,
 			brotli: false,
-			gzip: false
+			gzip: false,
+			setHeaders(res, pathname) {
+				// Ensure a UTF8 charset (because we set Nosniff)
+				const fn = res.setHeader;
+				res.setHeader = function (name, value) {
+					if (/^content-type$/i.test(name) && /text/i.test(value) && !/;\s*charset/i.test(value)) {
+						value += ';charset=utf-8';
+					}
+					return fn.call(this, name, value);
+				};
+			}
 		})
 	);
 
