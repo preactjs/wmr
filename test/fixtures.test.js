@@ -31,10 +31,25 @@ describe('fixtures', () => {
 		expect(await getOutput(env, instance)).toMatch(`class fields work`);
 	});
 
-	it.only('should not if sub-import is not in export map', async () => {
-		await loadFixture('package-export', env);
+	it('should not if sub-import is not in export map', async () => {
+		await loadFixture('empty', env);
 		instance = await runWmrFast(env.tmp.path);
-		expect(await getOutput(env, instance)).toMatch(`class fields work`);
+		await getOutput(env, instance);
+		expect(
+			await env.page.evaluate(async () => {
+				const res = await fetch('/@npm/@urql/core');
+				const body = await res.text();
+				return { status: res.status, body };
+			})
+		).toEqual({
+			status: 200,
+			body: expect.stringMatching(/createClient/)
+		});
+		// Note: we can't assert on the exported values here because they're just Puppeteer Handle objects.
+		expect(await env.page.evaluate(`import('/@npm/@urql/core')`)).toMatchObject({
+			createClient: expect.anything(),
+			Client: expect.anything()
+		});
 	});
 
 	describe('empty', () => {
