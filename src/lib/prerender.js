@@ -64,7 +64,9 @@ async function workerCode({ cwd, out }) {
 	// script = new URL(`../dist/${script.replace(/^(\.?\/)?/g, '')}`, selfUrl).href;
 	script = path.resolve(cwd, out, script.replace(/^(\.?\/)?/g, ''));
 
-	const m = await import(script);
+	// Prevent Rollup from transforming `import()` here.
+	const $import = new Function('s', 'return import(s)');
+	const m = await $import(script);
 	const doPrerender = m.prerender;
 	// const App = m.default || m[Object.keys(m)[0]];
 
