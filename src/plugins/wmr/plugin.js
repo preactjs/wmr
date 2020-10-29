@@ -79,6 +79,8 @@ export default function wmrPlugin({ hot = true } = {}) {
 
 			const s = new MagicString(code, {
 				filename: id,
+				// Typings from MagicString are wrong, see: https://github.com/Rich-Harris/magic-string/pull/182
+				// @ts-ignore
 				indentExclusionRanges: undefined
 			});
 			if (hot) {

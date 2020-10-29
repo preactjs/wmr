@@ -1,4 +1,4 @@
-import { useLoc } from './loc.js';
+import { useLoc } from './lib/loc.js';
 
 export default function Header() {
 	const { url }: { url: string } = useLoc();
@@ -10,6 +10,7 @@ export default function Header() {
 				<a href="/compat">Compat</a>
 				<a href="/class-fields">Class-Fields</a>
 				<a href="/files">Files</a>
+				<a href="/env">Env</a>
 				<a href="/error">Error</a>
 			</nav>
 			<label>

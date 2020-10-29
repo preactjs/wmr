@@ -13,11 +13,11 @@ export function processSass(sass) {
 /**
  * @param {string} css
  * @param {string} id cwd-relative path to the stylesheet, no leading `./`
- * @param {string[]?} [mappings] an array to populate with object property code
- * @param {string?} [idAbsolute] absolute filepath to the CSS file
+ * @param {string[]} [mappings] an array to populate with object property code
+ * @param {string} [idAbsolute] absolute filepath to the CSS file
  * @returns {Promise<string>}
  */
-export async function modularizeCss(css, id, mappings, idAbsolute) {
+export async function modularizeCss(css, id, mappings = [], idAbsolute) {
 	// normalize to posix id for consistent hashing
 	if (id.match(/^[^/]*\\/)) id = id.split(sep).join(posix.sep);
 

@@ -14,7 +14,7 @@ const transform = cjsDefault(sucrase).transform;
  * @param {boolean} [opts.production=false]
  */
 export default function sucrasePlugin(opts = {}) {
-	const include = [].concat(opts.include || []);
+	const include = /** @type {Array<string|RegExp>} */ ([]).concat(opts.include || []);
 	const allTransforms = [];
 	if (opts.typescript) allTransforms.push('typescript');
 

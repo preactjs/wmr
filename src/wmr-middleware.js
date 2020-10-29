@@ -34,6 +34,7 @@ const WRITE_CACHE = new Map();
  * @param {string} [options.distDir] if set, ignores watch events within this directory
  * @param {boolean} [options.sourcemap]
  * @param {Record<string, string>} [options.aliases]
+ * @param {Record<string, string>} [options.env]
  * @param {boolean} [options.profile] Enable bundler performance profiling
  * @param {(error: Error & { clientMessage?: string })=>void} [options.onError]
  * @param {(event: { changes: string[], duration: number })=>void} [options.onChange]
@@ -44,6 +45,7 @@ export default function wmrMiddleware({
 	root,
 	out = '.cache',
 	distDir = 'dist',
+	env = {},
 	aliases,
 	onError,
 	onChange
@@ -65,7 +67,7 @@ export default function wmrMiddleware({
 				sourcemap: false,
 				production: false
 			}),
-			processGlobalPlugin({ NODE_ENV: 'development' }),
+			processGlobalPlugin({ NODE_ENV: 'development', env }),
 			sassPlugin(),
 			htmPlugin({ production: false }),
 			wmrPlugin({ hot: true }),
@@ -289,7 +291,7 @@ export const TRANSFORMS = {
 				const resolved = await NonRollup.resolveId(spec, file);
 				if (resolved) {
 					spec = typeof resolved == 'object' ? resolved.id : resolved;
-					if (/^(\/|\\|[a-z]:\\)/i.test(spec[0])) {
+					if (/^(\/|\\|[a-z]:\\)/i.test(spec)) {
 						spec = relative(dirname(file), spec).split(sep).join(posix.sep);
 						if (!/^\.?\.?\//.test(spec)) {
 							spec = './' + spec;
@@ -424,7 +426,23 @@ export const TRANSFORMS = {
 	},
 
 	// Falls through to sirv
-	generic() {
+	async generic(ctx) {
+		// Serve ~/200.html fallback for requests with no extension
+		if (!/\.[a-z]+$/gi.test(ctx.path)) {
+			const fallback = resolve(ctx.cwd, '200.html');
+			let use200 = false;
+			try {
+				const hasFile = await fs.lstat(ctx.file).catch(() => false);
+				use200 = !hasFile && !!(await fs.lstat(fallback));
+			} catch (e) {}
+			if (use200) {
+				ctx.file = fallback;
+				const mime = getMimeType(ctx.file) || 'text/html;charset=utf-8';
+				ctx.res.setHeader('Content-Type', mime);
+				return TRANSFORMS.asset(ctx);
+			}
+		}
+
 		return false;
 		// return new Promise((resolve, reject) => {
 		// 	if (file.endsWith('/') || !file.match(/[^/]\.[a-z0-9]+$/gi)) {

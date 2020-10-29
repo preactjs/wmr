@@ -7,6 +7,12 @@ import { get as httpGet } from 'http';
 import polka from 'polka';
 import sirv from 'sirv';
 
+export function dent(str) {
+	str = String(str);
+	const leading = str.match(/^\n+([\t ]+)/)[1];
+	return str.replace(new RegExp('^' + leading, 'gm'), '').trim();
+}
+
 const ncp = promisify(ncpCb);
 
 export function serveStatic(dir) {
@@ -55,7 +61,7 @@ export async function runWmr(cwd, ...args) {
 	let opts = {};
 	const lastArg = args[args.length - 1];
 	if (lastArg && typeof lastArg === 'object') {
-		opts = args.pop();
+		opts = args.pop() || opts;
 	}
 	const bin = path.join(__dirname, '..', 'src', 'cli.js');
 	const child = childProcess.spawn('node', ['--experimental-modules', bin, ...args], {
@@ -64,23 +70,22 @@ export async function runWmr(cwd, ...args) {
 		env: {
 			...process.env,
 			DEBUG: 'true',
+			PORT: '0',
 			...(opts.env || {})
 		}
 	});
 
-	const out = {
-		output: [],
-		code: 0,
-		address: null,
-		done: null,
-		close: () => child.kill()
-	};
+	const out = {};
+	out.output = [];
+	out.code = 0;
+	out.close = () => child.kill();
 
 	function onOutput(buffer) {
 		const raw = stripColors(buffer.toString('utf-8'));
 		const lines = raw.split('\n').filter(line => !/\(node:\d+\) ExperimentalWarning:/.test(line) && line);
 		out.output.push(...lines);
-		if (/\b([A-Z][a-z]+)?Error\b/m.test(raw)) {
+		// Bubble up errors, but not 404's
+		if (/\b([A-Z][a-z]+)?Error\b/m.test(raw) && !/^404 /.test(raw)) {
 			console.error(`Error running "wmr ${args.join(' ')}":\n${raw}`);
 		}
 		if (/^Listening/m.test(raw)) {
@@ -174,6 +179,11 @@ export async function waitForMessage(haystack, message, timeout = 5000) {
 	}
 }
 
+/**
+ * @param {WmrInstance} instance
+ * @param {string} urlPath
+ * @returns {Promise<{status?: number, body: string, res: import('http').IncomingMessage }>}
+ */
 export async function get(instance, urlPath) {
 	const addr = await instance.address;
 	return new Promise((resolve, reject) => {
@@ -184,7 +194,7 @@ export async function get(instance, urlPath) {
 				body += chunk;
 			});
 			res.once('end', () => {
-				if (res.statusCode >= 400) {
+				if (!res.statusCode || res.statusCode >= 400) {
 					const err = Object.assign(Error(`${res.statusCode} ${res.statusMessage}: ${urlPath}\n${body}`), {
 						code: res.statusCode,
 						body,
