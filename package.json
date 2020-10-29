@@ -9,7 +9,7 @@
 		"demo:serve": "cd demo && node --experimental-modules ../src/cli.js serve --http2",
 		"dev": "PROFILE=true nodemon -w src --exec \"npm run -s demo\"",
 		"build": "rollup -c",
-		"ci": "npm run build && cd demo && node ../wmr.cjs build",
+		"ci": "npm run build && cd demo && node ../wmr.cjs build --prerender",
 		"prepack": "node --experimental-modules ./src/lib/~publish.js",
 		"test-e2e": "cross-env JEST_PUPPETEER_CONFIG=jest-puppeteer.config.cjs jest",
 		"test": "eslint src test && npm run test-e2e"
