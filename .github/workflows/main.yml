@@ -18,11 +18,22 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Install
         run: npm install
-      - name: Build
-        run: npm run ci
       - name: Test
         run: npm test
+  lhci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Use Node.js 14.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14.x
       - name: Prepare LHCI
         run: npm install -g @lhci/cli@0.4.x
+      - name: Install
+        run: npm install
+      - name: Build
+        run: npm run ci
       - name: LHCI
         run: lhci autorun --upload.target=temporary-public-storage --collect.url="https://localhost:8080" --collect.startServerCommand="npm run demo:serve" --upload.githubAppToken=${{ secrets.LHCI_GITHUB_APP_TOKEN }}
