@@ -25,4 +25,4 @@ jobs:
       - name: Prepare LHCI
         run: npm install -g @lhci/cli@0.4.x
       - name: LHCI
-        run: lhci autorun --upload.target=temporary-public-storage --collect.url="http://localhost:8080" --collect.startServerCommand="npm run demo:serve" --upload.githubAppToken=${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+        run: lhci autorun --upload.target=temporary-public-storage --collect.url="https://localhost:8080" --collect.startServerCommand="npm run demo:serve" --upload.githubAppToken=${{ secrets.LHCI_GITHUB_APP_TOKEN }}
