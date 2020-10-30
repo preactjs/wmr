@@ -20,13 +20,13 @@ export async function resolveModule(path, { readFile, hasFile, module, internal 
 	const isExportMappedSpecifier = pkg.exports && internal;
 
 	// Package Export Maps
-	if (pkg.exports) {
+	if (!internal && pkg.exports) {
 		const entry = path ? `./${path}` : '.';
 
 		const mapped = resolveExportMap(pkg.exports, entry, ENV_KEYS);
 
 		if (!mapped) {
-			throw Error(`Unknown package export ${entry} in ${module}.\n\n${JSON.stringify(pkg.exports, null, 2)}`);
+			throw new Error(`Unknown package export ${entry} in ${module}.\n\n${JSON.stringify(pkg.exports, null, 2)}`);
 		}
 
 		// `mapped:true` means directory access was allowed for this entry, but it was not resolved.
