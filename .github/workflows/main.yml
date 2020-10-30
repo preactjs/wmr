@@ -20,3 +20,10 @@ jobs:
         run: npm install
       - name: Build and Test
         run: npm test
+  lhci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: LHCI
+        run: npm install -g @lhci/cli@0.4.x
+        run: npm i && npm run build
+        run: lhci autorun --upload.target=temporary-public-storage --collect.url="http://localhost:8080" --collect.startServerCommand="npm run demo:serve && sleep 1 && echo listen" --upload.githubAppToken=${{ secrets.LHCI_GITHUB_APP_TOKEN }}
