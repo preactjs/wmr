@@ -19,6 +19,7 @@ import resolveExtensionsPlugin from './plugins/resolve-extensions-plugin.js';
 import fastCjsPlugin from './plugins/fast-cjs-plugin.js';
 import bundlePlugin from './plugins/bundle-plugin.js';
 import jsonPlugin from './plugins/json-plugin.js';
+import optimizeGraphPlugin from './plugins/optimize-graph-plugin.js';
 
 /** @param {string} p */
 const pathToPosix = p => p.split(sep).join(posix.sep);
@@ -103,10 +104,11 @@ export async function bundleProd({
 			}),
 			json(),
 			npmPlugin({ external: false }),
-			minifyCssPlugin({ sourcemap }),
 			urlPlugin({}),
 			jsonPlugin(),
-			bundlePlugin({ cwd })
+			bundlePlugin({ cwd }),
+			optimizeGraphPlugin({ publicPath: '/' }),
+			minifyCssPlugin({ sourcemap })
 		]
 	});
 
@@ -115,6 +117,7 @@ export async function bundleProd({
 		chunkFileNames: 'chunks/[name].[hash].js',
 		assetFileNames: 'assets/[name].[hash][extname]',
 		compact: true,
+		hoistTransitiveImports: true,
 		plugins: [terser({ compress: true, sourcemap })],
 		sourcemap,
 		sourcemapPathTransform(p, mapPath) {
