@@ -56,28 +56,28 @@ describe('fixtures', () => {
 		it('should print warning for missing index.html file in public dir', async () => {
 			await loadFixture('empty', env);
 			instance = await runWmrFast(env.tmp.path);
-			expect(instance.output[0]).toMatch(`missing "index.html" file`);
+			expect(instance.output.join('\n')).toMatch(`missing "index.html" file`);
 			expect(await getOutput(env, instance)).toMatch(`Not Found`);
 		});
 
 		it('should print warning for missing index.html file (no public dir)', async () => {
 			await loadFixture('empty-nopublic', env);
 			instance = await runWmrFast(env.tmp.path);
-			expect(instance.output[0]).toMatch(`missing "index.html" file`);
+			expect(instance.output.join('\n')).toMatch(`missing "index.html" file`);
 			expect(await getOutput(env, instance)).toMatch(`Not Found`);
 		});
 
 		it('should start successfully with only an HTML file in public dir', async () => {
 			await loadFixture('htmlonly', env);
 			instance = await runWmrFast(env.tmp.path);
-			expect(instance.output[0]).not.toMatch(`missing an "index.html"`);
+			expect(instance.output.join('\n')).not.toMatch(`missing an "index.html"`);
 			expect(await getOutput(env, instance)).toMatch(`<h1>Hello wmr</h1>`);
 		});
 
 		it('should start successfully with only an HTML file (no public dir)', async () => {
 			await loadFixture('htmlonly-nopublic', env);
 			instance = await runWmrFast(env.tmp.path);
-			expect(instance.output[0]).not.toMatch(`missing an "index.html"`);
+			expect(instance.output.join('\n')).not.toMatch(`missing an "index.html"`);
 			expect(await getOutput(env, instance)).toMatch(`<h1>Hello wmr</h1>`);
 		});
 	});
