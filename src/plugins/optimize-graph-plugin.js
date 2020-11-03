@@ -5,6 +5,8 @@ import { posix } from 'path';
 /** @typedef {import('rollup').OutputAsset} Asset */
 /** @typedef {Asset & { referencedFiles?: string[], importedIds?: string[] }} ExtendedAsset */
 
+const DEBUG = !!process.env.DEBUG;
+
 /**
  * Performs graph-based optimizations on generated assets and chunks:
  * - merges CSS assets that are always loaded together
@@ -155,6 +157,7 @@ class ChunkGraph {
 
 	/**
 	 * Replace CSS "imports" of the form `style("/url")` within a Chunk.
+	 * Return `false` to remove the call.
 	 * @param {Chunk} chunk
 	 * @param {string|string[]} oldUrl
 	 * @param {string|boolean|((url:string,fn:string,quote:string)=>string|boolean|null|undefined)} newUrl
@@ -193,8 +196,11 @@ function mergeAdjacentCss(graph) {
 
 		if (toMerge.length < 2) continue;
 
-		const p = posix.relative(process.cwd(), chunk.facadeModuleId || chunk.fileName);
-		console.log(`Merging ${toMerge.length} adjacent CSS children of parent ${p}:\n  ${toMerge.join(', ')}`);
+		if (DEBUG) {
+			const p = posix.relative(process.cwd(), chunk.facadeModuleId || chunk.fileName);
+			console.log(`Merging ${toMerge.length} adjacent CSS assets imported by ${p}:\n  ${toMerge.join(', ')}`);
+		}
+
 		const base = /** @type {Asset} */ (graph.bundle[toMerge[0]]);
 		for (let i = 1; i < toMerge.length; i++) {
 			const f = toMerge[i];
@@ -204,13 +210,13 @@ function mergeAdjacentCss(graph) {
 			delete graph.bundle[f];
 		}
 
-		// remove all but the first style("url") "import"
+		// Remove all but the first style("url") "import":
 		let count = 0;
 		graph.replaceCssImport(chunk, toMerge, (url, fn) => {
-			// styleLoadFns.set(chunk.fileName, fn);
 			graph.getMeta(chunk.fileName).styleLoadFn = fn;
 			// replace the first style() with the collapsed bundle ID, omit the rest
-			return count++ === 0 && toMerge[0];
+			const isFirst = count++ === 0;
+			return isFirst && toMerge[0];
 		});
 	}
 }
@@ -237,13 +243,14 @@ function hoistEntryCss(graph) {
 				const f = chunk.referencedFiles[i];
 				if (!isCssFilename(f)) continue;
 				if (cssAsset) {
-					console.log(`Hoisting CSS "${f}" imported by ${id} into parent HTML's CSS import "${cssImport}".`);
+					if (DEBUG) console.log(`Hoisting CSS "${f}" imported by ${id} into parent HTML import "${cssImport}".`);
 					cssAsset.source += '\n' + getAssetSource(graph.bundle[f]);
 					chunk.referencedFiles[i] = cssImport;
 					delete graph.bundle[f];
 					graph.replaceCssImport(chunk, f, false);
 				} else {
-					console.log(`Hoisting CSS "${f}" imported by ${id} into parent HTML.`);
+					// @TODO: this branch is actually unreachable
+					if (DEBUG) console.log(`Hoisting CSS "${f}" imported by ${id} into parent HTML.`);
 					const url = JSON.stringify(posix.join(graph.publicPath, f));
 					asset.source = getAssetSource(asset).replace(/<\/head>/, `<link rel="stylesheet" href=${url}></head>`);
 				}
@@ -263,15 +270,18 @@ function hoistCascadedCss(graph) {
 		const chunkInfo = graph.assetToChunkMap.get(fileName);
 
 		// ignore external CSS files, those imported by multiple parents, or where their parents are already entries
-		// if (!chunkInfo || chunkInfo.chunks.length !== 1 || chunkInfo.isEntry || chunkInfo.isDynamicEntry) continue;
 		if (!chunkInfo) continue;
 
-		const ownerChunk = graph.bundle[chunkInfo.chunks[0]];
+		// @TODO: CSS assets imported by more than one chunk.
+		const ownerFileName = chunkInfo.chunks[0];
+		const ownerChunk = graph.bundle[ownerFileName];
 		let parentChunk;
 		parentChunk = ownerChunk;
 		while ((parentChunk = graph.getParentChunk(parentChunk.fileName, true))) {
 			const isEntry = parentChunk.isEntry || parentChunk.isDynamicEntry;
 			if (!isEntry) continue;
+
+			const parentFileName = parentChunk.fileName;
 
 			const ownCss = parentChunk.referencedFiles.find(f => {
 				const info = isCssFilename(f) && graph.assetToChunkMap.get(f);
@@ -279,24 +289,21 @@ function hoistCascadedCss(graph) {
 			});
 
 			if (ownCss) {
+				if (DEBUG) console.log(`Merging ${fileName} into ${ownCss} (${ownerFileName} → ${parentFileName})`);
 				// TODO: here be dragons
 				const parentAsset = /** @type {Asset} */ (graph.bundle[ownCss]);
 				parentAsset.source += '\n' + asset.source;
-				delete graph.bundle[fileName];
-				console.log(
-					`Moved ${fileName} from ${chunkInfo.chunks[0]} to ${parentChunk.fileName} (merged into ${parentAsset.fileName})`
-				);
 				graph.replaceCssImport(ownerChunk, fileName, ownCss);
-				chunkInfo.chunks = [parentChunk.fileName];
+				delete graph.bundle[fileName];
+				chunkInfo.chunks = [parentFileName];
 			} else {
-				// const fn = styleLoadFns.get(parentChunk.fileName);
-				const fn = graph.getMeta(parentChunk.fileName).styleLoadFn;
+				const { styleLoadFn } = graph.getMeta(parentFileName);
 				const url = JSON.stringify(posix.join(graph.publicPath, fileName));
-				if (fn) {
-					console.log(`Hoisted ${fileName} import from ${chunkInfo.chunks[0]} into ${parentChunk.fileName}`);
-					parentChunk.code += `\n${fn}(${url});`;
+				if (styleLoadFn) {
+					if (DEBUG) console.log(`Hoisting ${fileName} from ${ownerFileName} into ${parentFileName}`);
+					parentChunk.code += `\n${styleLoadFn}(${url});`;
 				} else {
-					console.log(`Preloading ${fileName} import from ${chunkInfo.chunks[0]} in ${parentChunk.fileName}`);
+					if (DEBUG) console.log(`Preloading ${fileName} from ${ownerFileName} in ${parentFileName}`);
 					parentChunk.code += `\ndocument.querySelector('link[rel="stylesheet"][href=${url}]')||document.head.appendChild(Object.assign(document.createElement('link'),{rel:'stylesheet',href:${url}}));`;
 				}
 			}
@@ -308,9 +315,9 @@ function hoistCascadedCss(graph) {
 /**
  * Visit every dynamic import(), and inject hoisted JS + CSS imports from it at the callsite.
  * Turns this:
- *   import('./foo.js')
+ *   import('/foo.js')
  * Into this:
- *   (import('/util.js'),style('/foo.module.css'),import('./foo.js'))
+ *   (import('/util.js'),style('/foo.module.css'),import('/foo.js'))
  * @param {ChunkGraph} graph
  */
 function hoistTransitiveImports(graph) {
@@ -325,41 +332,34 @@ function hoistTransitiveImports(graph) {
 			const spec = url.startsWith('./') ? posix.join(posix.dirname(fileName), url) : url;
 			if (!deps.css.has(spec) && !deps.js.has(spec)) return s;
 
-			// const fn = styleLoadFns.get(fileName);
-			const fn = graph.getMeta(fileName).styleLoadFn;
-			if (!fn) {
-				console.log('no style loader func defined for ', url);
-				return s;
-			}
-
 			const imp = `import(${quote}${url}${quote})`;
 			const preloads = [];
 
 			const css = deps.css.get(spec);
-			if (css) {
-				preloads.push(...css.map(f => `${fn}(${JSON.stringify(posix.join(graph.publicPath, f))})`));
-				console.log(`Preloading CSS for import(${spec}): ${css}`);
+			const { styleLoadFn } = graph.getMeta(fileName);
+			if (!styleLoadFn) {
+				if (DEBUG) console.warn(`Unable to preload ${css.length} CSS assets from "${url}": no style loader defined.`);
+			} else if (css) {
+				if (DEBUG) console.log(`Preloading CSS for import(${spec}): ${css}`);
+				preloads.push(...css.map(f => `${styleLoadFn}(${JSON.stringify(posix.join(graph.publicPath, f))})`));
 			}
 
 			const js = deps.js.get(spec);
 			if (js) {
+				if (DEBUG) console.log(`Preloading JS for import(${spec}): ${js}`);
 				preloads.push(
 					...js.map(f => {
 						let rel = posix.relative(posix.dirname('/' + fileName), posix.join(graph.publicPath, f));
 						if (!rel.startsWith('.')) rel = './' + rel;
 						return `import(${JSON.stringify(rel)})`;
-						// return `import(${JSON.stringify(posix.join(publicPath, f))})`;
 					})
 				);
-				console.log(`Preloading JS for import(${spec}): ${js}`);
 			}
 
-			const preload = preloads.join(',');
-			// console.log(`Preloading CSS for import(${spec}): ${cssImports.get(spec)} ${transitiveDeps.get(spec)}`);
-			// version 1: wait for CSS before resolving
-			// return `Promise.all([${imp},${preload}]).then(r=>r[0])`;
-			// version 2: preload CSS, but don't wait for it
-			return `(${preload},${imp})`;
+			// Option 1: preload CSS, but don't wait for it:
+			return `(${preloads.join(',')},${imp})`;
+			// Option 2: wait for CSS before resolving:
+			// return `Promise.all([${imp},${preloads.join(',')}]).then(r=>r[0])`;
 		});
 	}
 }
@@ -415,13 +415,11 @@ function constructAssetToChunkMap(bundle) {
 	return assetToChunkMap;
 }
 
-// Utilities
-
-const isCssFilename = fileName => /\.(?:css|s[ac]ss)$/.test(fileName);
-
 /**
  * Replace function calls of the form `$fn("$url")` with a value returned by a function.
- * @type {(code: string, replacer: (fn: string, url: string, quote: string) => string | null | undefined) => string}
+ * This is brittle. It should only be used for generated code and must account for it having been minified.
+ * @param {string} code
+ * @param {(fn: string, url: string, quote: string) => string | null | undefined} replacer Return replacement code, or `null`/`undefined` to preserve the matched call.
  */
 function replaceSimpleFunctionCall(code, replacer) {
 	return code.replace(/([a-z$_][a-z0-9$_]*)\((['"`])(.*?)\2\)/gi, (s, fn, quote, url) => {
@@ -430,10 +428,8 @@ function replaceSimpleFunctionCall(code, replacer) {
 	});
 }
 
-/**
- * @param {any} asset
- * @return {string}
- */
+const isCssFilename = fileName => /\.(?:css|s[ac]ss)$/.test(fileName);
+
 function getAssetSource(asset) {
 	let code = asset.source;
 	if (typeof code !== 'string') {
@@ -441,50 +437,3 @@ function getAssetSource(asset) {
 	}
 	return code;
 }
-
-// function getEntryChunks(chunkFileName, ofFiles = [], entries = [], seen = new Set()) {
-// 	for (const fileName in bundle) {
-// 		const chunk = bundle[fileName];
-// 		if (chunk.type !== 'chunk' || seen.has(fileName)) continue;
-// 		if (chunk.dynamicImports.includes(chunkFileName) || chunk.imports.includes(chunkFileName)) {
-// 			if (chunk.isEntry || chunk.isDynamicEntry) {
-// 				if (!ofFiles.includes(chunkFileName)) ofFiles.push(chunkFileName);
-// 				entries.push(chunk);
-// 			} else {
-// 				getEntryChunks(chunk.fileName, ofFiles, entries, seen);
-// 			}
-// 		}
-// 	}
-// 	return entries;
-// }
-// const parentChunks = new Map();
-// function addParent(chunk, parent) {
-// 	const pc = parentChunks.get(chunk);
-// 	if (pc) pc.add(parent);
-// 	else parentChunks.set(chunk, new Set([parent]));
-// }
-// for (const fileName in bundle) {
-// 	const chunk = bundle[fileName];
-// 	if (chunk.type !== 'chunk') continue;
-// 	for (const f of chunk.referencedFiles) addParent(f, fileName);
-// 	for (const f of chunk.imports) addParent(f, fileName);
-// 	for (const f of chunk.dynamicImports) addParent(f, fileName);
-// }
-
-// function getEntryChunks(chunkFileName, entries = [], seen = new Set()) {
-// 	for (const fileName in bundle) {
-// 		const chunk = bundle[fileName];
-// 		if (chunk.type !== 'chunk' || seen.has(fileName)) continue;
-// 		if (
-// 			(chunk.dynamicImports.includes(chunkFileName) && chunk.dynamicImports.length === 1) ||
-// 			chunk.imports.includes(chunkFileName)
-// 		) {
-// 			if (chunk.isEntry || chunk.isDynamicEntry) {
-// 				if (!entries.includes(fileName)) entries.push(fileName);
-// 			} else {
-// 				getEntryChunks(chunk.fileName, entries, seen);
-// 			}
-// 		}
-// 	}
-// 	return entries;
-// }
