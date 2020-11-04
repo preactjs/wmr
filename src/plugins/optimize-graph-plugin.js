@@ -356,6 +356,8 @@ function hoistTransitiveImports(graph) {
 				);
 			}
 
+			if (!preloads.length) return s;
+
 			// Option 1: preload CSS, but don't wait for it:
 			return `(${preloads.join(',')},${imp})`;
 			// Option 2: wait for CSS before resolving:
