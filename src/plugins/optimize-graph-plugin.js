@@ -15,9 +15,10 @@ const DEBUG = !!process.env.DEBUG;
  * - hoists transitive JS and CSS imports, making chunks and styles load in parallel
  * @param {object} [options]
  * @param {string} [options.publicPath]
+ * @param {number} [options.cssMinSize] CSS assets smaller than this number of bytes get merged into their parent
  * @returns {import('rollup').Plugin}
  */
-export default function optimizeGraphPlugin({ publicPath = '' } = {}) {
+export default function optimizeGraphPlugin({ publicPath = '', cssMinSize = 1000 } = {}) {
 	return {
 		name: 'optimize-graph',
 		async generateBundle(_, bundle) {
@@ -90,6 +91,7 @@ class ChunkGraph {
 	 * @param {boolean} [staticOnly=false]
 	 */
 	getParentChunk(chunkFileName, staticOnly) {
+		if (this.bundle[chunkFileName].isEntry) return;
 		for (const fileName in this.bundle) {
 			const chunk = this.bundle[fileName];
 			if (chunk.type !== 'chunk') continue;
@@ -102,6 +104,7 @@ class ChunkGraph {
 	 * Find JS and CSS imports within the modules dynamically imported by a chunk.
 	 * @param {Chunk} chunk
 	 * @param {Iterable<string>} [entries]
+	 * @returns {{ css: Map<string, string[]>, js: Map<string, string[]> }}
 	 */
 	findTransitiveImports(chunk, entries = this.entries) {
 		const ownCss = this.findCssImports(chunk);
@@ -244,10 +247,22 @@ function hoistEntryCss(graph) {
 				if (!isCssFilename(f)) continue;
 				if (cssAsset) {
 					if (DEBUG) console.log(`Hoisting CSS "${f}" imported by ${id} into parent HTML import "${cssImport}".`);
+					// @TODO: this needs to update the hash of the chunk into which CSS got merged.
 					cssAsset.source += '\n' + getAssetSource(graph.bundle[f]);
 					chunk.referencedFiles[i] = cssImport;
 					delete graph.bundle[f];
 					graph.replaceCssImport(chunk, f, false);
+					const chunkInfo = graph.assetToChunkMap.get(f);
+					if (chunkInfo) chunkInfo.mergedInto = cssImport;
+					for (const chunkInfo of graph.assetToChunkMap.values()) {
+						if (chunkInfo.mergedInto == f) {
+							for (const ownerChunk of chunkInfo.chunks) {
+								if (ownerChunk === id) continue;
+								graph.replaceCssImport(graph.bundle[ownerChunk], f, false);
+							}
+							chunkInfo.mergedInto = cssImport;
+						}
+					}
 				} else {
 					// @TODO: this branch is actually unreachable
 					if (DEBUG) console.log(`Hoisting CSS "${f}" imported by ${id} into parent HTML.`);
@@ -263,7 +278,7 @@ function hoistEntryCss(graph) {
  * Cascade statically-imported assets (css imported by an imported module) up the graph.
  * @param {ChunkGraph} graph
  */
-function hoistCascadedCss(graph) {
+function hoistCascadedCss(graph, { cssMinSize }) {
 	for (const fileName in graph.bundle) {
 		const asset = graph.bundle[fileName];
 		if (asset.type !== 'asset' || !isCssFilename(asset.fileName)) continue;
@@ -272,12 +287,16 @@ function hoistCascadedCss(graph) {
 		// ignore external CSS files, those imported by multiple parents, or where their parents are already entries
 		if (!chunkInfo) continue;
 
-		// @TODO: CSS assets imported by more than one chunk.
+		// for CSS under 500b, we'll try to avoid loading it async
+		const hoistAcrossDynamicImports = cssMinSize && Buffer.byteLength(asset.source) < cssMinSize;
+
+		// @TODO: CSS assets imported by more than one chunk could cause issues here.
+		// We should switch to "highest common ancestor" and bail out unless exactly one is found.
 		const ownerFileName = chunkInfo.chunks[0];
 		const ownerChunk = graph.bundle[ownerFileName];
 		let parentChunk;
 		parentChunk = ownerChunk;
-		while ((parentChunk = graph.getParentChunk(parentChunk.fileName, true))) {
+		while ((parentChunk = graph.getParentChunk(parentChunk.fileName, !hoistAcrossDynamicImports))) {
 			const isEntry = parentChunk.isEntry || parentChunk.isDynamicEntry;
 			if (!isEntry) continue;
 
@@ -289,17 +308,18 @@ function hoistCascadedCss(graph) {
 			});
 
 			if (ownCss) {
-				if (DEBUG) console.log(`Merging ${fileName} into ${ownCss} (${ownerFileName} → ${parentFileName})`);
 				// TODO: here be dragons
+				if (DEBUG) console.log(`Merging ${fileName} into ${ownCss} (${ownerFileName} → ${parentFileName})`);
 				const parentAsset = /** @type {Asset} */ (graph.bundle[ownCss]);
 				parentAsset.source += '\n' + asset.source;
 				graph.replaceCssImport(ownerChunk, fileName, ownCss);
 				delete graph.bundle[fileName];
-				chunkInfo.chunks = [parentFileName];
+				chunkInfo.mergedInto = ownCss;
+				// chunkInfo.chunks = [parentFileName];
+				chunkInfo.chunks.unshift(parentFileName);
+				const i = ownerChunk.referencedFiles.indexOf(fileName);
+				if (i !== -1) ownerChunk.referencedFiles.splice(i, 1);
 			} else {
-				const { styleLoadFn } = graph.getMeta(parentFileName);
-				const url = JSON.stringify(posix.join(graph.publicPath, fileName));
-				if (styleLoadFn) {
 					if (DEBUG) console.log(`Hoisting ${fileName} from ${ownerFileName} into ${parentFileName}`);
 					parentChunk.code += `\n${styleLoadFn}(${url});`;
 				} else {
@@ -369,7 +389,7 @@ function hoistTransitiveImports(graph) {
 /**
  * Generate a mapping of assets to metadata about the chunks that reference them.
  * @param {Bundle} bundle
- * @return {Map<string, { isEntry: boolean, isDynamicEntry: boolean, isImplicitEntry: boolean, chunks: string[] }>}
+ * @return {Map<string, { isEntry: boolean, isDynamicEntry: boolean, isImplicitEntry: boolean, mergedInto?: string, chunks: string[] }>}
  */
 function constructAssetToChunkMap(bundle) {
 	const assetToChunkMap = new Map();
@@ -385,6 +405,7 @@ function constructAssetToChunkMap(bundle) {
 					isEntry: false,
 					isDynamicEntry: false,
 					isImplicitEntry: false,
+					mergedInto: undefined,
 					chunks: []
 				};
 				assetToChunkMap.set(fileId, map);
