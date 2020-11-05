@@ -30,7 +30,7 @@ describe('production', () => {
 			for (const d of ['dist', 'node_modules', '.cache']) {
 				await fs.rmdir(path.join(env.tmp.path, d), { recursive: true });
 			}
-			instance = await runWmr(env.tmp.path, 'build');
+			instance = await runWmr(env.tmp.path, 'build', '--prerender');
 			const code = await instance.done;
 			const output = instance.output.join('\n');
 			if (code !== 0 || /error/i.test(output)) {
@@ -120,6 +120,68 @@ describe('production', () => {
 				const data = cssCov.files[filename];
 				expect(data.unused / data.size).toBeLessThan(0.5);
 			}
+		});
+	});
+
+	describe('CSS Asset Graph Optimization', () => {
+		it('should hoist dynamically imported CSS into unconditionally loaded parent', async () => {
+			await loadFixture('css', env);
+			instance = await runWmr(env.tmp.path, 'build');
+			const code = await instance.done;
+			console.info(instance.output.join('\n'));
+			expect(code).toBe(0);
+
+			const readdir = async f => (await fs.readdir(path.join(env.tmp.path, f))).filter(f => f[0] !== '.');
+			const assets = await readdir('dist/assets');
+			const chunks = await readdir('dist/chunks');
+
+			expect(assets).toEqual([expect.stringMatching(/^style\.\w+\.css$/)]);
+			expect(chunks).toEqual([expect.stringMatching(/^index\.\w+\.js$/), expect.stringMatching(/^index\.\w+\.js$/)]);
+
+			const css = await fs.readFile(path.join(env.tmp.path, 'dist/assets', assets[0]), 'utf-8');
+			// ensure all the CSS got merged:
+			expect(css).toMatch(/body\s*,\s*html/);
+			expect(css).toMatch(/\.app_\w+/);
+			expect(css).toMatch(/\.home_\w+/);
+			expect(css).toMatch(/\.profile_\w+/);
+
+			const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+			cleanup.push(stop);
+
+			const logs = [];
+			function log(type, text) {
+				logs.push(`${type}: ${text}`);
+				console.log(`  ${type}: ${text}`);
+			}
+			env.page.on('console', m => log(m.type(), m.text()));
+			env.page.on('error', err => log('error', err));
+			env.page.on('pageerror', err => log('page error', err));
+
+			const requests = [];
+			await env.page.setCacheEnabled(false);
+			await env.page.setRequestInterception(true);
+			page.on('request', req => {
+				requests.push(req.url().replace(/^https?:\/\/[^/]+/, ''));
+				req.continue();
+			});
+
+			await env.page.goto(address, { waitUntil: ['domcontentloaded', 'networkidle2'] });
+			expect(await env.page.content()).toMatch(/This is the home page/);
+
+			expect(logs).toEqual([]);
+			expect(requests.filter(url => /\.css$/.test(url))).toEqual([
+				expect.stringMatching(/^\/assets\/style\.\w+\.css$/)
+			]);
+
+			logs.length = requests.length = 0;
+
+			await env.page.goto(address + '/profile/foo', { waitUntil: ['domcontentloaded', 'networkidle2'] });
+			expect(await env.page.content()).toMatch(/This is the profile page for foo/);
+
+			expect(logs).toEqual([]);
+			expect(requests.filter(url => /\.css$/.test(url))).toEqual([
+				expect.stringMatching(/^\/assets\/style\.\w+\.css$/)
+			]);
 		});
 	});
 });
