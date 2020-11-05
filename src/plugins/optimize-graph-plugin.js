@@ -7,6 +7,9 @@ import { posix } from 'path';
 
 const DEBUG = !!process.env.DEBUG;
 
+const DEFAULT_STYLE_LOAD_FN = '$w_s$';
+const DEFAULT_STYLE_LOAD_IMPL = `function $w_s$(e,t){document.querySelector('link[rel=stylesheet][href="'+e+'"]')||((t=document.createElement("link")).rel="stylesheet",t.href=e,document.head.appendChild(t))}`;
+
 /**
  * Performs graph-based optimizations on generated assets and chunks:
  * - merges CSS assets that are always loaded together
@@ -24,8 +27,8 @@ export default function optimizeGraphPlugin({ publicPath = '', cssMinSize = 1000
 		async generateBundle(_, bundle) {
 			const graph = new ChunkGraph(bundle, { publicPath });
 			mergeAdjacentCss(graph);
+			hoistCascadedCss(graph, { cssMinSize });
 			hoistEntryCss(graph);
-			hoistCascadedCss(graph);
 			hoistTransitiveImports(graph);
 		}
 	};
@@ -320,12 +323,16 @@ function hoistCascadedCss(graph, { cssMinSize }) {
 				const i = ownerChunk.referencedFiles.indexOf(fileName);
 				if (i !== -1) ownerChunk.referencedFiles.splice(i, 1);
 			} else {
-					if (DEBUG) console.log(`Hoisting ${fileName} from ${ownerFileName} into ${parentFileName}`);
-					parentChunk.code += `\n${styleLoadFn}(${url});`;
-				} else {
-					if (DEBUG) console.log(`Preloading ${fileName} from ${ownerFileName} in ${parentFileName}`);
-					parentChunk.code += `\ndocument.querySelector('link[rel="stylesheet"][href=${url}]')||document.head.appendChild(Object.assign(document.createElement('link'),{rel:'stylesheet',href:${url}}));`;
+				if (DEBUG) console.log(`Hoisting ${fileName} from ${ownerFileName} into ${parentFileName}`);
+				const meta = graph.getMeta(parentFileName);
+				// inject the stylesheet loader: (and register it)
+				if (!meta.styleLoadFn) {
+					// if (DEBUG) console.log(`Injecting style loader into ${parentFileName}`);
+					meta.styleLoadFn = DEFAULT_STYLE_LOAD_FN;
+					parentChunk.code += '\n' + DEFAULT_STYLE_LOAD_IMPL;
 				}
+				const url = JSON.stringify(posix.join(graph.publicPath, fileName));
+				parentChunk.code += `\n${meta.styleLoadFn}(${url});`;
 			}
 			break;
 		}
@@ -348,6 +355,7 @@ function hoistTransitiveImports(graph) {
 		const deps = graph.findTransitiveImports(chunk);
 		if (deps.css.size === 0 && deps.js.size === 0) continue;
 
+		let appendCode = '';
 		chunk.code = chunk.code.replace(/import\((['"`])(.*?)\1\)/gi, (s, quote, url) => {
 			const spec = url.startsWith('./') ? posix.join(posix.dirname(fileName), url) : url;
 			if (!deps.css.has(spec) && !deps.js.has(spec)) return s;
@@ -356,16 +364,20 @@ function hoistTransitiveImports(graph) {
 			const preloads = [];
 
 			const css = deps.css.get(spec);
-			const { styleLoadFn } = graph.getMeta(fileName);
-			if (!styleLoadFn) {
-				if (DEBUG) console.warn(`Unable to preload ${css.length} CSS assets from "${url}": no style loader defined.`);
-			} else if (css) {
+			if (css && css.length) {
+				const meta = graph.getMeta(fileName);
+				// inject the stylesheet loader: (and register it)
+				if (!meta.styleLoadFn) {
+					// if (DEBUG) console.log(`Injecting style loader into ${url}`);
+					meta.styleLoadFn = DEFAULT_STYLE_LOAD_FN;
+					appendCode += '\n' + DEFAULT_STYLE_LOAD_IMPL;
+				}
 				if (DEBUG) console.log(`Preloading CSS for import(${spec}): ${css}`);
-				preloads.push(...css.map(f => `${styleLoadFn}(${JSON.stringify(posix.join(graph.publicPath, f))})`));
+				preloads.push(...css.map(f => `${meta.styleLoadFn}(${JSON.stringify(posix.join(graph.publicPath, f))})`));
 			}
 
 			const js = deps.js.get(spec);
-			if (js) {
+			if (js && js.length) {
 				if (DEBUG) console.log(`Preloading JS for import(${spec}): ${js}`);
 				preloads.push(
 					...js.map(f => {
@@ -383,6 +395,9 @@ function hoistTransitiveImports(graph) {
 			// Option 2: wait for CSS before resolving:
 			// return `Promise.all([${imp},${preloads.join(',')}]).then(r=>r[0])`;
 		});
+
+		// inject style loader (once) if required:
+		if (appendCode) chunk.code += appendCode;
 	}
 }
 
