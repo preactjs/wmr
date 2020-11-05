@@ -21,10 +21,11 @@ export default function minifyCssPlugin({ sourcemap } = {}) {
 				}
 			}
 		},
+
 		async generateBundle(_, bundle) {
 			await Promise.all(
 				Object.values(bundle).map(async asset => {
-					if (asset.type !== 'asset' || !/\.(css|s[ac]ss)$/.test(asset.fileName)) return;
+					if (asset.type !== 'asset' || !isCssFilename(asset.fileName)) return;
 					const id = asset.fileName;
 					const mapFile = asset.fileName + '.map';
 					let result;
@@ -38,22 +39,8 @@ export default function minifyCssPlugin({ sourcemap } = {}) {
 								sourcesContent: false
 							}
 						});
-					} catch (e) {
-						if (e.line != null && e.column != null) {
-							const lines = e.source.split('\n');
-							const line = e.line - 1;
-							const frame = [
-								lines[line - 2] || '',
-								lines[line - 1] || '',
-								lines[line],
-								'-'.repeat(e.column - 1) + '^',
-								lines[line + 1] || '',
-								lines[line + 2] || ''
-							];
-							const err = Error(e.message + '\n> ' + frame.join('\n> '));
-							return this.error(err, { line: e.line, column: e.column });
-						}
-						throw e;
+					} catch (err) {
+						return handleError(this, err);
 					}
 					if (result.map) {
 						this.emitFile({
@@ -68,3 +55,22 @@ export default function minifyCssPlugin({ sourcemap } = {}) {
 		}
 	};
 }
+
+/** @param {import('rollup').PluginContext} rollupContext */
+function handleError(rollupContext, error) {
+	if (error.line == null || error.column == null) throw error;
+	const lines = error.source.split('\n');
+	const line = error.line - 1;
+	const frame = [
+		lines[line - 2] || '',
+		lines[line - 1] || '',
+		lines[line],
+		'-'.repeat(error.column - 1) + '^',
+		lines[line + 1] || '',
+		lines[line + 2] || ''
+	];
+	const err = Error(error.message + '\n> ' + frame.join('\n> '));
+	rollupContext.error(err, { line: error.line, column: error.column });
+}
+
+const isCssFilename = fileName => /\.(?:css|s[ac]ss)$/.test(fileName);
