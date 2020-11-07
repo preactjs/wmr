@@ -1,6 +1,5 @@
 import { relative, sep, posix, resolve, dirname } from 'path';
 import * as rollup from 'rollup';
-import json from '@rollup/plugin-json';
 import htmPlugin from './plugins/htm-plugin.js';
 import sucrasePlugin from './plugins/sucrase-plugin.js';
 import wmrPlugin from './plugins/wmr/plugin.js';
@@ -102,7 +101,6 @@ export async function bundleProd({
 				// Only transpile CommonJS in node_modules and explicit .cjs files:
 				include: /(?:^[\b]npm\/|[/\\]node_modules[/\\]|\.cjs$)/
 			}),
-			json(),
 			npmPlugin({ external: false }),
 			urlPlugin({}),
 			jsonPlugin(),
