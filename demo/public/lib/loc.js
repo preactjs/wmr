@@ -18,7 +18,8 @@ export function Loc(props) {
 	const [url, route] = useReducer(UPDATE, location.pathname + location.search);
 	const value = useMemo(() => {
 		const u = new URL(url, location.origin);
-		return { url, path: u.pathname, query: Object.fromEntries(u.searchParams), route };
+		const path = u.pathname.replace(/(.)\/$/g, '$1');
+		return { url, path, query: Object.fromEntries(u.searchParams), route };
 	}, [url]);
 	useEffect(() => {
 		addEventListener('click', route);

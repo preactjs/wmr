@@ -8,7 +8,7 @@ import * as kl from 'kolorist';
 /**
  * @typedef OtherOptions
  * @property {string} [host]
- * @property {string} [port]
+ * @property {number} [port]
  * @property {Record<string, string>} [env]
  */
 
@@ -21,13 +21,19 @@ export default async function start(options = {}) {
 
 	options = await normalizeOptions(options);
 
-	options.middleware = [
+	options.port = await getFreePort(options.port || process.env.PORT || 8080);
+	options.host = options.host || process.env.HOST;
+
+	options.middleware = [].concat(
+		// @ts-ignore-next
+		options.middleware || [],
+
 		wmrMiddleware({
 			...options,
 			onError: sendError,
 			onChange: sendChanges
 		})
-	];
+	);
 
 	// eslint-disable-next-line
 	function sendError(err) {
@@ -55,9 +61,7 @@ export default async function start(options = {}) {
 	}
 
 	const app = await server(options);
-	const port = await getFreePort(options.port || process.env.PORT || 8080);
-	const host = options.host || process.env.HOST;
-	app.listen(port, host);
+	app.listen(options.port, options.host);
 	const addresses = getServerAddresses(app.server.address(), { https: app.http2 });
 	process.stdout.write(kl.cyan(`Listening on ${addresses}`) + '\n');
 }
