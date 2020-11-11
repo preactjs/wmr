@@ -23,6 +23,9 @@ import optimizeGraphPlugin from './plugins/optimize-graph-plugin.js';
 /** @param {string} p */
 const pathToPosix = p => p.split(sep).join(posix.sep);
 
+/** @typedef {import('rollup').OutputOptions} OutputOptions */
+/** @typedef {OutputOptions | ((opts: OutputOptions) => OutputOptions)} Output */
+
 /**
  * @typedef {Object} BuildOptions
  * @property {string} [cwd = '']
@@ -33,6 +36,8 @@ const pathToPosix = p => p.split(sep).join(posix.sep);
  * @property {Record<string, string>} [aliases] module aliases
  * @property {boolean} [profile] Enable bundler performance profiling
  * @property {Record<string, string>} [env]
+ * @property {import('rollup').Plugin[]} [plugins]
+ * @property {Output | Output[]} [output]
  * @property {(error: BuildError)=>void} [onError]
  * @property {(error: BuildEvent)=>void} [onBuild]
  */
@@ -57,6 +62,8 @@ export async function bundleProd({
 	aliases,
 	profile,
 	env = {},
+	plugins,
+	output,
 	npmChunks = false
 }) {
 	cwd = cwd || '';
@@ -107,10 +114,11 @@ export async function bundleProd({
 			bundlePlugin({ cwd }),
 			optimizeGraphPlugin({ publicPath: '/' }),
 			minifyCssPlugin({ sourcemap })
-		]
+		].concat(plugins || [])
 	});
 
-	return await bundle.write({
+	/** @type {import('rollup').OutputOptions} */
+	const outputConfig = {
 		entryFileNames: '[name].[hash].js',
 		chunkFileNames: 'chunks/[name].[hash].js',
 		assetFileNames: 'assets/[name].[hash][extname]',
@@ -128,7 +136,23 @@ export async function bundleProd({
 		},
 		preferConst: true,
 		dir: out || 'dist'
-	});
+	};
+
+	const result = await bundle.write(outputConfig);
+
+	if (output) {
+		if (!Array.isArray(output)) output = [output];
+		await Promise.all(
+			output.map(output => {
+				if (typeof output === 'function') {
+					output = output({ ...outputConfig });
+				}
+				return bundle.write(output);
+			})
+		);
+	}
+
+	return result;
 }
 
 /** @type {import('rollup').GetManualChunk} */

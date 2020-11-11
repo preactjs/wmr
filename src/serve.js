@@ -29,7 +29,7 @@ import sirv from 'sirv';
 export default async function serve(options = {}) {
 	options.out = options.out || 'dist';
 
-	options = await normalizeOptions(options);
+	options = await normalizeOptions(options, 'serve');
 
 	/** @type {CustomServer} */
 	const app = polka({
