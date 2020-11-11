@@ -93,20 +93,39 @@ function resolveExportMap(exp, entry, envKeys) {
 	}
 	let isFileListing;
 	let isDirectoryExposed = false;
-	for (let i in exp) {
-		if (isFileListing === undefined) isFileListing = i[0] === '.';
-		if (isFileListing) {
-			// {"exports":{".":"./index.js"}}
+	const keys = Object.keys(exp);
+	if (keys.length === 0) return false;
+	isFileListing = keys[0][0] === '.';
+	if (isFileListing) {
+		for (const i of keys) {
 			if (i === entry) {
 				return resolveExportMap(exp[i], entry, envKeys);
 			}
 			if (!isDirectoryExposed && i.endsWith('/') && entry.startsWith(i)) {
 				isDirectoryExposed = true;
 			}
-		} else if (envKeys.includes(i)) {
-			// {"exports":{"import":"./foo.js"}}
-			return resolveExportMap(exp[i], entry, envKeys);
+		}
+	} else {
+		for (let i of envKeys) {
+			if (exp.hasOwnProperty(i)) {
+				return resolveExportMap(exp[i], entry, envKeys);
+			}
 		}
 	}
+	// for (let i in exp) {
+	// 	if (isFileListing === undefined) isFileListing = i[0] === '.';
+	// 	if (isFileListing) {
+	// 		// {"exports":{".":"./index.js"}}
+	// 		if (i === entry) {
+	// 			return resolveExportMap(exp[i], entry, envKeys);
+	// 		}
+	// 		if (!isDirectoryExposed && i.endsWith('/') && entry.startsWith(i)) {
+	// 			isDirectoryExposed = true;
+	// 		}
+	// 	} else if (envKeys.includes(i)) {
+	// 		// {"exports":{"import":"./foo.js"}}
+	// 		return resolveExportMap(exp[i], entry, envKeys);
+	// 	}
+	// }
 	return isDirectoryExposed;
 }
