@@ -2,12 +2,15 @@ import { resolve, join } from 'path';
 import { promises as fs } from 'fs';
 import { readEnvFiles } from './environment.js';
 
+/** @typedef {'start' | 'serve' | 'build'} Mode */
+
 /**
- * @template {{ cwd?: string, root?: string, out?: string, overlayDir?: string, aliases?: Record<string, string>, env?: Record<string, string>, middleware?: import('polka').Middleware[] }} T
+ * @template {{ prod?: boolean, mode?: Mode, cwd?: string, root?: string, out?: string, overlayDir?: string, aliases?: Record<string, string>, env?: Record<string, string>, middleware?: import('polka').Middleware[] }} T
  * @param {T} options
+ * @param {Mode} mode
  * @returns {Promise<T>}
  */
-export async function normalizeOptions(options) {
+export async function normalizeOptions(options, mode) {
 	options.cwd = resolve(options.cwd || '');
 	process.chdir(options.cwd);
 
@@ -15,7 +18,13 @@ export async function normalizeOptions(options) {
 
 	options.middleware = [];
 
-	const { NODE_ENV = 'development' } = process.env;
+	// `wmr` / `wmr start` is a development command.
+	// `wmr build` / `wmr serve` are production commands.
+	const prod = mode !== 'start';
+	options.prod = prod;
+	options.mode = mode;
+
+	const NODE_ENV = process.env.NODE_ENV || (prod ? 'production' : 'development');
 	options.env = await readEnvFiles(options.root, ['.env', '.env.local', `.env.${NODE_ENV}`, `.env.${NODE_ENV}.local`]);
 
 	// Output directory is relative to CWD *before* ./public is detected + appended:
@@ -54,8 +63,9 @@ export async function normalizeOptions(options) {
 			}
 		}
 		Object.defineProperty(options, '_config', { value: custom });
-		if (custom && custom.default) {
-			custom.default(options);
+		if (custom) {
+			if (custom.default) await custom.default(options);
+			if (custom[mode]) await custom[mode](options);
 		}
 	}
 

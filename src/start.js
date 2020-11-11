@@ -19,7 +19,7 @@ export default async function start(options = {}) {
 	// @todo remove this hack once registry.js is instantiable
 	setCwd(options.cwd);
 
-	options = await normalizeOptions(options);
+	options = await normalizeOptions(options, 'start');
 
 	options.port = await getFreePort(options.port || process.env.PORT || 8080);
 	options.host = options.host || process.env.HOST;
