@@ -56,7 +56,12 @@ export async function normalizeOptions(options, mode) {
 		let custom,
 			initialConfigFile = hasMjsConfig ? 'wmr.config.mjs' : 'wmr.config.js';
 		try {
-			custom = await import(resolve(options.root, initialConfigFile));
+			const resolved = resolve(options.root, initialConfigFile);
+			try {
+				custom = await eval('(x => import(x))')(resolved);
+			} catch (err) {
+				custom = eval('(x => require(x))')(resolved);
+			}
 		} catch (e) {
 			if (hasMjsConfig || !/import statement/.test(e)) {
 				throw Error(`Failed to load ${initialConfigFile}\n${e}`);
