@@ -2,11 +2,9 @@ import { resolve, join } from 'path';
 import { promises as fs } from 'fs';
 import { readEnvFiles } from './environment.js';
 
-/** @typedef {'start' | 'serve' | 'build'} Mode */
-
 /**
- * @template {{ prod?: boolean, mode?: Mode, cwd?: string, root?: string, out?: string, overlayDir?: string, aliases?: Record<string, string>, env?: Record<string, string>, middleware?: import('polka').Middleware[] }} T
- * @param {T} options
+ * @template {Options} T
+ * @param {Partial<T>} options
  * @param {Mode} mode
  * @returns {Promise<T>}
  */
@@ -16,6 +14,8 @@ export async function normalizeOptions(options, mode) {
 
 	options.root = options.cwd;
 
+	options.plugins = [];
+	options.output = [];
 	options.middleware = [];
 
 	// `wmr` / `wmr start` is a development command.
@@ -74,6 +74,7 @@ export async function normalizeOptions(options, mode) {
 		}
 	}
 
+	// @ts-ignore-next
 	return options;
 }
 

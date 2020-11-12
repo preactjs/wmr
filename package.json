@@ -17,8 +17,10 @@
 	"author": "The Preact Authors (https://preactjs.com)",
 	"repository": "preactjs/wmr",
 	"files": [
-		"wmr.cjs"
+		"wmr.cjs",
+		"types.d.ts"
 	],
+	"types": "types.d.ts",
 	"babel": {
 		"plugins": [
 			"@babel/plugin-transform-modules-commonjs"

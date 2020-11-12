@@ -142,14 +142,16 @@ export async function bundleProd({
 
 	if (output) {
 		if (!Array.isArray(output)) output = [output];
-		await Promise.all(
-			output.map(output => {
-				if (typeof output === 'function') {
-					output = output({ ...outputConfig });
-				}
-				return bundle.write(output);
-			})
-		);
+		if (output.length) {
+			await Promise.all(
+				output.map(output => {
+					if (typeof output === 'function') {
+						output = output({ ...outputConfig });
+					}
+					return bundle.write(output);
+				})
+			);
+		}
 	}
 
 	return result;
