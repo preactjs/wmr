@@ -14,7 +14,7 @@ export default async function build(options = {}) {
 	// @todo remove this hack once registry.js is instantiable
 	setCwd(options.cwd);
 
-	options = await normalizeOptions(options);
+	options = await normalizeOptions(options, 'build');
 
 	const bundleOutput = await bundleProd(options);
 

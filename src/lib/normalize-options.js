@@ -2,18 +2,29 @@ import { resolve, join } from 'path';
 import { promises as fs } from 'fs';
 import { readEnvFiles } from './environment.js';
 
+/** @typedef {'start' | 'serve' | 'build'} Mode */
+
 /**
- * @template {{ cwd?: string, root?: string, out?: string, overlayDir?: string, aliases?: Record<string, string>, env?: Record<string, string> }} T
+ * @template {{ prod?: boolean, mode?: Mode, cwd?: string, root?: string, out?: string, overlayDir?: string, aliases?: Record<string, string>, env?: Record<string, string>, middleware?: import('polka').Middleware[] }} T
  * @param {T} options
+ * @param {Mode} mode
  * @returns {Promise<T>}
  */
-export async function normalizeOptions(options) {
+export async function normalizeOptions(options, mode) {
 	options.cwd = resolve(options.cwd || '');
 	process.chdir(options.cwd);
 
 	options.root = options.cwd;
 
-	const { NODE_ENV = 'development' } = process.env;
+	options.middleware = [];
+
+	// `wmr` / `wmr start` is a development command.
+	// `wmr build` / `wmr serve` are production commands.
+	const prod = mode !== 'start';
+	options.prod = prod;
+	options.mode = mode;
+
+	const NODE_ENV = process.env.NODE_ENV || (prod ? 'production' : 'development');
 	options.env = await readEnvFiles(options.root, ['.env', '.env.local', `.env.${NODE_ENV}`, `.env.${NODE_ENV}.local`]);
 
 	// Output directory is relative to CWD *before* ./public is detected + appended:
@@ -40,6 +51,24 @@ export async function normalizeOptions(options) {
 	const pkg = fs.readFile(pkgFile, 'utf-8').then(JSON.parse);
 	options.aliases = (await pkg.catch(() => ({}))).alias || {};
 
+	const hasMjsConfig = await isFile(resolve(options.root, 'wmr.config.mjs'));
+	if (hasMjsConfig || (await isFile(resolve(options.root, 'wmr.config.js')))) {
+		let custom,
+			initialConfigFile = hasMjsConfig ? 'wmr.config.mjs' : 'wmr.config.js';
+		try {
+			custom = await import(resolve(options.root, initialConfigFile));
+		} catch (e) {
+			if (hasMjsConfig || !/import statement/.test(e)) {
+				throw Error(`Failed to load ${initialConfigFile}\n${e}`);
+			}
+		}
+		Object.defineProperty(options, '_config', { value: custom });
+		if (custom) {
+			if (custom.default) await custom.default(options);
+			if (custom[mode]) await custom[mode](options);
+		}
+	}
+
 	return options;
 }
 
@@ -47,5 +76,12 @@ function isDirectory(path) {
 	return fs
 		.stat(path)
 		.then(s => s.isDirectory())
+		.catch(() => false);
+}
+
+function isFile(path) {
+	return fs
+		.stat(path)
+		.then(s => s.isFile())
 		.catch(() => false);
 }
