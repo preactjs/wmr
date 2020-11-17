@@ -57,6 +57,8 @@ export async function normalizeOptions(options, mode) {
 			initialConfigFile = hasMjsConfig ? 'wmr.config.mjs' : 'wmr.config.js';
 		try {
 			const resolved = resolve(options.root, initialConfigFile);
+			// Note: the eval() below is to prevent Rollup from transforming import() and require().
+			// Using the native functions allows us to load ESM and CJS with Node's own semantics.
 			try {
 				custom = await eval('(x => import(x))')(resolved);
 			} catch (err) {
