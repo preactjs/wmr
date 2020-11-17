@@ -93,39 +93,55 @@ function resolveExportMap(exp, entry, envKeys) {
 	}
 	let isFileListing;
 	let isDirectoryExposed = false;
-	const keys = Object.keys(exp);
-	if (keys.length === 0) return false;
-	isFileListing = keys[0][0] === '.';
-	if (isFileListing) {
-		for (const i of keys) {
-			if (i === entry) {
-				return resolveExportMap(exp[i], entry, envKeys);
-			}
-			if (!isDirectoryExposed && i.endsWith('/') && entry.startsWith(i)) {
-				isDirectoryExposed = true;
-			}
-		}
-	} else {
-		for (let i of envKeys) {
-			if (exp.hasOwnProperty(i)) {
-				return resolveExportMap(exp[i], entry, envKeys);
-			}
-		}
-	}
-	// for (let i in exp) {
-	// 	if (isFileListing === undefined) isFileListing = i[0] === '.';
-	// 	if (isFileListing) {
-	// 		// {"exports":{".":"./index.js"}}
+
+	// Alternative Version: prioritized export keys
+	// We could use this to prefer `module` over `browser`.
+	// const keys = Object.keys(exp);
+	// if (keys.length === 0) return false;
+	// isFileListing = keys[0][0] === '.';
+	// if (isFileListing) {
+	// 	for (const i of keys) {
 	// 		if (i === entry) {
 	// 			return resolveExportMap(exp[i], entry, envKeys);
 	// 		}
 	// 		if (!isDirectoryExposed && i.endsWith('/') && entry.startsWith(i)) {
 	// 			isDirectoryExposed = true;
 	// 		}
-	// 	} else if (envKeys.includes(i)) {
-	// 		// {"exports":{"import":"./foo.js"}}
-	// 		return resolveExportMap(exp[i], entry, envKeys);
+	// 	}
+	// } else {
+	// 	for (let i of envKeys) {
+	// 		if (exp.hasOwnProperty(i)) {
+	// 			return resolveExportMap(exp[i], entry, envKeys);
+	// 		}
 	// 	}
 	// }
+
+	let fallbacks = [];
+	for (let i in exp) {
+		if (isFileListing === undefined) isFileListing = i[0] === '.';
+		if (isFileListing) {
+			// {"exports":{".":"./index.js"}}
+			if (i === entry) {
+				return resolveExportMap(exp[i], entry, envKeys);
+			}
+			if (!isDirectoryExposed && i.endsWith('/') && entry.startsWith(i)) {
+				isDirectoryExposed = true;
+			}
+		} else if (envKeys.includes(i)) {
+			// intentionally de-prioritize "require" and "default" keys
+			if (i === 'require' || i === 'default') {
+				fallbacks.push(i);
+			} else {
+				// {"exports":{"import":"./foo.js"}}
+				return resolveExportMap(exp[i], entry, envKeys);
+			}
+		}
+	}
+
+	// None of the in-order keys matched - fall back to require/default in the order specified
+	for (let i of fallbacks) {
+		return resolveExportMap(exp[i], entry, envKeys);
+	}
+
 	return isDirectoryExposed;
 }
