@@ -2,11 +2,9 @@ import { resolve, join } from 'path';
 import { promises as fs } from 'fs';
 import { readEnvFiles } from './environment.js';
 
-/** @typedef {'start' | 'serve' | 'build'} Mode */
-
 /**
- * @template {{ prod?: boolean, mode?: Mode, cwd?: string, root?: string, out?: string, overlayDir?: string, aliases?: Record<string, string>, env?: Record<string, string>, middleware?: import('polka').Middleware[] }} T
- * @param {T} options
+ * @template {Options} T
+ * @param {Partial<T>} options
  * @param {Mode} mode
  * @returns {Promise<T>}
  */
@@ -16,6 +14,8 @@ export async function normalizeOptions(options, mode) {
 
 	options.root = options.cwd;
 
+	options.plugins = [];
+	options.output = [];
 	options.middleware = [];
 
 	// `wmr` / `wmr start` is a development command.
@@ -56,7 +56,14 @@ export async function normalizeOptions(options, mode) {
 		let custom,
 			initialConfigFile = hasMjsConfig ? 'wmr.config.mjs' : 'wmr.config.js';
 		try {
-			custom = await import(resolve(options.root, initialConfigFile));
+			const resolved = resolve(options.root, initialConfigFile);
+			// Note: the eval() below is to prevent Rollup from transforming import() and require().
+			// Using the native functions allows us to load ESM and CJS with Node's own semantics.
+			try {
+				custom = await eval('(x => import(x))')(resolved);
+			} catch (err) {
+				custom = eval('(x => require(x))')(resolved);
+			}
 		} catch (e) {
 			if (hasMjsConfig || !/import statement/.test(e)) {
 				throw Error(`Failed to load ${initialConfigFile}\n${e}`);
@@ -69,6 +76,7 @@ export async function normalizeOptions(options, mode) {
 		}
 	}
 
+	// @ts-ignore-next
 	return options;
 }
 

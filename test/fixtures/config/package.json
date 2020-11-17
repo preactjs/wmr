@@ -1,0 +1,6 @@
+{
+	"type": "module",
+	"devDependencies": {
+		"@babel/standalone": "7.11.6"
+	}
+}
