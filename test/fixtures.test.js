@@ -320,4 +320,56 @@ describe('fixtures', () => {
 			expect(served.body).toEqual(expected);
 		});
 	});
+
+	describe('package-exports', () => {
+		beforeEach(async () => {
+			await loadFixture('package-exports', env);
+			instance = await runWmrFast(env.tmp.path);
+			await env.page.goto(await instance.address);
+		});
+
+		it('should support the "main" field (and no mainfield)', async () => {
+			expect(await env.page.evaluate(`import('/@npm/main')`)).toEqual({
+				default: 'main'
+			});
+
+			expect(await env.page.evaluate(`import('/@npm/no-mainfield')`)).toEqual({
+				default: 'no-mainfield'
+			});
+
+			expect(await env.page.evaluate(`import('/@npm/no-mainfield-module')`)).toEqual({
+				default: 'no-mainfield-module'
+			});
+		});
+
+		it('should support the "exports" field', async () => {
+			expect(await env.page.evaluate(`import('/@npm/exports-single')`)).toEqual({
+				default: 'exports-single'
+			});
+
+			expect(await env.page.evaluate(`import('/@npm/exports-multi')`)).toEqual({
+				default: 'exports-multi'
+			});
+
+			expect(await env.page.evaluate(`import('/@npm/exports-fallbacks-importfirst')`)).toEqual({
+				default: 'import'
+			});
+
+			// We prioritize import/module/browser over require/default:
+			expect(await env.page.evaluate(`import('/@npm/exports-fallbacks-requirefirst')`)).toEqual({
+				default: 'import'
+			});
+			expect(await env.page.evaluate(`import('/@npm/exports-fallbacks-defaultfirst')`)).toEqual({
+				default: 'import'
+			});
+
+			// When import/module/browser isn't present (but a random other one is!), we fall back to require/default:
+			expect(await env.page.evaluate(`import('/@npm/exports-fallbacks-requirefallback')`)).toEqual({
+				default: 'require'
+			});
+			expect(await env.page.evaluate(`import('/@npm/exports-fallbacks-defaultfallback')`)).toEqual({
+				default: 'default'
+			});
+		});
+	});
 });
