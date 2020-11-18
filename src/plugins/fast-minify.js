@@ -24,7 +24,7 @@ export default function fastMinifyPlugin({ sourcemap = false, warnThreshold = 50
 			const duration = Date.now() - start;
 			if (out.error) this.error(out.error);
 			if (out.warnings) for (const warn of out.warnings) this.warn(warn);
-			if (duration > warnThreshold) {
+			if (duration > warnThreshold && process.env.DEBUG) {
 				this.warn(`minify(${chunk.fileName}) took ${duration}ms`);
 			}
 			const map = typeof out.map === 'string' ? JSON.parse(out.map) : out.map || null;
