@@ -34,7 +34,7 @@ export function App() {
 	);
 }
 
-if (typeof document !== 'undefined') {
+if (typeof window !== 'undefined') {
 	if (document.querySelector('.app')) {
 		hydrate(<App />, document.body);
 	} else {
