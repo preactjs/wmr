@@ -5,4 +5,5 @@ node_modules
 wmr.cjs
 yarn.lock
 !node_modules/fake-lib
+!test/fixtures/package-exports/node_modules
 .DS_Store

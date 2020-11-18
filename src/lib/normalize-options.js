@@ -3,19 +3,28 @@ import { promises as fs } from 'fs';
 import { readEnvFiles } from './environment.js';
 
 /**
- * @template {{ cwd?: string, root?: string, out?: string, overlayDir?: string, aliases?: Record<string, string>, env?: Record<string, string>, middleware?: import('polka').Middleware[] }} T
- * @param {T} options
+ * @template {Options} T
+ * @param {Partial<T>} options
+ * @param {Mode} mode
  * @returns {Promise<T>}
  */
-export async function normalizeOptions(options) {
+export async function normalizeOptions(options, mode) {
 	options.cwd = resolve(options.cwd || '');
 	process.chdir(options.cwd);
 
 	options.root = options.cwd;
 
+	options.plugins = [];
+	options.output = [];
 	options.middleware = [];
 
-	const { NODE_ENV = 'development' } = process.env;
+	// `wmr` / `wmr start` is a development command.
+	// `wmr build` / `wmr serve` are production commands.
+	const prod = mode !== 'start';
+	options.prod = prod;
+	options.mode = mode;
+
+	const NODE_ENV = process.env.NODE_ENV || (prod ? 'production' : 'development');
 	options.env = await readEnvFiles(options.root, ['.env', '.env.local', `.env.${NODE_ENV}`, `.env.${NODE_ENV}.local`]);
 
 	// Output directory is relative to CWD *before* ./public is detected + appended:
@@ -47,29 +56,27 @@ export async function normalizeOptions(options) {
 		let custom,
 			initialConfigFile = hasMjsConfig ? 'wmr.config.mjs' : 'wmr.config.js';
 		try {
-			custom = await import(resolve(options.root, initialConfigFile));
+			const resolved = resolve(options.root, initialConfigFile);
+			// Note: the eval() below is to prevent Rollup from transforming import() and require().
+			// Using the native functions allows us to load ESM and CJS with Node's own semantics.
+			try {
+				custom = await eval('(x => import(x))')(resolved);
+			} catch (err) {
+				custom = eval('(x => require(x))')(resolved);
+			}
 		} catch (e) {
 			if (hasMjsConfig || !/import statement/.test(e)) {
 				throw Error(`Failed to load ${initialConfigFile}\n${e}`);
 			}
-			// // Importing `wmr.config.js` failed: try copying it to `wmr.config.mjs` and importing that:
-			// await fs.copyFile(resolve(options.root, 'wmr.config.js'), resolve(options.root, 'wmr.config.mjs'));
-			// try {
-			// 	custom = await import(resolve(options.root, 'wmr.config.mjs'));
-			// } catch (e) {
-			// 	throw Error(`Failed to load wmr.config.js\n${e}`);
-			// } finally {
-			// 	try {
-			// 		await fs.unlink(resolve(options.root, 'wmr.config.mjs'));
-			// 	} catch {}
-			// }
 		}
 		Object.defineProperty(options, '_config', { value: custom });
-		if (custom && custom.default) {
-			custom.default(options);
+		if (custom) {
+			if (custom.default) await custom.default(options);
+			if (custom[mode]) await custom[mode](options);
 		}
 	}
 
+	// @ts-ignore-next
 	return options;
 }
 

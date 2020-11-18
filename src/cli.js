@@ -12,6 +12,7 @@ prog
 	.option('--cwd', 'Your web app root directory (default: ./public)')
 	.option('--out', 'Where to store generated files (default: ./dist)')
 	.command('build', 'make a production build')
+	.option('--prerender', 'Pre-render the application to HTML')
 	.action(opts => {
 		run(build(opts));
 	})

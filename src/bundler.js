@@ -1,6 +1,5 @@
 import { relative, sep, posix, resolve, dirname } from 'path';
 import * as rollup from 'rollup';
-import json from '@rollup/plugin-json';
 import htmPlugin from './plugins/htm-plugin.js';
 import sucrasePlugin from './plugins/sucrase-plugin.js';
 import wmrPlugin from './plugins/wmr/plugin.js';
@@ -19,9 +18,13 @@ import resolveExtensionsPlugin from './plugins/resolve-extensions-plugin.js';
 import fastCjsPlugin from './plugins/fast-cjs-plugin.js';
 import bundlePlugin from './plugins/bundle-plugin.js';
 import jsonPlugin from './plugins/json-plugin.js';
+import optimizeGraphPlugin from './plugins/optimize-graph-plugin.js';
 
 /** @param {string} p */
 const pathToPosix = p => p.split(sep).join(posix.sep);
+
+/** @typedef {import('rollup').OutputOptions} OutputOptions */
+/** @typedef {OutputOptions | ((opts: OutputOptions) => OutputOptions)} Output */
 
 /**
  * @typedef {Object} BuildOptions
@@ -33,6 +36,8 @@ const pathToPosix = p => p.split(sep).join(posix.sep);
  * @property {Record<string, string>} [aliases] module aliases
  * @property {boolean} [profile] Enable bundler performance profiling
  * @property {Record<string, string>} [env]
+ * @property {import('rollup').Plugin[]} [plugins]
+ * @property {Output | Output[]} [output]
  * @property {(error: BuildError)=>void} [onError]
  * @property {(error: BuildEvent)=>void} [onBuild]
  */
@@ -57,6 +62,8 @@ export async function bundleProd({
 	aliases,
 	profile,
 	env = {},
+	plugins,
+	output,
 	npmChunks = false
 }) {
 	cwd = cwd || '';
@@ -101,20 +108,22 @@ export async function bundleProd({
 				// Only transpile CommonJS in node_modules and explicit .cjs files:
 				include: /(?:^[\b]npm\/|[/\\]node_modules[/\\]|\.cjs$)/
 			}),
-			json(),
 			npmPlugin({ external: false }),
-			minifyCssPlugin({ sourcemap }),
 			urlPlugin({}),
 			jsonPlugin(),
-			bundlePlugin({ cwd })
-		]
+			bundlePlugin({ cwd }),
+			optimizeGraphPlugin({ publicPath: '/' }),
+			minifyCssPlugin({ sourcemap })
+		].concat(plugins || [])
 	});
 
-	return await bundle.write({
+	/** @type {import('rollup').OutputOptions} */
+	const outputConfig = {
 		entryFileNames: '[name].[hash].js',
 		chunkFileNames: 'chunks/[name].[hash].js',
 		assetFileNames: 'assets/[name].[hash][extname]',
 		compact: true,
+		hoistTransitiveImports: true,
 		plugins: [terser({ compress: true, sourcemap })],
 		sourcemap,
 		sourcemapPathTransform(p, mapPath) {
@@ -127,7 +136,25 @@ export async function bundleProd({
 		},
 		preferConst: true,
 		dir: out || 'dist'
-	});
+	};
+
+	const result = await bundle.write(outputConfig);
+
+	if (output) {
+		if (!Array.isArray(output)) output = [output];
+		if (output.length) {
+			await Promise.all(
+				output.map(output => {
+					if (typeof output === 'function') {
+						output = output({ ...outputConfig });
+					}
+					return bundle.write(output);
+				})
+			);
+		}
+	}
+
+	return result;
 }
 
 /** @type {import('rollup').GetManualChunk} */

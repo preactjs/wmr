@@ -1,3 +1,4 @@
+import styles from './style.module.css';
 import { useState } from 'preact/hooks';
 
 export default function Home() {
@@ -5,7 +6,7 @@ export default function Home() {
 
 	return (
 		<>
-			<section>
+			<section class={styles.home}>
 				<h1>Home</h1>
 				{/* Note: the string below is used in E2E tests */}
 				<p>This is the home page.</p>

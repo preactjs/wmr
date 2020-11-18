@@ -1,6 +1,6 @@
-import { h, hydrate, render } from 'preact';
-import { Loc, Router } from './loc.js';
-import lazy, { ErrorBoundary } from './lazy.js';
+import { hydrate, render } from 'preact';
+import { Loc, Router } from './lib/loc.js';
+import lazy, { ErrorBoundary } from './lib/lazy.js';
 import Home from './pages/home.js';
 // import About from './pages/about/index.js';
 import NotFound from './pages/_404.js';
@@ -35,7 +35,7 @@ export function App() {
 }
 
 if (typeof document !== 'undefined') {
-	if (document.body.hasAttribute('ssr')) {
+	if (document.querySelector('.app')) {
 		hydrate(<App />, document.body);
 	} else {
 		render(<App />, document.body);

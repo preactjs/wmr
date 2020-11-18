@@ -2,6 +2,8 @@ import { promises as fs } from 'fs';
 import { resolve, join, dirname, relative, sep, posix } from 'path';
 import { transformHtml } from '../lib/transform-html.js';
 
+/** @typedef {import('rollup').OutputAsset & { referencedFiles: string[], importedIds: string[] }} ExtendedAsset */
+
 /** @param {string} src */
 const isLocalFile = src => src && !/^([a-z]+:)\/\//i.test(src);
 
@@ -26,6 +28,7 @@ const toSystemPath = p => p.split(posix.sep).join(sep);
 export default function htmlEntriesPlugin({ cwd, publicDir, publicPath } = {}) {
 	const root = publicDir || cwd || '.';
 	const ENTRIES = [];
+	const META = new Map();
 
 	/** @this {import('rollup').PluginContext} */
 	async function handleHtmlEntry(id) {
@@ -36,9 +39,11 @@ export default function htmlEntriesPlugin({ cwd, publicDir, publicPath } = {}) {
 		if (!resolved) return;
 		id = resolved.id;
 
+		const entryId = relative(root, id);
 		const html = await fs.readFile(id, 'utf-8');
 		const waiting = [];
 		const scripts = [];
+		const all = [];
 
 		const transformed = await transformHtml(html, {
 			transformUrl: (url, attr, tag, { attrs }) => {
@@ -56,6 +61,7 @@ export default function htmlEntriesPlugin({ cwd, publicDir, publicPath } = {}) {
 				if (tag === 'script' && attrs && attrs.type && /^module$/i.test(attrs.type)) {
 					const id = ENTRIES.push(abs) - 1;
 					scripts.push(abs);
+					all.push(abs);
 					return `/__ENTRY__/${id}`;
 				}
 				if (tag === 'link' && attrs && attrs.rel && /^stylesheet$/i.test(attrs.rel)) {
@@ -63,6 +69,7 @@ export default function htmlEntriesPlugin({ cwd, publicDir, publicPath } = {}) {
 						type: 'asset',
 						name: url.replace(/^\.\//, '')
 					});
+					all.push(ref);
 					waiting.push(
 						fs.readFile(abs, 'utf-8').then(source => {
 							this.setAssetSource(ref, source);
@@ -79,9 +86,11 @@ export default function htmlEntriesPlugin({ cwd, publicDir, publicPath } = {}) {
 
 		this.emitFile({
 			type: 'asset',
-			fileName: relative(root, id),
+			fileName: entryId,
 			source: transformed
 		});
+
+		META.set(entryId, { assets: all });
 
 		return scripts;
 	}
@@ -90,6 +99,7 @@ export default function htmlEntriesPlugin({ cwd, publicDir, publicPath } = {}) {
 		name: 'html-entries',
 
 		async buildStart(opts) {
+			META.clear();
 			ENTRIES.length = 0;
 			const scripts = await Promise.all(Object.values(opts.input).map(handleHtmlEntry.bind(this)));
 			opts.input = scripts.flat();
@@ -97,28 +107,46 @@ export default function htmlEntriesPlugin({ cwd, publicDir, publicPath } = {}) {
 
 		async generateBundle(_, bundle) {
 			for (const id in bundle) {
-				const asset = bundle[id];
-				// replace asset references with their generated URLs:
-				if (asset.type === 'asset' && asset.fileName.match(/\.html$/)) {
-					let html = asset.source.toString();
-					html = html.replace(/\/__ENTRY__\/(\d+)/g, (str, id) => {
-						const name = ENTRIES[id];
-						for (const id in bundle) {
-							const asset = bundle[id];
-							if (asset.type === 'chunk' && asset.facadeModuleId === name) {
-								return (publicPath || '') + asset.fileName;
+				const thisAsset = bundle[id];
+				if (thisAsset.type !== 'asset' || !/\.html$/.test(thisAsset.fileName)) continue;
+
+				/** @type {ExtendedAsset} */
+				const htmlAsset = Object.assign(thisAsset, {
+					importedIds: [],
+					referencedFiles: []
+				});
+
+				let html = htmlAsset.source;
+				if (typeof html !== 'string') html = Buffer.from(html.buffer).toString('utf-8');
+
+				// Replace chunk references with their generated URLs:
+				html = html.replace(/\/__ENTRY__\/(\d+)/g, (str, id) => {
+					const name = ENTRIES[id];
+					for (const id in bundle) {
+						const asset = bundle[id];
+						if (asset.type === 'chunk' && asset.facadeModuleId === name) {
+							const fileName = asset.fileName;
+							if (!htmlAsset.importedIds.includes(fileName)) {
+								htmlAsset.importedIds.push(fileName);
 							}
+							return (publicPath || '') + fileName;
 						}
-						this.warn(`Could not find generated URL for ${name}`);
-						return str;
-					});
-					html = html.replace(/\/__ASSET__\/(\w+)/g, (str, id) => {
-						let filename = this.getFileName(id);
-						if (!filename) return str;
-						return (publicPath || '') + filename;
-					});
-					asset.source = html;
-				}
+					}
+					this.warn(`Could not find generated URL for ${name}`);
+					return str;
+				});
+
+				// Replace asset references with their generated URLs:
+				html = html.replace(/\/__ASSET__\/(\w+)/g, (str, id) => {
+					let filename = this.getFileName(id);
+					if (!filename) return str;
+					if (!htmlAsset.referencedFiles.includes(filename)) {
+						htmlAsset.referencedFiles.push(filename);
+					}
+					return (publicPath || '') + filename;
+				});
+
+				htmlAsset.source = html;
 			}
 		}
 	};

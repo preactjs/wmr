@@ -1,4 +1,4 @@
-import { useLoc } from './loc.js';
+import { useLoc } from './lib/loc.js';
 
 export default function Header() {
 	const { url }: { url: string } = useLoc();

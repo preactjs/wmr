@@ -31,33 +31,85 @@ describe('fixtures', () => {
 		expect(await getOutput(env, instance)).toMatch(`class fields work`);
 	});
 
+	it('should not if sub-import is not in export map', async () => {
+		await loadFixture('empty', env);
+		instance = await runWmrFast(env.tmp.path);
+		await getOutput(env, instance);
+		expect(
+			await env.page.evaluate(async () => {
+				const res = await fetch('/@npm/@urql/core');
+				const body = await res.text();
+				return { status: res.status, body };
+			})
+		).toEqual({
+			status: 200,
+			body: expect.stringMatching(/createClient/)
+		});
+		// Note: we can't assert on the exported values here because they're just Puppeteer Handle objects.
+		expect(await env.page.evaluate(`import('/@npm/@urql/core')`)).toMatchObject({
+			createClient: expect.anything(),
+			Client: expect.anything()
+		});
+	});
+
 	describe('empty', () => {
 		it('should print warning for missing index.html file in public dir', async () => {
 			await loadFixture('empty', env);
 			instance = await runWmrFast(env.tmp.path);
-			expect(instance.output[0]).toMatch(`missing "index.html" file`);
+			expect(instance.output.join('\n')).toMatch(`missing "index.html" file`);
 			expect(await getOutput(env, instance)).toMatch(`Not Found`);
 		});
 
 		it('should print warning for missing index.html file (no public dir)', async () => {
 			await loadFixture('empty-nopublic', env);
 			instance = await runWmrFast(env.tmp.path);
-			expect(instance.output[0]).toMatch(`missing "index.html" file`);
+			expect(instance.output.join('\n')).toMatch(`missing "index.html" file`);
 			expect(await getOutput(env, instance)).toMatch(`Not Found`);
 		});
 
 		it('should start successfully with only an HTML file in public dir', async () => {
 			await loadFixture('htmlonly', env);
 			instance = await runWmrFast(env.tmp.path);
-			expect(instance.output[0]).not.toMatch(`missing an "index.html"`);
+			expect(instance.output.join('\n')).not.toMatch(`missing an "index.html"`);
 			expect(await getOutput(env, instance)).toMatch(`<h1>Hello wmr</h1>`);
 		});
 
 		it('should start successfully with only an HTML file (no public dir)', async () => {
 			await loadFixture('htmlonly-nopublic', env);
 			instance = await runWmrFast(env.tmp.path);
-			expect(instance.output[0]).not.toMatch(`missing an "index.html"`);
+			expect(instance.output.join('\n')).not.toMatch(`missing an "index.html"`);
 			expect(await getOutput(env, instance)).toMatch(`<h1>Hello wmr</h1>`);
+		});
+	});
+
+	describe('client-side routing fallbacks', () => {
+		it('should return index.html for missing navigate requests', async () => {
+			await loadFixture('index-fallback', env);
+			instance = await runWmrFast(env.tmp.path);
+
+			await getOutput(env, instance);
+			expect(await env.page.$eval('h1', el => el.textContent)).toBe('/');
+			expect(await env.page.title()).toBe('index.html');
+
+			await env.page.goto(`${await instance.address}/foo`, { waitUntil: 'networkidle0' });
+			expect(await env.page.$eval('h1', el => el.textContent)).toBe('/foo');
+			expect(await env.page.title()).toBe('index.html');
+
+			expect(await env.page.evaluate(async () => (await fetch('/foo.js')).status)).toBe(404);
+			expect(await env.page.evaluate(async () => await (await fetch('/foo.js')).text())).toMatch(/not found/i);
+		});
+
+		it('should use 200.html for fallback if present', async () => {
+			await loadFixture('200', env);
+			instance = await runWmrFast(env.tmp.path);
+
+			await getOutput(env, instance);
+			expect(await env.page.$eval('h1', el => el.textContent)).toBe('/');
+			expect(await env.page.title()).toBe('index.html');
+
+			await env.page.goto(`${await instance.address}/foo`, { waitUntil: 'networkidle0' });
+			expect(await env.page.$eval('h1', el => el.textContent)).toBe('/foo');
+			expect(await env.page.title()).toBe('200.html');
 		});
 	});
 
@@ -266,6 +318,58 @@ describe('fixtures', () => {
 			const expected = await fs.readFile(path.resolve(__dirname, 'fixtures/file-import/fake-font.ttf'), 'utf-8');
 			const served = await get(instance, '/fake-font.ttf');
 			expect(served.body).toEqual(expected);
+		});
+	});
+
+	describe('package-exports', () => {
+		beforeEach(async () => {
+			await loadFixture('package-exports', env);
+			instance = await runWmrFast(env.tmp.path);
+			await env.page.goto(await instance.address);
+		});
+
+		it('should support the "main" field (and no mainfield)', async () => {
+			expect(await env.page.evaluate(`import('/@npm/main')`)).toEqual({
+				default: 'main'
+			});
+
+			expect(await env.page.evaluate(`import('/@npm/no-mainfield')`)).toEqual({
+				default: 'no-mainfield'
+			});
+
+			expect(await env.page.evaluate(`import('/@npm/no-mainfield-module')`)).toEqual({
+				default: 'no-mainfield-module'
+			});
+		});
+
+		it('should support the "exports" field', async () => {
+			expect(await env.page.evaluate(`import('/@npm/exports-single')`)).toEqual({
+				default: 'exports-single'
+			});
+
+			expect(await env.page.evaluate(`import('/@npm/exports-multi')`)).toEqual({
+				default: 'exports-multi'
+			});
+
+			expect(await env.page.evaluate(`import('/@npm/exports-fallbacks-importfirst')`)).toEqual({
+				default: 'import'
+			});
+
+			// We prioritize import/module/browser over require/default:
+			expect(await env.page.evaluate(`import('/@npm/exports-fallbacks-requirefirst')`)).toEqual({
+				default: 'import'
+			});
+			expect(await env.page.evaluate(`import('/@npm/exports-fallbacks-defaultfirst')`)).toEqual({
+				default: 'import'
+			});
+
+			// When import/module/browser isn't present (but a random other one is!), we fall back to require/default:
+			expect(await env.page.evaluate(`import('/@npm/exports-fallbacks-requirefallback')`)).toEqual({
+				default: 'require'
+			});
+			expect(await env.page.evaluate(`import('/@npm/exports-fallbacks-defaultfallback')`)).toEqual({
+				default: 'default'
+			});
 		});
 	});
 });
