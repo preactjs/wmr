@@ -90,7 +90,7 @@ function createWorker({ entry, baseURL, http2, methods = {} }) {
 	const ready = deferred();
 
 	const proc = fork(entry, [], {
-		stdio: 'inherit',
+		stdio: ['ipc', 'inherit', 'pipe'],
 		execArgv: [
 			// force ESM to be enabled in Node 12
 			'--experimental-modules',
@@ -102,6 +102,10 @@ function createWorker({ entry, baseURL, http2, methods = {} }) {
 			WMRSSR_HOST: baseURL,
 			NODE_TLS_REJECT_UNAUTHORIZED: http2 ? '0' : undefined
 		}
+	});
+	// @ts-ignore-next
+	proc.stderr.on('data', m => {
+		if (!/^\(node:\d+\) ExperimentalWarning:/.test(m.toString('utf-8'))) process.stderr.write(m);
 	});
 	proc.on('error', console.error);
 	proc.once('exit', process.exit);
