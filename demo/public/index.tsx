@@ -44,3 +44,8 @@ if (typeof document !== 'undefined') {
 	// @ts-ignore
 	if (module.hot) module.hot.accept(u => render(<u.module.App />, document.body));
 }
+
+export async function prerender(data) {
+	const { prerender } = await import('./lib/prerender.js');
+	return await prerender(<App {...data} />);
+}

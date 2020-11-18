@@ -113,7 +113,6 @@ function finish({ url, res }, result) {
 	if (/<\/body>/i.test(result)) result = result.replace(/(<\/body>)/i, body + '$1');
 	else result += body;
 
-	// result = result.replace(/<script type="module"/g, '<script type="not-module"');
 	return result;
 }
 

@@ -19,5 +19,6 @@ export function ErrorBoundary(props) {
 }
 function absorb(err) {
 	if (err && err.then) this.__d = true;
+	// @ts-ignore-next
 	else if (this.props.onError) this.props.onError(err);
 }

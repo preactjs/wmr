@@ -97,7 +97,6 @@ function createWorker({ entry, baseURL, http2, methods = {} }) {
 			// enable the Loader API in Node 12+
 			'--experimental-loader',
 			fileURLToPath(new URL('./loader.js', import.meta.url).href)
-			// resolve(fileURLToPath(import.meta.url), '../../../_ssr.js')
 		],
 		env: {
 			WMRSSR_HOST: baseURL,

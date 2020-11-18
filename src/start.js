@@ -4,7 +4,6 @@ import { getFreePort, getServerAddresses } from './lib/net-utils.js';
 import { normalizeOptions } from './lib/normalize-options.js';
 import { setCwd } from './plugins/npm-plugin/registry.js';
 import * as kl from 'kolorist';
-// import ssrMiddleware from './lib/ssr-middleware.js';
 
 /**
  * @typedef OtherOptions
@@ -62,9 +61,6 @@ export default async function start(options = {}) {
 	}
 
 	const app = await server(options);
-	// const port = await getFreePort(options.port || process.env.PORT || 8080);
-	// const host = options.host || process.env.HOST;
-	// app.listen(port, host);
 	app.listen(options.port, options.host);
 	const addresses = getServerAddresses(app.server.address(), { https: app.http2 });
 	process.stdout.write(kl.cyan(`Listening on ${addresses}`) + '\n');
