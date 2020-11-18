@@ -3,10 +3,11 @@ import { fileURLToPath } from 'url';
 import { fork } from 'child_process';
 
 /**
- * @param {{ cwd: string, root?: string, port?: number, http2?: boolean, ssr?: boolean|string }} options
+ * @param {{ cwd: string, root?: string, port?: number, http2?: boolean }} options
+ * @param {{ }} [config]
  * @returns {(req: Pick<import('http').IncomingMessage, 'method'|'headers'|'url'|'path'>, res: import('http').ServerResponse, next:Function) => void}
  */
-export default function ssrMiddleware(options) {
+export default function ssrMiddleware(options, config) {
 	const RPC_METHODS = {
 		setHeader(requestId, name, value) {
 			const res = responses.get(requestId);

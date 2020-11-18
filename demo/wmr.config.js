@@ -1,5 +1,5 @@
-import middleware from './plugins/ssr/middleware.js';
+import ssr from './plugins/ssr/index.js';
 
 export default options => {
-	options.middleware.push(middleware(options));
+	ssr({})(options);
 };
