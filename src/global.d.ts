@@ -1,4 +1,4 @@
 type empty = null | undefined;
 
-type Mode = import('../types').Mode;
-type Options = import('../types').Options;
+type Mode = import('wmr').Mode;
+type Options = import('wmr').Options;
