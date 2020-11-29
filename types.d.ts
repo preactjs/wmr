@@ -11,6 +11,7 @@ export interface Options {
 	prod: boolean;
 	mode: Mode;
 	cwd: string;
+	public: string;
 	root: string;
 	out: string;
 	overlayDir: string;
