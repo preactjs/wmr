@@ -20,7 +20,7 @@
 		"wmr.cjs",
 		"types.d.ts"
 	],
-	"types": "types.d.ts",
+	"types": "./types.d.ts",
 	"babel": {
 		"plugins": [
 			"@babel/plugin-transform-modules-commonjs"
