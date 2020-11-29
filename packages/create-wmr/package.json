@@ -1,0 +1,25 @@
+{
+  "name": "create-wmr",
+  "version": "0.1.1",
+  "description": "",
+  "main": "./dist/index.js",
+  "bin": "./dist/index.js",
+  "scripts": {
+    "prepare": "microbundle --target node -f cjs --no-sourcemap --compress --external none src/index.js"
+  },
+  "author": "The Preact Authors (https://preactjs.com)",
+  "repository": "preactjs/wmr",
+  "license": "MIT",
+  "files": [
+    "dist",
+    "tpl"
+  ],
+  "devDependencies": {
+    "@types/node": "^14.14.8",
+    "kleur": "^4.1.3",
+    "microbundle": "^0.12.4",
+    "ora": "^5.1.0",
+    "pkg-install": "^1.0.0",
+    "sade": "^1.7.4"
+  }
+}

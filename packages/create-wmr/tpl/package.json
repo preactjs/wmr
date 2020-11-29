@@ -1,0 +1,14 @@
+{
+	"scripts": {
+		"start": "wmr",
+		"build": "wmr build --prerender",
+		"serve": "wmr serve"
+	},
+	"eslintConfig": {
+		"extends": "preact"
+	},
+	"alias": {
+		"react": "preact/compat",
+		"react-dom": "preact/compat"
+	}
+}
