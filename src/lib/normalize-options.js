@@ -54,7 +54,8 @@ export async function normalizeOptions(options, mode) {
 	const hasMjsConfig = await isFile(resolve(options.root, 'wmr.config.mjs'));
 	if (hasMjsConfig || (await isFile(resolve(options.root, 'wmr.config.js')))) {
 		let custom,
-			initialConfigFile = hasMjsConfig ? 'wmr.config.mjs' : 'wmr.config.js';
+			initialConfigFile = hasMjsConfig ? 'wmr.config.mjs' : 'wmr.config.js',
+			initialError;
 		try {
 			const resolved = resolve(options.root, initialConfigFile);
 			// Note: the eval() below is to prevent Rollup from transforming import() and require().
@@ -62,11 +63,12 @@ export async function normalizeOptions(options, mode) {
 			try {
 				custom = await eval('(x => import(x))')(resolved);
 			} catch (err) {
+				initialError = err;
 				custom = eval('(x => require(x))')(resolved);
 			}
 		} catch (e) {
 			if (hasMjsConfig || !/import statement/.test(e)) {
-				throw Error(`Failed to load ${initialConfigFile}\n${e}`);
+				throw Error(`Failed to load ${initialConfigFile}\n${initialError || ''}\n${e}`);
 			}
 		}
 		Object.defineProperty(options, '_config', { value: custom });

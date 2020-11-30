@@ -86,8 +86,10 @@ function dequeue() {
 }
 function update(url) {
 	const mod = getMod(url);
+	const prepare = Array.from(mod.prepare);
 	const dispose = Array.from(mod.dispose);
 	const accept = Array.from(mod.accept);
+	prepare.forEach(c => (c(), mod.prepare.delete(c)));
 	const newUrl = url + '?t=' + Date.now();
 	const p = mod.import ? mod.import(newUrl) : import(newUrl);
 	return p
@@ -106,7 +108,7 @@ const mods = new Map();
 function getMod(url) {
 	url = strip(url);
 	let mod = mods.get(url);
-	if (!mod) mods.set(url, (mod = { accept: new Set(), dispose: new Set() }));
+	if (!mod) mods.set(url, (mod = { prepare: new Set(), accept: new Set(), dispose: new Set() }));
 	return mod;
 }
 
@@ -114,6 +116,9 @@ function getMod(url) {
 export function createHotContext(url) {
 	const mod = getMod(url);
 	return {
+		prepare(fn) {
+			mod.prepare.add(fn);
+		},
 		accept(fn) {
 			mod.accept.add(fn);
 		},
@@ -134,10 +139,13 @@ export function style(filename, id) {
 	if (node) {
 		node.href = filename + '?t=' + Date.now();
 	} else {
-		const node = document.createElement('link');
-		node.rel = 'stylesheet';
-		node.href = filename;
-		document.head.appendChild(node);
+		let node = document.querySelector('link[rel=stylesheet][href="' + filename + '"]');
+		if (!node) {
+			node = document.createElement('link');
+			node.rel = 'stylesheet';
+			node.href = filename;
+			document.head.appendChild(node);
+		}
 		styles.set(id, node);
 	}
 }
