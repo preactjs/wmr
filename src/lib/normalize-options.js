@@ -39,10 +39,12 @@ export async function normalizeOptions(options, mode) {
 		console.warn(`Warning: Failed to create output directory: ${err.message}`);
 	});
 
+	options.public = options.public || 'public';
+
 	// If the CWD has a public/ directory, all files are assumed to be within it.
 	// From here, everything except node_modules and `out` are relative to public:
-	if (await isDirectory(join(options.cwd, 'public'))) {
-		options.cwd = join(options.cwd, 'public');
+	if (options.public !== '.' && (await isDirectory(join(options.cwd, options.public)))) {
+		options.cwd = join(options.cwd, options.public);
 	}
 
 	await ensureOutDirPromise;

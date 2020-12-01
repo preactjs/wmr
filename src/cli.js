@@ -9,8 +9,9 @@ import * as kl from 'kolorist';
 const prog = sade('wmr');
 
 prog
-	.option('--cwd', 'Your web app root directory (default: ./public)')
+	.option('--public', 'Your web app root directory (default: ./public)')
 	.option('--out', 'Where to store generated files (default: ./dist)')
+	.option('--cwd', 'The working directory - equivalent to "(cd FOO && wmr)"')
 	.command('build', 'make a production build')
 	.option('--prerender', 'Pre-render the application to HTML')
 	.action(opts => {
