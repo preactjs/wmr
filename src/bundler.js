@@ -78,7 +78,8 @@ export async function bundleProd({
 	});
 
 	// note: we intentionally pass these to Rollup as posix paths
-	const input = htmlFiles.filter(p => !p.startsWith(out)).map(p => './' + pathToPosix(relative('.', p)));
+	const ignore = /^\.\/(node_modules|dist|build)\//;
+	const input = htmlFiles.map(p => './' + pathToPosix(relative('.', p))).filter(p => !ignore.test(p));
 
 	const bundle = await rollup.rollup({
 		input,
