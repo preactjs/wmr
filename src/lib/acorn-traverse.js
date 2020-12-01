@@ -2,6 +2,7 @@ import * as acornWalk from 'acorn-walk';
 import * as jsxWalk from 'acorn-jsx-walk';
 import MagicString from 'magic-string';
 import * as astringLib from 'astring';
+import { codeFrame } from './output-utils.js';
 
 /**
  * @fileoverview
@@ -722,27 +723,6 @@ function buildError(err, code, filename) {
 	const position = `${filename}:${loc.line}:${loc.column + 1}`;
 	const frame = codeFrame(code, loc);
 	return `${text} (${position})${frame}`;
-}
-
-const normalize = str => str.replace(/^(\t+)/, (_, p1) => '  '.repeat(p1.length));
-
-function codeFrame(code, loc) {
-	const { line, column } = loc;
-	const lines = code.split('\n');
-	const len = String(line).length + 2;
-	const pad = str => String(str).padStart(len);
-	let frame = '';
-	if (line > 1) {
-		frame += `\n${pad(line - 2)} | ${normalize(lines[line - 2])}`;
-	}
-	frame += `\n${pad(line - 1)} | ${normalize(lines[line - 1])}`;
-	// Add tab count to marker offset, because tabs are converted to 2 spaces.
-	const tabCount = (lines[line - 1].match(/^\t+/) || []).length;
-	frame += `\n${'-'.repeat(len + 3 + column + tabCount)}^`;
-	if (line < lines.length) {
-		frame += `\n${pad(line)} | ${normalize(lines[line])}`;
-	}
-	return frame;
 }
 
 /**

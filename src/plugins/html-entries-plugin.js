@@ -1,6 +1,8 @@
 import { promises as fs } from 'fs';
 import { resolve, join, dirname, relative, sep, posix } from 'path';
 import { transformHtml } from '../lib/transform-html.js';
+import { yellow, bgYellow, bgRed, dim, bold, white, black, magenta } from 'kolorist';
+import { codeFrame } from '../lib/output-utils.js';
 
 /** @typedef {import('rollup').OutputAsset & { referencedFiles: string[], importedIds: string[] }} ExtendedAsset */
 
@@ -47,6 +49,7 @@ export default function htmlEntriesPlugin({ cwd, publicDir, publicPath } = {}) {
 
 		const transformed = await transformHtml(html, {
 			transformUrl: (url, attr, tag, { attrs }) => {
+				const origUrl = url;
 				if (!isLocalFile(url)) return null;
 
 				let abs = url;
@@ -58,12 +61,35 @@ export default function htmlEntriesPlugin({ cwd, publicDir, publicPath } = {}) {
 					abs = resolve(dirname(id), toSystemPath(url));
 				}
 
-				if (tag === 'script' && attrs && attrs.type && /^module$/i.test(attrs.type)) {
+				if (tag === 'script') {
+					if (attrs && attrs.nomodule) return null;
+
+					if (!attrs || !/^\s*module\s*$/i.test(attrs.type || '')) {
+						let match, frame;
+						const reg = /<script(?:\s[^>]*?)?\ssrc=(['"]?)([^'">]*?)\1(?:\s[^>]*?)?\s*>/;
+						while ((match = reg.exec(html))) {
+							if (match[2] === origUrl) {
+								frame = codeFrame(html, match.index);
+								break;
+							}
+						}
+						this.warn(
+							'\n' +
+								bgYellow(black(bold('WARN'))) +
+								yellow(` <script src="${url}"> is missing type="module".\n`) +
+								white(`${dim('>')} Only module scripts are handled by WMR.\n`) +
+								white(dim('> ' + yellow(entryId) + ': ')) +
+								(frame ? white(frame) : '')
+						);
+						return null;
+					}
+
 					const id = ENTRIES.push(abs) - 1;
 					scripts.push(abs);
 					all.push(abs);
 					return `/__ENTRY__/${id}`;
 				}
+
 				if (tag === 'link' && attrs && attrs.rel && /^stylesheet$/i.test(attrs.rel)) {
 					const ref = this.emitFile({
 						type: 'asset',
@@ -101,8 +127,20 @@ export default function htmlEntriesPlugin({ cwd, publicDir, publicPath } = {}) {
 		async buildStart(opts) {
 			META.clear();
 			ENTRIES.length = 0;
-			const scripts = await Promise.all(Object.values(opts.input).map(handleHtmlEntry.bind(this)));
+			const entries = Object.values(opts.input);
+			const scripts = await Promise.all(entries.map(handleHtmlEntry.bind(this)));
 			opts.input = scripts.flat();
+			if (opts.input.length === 0) {
+				const htmlEntries = entries.filter(id => /\.html$/.test(id));
+
+				let desc = htmlEntries.slice(0, 3).join(', ');
+				if (htmlEntries.length > 3) desc += ` (+${htmlEntries.length - 3} more)`;
+				this.error(
+					`\n${bgRed(white(bold(`ERROR`)))} No modules found:` +
+						`\n> ${white(`No module scripts were found in ${desc}.`)}` +
+						`\n> ${white(`Did you forget ${dim('<script')} ${magenta('type="module"')} ${dim('src="..">')} ?`)}\n`
+				);
+			}
 		},
 
 		async generateBundle(_, bundle) {
