@@ -12,10 +12,15 @@ export function prerender({ cwd = '.', out = '.cache' }) {
 			.catch(err => require('worker_threads').parentPort.postMessage([0,err && err.stack || err+'']))`,
 		{
 			eval: true,
-			workerData: { cwd, out }
-			// execArgv: ['--experimental-modules']
+			workerData: { cwd, out },
+			// execArgv: ['--experimental-modules'],
+			stderr: true
 		}
 	);
+	// @ts-ignore-next
+	w.stderr.on('data', m => {
+		if (!/^\(node:\d+\) ExperimentalWarning:/.test(m.toString('utf-8'))) process.stderr.write(m);
+	});
 	return new Promise((resolve, reject) => {
 		w.on('message', ([f, d]) => (f ? resolve(d) : reject(d)));
 		w.once('error', reject);
