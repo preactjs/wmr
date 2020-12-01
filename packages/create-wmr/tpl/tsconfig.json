@@ -1,0 +1,19 @@
+{
+	"compileOnSave": false,
+	"compilerOptions": {
+		"jsx": "preserve",
+		"allowJs": true,
+		"checkJs": true,
+		// "strict": true,
+		"noEmit": true,
+		"moduleResolution": "node",
+		"target": "ESNext",
+		"module": "esnext",
+		"resolveJsonModule": true,
+		"allowSyntheticDefaultImports": true,
+		"downlevelIteration": true
+	},
+	"typeAcquisition": {
+		"enable": true
+	}
+}

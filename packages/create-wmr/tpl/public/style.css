@@ -1,0 +1,45 @@
+html,
+body {
+	margin: 0;
+	min-height: 100%;
+	font-family: system-ui, sans-serif;
+}
+
+header {
+	display: flex;
+	background: #ddd;
+}
+
+header > nav {
+	flex: 1;
+	display: flex;
+}
+
+header > nav a {
+	padding: 10px;
+	color: #673ab8;
+	text-decoration: none;
+}
+
+header > nav a:hover {
+	background-color: #f1e9ff;
+}
+
+header > label {
+	display: flex;
+	align-items: center;
+	padding: 10px;
+	color: #555;
+	font-size: 80%;
+}
+
+header input {
+	border: none;
+	border-radius: 3px;
+	padding: 2px 5px;
+	font-size: 100%;
+}
+
+.app > section {
+	padding: 20px;
+}
