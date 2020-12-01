@@ -20,6 +20,7 @@ import bundlePlugin from './plugins/bundle-plugin.js';
 import jsonPlugin from './plugins/json-plugin.js';
 import optimizeGraphPlugin from './plugins/optimize-graph-plugin.js';
 import externalUrlsPlugin from './plugins/external-urls-plugin.js';
+import copyAssetsPlugin from './plugins/copy-assets-plugin.js';
 
 /** @param {string} p */
 const pathToPosix = p => p.split(sep).join(posix.sep);
@@ -115,7 +116,8 @@ export async function bundleProd({
 			jsonPlugin(),
 			bundlePlugin({ cwd }),
 			optimizeGraphPlugin({ publicPath: '/' }),
-			minifyCssPlugin({ sourcemap })
+			minifyCssPlugin({ sourcemap }),
+			copyAssetsPlugin({ cwd })
 		].concat(plugins || [])
 	});
 
