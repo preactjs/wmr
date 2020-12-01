@@ -49,3 +49,36 @@ export function prettyBytes(size) {
 	}
 	return `${size < 1 ? size.toFixed(2) : size < 10 ? size.toFixed(1) : size | 0}${unit}`;
 }
+
+// normalize tab characters for CLI printing
+const normalize = str => str.replace(/^\t/g, '  ');
+
+/**
+ * Print source code with line numbers and error location pointer.
+ * @param {string} code
+ * @param {{ line: number, column: number } | number} loc A source position, or character offset within `code`.
+ */
+export function codeFrame(code, loc) {
+	let line, column;
+	if (typeof loc === 'number') {
+		let before = code.substring(0, loc).split('\n');
+		line = before.length;
+		column = before[before.length - 1].length;
+	} else {
+		({ line, column } = loc);
+	}
+	const lines = code.split('\n');
+	const len = String(line).length + 2;
+	const pad = str => String(str).padStart(len);
+	let frame = '';
+	if (line > 1) {
+		frame += `\n${kl.dim(pad(line - 2) + ' |')} ${normalize(lines[line - 2])}`;
+	}
+	frame += `\n${kl.dim(pad(line - 1) + ' |')} ${normalize(lines[line - 1])}`;
+	const offsetCol = normalize(lines[line - 1].substring(0, column)).length;
+	frame += '\n' + kl.yellow('-'.repeat(len + 3 + offsetCol) + '^');
+	if (line < lines.length) {
+		frame += `\n${kl.dim(pad(line) + ' |')} ${normalize(lines[line])}`;
+	}
+	return frame;
+}

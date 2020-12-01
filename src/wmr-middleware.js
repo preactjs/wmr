@@ -18,7 +18,10 @@ import resolveExtensionsPlugin from './plugins/resolve-extensions-plugin.js';
 import bundlePlugin from './plugins/bundle-plugin.js';
 import nodeBuiltinsPlugin from './plugins/node-builtins-plugin.js';
 import jsonPlugin from './plugins/json-plugin.js';
+import externalUrlsPlugin from './plugins/external-urls-plugin.js';
 // import { resolvePackageVersion } from './plugins/npm-plugin/registry.js';
+
+const NOOP = () => {};
 
 /**
  * In-memory cache of files that have been generated and written to .cache/
@@ -28,7 +31,7 @@ const WRITE_CACHE = new Map();
 
 /**
  * @param {object} [options]
- * @param {string} [options.cwd]
+ * @param {string} [options.cwd = '.']
  * @param {string} [options.root] cwd without ./public suffix
  * @param {string} [options.out = '.cache']
  * @param {string} [options.distDir] if set, ignores watch events within this directory
@@ -42,14 +45,14 @@ const WRITE_CACHE = new Map();
  * @returns {import('polka').Middleware}
  */
 export default function wmrMiddleware({
-	cwd,
+	cwd = '.',
 	root,
 	out = '.cache',
 	distDir = 'dist',
 	env = {},
 	aliases,
-	onError,
-	onChange,
+	onError = NOOP,
+	onChange = NOOP,
 	plugins
 } = {}) {
 	cwd = resolve(process.cwd(), cwd || '.');
@@ -59,6 +62,7 @@ export default function wmrMiddleware({
 
 	const NonRollup = createPluginContainer(
 		[
+			externalUrlsPlugin(),
 			nodeBuiltinsPlugin({}),
 			urlPlugin({ inline: true, cwd }),
 			jsonPlugin(),
@@ -287,7 +291,7 @@ export const TRANSFORMS = {
 			async resolveId(spec, importer) {
 				if (spec === 'wmr') return '/_wmr.js';
 
-				if (/^(data|https?):/.test(spec)) return spec;
+				if (/^(data:|https?:|\/\/)/.test(spec)) return spec;
 
 				// const resolved = await NonRollup.resolveId(spec, importer);
 				const resolved = await NonRollup.resolveId(spec, file);
@@ -408,7 +412,7 @@ export const TRANSFORMS = {
 		let code = await fs.readFile(idAbsolute, 'utf-8');
 
 		if (isModular) {
-			code = await modularizeCss(code, id, null, idAbsolute);
+			code = await modularizeCss(code, id, undefined, idAbsolute);
 		} else if (isSass) {
 			code = processSass(code);
 		}

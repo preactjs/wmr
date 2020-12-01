@@ -19,6 +19,7 @@ import fastCjsPlugin from './plugins/fast-cjs-plugin.js';
 import bundlePlugin from './plugins/bundle-plugin.js';
 import jsonPlugin from './plugins/json-plugin.js';
 import optimizeGraphPlugin from './plugins/optimize-graph-plugin.js';
+import externalUrlsPlugin from './plugins/external-urls-plugin.js';
 
 /** @param {string} p */
 const pathToPosix = p => p.split(sep).join(posix.sep);
@@ -84,6 +85,7 @@ export async function bundleProd({
 		preserveEntrySignatures: 'allow-extension',
 		manualChunks: npmChunks ? extractNpmChunks : undefined,
 		plugins: [
+			externalUrlsPlugin(),
 			sucrasePlugin({
 				typescript: true,
 				sourcemap,
@@ -123,6 +125,13 @@ export async function bundleProd({
 		chunkFileNames: 'chunks/[name].[hash].js',
 		assetFileNames: 'assets/[name].[hash][extname]',
 		compact: true,
+		// Rollup considers `import '//foo.com/bar'` to be a filesystem path, we do not.
+		paths(fileName) {
+			if (/^\/\//.test(fileName)) {
+				fileName = 'https:' + fileName;
+			}
+			return fileName;
+		},
 		hoistTransitiveImports: true,
 		plugins: [terser({ compress: true, sourcemap })],
 		sourcemap,

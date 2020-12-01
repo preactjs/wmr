@@ -176,6 +176,14 @@ describe('fixtures', () => {
 			await getOutput(env, instance);
 			expect(await env.page.$eval('h1', el => el.textContent)).toBe('EXTERNAL SCRIPT LOADED');
 		});
+
+		it('should allow unprocessed protocol-relative URL imports', async () => {
+			await loadFixture('external-scripts', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+			expect(await env.page.$eval('#external', el => el.textContent)).toBe('rendered from unpkg');
+			expect(await env.page.evaluate(`window.unistore`)).toBeTruthy();
+		});
 	});
 
 	describe('commonjs', () => {
