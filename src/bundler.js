@@ -20,6 +20,7 @@ import bundlePlugin from './plugins/bundle-plugin.js';
 import jsonPlugin from './plugins/json-plugin.js';
 import optimizeGraphPlugin from './plugins/optimize-graph-plugin.js';
 import externalUrlsPlugin from './plugins/external-urls-plugin.js';
+import copyAssetsPlugin from './plugins/copy-assets-plugin.js';
 
 /** @param {string} p */
 const pathToPosix = p => p.split(sep).join(posix.sep);
@@ -77,7 +78,8 @@ export async function bundleProd({
 	});
 
 	// note: we intentionally pass these to Rollup as posix paths
-	const input = htmlFiles.filter(p => !p.startsWith(out)).map(p => './' + pathToPosix(relative('.', p)));
+	const ignore = /^\.\/(node_modules|dist|build)\//;
+	const input = htmlFiles.map(p => './' + pathToPosix(relative('.', p))).filter(p => !ignore.test(p));
 
 	const bundle = await rollup.rollup({
 		input,
@@ -115,7 +117,8 @@ export async function bundleProd({
 			jsonPlugin(),
 			bundlePlugin({ cwd }),
 			optimizeGraphPlugin({ publicPath: '/' }),
-			minifyCssPlugin({ sourcemap })
+			minifyCssPlugin({ sourcemap }),
+			copyAssetsPlugin({ cwd })
 		].concat(plugins || [])
 	});
 
