@@ -5,7 +5,7 @@ import { transformHtml } from '../lib/transform-html.js';
 /** @typedef {import('rollup').OutputAsset & { referencedFiles: string[], importedIds: string[] }} ExtendedAsset */
 
 /** @param {string} src */
-const isLocalFile = src => src && !/^([a-z]+:)\/\//i.test(src);
+const isLocalFile = src => src && !/^([a-z]+:)?\/\//i.test(src);
 
 /** @param {string} p */
 const toSystemPath = p => p.split(posix.sep).join(sep);
