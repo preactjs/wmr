@@ -4,6 +4,7 @@
 		"jsx": "preserve",
 		"allowJs": true,
 		"checkJs": true,
+		// "strict": true,
 		"noEmit": true,
 		"moduleResolution": "node",
 		"target": "ESNext",
