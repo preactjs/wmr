@@ -8,6 +8,9 @@ export function bundleStats(bundle) {
 		.sort((a, b) => scoreAsset(b) - scoreAsset(a));
 
 	const assetsText = assets.reduce((str, output) => {
+		// TODO: group output and bring back asset sizes
+		if (output.type === 'asset' && !/\.(css|html)/.test(output.fileName)) return str;
+
 		const content = output.type === 'asset' ? output.source : output.code;
 		const size = content.length;
 		total += content.length;
