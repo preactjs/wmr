@@ -15,6 +15,7 @@
 		"test": "eslint src test && npm run test-e2e"
 	},
 	"author": "The Preact Authors (https://preactjs.com)",
+	"license": "MIT",
 	"repository": "preactjs/wmr",
 	"files": [
 		"wmr.cjs",
