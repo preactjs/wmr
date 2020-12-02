@@ -1,8 +1,8 @@
 # WMR
 
-An instant development server for modern code. One 2mb file with no dependencies.
+**The tiny all-in-one development tool for modern web apps**, in a single 2mb file with no dependencies.
 
-WMR is an all-in-one development and production build tool:
+All the features you'd expect and more, from development to production:
 
 - 🕶 No "entry points" or "pages" to configure - just `<script type=module src=anything.js>`
 - ⛳️ `import "packages"` from npm **_without installation_**
@@ -17,13 +17,11 @@ WMR is an all-in-one development and production build tool:
 
 ## Quickstart _(recommended)_
 
-Create a new project in seconds with [create-wmr](https://npm.im/create-wmr):
+Create a new project in seconds with [create-wmr](https://npm.im/create-wmr): **`npm init wmr your-project-name`**
 
-```sh
-npm init wmr your-project-name
-```
+<img width="400" src="https://user-images.githubusercontent.com/105127/100917537-4661e100-34a5-11eb-89bd-565b7bc31919.gif">
 
-> If you'd also like ESLint to be set, add `--eslint` to the command. _Note that ESLint will use 150mb of disk space._
+> 💁 If you'd like ESLint to be set up for you, add `--eslint` to the command. _Note: this will use 150mb of disk space._
 
 ## Manual installation and setup
 
