@@ -4,16 +4,16 @@
 
 All the features you'd expect and more, from development to production:
 
-<font size="5">🔨</font> &nbsp; No "entry points" or "pages" to configure - just `<script type=module src=anything.js>`  
-<font size="5">🦦</font> &nbsp; `import "packages"` from npm **_without installation_**  
-<font size="5">📦</font> &nbsp; Smart bundling and caching for npm dependencies  
-<font size="5">↻</font> &nbsp; Hot reloading for modules, Preact components and CSS  
-<font size="5">⚡️</font> &nbsp; Lightning-fast JSX support that you can debug in the browser  
-<font size="5">💄</font> &nbsp; Import CSS files and [CSS Modules](https://github.com/css-modules/css-modules) (`*.module.css`)  
-<font size="5">📂</font> &nbsp; Static file serving with hot reloading of CSS and images  
-<font size="5">🗜</font> &nbsp; Highly optimized Rollup-based production output (`wmr build`)  
-<font size="5">📑</font> &nbsp; Crawls and pre-renders your app's pages to static HTML at build time  
-<font size="5">🏎</font> &nbsp; Built-in HTTP2 support in both development and production (`wmr serve --http2`)  
+<font size="5">🔨</font> &nbsp; No "entry points" or "pages" to configure - just `<script type=module src=anything.js>`
+<font size="5">🦦</font> &nbsp; `import "packages"` from npm **_without installation_**
+<font size="5">📦</font> &nbsp; Smart bundling and caching for npm dependencies
+<font size="5">↻</font> &nbsp; Hot reloading for modules, Preact components and CSS
+<font size="5">⚡️</font> &nbsp; Lightning-fast JSX support that you can debug in the browser
+<font size="5">💄</font> &nbsp; Import CSS files and [CSS Modules](https://github.com/css-modules/css-modules) (`*.module.css`)
+<font size="5">📂</font> &nbsp; Static file serving with hot reloading of CSS and images
+<font size="5">🗜</font> &nbsp; Highly optimized Rollup-based production output (`wmr build`)
+<font size="5">📑</font> &nbsp; Crawls and pre-renders your app's pages to static HTML at build time
+<font size="5">🏎</font> &nbsp; Built-in HTTP2 support in both development and production (`wmr serve --http2`)
 <font size="5">🔧</font> &nbsp; Supports [Rollup plugins](#configuration-and-plugins), even in development where Rollup isn't used
 
 ## Quickstart _(recommended)_
@@ -123,7 +123,7 @@ export default async function (config) {
 	}
 
 	if (config.mode === 'serve') {
-		options.middleware.push(
+		config.middleware.push(
 			// add any Polka middleware:
 			function myPolkaMiddleware(req, res, next) {
 				res.setHeader('X-Foo', 'bar');
