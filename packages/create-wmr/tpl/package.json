@@ -10,5 +10,8 @@
 	"alias": {
 		"react": "preact/compat",
 		"react-dom": "preact/compat"
+	},
+	"devDependencies": {
+		"wmr": "^1.0.0"
 	}
 }
