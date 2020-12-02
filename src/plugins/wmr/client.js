@@ -12,13 +12,13 @@ function connect() {
 	ws = new WebSocket(location.origin.replace('http', 'ws') + '/_hmr');
 	ws.onmessage = handleMessage;
 	ws.onerror = handleError;
-	// ws.onopen = () => log('connected');
-	// ws.onclose = () => log('disconnected');
 }
 
 setTimeout(connect);
 
 let errorCount = 0;
+
+const URL_SUFFIX = /\/(index\.html)?$/;
 
 function handleMessage(e) {
 	const data = JSON.parse(e.data);
@@ -28,13 +28,22 @@ function handleMessage(e) {
 				url = resolve(url);
 
 				if (!mods.get(url)) {
-					const isCss = /\.css$/.test(url);
-					if (isCss && mods.has(url + '.js')) {
-						url += '.js';
-					} else if (isCss && updateStyleSheet(url)) {
-						return;
-					} else {
+					if (/\.css$/.test(url)) {
+						if (mods.has(url + '.js')) {
+							url += '.js';
+						} else {
+							updateStyleSheet(url);
+							return;
+						}
+					} else if (url.replace(URL_SUFFIX, '') === resolve(location.pathname).replace(URL_SUFFIX, '')) {
 						return location.reload();
+					} else {
+						for (const el of document.querySelectorAll('[src],[href]')) {
+							// @ts-ignore-next
+							const p = el.src ? 'src' : 'href';
+							if (el[p] && strip(resolve(el[p])) === url) el[p] = strip(el[p]) + '?t=' + Date.now();
+						}
+						return;
 					}
 				}
 
@@ -46,9 +55,9 @@ function handleMessage(e) {
 				if (!updating)
 					dequeue().then(() => {
 						if (errorId === errorCount) {
-							try {
-								// console.clear();
-							} catch (e) {}
+							// try {
+							// 	console.clear();
+							// } catch (e) {}
 						}
 					});
 			});
@@ -56,14 +65,6 @@ function handleMessage(e) {
 		case 'error':
 			errorCount++;
 			console.error(data.error);
-			// if (typeof data.error === 'string') {
-			// 	let err = data.error.replace(/ \(([^(]+):(\d+):(\d+)\)/, (s, file, line, col) => {
-			// 		return ` (${file}:${line}:${col})`;
-			// 	});
-			// 	console.error(err);
-			// } else {
-			// 	console.error(data.error);
-			// }
 			break;
 		default:
 			log('unknown message: ', data);
@@ -74,7 +75,7 @@ function handleError(e) {
 	if (e && e.code === 'ECONNREFUSED') {
 		setTimeout(connect, 1000);
 	}
-	log('connection error');
+	log('connection error', e);
 }
 
 // HMR updates are queued uniquely and run in sequence
