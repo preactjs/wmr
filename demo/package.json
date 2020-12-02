@@ -1,5 +1,9 @@
 {
+	"type": "module",
 	"alias": {
 		"react": "preact/compat"
+	},
+	"devDependencies": {
+		"@wmr-plugins/nomodule": "0.0.5"
 	}
 }
