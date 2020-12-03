@@ -12,6 +12,7 @@
     "./hydrate": "./hydrate.js"
   },
   "author": "The Preact Authors (https://preactjs.com)",
+  "repository": "preactjs/wmr",	
   "license": "MIT",
   "devDependencies": {
     "preact": "^10.5.7",
