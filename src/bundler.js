@@ -78,7 +78,7 @@ export async function bundleProd({
 	await totalist(cwd, (rel, abs) => {
 		if (ignore.test(abs)) return;
 		if (!/\.html?/.test(rel)) return;
-		input.push('./' + pathToPosix(relative('.', abs)));
+		input.push('./' + pathToPosix(relative(root, abs)));
 	});
 
 	const bundle = await rollup.rollup({
