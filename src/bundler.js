@@ -10,7 +10,7 @@ import npmPlugin from './plugins/npm-plugin/index.js';
 import publicPathPlugin from './plugins/public-path-plugin.js';
 import minifyCssPlugin from './plugins/minify-css-plugin.js';
 import htmlEntriesPlugin from './plugins/html-entries-plugin.js';
-import { totalist } from 'totalist';
+import totalist from 'totalist';
 import aliasesPlugin from './plugins/aliases-plugin.js';
 import processGlobalPlugin from './plugins/process-global-plugin.js';
 import urlPlugin from './plugins/url-plugin.js';
