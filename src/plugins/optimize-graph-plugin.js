@@ -390,9 +390,7 @@ function hoistTransitiveImports(graph) {
 					appendCode += '\n' + DEFAULT_STYLE_LOAD_IMPL;
 				}
 				if (DEBUG) console.log(`Preloading CSS for import(${spec}): ${css}`);
-				preloads.push(
-					...css.map(f => `${meta.styleLoadFn}(${toImport(graph.publicPath, f, true)})`)
-				);
+				preloads.push(...css.map(f => `${meta.styleLoadFn}(${toImport(graph.publicPath, f, true)})`));
 			}
 
 			const js = deps.js.get(spec);
