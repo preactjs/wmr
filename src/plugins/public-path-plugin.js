@@ -14,7 +14,7 @@ export default function publicPathPlugin({ publicPath, filter } = {}) {
 
 			let output = posix.join(publicPath, assetInfo.fileName);
 			if (/^(https?:)?\/\//.test(publicPath)) {
-				const isFull = /^https:\/\//.test(publicPath);
+				const isFull = /^https?:\/\//.test(publicPath);
 				const root = isFull ? publicPath : 'https:' + publicPath;
 				output = new URL(assetInfo.fileName, root).href.substring(isFull ? 0 : 6);
 			}

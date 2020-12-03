@@ -193,7 +193,7 @@ function toImport(publicPath, filename, toJSON) {
 	let value = posix.join(publicPath, filename);
 
 	if (/^(https?:)?\/\//.test(publicPath)) {
-		const isFull = /^https:\/\//.test(publicPath);
+		const isFull = /^https?:\/\//.test(publicPath);
 		const root = isFull ? publicPath : 'https:' + publicPath;
 		value = new URL(filename, root).href.substring(isFull ? 0 : 6);
 	}
