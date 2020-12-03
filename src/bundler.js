@@ -73,10 +73,6 @@ export async function bundleProd({
 	cwd = cwd || '';
 	root = root || cwd;
 
-	if (!publicPath.endsWith('/')) {
-		publicPath += '/';
-	}
-
 	const htmlFiles = await glob('**/*.html', {
 		cwd,
 		absolute: true,
