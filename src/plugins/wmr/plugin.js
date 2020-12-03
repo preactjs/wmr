@@ -53,7 +53,7 @@ export default function wmrPlugin({ hot = true } = {}) {
 			}
 			return null;
 		},
-		transform(code, id) {
+		transform(code, id, ...args) {
 			const ch = id[0];
 			if (ch === '\0' || ch === '\b' || !/\.[tj]sx?$/.test(id)) return;
 			let hasHot = /(import\.meta\.hot|\$IMPORT_META_HOT\$)/.test(code);
@@ -66,17 +66,19 @@ export default function wmrPlugin({ hot = true } = {}) {
 				before += `const module={${hot ? 'hot:import.meta.hot' : ''}};\n`;
 			}
 
+			const hasExport = code.match(/\bexport\b/);
+
 			// Detect modules that appear to have both JSX and an export, and inject prefresh:
 			// @todo: move to separate plugin.
 			// if (code.match(/\/\*@@prefresh_include\*\//) && code.match(/\bexport\b/)) {
-			if (code.match(/html`[^`]*<([a-zA-Z][a-zA-Z0-9.:-]*|\$\{.+?\})[^>]*>/) && code.match(/\bexport\b/)) {
+			if (code.match(/html`[^`]*<([a-zA-Z][a-zA-Z0-9.:-]*|\$\{.+?\})[^>]*>/) && hasExport) {
 				// if (this.getModuleInfo(id).hasJSX) {
 				hasHot = true;
 				after += '\n' + PREFRESH;
 				// }
 			}
 
-			if (!hot && !hasHot) return null;
+			if ((!hot && !hasHot) || (!hasExport && !code.match(/\bimport\b/))) return null;
 
 			const s = new MagicString(code, {
 				filename: id,
