@@ -40,6 +40,7 @@ export async function normalizeOptions(options, mode) {
 	});
 
 	options.public = options.public || 'public';
+	options.publicPath = options.publicPath || '/';
 
 	// If the CWD has a public/ directory, all files are assumed to be within it.
 	// From here, everything except node_modules and `out` are relative to public:
