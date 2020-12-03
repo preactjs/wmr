@@ -12,6 +12,11 @@
     "./hydrate": "./hydrate.js"
   },
   "author": "The Preact Authors (https://preactjs.com)",
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/preactjs/wmr",
+    "directory": "packages/preact-iso"
+  },
   "license": "MIT",
   "devDependencies": {
     "preact": "^10.5.7",
