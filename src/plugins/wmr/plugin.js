@@ -83,7 +83,7 @@ export default function wmrPlugin({ hot = true } = {}) {
 			});
 
 			if (!hasHot) {
-				s.prepend(`import { createHotContext as $w_h$ } from 'wmr'; $w_h$(import.meta.url);`);
+				s.append(`\nimport { createHotContext as $w_h$ } from 'wmr'; $w_h$(import.meta.url);`);
 			} else if (hot) {
 				s.append(after);
 				s.prepend(
