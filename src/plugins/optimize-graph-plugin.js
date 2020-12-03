@@ -176,7 +176,7 @@ class ChunkGraph {
 				let rep = typeof newUrl === 'function' ? newUrl(url, fn, quote) : newUrl;
 				if (rep === false) return 'null';
 				if (typeof rep === 'string') {
-					rep = publicPath ? toImport(publicPath, rep, true) : JSON.stringify(rep);
+					rep = JSON.stringify(publicPath ? toImport(publicPath, rep) : rep);
 				}
 				return `${fn}(${rep})`;
 			}
