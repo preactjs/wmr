@@ -1,0 +1,20 @@
+{
+  "name": "preact-iso",
+  "version": "0.2.0",
+  "description": "Isomorphic utilities for Preact",
+  "main": "./index.js",
+  "module": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./router": "./router.js",
+    "./lazy": "./lazy.js",
+    "./prerender": "./prerender.js",
+    "./hydrate": "./hydrate.js"
+  },
+  "author": "The Preact Authors (https://preactjs.com)",
+  "license": "MIT",
+  "devDependencies": {
+    "preact": "^10.5.7",
+    "preact-render-to-string": "^5.1.12"
+  }
+}
