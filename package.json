@@ -4,7 +4,7 @@
 	"bin": "wmr.cjs",
 	"type": "module",
 	"scripts": {
-		"demo": "cd demo && node --experimental-modules ../src/cli.js --no-optimize --no-compress 2>&1",
+		"demo": "cd demo && node --experimental-modules ../src/cli.js 2>&1",
 		"demo:prod": "cd demo && node --experimental-modules ../src/cli.js build --prerender 2>&1",
 		"demo:serve": "cd demo && node --experimental-modules ../src/cli.js serve",
 		"dev": "PROFILE=true nodemon -w src --exec \"npm run -s demo\"",
