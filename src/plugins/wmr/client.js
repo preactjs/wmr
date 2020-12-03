@@ -85,12 +85,29 @@ function dequeue() {
 	updating = updateQueue.length !== 0;
 	return updating && update(updateQueue.shift()).then(dequeue, dequeue);
 }
-function update(url) {
+
+function update(url, visited = new Set()) {
 	const mod = getMod(url);
 	const dispose = Array.from(mod.dispose);
 	const accept = Array.from(mod.accept);
 	const newUrl = url + '?t=' + Date.now();
 	const p = mod.import ? mod.import(newUrl) : import(newUrl);
+
+	if (!accept.length) {
+		const dependents = Array.from(mod.dependents);
+		if (dependents.length) {
+			for (const dependent of dependents) {
+				if (!visited.has(dependent)) {
+					visited.add(dependent);
+					update(dependent, visited);
+				}
+			}
+		} else {
+			// We can't bubble up
+			window.location.reload();
+		}
+	}
+
 	return p
 		.then(m => {
 			accept.forEach(c => (c({ module: m }), mod.accept.delete(c)));
@@ -107,13 +124,23 @@ const mods = new Map();
 function getMod(url) {
 	url = strip(url);
 	let mod = mods.get(url);
-	if (!mod) mods.set(url, (mod = { accept: new Set(), dispose: new Set() }));
+	if (!mod)
+		mods.set(url, (mod = { dependencies: new Set(), dependents: new Set(), accept: new Set(), dispose: new Set() }));
 	return mod;
 }
 
 // HMR API
-export function createHotContext(url) {
+export function createHotContext(url, dependencies) {
 	const mod = getMod(url);
+
+	if (dependencies) {
+		for (const dep of dependencies) {
+			mod.dependencies.add(dep);
+			const dependentMod = getMod(dep);
+			dependentMod.dependents.add(url);
+		}
+	}
+
 	return {
 		accept(fn) {
 			mod.accept.add(fn);

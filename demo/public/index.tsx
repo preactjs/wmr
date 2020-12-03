@@ -6,6 +6,7 @@ import Home from './pages/home.js';
 import NotFound from './pages/_404.js';
 import Header from './header.tsx';
 // import './style.css';
+import { useCounter } from './useCustomHook'
 
 const About = lazy(() => import('./pages/about/index.js'));
 const CompatPage = lazy(() => import('./pages/compat.js'));
@@ -14,6 +15,7 @@ const Files = lazy(() => import('./pages/files/index.js'));
 const Environment = lazy(async () => (await import('./pages/environment/index.js')).Environment);
 
 export function App() {
+	useCounter();
 	return (
 		<Loc>
 			<div class="app">
