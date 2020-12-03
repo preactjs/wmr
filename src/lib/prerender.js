@@ -71,7 +71,7 @@ async function workerCode({ cwd, out }) {
 
 	// Prevent Rollup from transforming `import()` here.
 	const $import = new Function('s', 'return import(s)');
-	const m = await $import(script);
+	const m = await $import('file:///' + script);
 	const doPrerender = m.prerender;
 	// const App = m.default || m[Object.keys(m)[0]];
 
