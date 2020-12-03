@@ -14,7 +14,6 @@ prog
 	.option('--cwd', 'The working directory - equivalent to "(cd FOO && wmr)"')
 	.command('build', 'make a production build')
 	.option('--prerender', 'Pre-render the application to HTML')
-	.option('--minify', 'Minify built assets (default: enabled)')
 	.action(opts => {
 		opts.minify = opts.minify !== false && !/false|0/.test(opts.minify);
 		run(build(opts));
