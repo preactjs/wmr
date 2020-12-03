@@ -76,7 +76,7 @@ export default function wmrPlugin({ hot = true } = {}) {
 				// }
 			}
 
-			if (!hot && !hasHot) return;
+			if (!hot && !hasHot) return null;
 
 			const s = new MagicString(code, {
 				filename: id,
