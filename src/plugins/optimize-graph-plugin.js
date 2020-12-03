@@ -176,13 +176,29 @@ class ChunkGraph {
 				let rep = typeof newUrl === 'function' ? newUrl(url, fn, quote) : newUrl;
 				if (rep === false) return 'null';
 				if (typeof rep === 'string') {
-					if (publicPath) rep = posix.join(publicPath, rep);
-					rep = JSON.stringify(rep);
+					rep = publicPath ? toImport(publicPath, rep, true) : JSON.stringify(rep);
 				}
 				return `${fn}(${rep})`;
 			}
 		});
 	}
+}
+
+/**
+ * @param {string} publicPath
+ * @param {string} filename
+ * @param {boolean} [toJSON]
+ */
+function toImport(publicPath, filename, toJSON) {
+	let value = posix.join(publicPath, filename);
+
+	if (/^(https?:)?\/\//.test(publicPath)) {
+		const isFull = /^https:\/\//.test(publicPath);
+		const root = isFull ? publicPath : 'https:' + publicPath;
+		value = new URL(filename, root).href.substring(isFull ? 0 : 6);
+	}
+
+	return toJSON ? JSON.stringify(value) : value;
 }
 
 /**
@@ -331,6 +347,7 @@ function hoistCascadedCss(graph, { cssMinSize }) {
 					meta.styleLoadFn = DEFAULT_STYLE_LOAD_FN;
 					parentChunk.code += '\n' + DEFAULT_STYLE_LOAD_IMPL;
 				}
+
 				const url = JSON.stringify(posix.join(graph.publicPath, fileName));
 				parentChunk.code += `\n${meta.styleLoadFn}(${url});`;
 			}
@@ -373,7 +390,9 @@ function hoistTransitiveImports(graph) {
 					appendCode += '\n' + DEFAULT_STYLE_LOAD_IMPL;
 				}
 				if (DEBUG) console.log(`Preloading CSS for import(${spec}): ${css}`);
-				preloads.push(...css.map(f => `${meta.styleLoadFn}(${JSON.stringify(posix.join(graph.publicPath, f))})`));
+				preloads.push(
+					...css.map(f => `${meta.styleLoadFn}(${toImport(graph.publicPath, f, true)})`)
+				);
 			}
 
 			const js = deps.js.get(spec);
