@@ -80,7 +80,7 @@ export default function wmrPlugin({ hot = true } = {}) {
 				// }
 			}
 
-			if ((!hot && !hasHot) || !hasEsmKeywords) return null;
+			if (!hot || !hasEsmKeywords) return null;
 
 			const s = new MagicString(code, {
 				filename: id,
