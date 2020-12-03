@@ -94,7 +94,8 @@ export default async function serve(options = {}) {
 
 	const port = await getFreePort(options.port || process.env.PORT || 8080);
 	const host = options.host || process.env.HOST;
-	app.listen(port, host);
-	const addresses = getServerAddresses(app.server.address(), { https: app.http2 });
-	process.stdout.write(kl.cyan(`Listening on ${addresses}`) + '\n');
+	app.listen(port, host, () => {
+		const addresses = getServerAddresses(app.server.address(), { https: app.http2 });
+		process.stdout.write(kl.cyan(`Listening on ${addresses}`) + '\n');
+	});
 }
