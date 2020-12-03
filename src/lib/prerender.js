@@ -4,15 +4,16 @@ import { Worker } from 'worker_threads';
  * @param {object} options
  * @property {string} [cwd = '.']
  * @property {string} [out = '.cache']
+ * @property {string} publicPath
  */
-export function prerender({ cwd = '.', out = '.cache' }) {
+export function prerender({ cwd = '.', out = '.cache', publicPath }) {
 	const w = new Worker(
 		`(${workerCode})(require('worker_threads').workerData)
 			.then(r => require('worker_threads').parentPort.postMessage([1,r]))
 			.catch(err => require('worker_threads').parentPort.postMessage([0,err && err.stack || err+'']))`,
 		{
 			eval: true,
-			workerData: { cwd, out },
+			workerData: { cwd, out, publicPath },
 			// execArgv: ['--experimental-modules'],
 			stderr: true
 		}
@@ -28,7 +29,7 @@ export function prerender({ cwd = '.', out = '.cache' }) {
 	});
 }
 
-async function workerCode({ cwd, out }) {
+async function workerCode({ cwd, out, publicPath }) {
 	/*global globalThis*/
 
 	const path = require('path');
@@ -67,6 +68,7 @@ async function workerCode({ cwd, out }) {
 		throw Error(`Unable to detect <script src="entry.js"> in your index.html.`);
 	}
 	// script = new URL(`../dist/${script.replace(/^(\.?\/)?/g, '')}`, selfUrl).href;
+	script = script.replace(publicPath, '');
 	script = path.resolve(cwd, out, script.replace(/^(\.?\/)?/g, ''));
 
 	// Prevent Rollup from transforming `import()` here.
