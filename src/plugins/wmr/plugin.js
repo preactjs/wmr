@@ -39,7 +39,6 @@ export function getWmrClient({ hot = true } = {}) {
 export default function wmrPlugin({ hot = true } = {}) {
 	if (BYPASS_HMR) hot = false;
 
-	const isProduction = process.env.NODE_ENV === 'production';
 	return {
 		name: 'wmr',
 		resolveId(s) {
@@ -84,13 +83,15 @@ export default function wmrPlugin({ hot = true } = {}) {
 				indentExclusionRanges: undefined
 			});
 
-			if (!hasHot && !isProduction) {
-				s.append(`\nimport { createHotContext as $w_h$ } from 'wmr'; $w_h$(import.meta.url);`);
-			} else if (hot) {
-				s.append(after);
-				s.prepend(
-					`import { createHotContext as $createHotContext$ } from 'wmr';const $IMPORT_META_HOT$ = $createHotContext$(import.meta.url);${before}`
-				);
+			if (hot) {
+				if (!hasHot) {
+					s.append(`\nimport { createHotContext as $w_h$ } from 'wmr'; $w_h$(import.meta.url);`);
+				} else {
+					s.append(after);
+					s.prepend(
+						`import { createHotContext as $createHotContext$ } from 'wmr';const $IMPORT_META_HOT$ = $createHotContext$(import.meta.url);${before}`
+					);
+				}
 			} else if (!BYPASS_HMR) {
 				// TODO: this should be able to be omitted unconditionally.
 				s.prepend(`const $IMPORT_META_HOT$ = undefined;${before}`);
