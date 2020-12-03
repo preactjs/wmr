@@ -95,7 +95,7 @@ export default function wmrPlugin({ hot = true } = {}) {
 				} else {
 					s.append(after);
 					s.prepend(
-						`import { createHotContext as $w_h $ } from 'wmr';const $IMPORT_META_HOT$ = $w_h $(import.meta.url);${before}`
+						`import { createHotContext as $w_h$ } from 'wmr';const $IMPORT_META_HOT$ = $w_h$(import.meta.url);${before}`
 					);
 				}
 			} else if (!BYPASS_HMR) {
