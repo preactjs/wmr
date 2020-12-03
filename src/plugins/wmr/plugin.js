@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import MagicString from 'magic-string';
+import { ESM_KEYWORDS } from '../fast-cjs-plugin.js';
 
 const BYPASS_HMR = process.env.BYPASS_HMR === 'true';
 
@@ -66,6 +67,7 @@ export default function wmrPlugin({ hot = true } = {}) {
 				before += `const module={${hot ? 'hot:import.meta.hot' : ''}};\n`;
 			}
 
+			const hasEsmKeywords = ESM_KEYWORDS.test(code);
 			const hasExport = code.match(/\bexport\b/);
 
 			// Detect modules that appear to have both JSX and an export, and inject prefresh:
@@ -78,7 +80,7 @@ export default function wmrPlugin({ hot = true } = {}) {
 				// }
 			}
 
-			if ((!hot && !hasHot) || (!hasExport && !code.match(/\bimport\b/))) return null;
+			if ((!hot && !hasHot) || !hasEsmKeywords) return null;
 
 			const s = new MagicString(code, {
 				filename: id,
