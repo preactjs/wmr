@@ -117,10 +117,10 @@ function App() {
 ## Configuration and plugins
 
 WMR supports a `wmr.config.js` (or `wmr.config.mjs`) configuration file.
-You can export a config function, or individual config functions for each of the `start`, `build` and `serve` commands:
+You can export a `default` config function, or individual config functions for each of the `start`, `build` and `serve` commands:
 
 ```js
-// wmr.config.js
+// wmr.config.mjs
 import someRollupPlugin from '@rollup/plugin-xyz';
 
 /** @param {import('wmr').Options} config */
@@ -141,6 +141,20 @@ export default async function (config) {
 			}
 		);
 	}
+}
+
+// OR
+
+export async function start(config) {
+	// equivalent to `config.mode === 'start'`
+}
+
+export async function build(config) {
+	// equivalent to `config.mode === 'build'`
+}
+
+export async function serve(config) {
+	// equivalent to `config.mode === 'serve'`
 }
 ```
 
