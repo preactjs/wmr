@@ -38,6 +38,8 @@ export function getWmrClient({ hot = true } = {}) {
  */
 export default function wmrPlugin({ hot = true } = {}) {
 	if (BYPASS_HMR) hot = false;
+
+	const isProduction = process.env.NODE_ENV === 'production';
 	return {
 		name: 'wmr',
 		resolveId(s) {
@@ -82,7 +84,7 @@ export default function wmrPlugin({ hot = true } = {}) {
 				indentExclusionRanges: undefined
 			});
 
-			if (!hasHot) {
+			if (!hasHot && !isProduction) {
 				s.append(`\nimport { createHotContext as $w_h$ } from 'wmr'; $w_h$(import.meta.url);`);
 			} else if (hot) {
 				s.append(after);
