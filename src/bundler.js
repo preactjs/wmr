@@ -73,7 +73,7 @@ export async function bundleProd({
 
 	// note: we intentionally pass these to Rollup as posix paths
 	const ignore = /^\.\/(node_modules|dist|build)\//;
-	/** @type {string[]} */const input = [];
+	/** @type {string[]} */ const input = [];
 
 	await totalist(cwd, (rel, abs) => {
 		if (ignore.test(abs)) return;
