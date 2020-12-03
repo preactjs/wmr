@@ -75,15 +75,16 @@ export default function wmrPlugin({ hot = true } = {}) {
 				// }
 			}
 
-			if (!hasHot) return null;
-
 			const s = new MagicString(code, {
 				filename: id,
 				// Typings from MagicString are wrong, see: https://github.com/Rich-Harris/magic-string/pull/182
 				// @ts-ignore
 				indentExclusionRanges: undefined
 			});
-			if (hot) {
+
+			if (!hasHot) {
+				s.prepend(`import { createHotContext as $w_h$ } from 'wmr'; $w_h$(import.meta.url);`);
+			} else if (hot) {
 				s.append(after);
 				s.prepend(
 					`import { createHotContext as $createHotContext$ } from 'wmr';const $IMPORT_META_HOT$ = $createHotContext$(import.meta.url);${before}`
@@ -92,6 +93,7 @@ export default function wmrPlugin({ hot = true } = {}) {
 				// TODO: this should be able to be omitted unconditionally.
 				s.prepend(`const $IMPORT_META_HOT$ = undefined;${before}`);
 			}
+
 			return {
 				code: s.toString(),
 				map: s.generateMap({ includeContent: false })
