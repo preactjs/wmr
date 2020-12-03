@@ -285,7 +285,7 @@ function hoistEntryCss(graph) {
 				} else {
 					// @TODO: this branch is actually unreachable
 					if (DEBUG) console.log(`Hoisting CSS "${f}" imported by ${id} into parent HTML.`);
-					const url = JSON.stringify(posix.join(graph.publicPath, f));
+					const url = toImport(graph.publicPath, f, true);
 					asset.source = getAssetSource(asset).replace(/<\/head>/, `<link rel="stylesheet" href=${url}></head>`);
 				}
 			}
@@ -348,7 +348,7 @@ function hoistCascadedCss(graph, { cssMinSize }) {
 					parentChunk.code += '\n' + DEFAULT_STYLE_LOAD_IMPL;
 				}
 
-				const url = JSON.stringify(posix.join(graph.publicPath, fileName));
+				const url = toImport(graph.publicPath, fileName, true);
 				parentChunk.code += `\n${meta.styleLoadFn}(${url});`;
 			}
 			break;
@@ -400,6 +400,7 @@ function hoistTransitiveImports(graph) {
 				if (DEBUG) console.log(`Preloading JS for import(${spec}): ${js}`);
 				preloads.push(
 					...js.map(f => {
+						// TODO: should have `toImport(...)` somewhere here
 						let rel = posix.relative(posix.dirname('/' + fileName), posix.join(graph.publicPath, f));
 						if (!rel.startsWith('.')) rel = './' + rel;
 						return `import(${JSON.stringify(rel)})`;
