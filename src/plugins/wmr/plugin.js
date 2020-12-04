@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import MagicString from 'magic-string';
+import { ESM_KEYWORDS } from '../fast-cjs-plugin.js';
 
 const BYPASS_HMR = process.env.BYPASS_HMR === 'true';
 
@@ -38,6 +39,7 @@ export function getWmrClient({ hot = true } = {}) {
  */
 export default function wmrPlugin({ hot = true } = {}) {
 	if (BYPASS_HMR) hot = false;
+
 	return {
 		name: 'wmr',
 		resolveId(s) {
@@ -65,17 +67,20 @@ export default function wmrPlugin({ hot = true } = {}) {
 				before += `const module={${hot ? 'hot:import.meta.hot' : ''}};\n`;
 			}
 
+			const hasEsmKeywords = ESM_KEYWORDS.test(code);
+			const hasExport = code.match(/\bexport\b/);
+
 			// Detect modules that appear to have both JSX and an export, and inject prefresh:
 			// @todo: move to separate plugin.
 			// if (code.match(/\/\*@@prefresh_include\*\//) && code.match(/\bexport\b/)) {
-			if (code.match(/html`[^`]*<([a-zA-Z][a-zA-Z0-9.:-]*|\$\{.+?\})[^>]*>/) && code.match(/\bexport\b/)) {
+			if (code.match(/html`[^`]*<([a-zA-Z][a-zA-Z0-9.:-]*|\$\{.+?\})[^>]*>/) && hasExport) {
 				// if (this.getModuleInfo(id).hasJSX) {
 				hasHot = true;
 				after += '\n' + PREFRESH;
 				// }
 			}
 
-			if (!hasHot) return null;
+			if ((!hasHot && !hot) || !hasEsmKeywords) return null;
 
 			const s = new MagicString(code, {
 				filename: id,
@@ -83,15 +88,21 @@ export default function wmrPlugin({ hot = true } = {}) {
 				// @ts-ignore
 				indentExclusionRanges: undefined
 			});
+
 			if (hot) {
-				s.append(after);
-				s.prepend(
-					`import { createHotContext as $createHotContext$ } from 'wmr';const $IMPORT_META_HOT$ = $createHotContext$(import.meta.url);${before}`
-				);
+				if (!hasHot) {
+					s.append(`\nimport { createHotContext as $w_h$ } from 'wmr'; $w_h$(import.meta.url);`);
+				} else {
+					s.append(after);
+					s.prepend(
+						`import { createHotContext as $w_h$ } from 'wmr';const $IMPORT_META_HOT$ = $w_h$(import.meta.url);${before}`
+					);
+				}
 			} else if (!BYPASS_HMR) {
 				// TODO: this should be able to be omitted unconditionally.
 				s.prepend(`const $IMPORT_META_HOT$ = undefined;${before}`);
 			}
+
 			return {
 				code: s.toString(),
 				map: s.generateMap({ includeContent: false })
