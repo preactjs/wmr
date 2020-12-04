@@ -1,3 +1,4 @@
+import { promises as fs } from 'fs';
 import * as kl from 'kolorist';
 import { bundleProd } from './bundler.js';
 import { bundleStats } from './lib/output-utils.js';
@@ -10,6 +11,8 @@ import { setCwd } from './plugins/npm-plugin/registry.js';
  */
 export default async function build(options = {}) {
 	options.out = options.out || 'dist';
+
+	await fs.rmdir(options.out, { recursive: true });
 
 	// @todo remove this hack once registry.js is instantiable
 	setCwd(options.cwd);
