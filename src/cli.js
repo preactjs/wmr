@@ -15,6 +15,7 @@ prog
 	.command('build', 'make a production build')
 	.option('--prerender', 'Pre-render the application to HTML')
 	.action(opts => {
+		opts.minify = opts.minify !== false && !/false|0/.test(opts.minify);
 		run(build(opts));
 	})
 	.command('serve', 'Start a production server')

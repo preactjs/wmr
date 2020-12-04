@@ -12,6 +12,7 @@ declare module "wmr" {
 
 	export interface Options {
 		prod: boolean;
+		minify: boolean;
 		mode: Mode;
 		cwd: string;
 		public: string;
