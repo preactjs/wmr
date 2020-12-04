@@ -1,6 +1,5 @@
 import { promises as fs } from 'fs';
 import MagicString from 'magic-string';
-import { ESM_KEYWORDS } from '../fast-cjs-plugin.js';
 import { parse } from 'es-module-lexer/dist/lexer.js';
 import { ESM_KEYWORDS } from '../fast-cjs-plugin.js';
 
@@ -62,8 +61,6 @@ export default function wmrPlugin({ hot = true, cwd } = {}) {
 			let hasHot = /(import\.meta\.hot|\$IMPORT_META_HOT\$)/.test(code);
 			let before = '';
 			let after = '';
-
-			const hasEsmKeywords = ESM_KEYWORDS.test(code);
 
 			// stub webpack-style `module.hot` using `import.meta.hot`:
 			if (code.match(/module\.hot/)) {
