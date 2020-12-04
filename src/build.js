@@ -1,4 +1,5 @@
 import * as kl from 'kolorist';
+import { premove } from 'premove';
 import { bundleProd } from './bundler.js';
 import { bundleStats } from './lib/output-utils.js';
 import { prerender } from './lib/prerender.js';
@@ -10,6 +11,8 @@ import { setCwd } from './plugins/npm-plugin/registry.js';
  */
 export default async function build(options = {}) {
 	options.out = options.out || 'dist';
+
+	await premove(options.out, { cwd: options.cwd });
 
 	// @todo remove this hack once registry.js is instantiable
 	setCwd(options.cwd);

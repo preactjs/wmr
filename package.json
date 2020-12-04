@@ -133,6 +133,7 @@
 		"postcss": "^7.0.32",
 		"postcss-es6": "github:postcss/postcss#7.0.32",
 		"posthtml": "^0.13.1",
+		"premove": "^3.0.1",
 		"prettier": "^2.0.5",
 		"puppeteer": "^3.3.0",
 		"rollup": "^2.21.0",
@@ -146,7 +147,6 @@
 		"terser": "^4.8.0",
 		"tiny-glob": "^0.2.6",
 		"tmp-promise": "^3.0.2",
-		"totalist": "^2.0.0",
 		"utf-8-validate": "^5.0.2",
 		"ws": "^7.3.1"
 	},
