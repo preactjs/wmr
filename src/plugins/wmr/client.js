@@ -22,6 +22,7 @@ const URL_SUFFIX = /\/(index\.html)?$/;
 
 function handleMessage(e) {
 	const data = JSON.parse(e.data);
+
 	switch (data.type) {
 		case 'update':
 			data.changes.forEach(url => {
@@ -112,8 +113,6 @@ function update(url, visited = new Set()) {
 		.then(m => {
 			accept.forEach(c => (c({ module: m }), mod.accept.delete(c)));
 			dispose.forEach(c => (c(), mod.dispose.delete(c)));
-			// accept.forEach(c => c({ module: m }));
-			// dispose.forEach(c => c());
 		})
 		.catch(err => {
 			console.error(err);
@@ -132,11 +131,10 @@ function getMod(url) {
 // HMR API
 export function createHotContext(url, dependencies) {
 	const mod = getMod(url);
-
 	if (dependencies) {
 		for (const dep of dependencies) {
-			mod.dependencies.add(dep);
-			const dependentMod = getMod(dep);
+			mod.dependencies.add(resolve(dep));
+			const dependentMod = getMod(resolve(dep));
 			dependentMod.dependents.add(url);
 		}
 	}

@@ -39,7 +39,7 @@ export function getWmrClient({ hot = true } = {}) {
  * @param {object} options
  * @returns {import('rollup').Plugin}
  */
-export default function wmrPlugin({ hot = true } = {}) {
+export default function wmrPlugin({ hot = true, cwd } = {}) {
 	if (BYPASS_HMR) hot = false;
 
 	return {
