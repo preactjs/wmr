@@ -268,7 +268,6 @@ export const TRANSFORMS = {
 		res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
 
 		const cacheKey = id.replace(/^[\0\b]/, '');
-
 		if (WRITE_CACHE.has(cacheKey)) return WRITE_CACHE.get(cacheKey);
 
 		const resolved = await NonRollup.resolveId(id);
@@ -290,7 +289,6 @@ export const TRANSFORMS = {
 			},
 			async resolveId(spec, importer) {
 				if (spec === 'wmr') return '/_wmr.js';
-
 				if (/^(data:|https?:|\/\/)/.test(spec)) return spec;
 
 				// const resolved = await NonRollup.resolveId(spec, importer);

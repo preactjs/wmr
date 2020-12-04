@@ -36,6 +36,7 @@ const pathToPosix = p => p.split(sep).join(posix.sep);
  * @property {string} [publicPath = '/']
  * @property {string} [out = '.cache']
  * @property {boolean} [sourcemap]
+ * @property {boolean} [minify = true]
  * @property {Record<string, string>} [aliases] module aliases
  * @property {boolean} [profile] Enable bundler performance profiling
  * @property {Record<string, string>} [env]
@@ -68,6 +69,7 @@ export async function bundleProd({
 	env = {},
 	plugins,
 	output,
+	minify = true,
 	npmChunks = false
 }) {
 	cwd = cwd || '';
@@ -119,7 +121,7 @@ export async function bundleProd({
 			jsonPlugin(),
 			bundlePlugin({ cwd }),
 			optimizeGraphPlugin({ publicPath }),
-			minifyCssPlugin({ sourcemap }),
+			minify && minifyCssPlugin({ sourcemap }),
 			copyAssetsPlugin({ cwd })
 		].concat(plugins || [])
 	});
@@ -138,7 +140,7 @@ export async function bundleProd({
 			return fileName;
 		},
 		hoistTransitiveImports: true,
-		plugins: [terser({ compress: true, sourcemap })],
+		plugins: [minify && terser({ compress: true, sourcemap })],
 		sourcemap,
 		sourcemapPathTransform(p, mapPath) {
 			let url = pathToPosix(relative(cwd, resolve(dirname(mapPath), p)));
