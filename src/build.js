@@ -1,4 +1,5 @@
 import * as kl from 'kolorist';
+import { premove } from 'premove';
 import { bundleProd } from './bundler.js';
 import { bundleStats } from './lib/output-utils.js';
 import { prerender } from './lib/prerender.js';
@@ -15,6 +16,8 @@ export default async function build(options = {}) {
 	setCwd(options.cwd);
 
 	options = await normalizeOptions(options, 'build');
+
+	await premove(options.out);
 
 	const bundleOutput = await bundleProd(options);
 
