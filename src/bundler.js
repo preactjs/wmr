@@ -10,7 +10,7 @@ import npmPlugin from './plugins/npm-plugin/index.js';
 import publicPathPlugin from './plugins/public-path-plugin.js';
 import minifyCssPlugin from './plugins/minify-css-plugin.js';
 import htmlEntriesPlugin from './plugins/html-entries-plugin.js';
-import totalist from 'totalist/sync/index.mjs'; // TODO: temporary
+import totalist from 'totalist';
 import aliasesPlugin from './plugins/aliases-plugin.js';
 import processGlobalPlugin from './plugins/process-global-plugin.js';
 import urlPlugin from './plugins/url-plugin.js';
@@ -75,7 +75,7 @@ export async function bundleProd({
 	const ignore = /^\.\/(node_modules|dist|build)\//;
 	/** @type {string[]} */ const input = [];
 
-	totalist(cwd, (rel, abs) => {
+	await totalist(cwd, (rel, abs) => {
 		if (ignore.test(abs)) return;
 		if (!/\.html?/.test(rel)) return;
 		input.push('./' + pathToPosix(relative(root, abs)));
