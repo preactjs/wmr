@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import MagicString from 'magic-string';
 import { ESM_KEYWORDS } from '../fast-cjs-plugin.js';
+import { parse } from 'es-module-lexer/dist/lexer.js';
 
 const BYPASS_HMR = process.env.BYPASS_HMR === 'true';
 
@@ -90,12 +91,25 @@ export default function wmrPlugin({ hot = true } = {}) {
 			});
 
 			if (hot) {
+				const [imports] = await parse(code, id);
+				const dependencies = [];
+				for (const item of imports) {
+					const spec = code.substring(item.s, item.e);
+					dependencies.push(spec.replace(/'/g, '').replace(/"/g, '').replace('./', '').replace('../', ''));
+				}
+
 				if (!hasHot) {
-					s.append(`\nimport { createHotContext as $w_h$ } from 'wmr'; $w_h$(import.meta.url);`);
+					s.append(
+						`\nimport { createHotContext as $w_h$ } from 'wmr'; $w_h$(import.meta.url, ${JSON.stringify(
+							dependencies
+						)});`
+					);
 				} else {
 					s.append(after);
 					s.prepend(
-						`import { createHotContext as $w_h$ } from 'wmr';const $IMPORT_META_HOT$ = $w_h$(import.meta.url);${before}`
+						`import { createHotContext as $createHotContext$ } from 'wmr';const $IMPORT_META_HOT$ = $createHotContext$(import.meta.url, ${JSON.stringify(
+							dependencies
+						)});${before}`
 					);
 				}
 			} else if (!BYPASS_HMR) {
