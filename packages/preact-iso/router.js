@@ -90,7 +90,7 @@ export function Router(props) {
 
 	curChildren.current = a.map((p, i) => cloneElement(p, { path, query }));
 
-	return curChildren.current.concat(prevChildren.current || []);
+	return prevChildren.current || curChildren.current;
 }
 
 Router.Provider = LocationProvider;
