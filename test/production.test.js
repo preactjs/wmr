@@ -187,7 +187,7 @@ describe('production', () => {
 
 	describe('config.publicPath', () => {
 		it('should respect `config.publicPath` value', async () => {
-			await loadFixture('publicPath', env);
+			await loadFixture('publicpath', env);
 			instance = await runWmr(env.tmp.path, 'build');
 			const code = await instance.done;
 			console.info(instance.output.join('\n'));
