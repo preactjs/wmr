@@ -4,7 +4,7 @@
 
 All the features you'd expect and more, from development to production:
 
-🔨 &nbsp; No "entry points" or "pages" to configure - just `<script type=module src=anything.js>`<br>
+🔨 &nbsp; No entry points or pages to configure - just HTML files with `<script type=module>`<br>
 🦦 &nbsp; Safely `import "packages"` from npm **_without installation_**<br>
 📦 &nbsp; Smart bundling and caching for npm dependencies<br>
 ↻ &nbsp; Hot reloading for modules, Preact components and CSS<br>
