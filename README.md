@@ -4,33 +4,23 @@
 
 All the features you'd expect and more, from development to production:
 
-🔨 &nbsp; No "entry points" or "pages" to configure - just `<script type=module src=anything.js>`
-
-🦦 &nbsp; `import "packages"` from npm **_without installation_**
-
-📦 &nbsp; Smart bundling and caching for npm dependencies
-
-↻ &nbsp; Hot reloading for modules, Preact components and CSS
-
-⚡️ &nbsp; Lightning-fast JSX support that you can debug in the browser
-
-💄 &nbsp; Import CSS files and [CSS Modules](https://github.com/css-modules/css-modules) (`*.module.css`)
-
-📂 &nbsp; Static file serving with hot reloading of CSS and images
-
-🗜 &nbsp; Highly optimized Rollup-based production output (`wmr build`)
-
-📑 &nbsp; Crawls and pre-renders your app's pages to static HTML at build time
-
-🏎 &nbsp; Built-in HTTP2 support in both development and production (`wmr serve --http2`)
-
+🔨 &nbsp; No "entry points" or "pages" to configure - just `<script type=module src=anything.js>`<br>
+🦦 &nbsp; Safely `import "packages"` from npm **_without installation_**<br>
+📦 &nbsp; Smart bundling and caching for npm dependencies<br>
+↻ &nbsp; Hot reloading for modules, Preact components and CSS<br>
+⚡️ &nbsp; Lightning-fast JSX support that you can debug in the browser<br>
+💄 &nbsp; Import CSS files and [CSS Modules](https://github.com/css-modules/css-modules) (`*.module.css`)<br>
+📂 &nbsp; Static file serving with hot reloading of CSS and images<br>
+🗜 &nbsp; Highly optimized Rollup-based production output (`wmr build`)<br>
+📑 &nbsp; Crawls and pre-renders your app's pages to static HTML at build time<br>
+🏎 &nbsp; Built-in HTTP2 in dev and prod (`wmr serve --http2`)<br>
 🔧 &nbsp; Supports [Rollup plugins](#configuration-and-plugins), even in development where Rollup isn't used
 
 ## Quickstart _(recommended)_
 
 Create a new project in seconds using [create-wmr](https://npm.im/create-wmr):
 
-<font size="5"><strong><code>npm init wmr your-project-name</code></strong></font>
+<strong><code>npm init wmr your-project-name</code></strong>
 
 <p>
 <img width="400" src="https://user-images.githubusercontent.com/105127/100917537-4661e100-34a5-11eb-89bd-565b7bc31919.gif">
