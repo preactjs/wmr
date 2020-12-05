@@ -7,10 +7,11 @@ import ora from 'ora';
 import kleur from 'kleur';
 import pkgInstall from 'pkg-install';
 const { getPackageManager, install } = pkgInstall;
-const { dim, bold, cyan } = kleur;
+const { dim, bold, cyan, red } = kleur;
 
 sade('create-wmr [dir]', true)
 	.option('--eslint', 'Set up the Preact ESLint configuration (takes a lot longer)', false)
+	.option('--yarn', 'Set up WMR using Yarn instead of NPM as the package manager', false)
 	.describe('Initialize a WMR project')
 	.example('npm init wmr ./some-directory')
 	.action(async (dir, opts) => {
@@ -32,14 +33,18 @@ sade('create-wmr [dir]', true)
 			color: 'yellow',
 			text: 'installing WMR...'
 		}).start();
+		const packageManager = opts.yarn ? 'yarn' : 'npm';
 		// @ts-ignore-next
-		await getPackageManager({ prefer: 'npm', cwd, dev: true, verbose: false });
-		await install(['wmr', 'preact-iso'], { cwd });
+		await getPackageManager({ prefer: packageManager }).catch(() => {
+			process.stderr.write(`\n${red(`${packageManager} cannot be found`)}\n`);
+			process.exit(1);
+		});
+		await install(['wmr', 'preact-iso'], { prefer: packageManager, cwd });
 		spinner.succeed('installed WMR.');
 
 		if (opts.eslint) {
 			spinner.start('installing eslint configuration...');
-			await install(['eslint', 'eslint-config-preact'], { cwd });
+			await install(['eslint', 'eslint-config-preact'], { prefer: packageManager, cwd });
 			spinner.succeed('installed eslint.');
 		}
 
@@ -55,18 +60,20 @@ sade('create-wmr [dir]', true)
 		}
 		const result = `
 			Start the development server:
-			${dim('$')} ${cyan('npm start')}
+			${dim('$')} ${cyan(`${packageManager} start`)}
 
 			Create a production build:
-			${dim('$')} ${cyan('npm run build')}
+			${dim('$')} ${cyan(`${packageManager === 'npm' ? 'npm run' : 'yarn'} build`)}
 
 			Serve the app in production mode:
-			${dim('$ PORT=8080')} ${cyan('npm run serve')}
+			${dim('$ PORT=8080')} ${cyan(`${packageManager === 'npm' ? 'npm run' : 'yarn'} serve`)}
 		`;
 		console.log('\n' + result.trim().replace(/^\t\t\t/gm, '') + '\n');
 		if (!opts.eslint) {
 			console.log(
-				`\n${bold('To enable ESLint:')} (optional)\n${dim('$')} ${cyan('npm i eslint eslint-config-preact')}\n`
+				`\n${bold('To enable ESLint:')} (optional)\n${dim('$')} ${cyan(
+					`${packageManager === 'npm' ? 'npm i' : 'yarn add'} eslint eslint-config-preact`
+				)}\n`
 			);
 		}
 	})
