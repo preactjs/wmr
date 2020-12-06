@@ -6,8 +6,9 @@ import { Worker } from 'worker_threads';
  * @property {string} [out = '.cache']
  */
 export function prerender({ cwd = '.', out = '.cache' }) {
+	let w;
 	try {
-		const w = new Worker(
+		w = new Worker(
 			`(${workerCode})(require('worker_threads').workerData)
 				.then(r => require('worker_threads').parentPort.postMessage([1,r]))
 				.catch(err => require('worker_threads').parentPort.postMessage([0,err && err.stack || err+'']))`,
