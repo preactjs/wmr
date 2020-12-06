@@ -1,6 +1,8 @@
 import path from 'path';
 import { promises as fs } from 'fs';
 import { setupTest, teardown, loadFixture, runWmrFast, getOutput, get } from './test-helpers.js';
+import { rollup } from 'rollup';
+import nodeBuiltinsPlugin from '../src/plugins/node-builtins-plugin.js';
 
 jest.setTimeout(30000);
 
@@ -378,6 +380,34 @@ describe('fixtures', () => {
 			expect(await env.page.evaluate(`import('/@npm/exports-fallbacks-defaultfallback')`)).toEqual({
 				default: 'default'
 			});
+		});
+	});
+
+	describe('node built-ins', () => {
+		it('should return an error if a node built-in is used in production', async () => {
+			const error =
+				'Could not load http (imported by test/fixtures/node-builtins/http.js): Error: http is a Node built-in - WMR does not polyfill these';
+
+			await expect(
+				rollup({
+					input: 'test/fixtures/node-builtins/http.js',
+					plugins: [nodeBuiltinsPlugin({ production: true })]
+				})
+			).rejects.toThrow(error);
+		});
+
+		it('should return an warning if a node built-in is used in development', async () => {
+			const warning = `
+				Warning: http is a Node built-in - WMR does not polyfill these. 
+				For development the module has been stubbed.`;
+			const warns = [];
+			await rollup({
+				input: 'test/fixtures/node-builtins/http.js',
+				plugins: [nodeBuiltinsPlugin()],
+				onwarn: warn => warns.push(warn)
+			});
+			expect(warns).toHaveLength(1);
+			expect(warns[0].message.trim()).toEqual(warning.trim());
 		});
 	});
 });
