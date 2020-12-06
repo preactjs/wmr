@@ -6,17 +6,22 @@ import { Worker } from 'worker_threads';
  * @property {string} [out = '.cache']
  */
 export function prerender({ cwd = '.', out = '.cache' }) {
-	const w = new Worker(
-		`(${workerCode})(require('worker_threads').workerData)
-			.then(r => require('worker_threads').parentPort.postMessage([1,r]))
-			.catch(err => require('worker_threads').parentPort.postMessage([0,err && err.stack || err+'']))`,
-		{
-			eval: true,
-			workerData: { cwd, out },
-			// execArgv: ['--experimental-modules'],
-			stderr: true
-		}
-	);
+	try {
+		const w = new Worker(
+			`(${workerCode})(require('worker_threads').workerData)
+				.then(r => require('worker_threads').parentPort.postMessage([1,r]))
+				.catch(err => require('worker_threads').parentPort.postMessage([0,err && err.stack || err+'']))`,
+			{
+				eval: true,
+				workerData: { cwd, out },
+				// execArgv: ['--experimental-modules'],
+				stderr: true
+			}
+		);
+	} catch (e) {
+		throw Error(`Failed to prerender, Workers aren't supported in your current Node.JS version (try v14 or later).\n  ${e}`);
+	}
+
 	// @ts-ignore-next
 	w.stderr.on('data', m => {
 		if (!/^\(node:\d+\) ExperimentalWarning:/.test(m.toString('utf-8'))) process.stderr.write(m);
