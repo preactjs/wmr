@@ -20,7 +20,9 @@ export function prerender({ cwd = '.', out = '.cache' }) {
 			}
 		);
 	} catch (e) {
-		throw Error(`Failed to prerender, Workers aren't supported in your current Node.JS version (try v14 or later).\n  ${e}`);
+		throw Error(
+			`Failed to prerender, Workers aren't supported in your current Node.JS version (try v14 or later).\n  ${e}`
+		);
 	}
 
 	// @ts-ignore-next
