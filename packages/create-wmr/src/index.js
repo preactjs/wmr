@@ -11,7 +11,6 @@ const { dim, bold, cyan, red } = kleur;
 
 sade('create-wmr [dir]', true)
 	.option('--eslint', 'Set up the Preact ESLint configuration (takes a lot longer)', false)
-	.option('--yarn', 'Set up WMR using Yarn instead of NPM as the package manager', false)
 	.describe('Initialize a WMR project')
 	.example('npm init wmr ./some-directory')
 	.action(async (dir, opts) => {
@@ -33,7 +32,7 @@ sade('create-wmr [dir]', true)
 			color: 'yellow',
 			text: 'installing WMR...'
 		}).start();
-		const packageManager = opts.yarn ? 'yarn' : 'npm';
+		const packageManager = /yarn/.test(process.env.npm_execpath) ? 'yarn' : 'npm';
 		// @ts-ignore-next
 		await getPackageManager({ prefer: packageManager }).catch(() => {
 			process.stderr.write(`\n${red(`${packageManager} cannot be found`)}\n`);
