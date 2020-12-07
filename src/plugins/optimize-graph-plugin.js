@@ -176,7 +176,7 @@ class ChunkGraph {
 				let rep = typeof newUrl === 'function' ? newUrl(url, fn, quote) : newUrl;
 				if (rep === false) return 'null';
 				if (typeof rep === 'string') {
-					rep = JSON.stringify(publicPath ? toImport(publicPath, rep) : rep);
+					rep = publicPath ? toImport(publicPath, rep) : JSON.stringify(rep);
 				}
 				return `${fn}(${rep})`;
 			}
@@ -187,9 +187,8 @@ class ChunkGraph {
 /**
  * @param {string} publicPath
  * @param {string} filename
- * @param {boolean} [toJSON]
  */
-function toImport(publicPath, filename, toJSON) {
+function toImport(publicPath, filename) {
 	let value = posix.join(publicPath, filename);
 
 	if (/^(https?:)?\/\//.test(publicPath)) {
@@ -198,7 +197,7 @@ function toImport(publicPath, filename, toJSON) {
 		value = new URL(filename, root).href.substring(isFull ? 0 : 6);
 	}
 
-	return toJSON ? JSON.stringify(value) : value;
+	return JSON.stringify(value);
 }
 
 /**
@@ -285,7 +284,7 @@ function hoistEntryCss(graph) {
 				} else {
 					// @TODO: this branch is actually unreachable
 					if (DEBUG) console.log(`Hoisting CSS "${f}" imported by ${id} into parent HTML.`);
-					const url = toImport(graph.publicPath, f, true);
+					const url = toImport(graph.publicPath, f);
 					asset.source = getAssetSource(asset).replace(/<\/head>/, `<link rel="stylesheet" href=${url}></head>`);
 				}
 			}
@@ -348,7 +347,7 @@ function hoistCascadedCss(graph, { cssMinSize }) {
 					parentChunk.code += '\n' + DEFAULT_STYLE_LOAD_IMPL;
 				}
 
-				const url = toImport(graph.publicPath, fileName, true);
+				const url = toImport(graph.publicPath, fileName);
 				parentChunk.code += `\n${meta.styleLoadFn}(${url});`;
 			}
 			break;
@@ -390,7 +389,7 @@ function hoistTransitiveImports(graph) {
 					appendCode += '\n' + DEFAULT_STYLE_LOAD_IMPL;
 				}
 				if (DEBUG) console.log(`Preloading CSS for import(${spec}): ${css}`);
-				preloads.push(...css.map(f => `${meta.styleLoadFn}(${toImport(graph.publicPath, f, true)})`));
+				preloads.push(...css.map(f => `${meta.styleLoadFn}(${toImport(graph.publicPath, f)})`));
 			}
 
 			const js = deps.js.get(spec);
