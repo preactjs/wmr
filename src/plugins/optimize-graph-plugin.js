@@ -398,7 +398,9 @@ function hoistTransitiveImports(graph) {
 				if (DEBUG) console.log(`Preloading JS for import(${spec}): ${js}`);
 				preloads.push(
 					...js.map(f => {
-						// TODO: should have `toImport(...)` somewhere here
+						if (/^(https?:)?\/\//.test(graph.publicPath)) {
+							return `import(${toImport(graph.publicPath, f)})`;
+						}
 						let rel = posix.relative(posix.dirname('/' + fileName), posix.join(graph.publicPath, f));
 						if (!rel.startsWith('.')) rel = './' + rel;
 						return `import(${JSON.stringify(rel)})`;
