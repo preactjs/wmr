@@ -10,6 +10,7 @@ All the features you'd expect and more, from development to production:
 ↻ &nbsp; Hot reloading for modules, Preact components and CSS<br>
 ⚡️ &nbsp; Lightning-fast JSX support that you can debug in the browser<br>
 💄 &nbsp; Import CSS files and [CSS Modules](https://github.com/css-modules/css-modules) (`*.module.css`)<br>
+🔩 &nbsp; Out-of-the-box support for [TypeScript](https://www.typescriptlang.org/)<br>
 📂 &nbsp; Static file serving with hot reloading of CSS and images<br>
 🗜 &nbsp; Highly optimized Rollup-based production output (`wmr build`)<br>
 📑 &nbsp; Crawls and pre-renders your app's pages to static HTML at build time<br>
