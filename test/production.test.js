@@ -201,16 +201,17 @@ describe('production', () => {
 
 			expect(assets).toEqual([expect.stringMatching(/^index\.\w+\.css$/), expect.stringMatching(/^math\.\w+\.css$/)]);
 
-			expect(chunks).toEqual([expect.stringMatching(/^math\.\w+\.js$/)]);
+			expect(chunks).toEqual([expect.stringMatching(/^constants\.\w+\.js$/), expect.stringMatching(/^math\.\w+\.js$/)]);
 
 			expect(roots).toEqual(['assets', 'chunks', expect.stringMatching(/^index\.\w+\.js$/), 'index.html']);
 
 			const html = await fs.readFile(path.join(env.tmp.path, 'dist', 'index.html'), 'utf8');
-			const math = await fs.readFile(path.join(env.tmp.path, 'dist', 'chunks', chunks[0]), 'utf8');
+			const math = await fs.readFile(path.join(env.tmp.path, 'dist', 'chunks', chunks[1]), 'utf8');
 			const main = await fs.readFile(path.join(env.tmp.path, 'dist', roots[2]), 'utf8');
 
 			// https://cdn.example.com/assets/math.d41e7373.css
-			expect(math.includes(`https://cdn.example.com/assets/${assets[1]}`)).toBe(true);
+			expect(math.includes(`("https://cdn.example.com/assets/${assets[1]}")`)).toBe(true);
+			expect(math.includes(`import("./${chunks[0]}")`)).toBe(true);
 
 			// (preload) https://cdn.example.com/assets/math.d41e7373.css
 			expect(main.includes(`$w_s$("https://cdn.example.com/assets/${assets[1]}")`)).toBe(true);
