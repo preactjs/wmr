@@ -22,6 +22,10 @@ Create a new project in seconds using [create-wmr](https://npm.im/create-wmr):
 
 <strong><code>npm init wmr your-project-name</code></strong>
 
+or
+
+<strong><code>yarn create wmr your-project-name</code></strong>
+
 <p>
 <img width="400" src="https://user-images.githubusercontent.com/105127/100917537-4661e100-34a5-11eb-89bd-565b7bc31919.gif">
 </p>
