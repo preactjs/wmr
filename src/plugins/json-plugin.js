@@ -23,8 +23,9 @@ export default function jsonPlugin({} = {}) {
 				// not a JSON file, no prefix
 				return;
 			}
+
 			const resolved = await this.resolve(id, importer, { skipSelf: true });
-			return resolved && INTERNAL_PREFIX + resolved.id;
+			return resolved && INTERNAL_PREFIX + id;
 		},
 		transform(code, id) {
 			if (!id.startsWith(INTERNAL_PREFIX)) return;
