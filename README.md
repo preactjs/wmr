@@ -155,6 +155,34 @@ export async function serve(config) {
 
 See [the full list of options](https://github.com/preactjs/wmr/blob/master/types.d.ts).
 
+## Recipes
+
+Here we'll outline some recipes that might come in handy when making an application with `wmr`.
+
+### Minifying HTML
+
+To minify HTML we can use [rollup-plugin-html-minifier](https://www.npmjs.com/package/rollup-plugin-html-minifier).
+
+```sh
+yarn add rollup-plugin-html-minifier
+## or
+npm i --save rollup-plugin-html-minifier
+```
+
+After we've installed this package we can add it to the config file (`wmr.config.js`).
+
+```js
+import htmlMinifier from 'rollup-plugin-html-minifier';
+
+export function build({ plugins }) {
+	plugins.push(
+		htmlMinifier({
+			// any options here
+		})
+	);
+}
+```
+
 ## Contributing
 
 ```sh
