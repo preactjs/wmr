@@ -1,5 +1,3 @@
-import { sep, posix } from 'path';
-
 /**
  * Convert JSON imports to ESM. Uses a prefix `\0json:./foo.json`.
  * In dev mode, this creates URLs like `/@json/path/to/foo.json`.
@@ -28,7 +26,7 @@ export default function jsonPlugin({} = {}) {
 
 			const resolved = await this.resolve(id, importer, { skipSelf: true });
 
-			return resolved && INTERNAL_PREFIX + resolved.id.split(sep).join(posix.sep);
+			return resolved && INTERNAL_PREFIX + resolved.id;
 		},
 		transform(code, id) {
 			if (!id.startsWith(INTERNAL_PREFIX)) return;

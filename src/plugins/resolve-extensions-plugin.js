@@ -49,7 +49,7 @@ export default function resolveExtensionsPlugin({
 		name: 'resolve-extensions-plugin',
 		async resolveId(id, importer) {
 			if (id[0] === '\0') return;
-			if (/\.(tsx?|css|s[ac]ss|wasm)$/.test(id)) return;
+			if (/\.(tsx?|css|s[ac]ss|wasm|json)$/.test(id)) return;
 
 			let resolved;
 			try {
