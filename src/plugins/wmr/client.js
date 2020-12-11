@@ -95,8 +95,8 @@ function update(url, visited = new Set()) {
 	const p = mod.import ? mod.import(newUrl) : import(newUrl);
 
 	if (!accept.length) {
-		const dependents = Array.from(mod.dependents);
-		if (dependents.length) {
+		const { dependents } = mod;
+		if (dependents.size) {
 			for (const dependent of dependents) {
 				if (!visited.has(dependent)) {
 					visited.add(dependent);
