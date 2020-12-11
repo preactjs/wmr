@@ -98,7 +98,7 @@ export async function bundleProd({
 			htmlEntriesPlugin({ cwd, publicDir, publicPath: '/' }),
 			publicPathPlugin({ publicPath: '/' }),
 			aliasesPlugin({ aliases, cwd: root }),
-			htmPlugin(),
+			htmPlugin({ production: true }),
 			sassPlugin({ production: true }),
 			wmrStylesPlugin({ hot: false, cwd }),
 			wmrPlugin({ hot: false }),
