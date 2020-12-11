@@ -2,6 +2,7 @@
 	"compileOnSave": false,
 	"compilerOptions": {
 		"jsx": "preserve",
+		"jsxFactory": "preact.h",
 		"allowJs": true,
 		"checkJs": true,
 		// "strict": true,
