@@ -12,5 +12,7 @@ interface RoutableProps {
 }
 
 declare module 'preact' {
-	export interface Attributes extends RoutableProps {}
+	namespace JSX {
+		interface IntrinsicAttributes extends RoutableProps {}
+	}
 }
