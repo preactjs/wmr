@@ -1,4 +1,4 @@
-import { FunctionalComponent, VNode } from 'preact';
+import { VNode } from 'preact';
 
 export default function lazy<T>(load: () => Promise<{ default: T }>): T;
 
