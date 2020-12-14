@@ -126,7 +126,7 @@
 		"lint-staged": "^10.2.11",
 		"magic-string": "^0.25.7",
 		"ncp": "^2.0.0",
-		"node-fetch": "^2.6.0",
+		"node-fetch": "^2.6.1",
 		"nodemon": "^2.0.4",
 		"npm-merge-driver-install": "^1.1.1",
 		"polka": "^0.5.2",
