@@ -459,8 +459,11 @@ const TYPES = {
 			const children = [];
 			for (let child of node.children) {
 				if (child.type === 'JSXText') {
-					const { value } = child;
+					let { value } = child;
 					if (value !== '') {
+						if (visitingCtx && visitingCtx.generatorOpts.compact) {
+							value = value.replace(/\s*\n+\s*/g, '');
+						}
 						children.push(TYPES.stringLiteral(value));
 					}
 					continue;
@@ -512,6 +515,9 @@ const types = new Proxy(TYPES, {
 	}
 });
 
+/** @type {ReturnType<createContext>} */
+let visitingCtx;
+
 /**
  * @param {Node} root
  * @param {Record<string, Visitor>} visitors
@@ -520,6 +526,8 @@ const types = new Proxy(TYPES, {
  */
 function visit(root, visitors, state) {
 	const { ctx } = this;
+	visitingCtx = ctx;
+
 	const afters = [];
 
 	// Check instanceof since that's fastest, but also account for POJO nodes.
@@ -599,8 +607,9 @@ function visit(root, visitors, state) {
  * @param {string} options.code
  * @param {MagicString} options.out
  * @param {typeof DEFAULTS['parse']} options.parse
+ * @param {{ compact?: boolean }} options.generatorOpts
  */
-function createContext({ code, out, parse }) {
+function createContext({ code, out, parse, generatorOpts }) {
 	const ctx = {
 		paths: new WeakMap(),
 		/** @type {Set<Path>} */
@@ -608,6 +617,7 @@ function createContext({ code, out, parse }) {
 		code,
 		out,
 		parse,
+		generatorOpts,
 		types,
 		visit,
 		template,
@@ -650,13 +660,15 @@ const DEFAULTS = {
  * @param {typeof DEFAULTS.parse} [options.parse]
  * @param {string} [options.filename]
  * @param {boolean} [options.ast = false]
+ * @param {{ compact?: boolean }} [options.generatorOpts]
  * @param {typeof DEFAULTS.sourceMaps} [options.sourceMaps]
  * @param {string} [options.sourceFileName]
  */
-export function transform(code, { presets, plugins, parse, filename, ast, sourceMaps, sourceFileName } = {}) {
+export function transform(code, { presets, plugins, parse, filename, ast, generatorOpts, sourceMaps, sourceFileName } = {}) {
 	parse = parse || DEFAULTS.parse;
+	generatorOpts = generatorOpts || {};
 	const out = new MagicString(code);
-	const { types, template, visit } = createContext({ code, out, parse });
+	const { types, template, visit } = createContext({ code, out, parse, generatorOpts });
 
 	const allPlugins = [];
 	resolvePreset({ presets, plugins }, allPlugins);
