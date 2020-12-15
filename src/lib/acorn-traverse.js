@@ -664,7 +664,10 @@ const DEFAULTS = {
  * @param {typeof DEFAULTS.sourceMaps} [options.sourceMaps]
  * @param {string} [options.sourceFileName]
  */
-export function transform(code, { presets, plugins, parse, filename, ast, generatorOpts, sourceMaps, sourceFileName } = {}) {
+export function transform(
+	code,
+	{ presets, plugins, parse, filename, ast, generatorOpts, sourceMaps, sourceFileName } = {}
+) {
 	parse = parse || DEFAULTS.parse;
 	generatorOpts = generatorOpts || {};
 	const out = new MagicString(code);

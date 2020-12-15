@@ -18,11 +18,13 @@ const parse = (code, opts) => Parser.parse(code, { ecmaVersion: 2020, sourceType
  * Transform source code using a Babel plugin
  * @param {string} code
  * @param {Plugin} plugin
+ * @param {object} [options]
  */
-function transformWithPlugin(code, plugin) {
+function transformWithPlugin(code, plugin, options = {}) {
 	return transform(code, {
 		parse,
-		plugins: [plugin]
+		plugins: [plugin],
+		...options
 	}).code;
 }
 
@@ -115,6 +117,38 @@ describe('acorn-traverse', () => {
 			);"
 		`);
 			});
+		});
+
+		it('should remove whitespaces with compact option', () => {
+			const doTransform = code => transformWithPlugin(code, transformJsxToHtm);
+			const doTransformWithCompact = code =>
+				transformWithPlugin(code, transformJsxToHtm, { generatorOpts: { compact: true } });
+
+			const expression = dent`
+				(
+					<>
+						<div>top</div>
+						<span>bottom</span>
+					</>
+				);
+			`;
+
+			// Should keep the newlines formatting
+			expect(doTransform(expression)).toMatchInlineSnapshot(`
+			"(
+				html\`
+					<div>top</div>
+					<span>bottom</span>
+				\`
+			);"
+		`);
+
+			// Should remove the whitespaces between the HTM generated syntax
+			expect(doTransformWithCompact(expression)).toMatchInlineSnapshot(`
+			"(
+				html\`<div>top</div><span>bottom</span>\`
+			);"
+			`);
 		});
 	});
 
