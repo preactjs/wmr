@@ -3,6 +3,7 @@
 	"compilerOptions": {
 		"jsx": "preserve",
 		"jsxFactory": "preact.h",
+		"jsxFragmentFactory": "preact.Fragment",
 		"allowJs": true,
 		"checkJs": true,
 		// "strict": true,
