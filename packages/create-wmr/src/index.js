@@ -38,7 +38,7 @@ sade('create-wmr [dir]', true)
 			process.stderr.write(`\n${red(`${packageManager} cannot be found`)}\n`);
 			process.exit(1);
 		});
-		await install(['wmr', 'preact-iso'], { prefer: packageManager, cwd });
+		await install(['wmr', 'preact', 'preact-iso'], { prefer: packageManager, cwd });
 		spinner.succeed('installed WMR.');
 
 		if (opts.eslint) {
