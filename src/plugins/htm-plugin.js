@@ -58,6 +58,9 @@ export default function htmPlugin({ include, production = true } = {}) {
 				],
 				filename,
 				sourceMaps: true,
+				generatorOpts: {
+					compact: production
+				},
 				parse: this.parse
 			});
 

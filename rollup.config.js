@@ -107,6 +107,7 @@ const config = {
 		},
 		alias({
 			entries: [
+				{ find: /^@babel\/plugin-syntax-jsx$/, replacement: require.resolve('./src/lib/~empty.js') },
 				{ find: /^postcss$/, replacement: 'postcss-es6' },
 				{ find: /^postcss[/\\]$/, replacement: `postcss-es6${sep}` },
 				// bypass native modules aimed at production WS performance:
