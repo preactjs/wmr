@@ -76,7 +76,7 @@ export default function npmMiddleware({ source = 'npm', aliases, optimize, cwd }
 			if (cached) return sendCachedBundle(req, res, cached);
 
 			// const start = Date.now();
-			const code = await bundleNpmModule(mod, { source, aliases });
+			const code = await bundleNpmModule(mod, { source, aliases, cwd });
 			// console.log(`Bundle dep: ${mod}: ${Date.now() - start}ms`);
 
 			// send it!
@@ -104,8 +104,9 @@ let npmCache;
  * @param {object} options
  * @param {'npm'|'unpkg'} [options.source]
  * @param {Record<string,string>} [options.aliases]
+ * @param {string} [options.cwd]
  */
-async function bundleNpmModule(mod, { source, aliases }) {
+async function bundleNpmModule(mod, { source, aliases, cwd }) {
 	let npmProviderPlugin;
 
 	if (source === 'unpkg') {
@@ -131,7 +132,7 @@ async function bundleNpmModule(mod, { source, aliases }) {
 		preserveEntrySignatures: 'allow-extension',
 		plugins: [
 			nodeBuiltinsPlugin({}),
-			aliasesPlugin({ aliases }),
+			aliasesPlugin({ aliases, cwd }),
 			npmProviderPlugin,
 			processGlobalPlugin({
 				NODE_ENV: 'development'
