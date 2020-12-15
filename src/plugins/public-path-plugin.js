@@ -11,8 +11,15 @@ export default function publicPathPlugin({ publicPath, filter } = {}) {
 		name: 'public-path',
 		resolveFileUrl(assetInfo) {
 			if (!publicPath || (filter && !filter(assetInfo))) return null;
-			const { fileName } = assetInfo;
-			return JSON.stringify(posix.join(publicPath, fileName));
+
+			let output = posix.join(publicPath, assetInfo.fileName);
+			if (/^(https?:)?\/\//.test(publicPath)) {
+				const isFull = /^https?:\/\//.test(publicPath);
+				const root = isFull ? publicPath : 'https:' + publicPath;
+				output = new URL(assetInfo.fileName, root).href.substring(isFull ? 0 : 6);
+			}
+
+			return JSON.stringify(output);
 		}
 	};
 }

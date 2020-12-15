@@ -16,6 +16,7 @@ declare module "wmr" {
 		mode: Mode;
 		cwd: string;
 		public: string;
+		publicPath: string;
 		root: string;
 		out: string;
 		overlayDir: string;

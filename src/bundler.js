@@ -33,6 +33,7 @@ const pathToPosix = p => p.split(sep).join(posix.sep);
  * @property {string} [cwd = '']
  * @property {string} [root = ''] cwd without implicit ./public dir
  * @property {string} [publicDir = '']
+ * @property {string} [publicPath = '/']
  * @property {string} [out = '.cache']
  * @property {boolean} [sourcemap]
  * @property {boolean} [minify = true]
@@ -60,6 +61,7 @@ export async function bundleProd({
 	cwd,
 	root,
 	publicDir,
+	publicPath = '/',
 	out,
 	sourcemap,
 	aliases,
@@ -95,8 +97,8 @@ export async function bundleProd({
 				sourcemap,
 				production: true
 			}),
-			htmlEntriesPlugin({ cwd, publicDir, publicPath: '/' }),
-			publicPathPlugin({ publicPath: '/' }),
+			htmlEntriesPlugin({ cwd, publicDir, publicPath }),
+			publicPathPlugin({ publicPath }),
 			aliasesPlugin({ aliases, cwd: root }),
 			htmPlugin(),
 			sassPlugin({ production: true }),
@@ -118,7 +120,7 @@ export async function bundleProd({
 			urlPlugin({}),
 			jsonPlugin(),
 			bundlePlugin({ cwd }),
-			optimizeGraphPlugin({ publicPath: '/' }),
+			optimizeGraphPlugin({ publicPath }),
 			minify && minifyCssPlugin({ sourcemap }),
 			copyAssetsPlugin({ cwd })
 		].concat(plugins || [])
