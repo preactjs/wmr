@@ -1,3 +1,3 @@
-import { VNode } from 'preact';
+import { ComponentChild, VNode } from 'preact';
 
-export default function hydrate(jsx: VNode, parent?: VNode): void;
+export default function hydrate(jsx: ComponentChild, parent?: VNode): void;

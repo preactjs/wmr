@@ -1,10 +1,10 @@
-import { VNode } from 'preact';
+import { FunctionComponent, VNode } from 'preact';
 
-export function LocationProvider(props: { children?: VNode }): VNode;
+export const LocationProvider: FunctionComponent;
 
 export function Router(props: { onLoadEnd?: () => void, onLoadStart?: () => void, children?: VNode[] }): VNode;
 
-export const useLoc: () => { url: string, path: string, query: Object, route };
+export const useLoc: () => { url: string, path: string, query: Record<string, string>, route };
 
 interface RoutableProps {
 	path?: string;
