@@ -84,7 +84,13 @@ const updateQueue = [];
 let updating = false;
 function dequeue() {
 	updating = updateQueue.length !== 0;
-	return updating && update(updateQueue.shift()).then(dequeue, dequeue);
+	if (updating) {
+		const promiseLike = update(updateQueue.shift());
+		if (Array.isArray) {
+			return Promise.all(promiseLike).then(dequeue, dequeue);
+		}
+		return promiseLike.then(dequeue, dequeue);
+	}
 }
 
 function update(url, visited = new Set()) {
@@ -92,31 +98,32 @@ function update(url, visited = new Set()) {
 	const dispose = Array.from(mod.dispose);
 	const accept = Array.from(mod.accept);
 	const newUrl = url + '?t=' + Date.now();
-	const p = mod.import ? mod.import(newUrl) : import(newUrl);
 
 	if (!accept.length) {
 		const { dependents } = mod;
+		const promises = [];
 		if (dependents.size) {
 			for (const dependent of dependents) {
 				if (!visited.has(dependent)) {
 					visited.add(dependent);
-					update(dependent, visited);
+					promises.push(update(dependent, visited));
 				}
 			}
-		} else {
-			// We can't bubble up
-			window.location.reload();
+			return promises;
 		}
+		// We can't bubble up
+		window.location.reload();
+	} else {
+		const p = mod.import ? mod.import(newUrl) : import(newUrl);
+		return p
+			.then(m => {
+				accept.forEach(c => (c({ module: m }), mod.accept.delete(c)));
+				dispose.forEach(c => (c(), mod.dispose.delete(c)));
+			})
+			.catch(err => {
+				console.error(err);
+			});
 	}
-
-	return p
-		.then(m => {
-			accept.forEach(c => (c({ module: m }), mod.accept.delete(c)));
-			dispose.forEach(c => (c(), mod.dispose.delete(c)));
-		})
-		.catch(err => {
-			console.error(err);
-		});
 }
 
 const mods = new Map();

@@ -264,11 +264,18 @@ export const TRANSFORMS = {
 	},
 
 	// Handle individual JavaScript modules
-	async js({ id, file, prefix, res, cwd, out, NonRollup }) {
+	async js({ id, file, prefix, res, cwd, out, NonRollup, req }) {
 		res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
 
 		const cacheKey = id.replace(/^[\0\b]/, '');
-		if (WRITE_CACHE.has(cacheKey)) return WRITE_CACHE.get(cacheKey);
+
+		if (WRITE_CACHE.has(cacheKey)) {
+			if (req.query.t) {
+				WRITE_CACHE.delete(cacheKey);
+			} else {
+				return WRITE_CACHE.get(cacheKey);
+			}
+		}
 
 		const resolved = await NonRollup.resolveId(id);
 		const resolvedId = typeof resolved == 'object' ? resolved && resolved.id : resolved;

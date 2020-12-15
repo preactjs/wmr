@@ -7,7 +7,6 @@ import NotFound from './pages/_404.js';
 import Header from './header.tsx';
 // import './style.css';
 import { useCounter } from './useCustomHook.js'
-
 const About = lazy(() => import('./pages/about/index.js'));
 const CompatPage = lazy(() => import('./pages/compat.js'));
 const ClassFields = lazy(() => import('./pages/class-fields.js'));
