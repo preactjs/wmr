@@ -21,6 +21,7 @@ import jsonPlugin from './plugins/json-plugin.js';
 import optimizeGraphPlugin from './plugins/optimize-graph-plugin.js';
 import externalUrlsPlugin from './plugins/external-urls-plugin.js';
 import copyAssetsPlugin from './plugins/copy-assets-plugin.js';
+import nodeBuiltinsPlugin from './plugins/node-builtins-plugin.js';
 
 /** @param {string} p */
 const pathToPosix = p => p.split(sep).join(posix.sep);
@@ -91,6 +92,7 @@ export async function bundleProd({
 		preserveEntrySignatures: 'allow-extension',
 		manualChunks: npmChunks ? extractNpmChunks : undefined,
 		plugins: [
+			nodeBuiltinsPlugin({ production: true }),
 			externalUrlsPlugin(),
 			sucrasePlugin({
 				typescript: true,
