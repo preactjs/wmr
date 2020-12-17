@@ -21,7 +21,7 @@ export default function nodeBuiltinsPlugin({ production } = {}) {
 				}
 				this.warn(
 					`Warning: ${id} is a Node built-in - WMR does not polyfill these.\n` +
-					`For development the module has been stubbed.`
+						`For development the module has been stubbed.`
 				);
 				return {
 					code: 'export default {}',
