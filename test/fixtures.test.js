@@ -397,9 +397,9 @@ describe('fixtures', () => {
 		});
 
 		it('should return an warning if a node built-in is used in development', async () => {
-			const warning = `
-				Warning: http is a Node built-in - WMR does not polyfill these. 
-				For development the module has been stubbed.`;
+			const warning =
+				`Warning: http is a Node built-in - WMR does not polyfill these.\n` +
+				`For development the module has been stubbed.`;
 			const warns = [];
 			await rollup({
 				input: 'test/fixtures/node-builtins/http.js',
