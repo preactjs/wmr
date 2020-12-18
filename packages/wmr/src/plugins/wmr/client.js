@@ -12,6 +12,11 @@ function connect() {
 	ws = new WebSocket(location.origin.replace('http', 'ws') + '/_hmr');
 	ws.onmessage = handleMessage;
 	ws.onerror = handleError;
+	ws.onopen = () => {
+		console.log('sending');
+		queue.forEach(m => ws.send(JSON.stringify(m)));
+		queue = [];
+	};
 }
 
 setTimeout(connect);
@@ -114,11 +119,19 @@ function getMod(url) {
 	return mod;
 }
 
+let queue = [];
+
 // HMR API
 export function createHotContext(url) {
 	const mod = getMod(url);
 	return {
 		accept(fn) {
+			if (!ws || ws.readyState !== ws.OPEN) {
+				queue.push({ id: url.replace(location.origin, ''), type: 'hotAccepted' });
+			} else {
+				ws.send(JSON.stringify({ id: url.replace(location.origin, ''), type: 'hotAccepted' }));
+			}
+
 			mod.accept.add(fn);
 		},
 		dispose(fn) {
