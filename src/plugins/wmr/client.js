@@ -23,6 +23,9 @@ const URL_SUFFIX = /\/(index\.html)?$/;
 function handleMessage(e) {
 	const data = JSON.parse(e.data);
 	switch (data.type) {
+		case 'reload':
+			window.location.reload();
+			break;
 		case 'update':
 			data.changes.forEach(url => {
 				url = resolve(url);

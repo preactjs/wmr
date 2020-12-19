@@ -35,6 +35,7 @@ prog
 	.option('--compress', 'Enable compression (default: enabled)')
 	.option('--sourcemap', 'Enable Source Maps')
 	.option('--profile', 'Generate build statistics')
+	.option('--reload', 'Switch off hmr and reload on file saves')
 	.action(opts => {
 		opts.optimize = !/false|0/.test(opts.compress);
 		if (/true|false/.test(opts.compress)) opts.compress = opts.compress !== 'false';
