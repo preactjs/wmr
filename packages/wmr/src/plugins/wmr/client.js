@@ -13,12 +13,10 @@ function connect() {
 	ws.onmessage = handleMessage;
 	ws.onerror = handleError;
 	ws.onopen = () => {
-		setTimeout(function () {
-			queue.forEach(m => {
-				ws.send(JSON.stringify(m));
-			});
-			queue = [];
+		queue.forEach(m => {
+			ws.send(JSON.stringify(m));
 		});
+		queue = [];
 	};
 }
 
@@ -30,6 +28,7 @@ const URL_SUFFIX = /\/(index\.html)?$/;
 
 function handleMessage(e) {
 	const data = JSON.parse(e.data);
+
 	switch (data.type) {
 		case 'reload':
 			window.location.reload();

@@ -135,17 +135,25 @@ export default function wmrMiddleware({
 			});
 		} else {
 			// We need a full-reload signal
+			return false;
 		}
+		return true;
 	}
 
 	watcher.on('change', filename => {
 		NonRollup.watchChange(resolve(cwd, filename));
 		// normalize paths to 'nix:
 		filename = filename.split(sep).join(posix.sep);
-		if (!pendingChanges.size) setTimeout(flushChanges, 60);
-		bubbleUpdates(filename);
+
 		// Delete any generated CSS Modules mapping modules:
 		if (/\.module\.css$/.test(filename)) WRITE_CACHE.delete(filename + '.js');
+
+		const result = bubbleUpdates(filename);
+		if (!result) {
+			({ type: 'reload' });
+		} else if (!pendingChanges.size) {
+			setTimeout(flushChanges, 60);
+		}
 	});
 
 	return async (req, res, next) => {
@@ -365,7 +373,6 @@ export const TRANSFORMS = {
 					spec = `/@npm/${meta.module}${meta.path ? '/' + meta.path : ''}`;
 				}
 
-				console.log(spec);
 				mod.dependencies.add(spec);
 				if (!moduleGraph.has(spec)) {
 					moduleGraph.set(spec, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });

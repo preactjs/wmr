@@ -1,6 +1,5 @@
 import parse from '@polka/url';
 import ws from 'ws';
-
 import { moduleGraph } from '../wmr-middleware.js';
 
 /**
@@ -11,19 +10,38 @@ export default class WebSocketServer extends ws.Server {
 	constructor(server, mountPath) {
 		super({ noServer: true });
 		this.mountPath = mountPath;
-		server.on('upgrade', this._handleUpgrade.bind(this));
+		this.hmrClients = new Set();
 
-		server.on('connection', function (client) {
-			// TODO: this never gets called
-			client.on('message', function (data) {
-				const message = JSON.parse(data.toString());
-				if (message.type === 'hotAccepted') {
-					if (!moduleGraph.has(message.id))
-						moduleGraph.set(message.id, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
-					const entry = moduleGraph.get(message.id);
-					entry.acceptingUpdates = true;
+		server.on('connection', client => {
+			this.connectClient(client);
+			this.registerListener(client);
+		});
+
+		server.on('close', client => {
+			this.disconnectClient(client);
+		});
+
+		server.on('upgrade', this._handleUpgrade.bind(this));
+	}
+
+	connectClient(client) {
+		this.hmrClients.add(client);
+	}
+
+	disconnectClient(client) {
+		this.hmrClients.delete(client);
+	}
+
+	registerListener(client) {
+		client.on('message', function (data) {
+			const message = JSON.parse(data.toString());
+			if (message.type === 'hotAccepted') {
+				if (!moduleGraph.has(message.id)) {
+					moduleGraph.set(message.id, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
 				}
-			});
+				const entry = moduleGraph.get(message.id);
+				entry.acceptingUpdates = true;
+			}
 		});
 	}
 
