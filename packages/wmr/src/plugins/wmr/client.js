@@ -5,19 +5,21 @@ function log(...args) {
 const strip = url => url.replace(/\?t=\d+/g, '');
 
 const resolve = url => new URL(url, location.origin).href;
-
 let ws;
+
 function connect() {
-	// Pared-down inline version of https://github.com/lukeed/sockette <3
-	ws = new WebSocket(location.origin.replace('http', 'ws') + '/_hmr');
-	ws.onmessage = handleMessage;
-	ws.onerror = handleError;
-	ws.onopen = () => {
-		queue.forEach(m => {
-			ws.send(JSON.stringify(m));
-		});
+	ws = new WebSocket(location.origin.replace('http', 'ws') + '/_hmr', 'hmr');
+	function sendSocketMessage(msg) {
+		ws.send(JSON.stringify(msg));
+	}
+
+	ws.addEventListener('open', () => {
+		queue.forEach(sendSocketMessage);
 		queue = [];
-	};
+	});
+
+	ws.addEventListener('message', handleMessage);
+	ws.addEventListener('error', handleError);
 }
 
 connect();

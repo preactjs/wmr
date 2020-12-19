@@ -12,28 +12,14 @@ export default class WebSocketServer extends ws.Server {
 		this.mountPath = mountPath;
 		this.hmrClients = new Set();
 
-		server.on('connection', client => {
-			this.connectClient(client);
-			this.registerListener(client);
-		});
-
-		server.on('close', client => {
-			this.disconnectClient(client);
-		});
-
+		server.on('connection', this.registerListener.bind(this));
 		server.on('upgrade', this._handleUpgrade.bind(this));
 	}
 
-	connectClient(client) {
-		this.hmrClients.add(client);
-	}
-
-	disconnectClient(client) {
-		this.hmrClients.delete(client);
-	}
-
 	registerListener(client) {
+		console.log('connection');
 		client.on('message', function (data) {
+			console.log('message');
 			const message = JSON.parse(data.toString());
 			if (message.type === 'hotAccepted') {
 				if (!moduleGraph.has(message.id)) {
@@ -53,6 +39,10 @@ export default class WebSocketServer extends ws.Server {
 	}
 
 	_handleUpgrade(req, socket, head) {
+		if (req.headers['sec-websocket-protocol'] !== 'hmr') {
+			return;
+		}
+
 		const pathname = parse(req).pathname;
 		if (pathname == this.mountPath) {
 			this.handleUpgrade(req, socket, head, client => {
