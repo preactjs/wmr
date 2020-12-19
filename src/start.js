@@ -54,10 +54,14 @@ export default async function start(options = {}) {
 
 	// eslint-disable-next-line
 	function sendChanges({ changes }) {
-		app.ws.broadcast({
-			type: 'update',
-			changes
-		});
+		if (options.reload) {
+			app.ws.broadcast({ type: 'reload' });
+		} else {
+			app.ws.broadcast({
+				type: 'update',
+				changes
+			});
+		}
 	}
 
 	const app = await server(options);

@@ -15,6 +15,7 @@ declare module "wmr" {
 		minify: boolean;
 		mode: Mode;
 		cwd: string;
+		reload: boolean;
 		public: string;
 		publicPath: string;
 		root: string;
