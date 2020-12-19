@@ -122,15 +122,28 @@ export default function wmrMiddleware({
 		pendingChanges.clear();
 	}
 
+	function bubbleUpdates(filename) {
+		// Delete file from the in-memory cache:
+		WRITE_CACHE.delete(filename);
+		const mod = moduleGraph.get(filename);
+		if (mod.acceptingUpdates) {
+			pendingChanges.add('/' + filename);
+		} else if (mod.dependents.size) {
+			mod.dependents.forEach(function (value) {
+				mod.stale = true;
+				bubbleUpdates(value);
+			});
+		} else {
+			// We need a full-reload signal
+		}
+	}
+
 	watcher.on('change', filename => {
-		console.log('changed', filename);
 		NonRollup.watchChange(resolve(cwd, filename));
 		// normalize paths to 'nix:
 		filename = filename.split(sep).join(posix.sep);
 		if (!pendingChanges.size) setTimeout(flushChanges, 60);
-		pendingChanges.add('/' + filename);
-		// Delete file from the in-memory cache:
-		WRITE_CACHE.delete(filename);
+		bubbleUpdates(filename);
 		// Delete any generated CSS Modules mapping modules:
 		if (/\.module\.css$/.test(filename)) WRITE_CACHE.delete(filename + '.js');
 	});
@@ -352,11 +365,18 @@ export const TRANSFORMS = {
 					spec = `/@npm/${meta.module}${meta.path ? '/' + meta.path : ''}`;
 				}
 
+				console.log(spec);
 				mod.dependencies.add(spec);
 				if (!moduleGraph.has(spec)) {
 					moduleGraph.set(spec, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
 				}
-				moduleGraph.get(spec).dependents.add(importer);
+				const specModule = moduleGraph.get(spec);
+				specModule.dependents.add(importer);
+				if (specModule.stale) {
+					specModule.stale = false;
+					return spec + `?t=${Date.now()}`;
+				}
+
 				return spec;
 			}
 		});

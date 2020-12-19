@@ -13,13 +13,16 @@ function connect() {
 	ws.onmessage = handleMessage;
 	ws.onerror = handleError;
 	ws.onopen = () => {
-		console.log('sending');
-		queue.forEach(m => ws.send(JSON.stringify(m)));
-		queue = [];
+		setTimeout(function () {
+			queue.forEach(m => {
+				ws.send(JSON.stringify(m));
+			});
+			queue = [];
+		});
 	};
 }
 
-setTimeout(connect);
+connect();
 
 let errorCount = 0;
 
