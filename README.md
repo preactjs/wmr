@@ -1,6 +1,6 @@
 # WMR
 
-[![npm](https://img.shields.io/npm/v/preact.svg)](http://npm.im/preact)
+[![npm](https://img.shields.io/npm/v/wmr.svg)](http://npm.im/wmr)
 [![install size](https://packagephobia.com/badge?p=wmr)](https://packagephobia.com/result?p=wmr)
 [![OpenCollective Backers](https://opencollective.com/preact/backers/badge.svg)](#backers)
 [![OpenCollective Sponsors](https://opencollective.com/preact/sponsors/badge.svg)](#sponsors)
