@@ -10,7 +10,7 @@ New browsers get the new stuff, old browsers get the old stuff.
 Add this to your `wmr.config.js`:
 
 ```js
-import nomodule from '@wmr-plugins/nomodule;
+import nomodule from '@wmr-plugins/nomodule';
 
 export function build(config) {
   nomodule(config);
