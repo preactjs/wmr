@@ -7,7 +7,7 @@ New browsers get the new stuff, old browsers get the old stuff.
 
 ## Usage
 
-Add this to your `wmr.config.js`:
+Add this to your `wmr.config.mjs`:
 
 ```js
 import nomodule from '@wmr-plugins/nomodule';
