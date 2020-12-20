@@ -30,7 +30,7 @@ export default async function server({ cwd, root, overlayDir, middleware, http2,
 	try {
 		await fs.access(resolve(cwd, 'index.html'));
 	} catch (e) {
-		process.stderr.write(kl.yellow(`Warning: missing "index.html" file ${kl.dim(`(in ${cwd}))`)}`) + '\n');
+		process.stderr.write(kl.yellow(`Warning: missing "index.html" file ${kl.dim(`(in ${cwd})`)}`) + '\n');
 	}
 
 	/** @type {CustomServer} */
