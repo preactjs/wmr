@@ -15,6 +15,7 @@
 		"allowSyntheticDefaultImports": true,
 		"downlevelIteration": true
 	},
+	"include": ["public"],
 	"typeAcquisition": {
 		"enable": true
 	}
