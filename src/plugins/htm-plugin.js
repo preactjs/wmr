@@ -50,8 +50,8 @@ export default function htmPlugin({ include, production = true } = {}) {
 							import: {
 								module: 'htm/preact'
 							},
-							// @TODO: enable this to avoid a likely variable collision:
-							// tag: '$$html',
+							// avoid a variable collisions:
+							tag: '$$html',
 							terse: true
 						}
 					]
