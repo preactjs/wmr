@@ -62,7 +62,7 @@ export default function transformJsxToHtmLite({ types: t }, options = {}) {
 				}
 
 				if (isRootElement(path)) {
-					path.prependString('${tagString}`');
+					path.prependString(tagString + '`');
 				}
 				if (path.node.selfClosing) {
 					path.appendString('`');
@@ -99,7 +99,7 @@ export default function transformJsxToHtmLite({ types: t }, options = {}) {
 				// <a><><b /></></a> --> html`<a><b /></a>`
 				if (!isRootElement(path)) return path.remove();
 
-				path.replaceWithString('${tagString}`');
+				path.replaceWithString(tagString + '`');
 			},
 			JSXClosingFragment(path) {
 				if (!isRootElement(path)) return path.remove();
