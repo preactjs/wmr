@@ -17,7 +17,7 @@ const parse = (code, opts) => Parser.parse(code, { ecmaVersion: 2020, sourceType
 /**
  * Transform source code using a Babel plugin
  * @param {string} code
- * @param {Plugin} plugin
+ * @param {Plugin | [Plugin] | [Plugin, object]} plugin
  * @param {object} [options]
  */
 function transformWithPlugin(code, plugin, options = {}) {
@@ -157,7 +157,12 @@ describe('acorn-traverse', () => {
 		it.each(cases.filter(f => f.match(/\.expected/)))('fixtures', async expectedFile => {
 			const expected = await fs.readFile(path.join(fixtures, expectedFile), 'utf-8');
 			const source = await fs.readFile(path.join(fixtures, expectedFile.replace('.expected', '')), 'utf-8');
-			const actual = transformWithPlugin(source, transformJsxToHtm);
+			const actual = transformWithPlugin(source, [
+				transformJsxToHtm,
+				{
+					tag: '$$html'
+				}
+			]);
 			expect(actual).toEqual(expected);
 		});
 	});
