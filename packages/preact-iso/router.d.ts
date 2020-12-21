@@ -4,9 +4,9 @@ export const LocationProvider: FunctionComponent;
 
 export function Router(props: { onLoadEnd?: () => void, onLoadStart?: () => void, children?: VNode[] }): VNode;
 
-type LocationHook = () => { url: string, path: string, query: Record<string, string>, route: (url: string) => void };
-export const useLoc: LocationHook;
-export const useLocation: LocationHook;
+type LocationHook = { url: string, path: string, query: Record<string, string>, route: (url: string) => void };
+export const useLoc: () => LocationHook;
+export const useLocation: () => LocationHook;
 
 interface RoutableProps {
 	path?: string;
