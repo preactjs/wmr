@@ -10,21 +10,19 @@ export default class WebSocketServer extends ws.Server {
 	constructor(server, mountPath) {
 		super({ noServer: true });
 		this.mountPath = mountPath;
-		this.hmrClients = new Set();
 
 		server.on('connection', this.registerListener.bind(this));
 		server.on('upgrade', this._handleUpgrade.bind(this));
 	}
 
 	registerListener(client) {
-		console.log('connection');
 		client.on('message', function (data) {
-			console.log('message');
 			const message = JSON.parse(data.toString());
 			if (message.type === 'hotAccepted') {
 				if (!moduleGraph.has(message.id)) {
 					moduleGraph.set(message.id, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
 				}
+
 				const entry = moduleGraph.get(message.id);
 				entry.acceptingUpdates = true;
 			}
@@ -47,6 +45,7 @@ export default class WebSocketServer extends ws.Server {
 		if (pathname == this.mountPath) {
 			this.handleUpgrade(req, socket, head, client => {
 				client.emit('connection', client, req);
+				this.registerListener(client);
 			});
 		} else {
 			socket.destroy();

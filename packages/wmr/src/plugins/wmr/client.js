@@ -103,6 +103,7 @@ function update(url) {
 	const accept = Array.from(mod.accept);
 	const newUrl = url + '?t=' + Date.now();
 	const p = mod.import ? mod.import(newUrl) : import(newUrl);
+
 	return p
 		.then(m => {
 			accept.forEach(c => (c({ module: m }), mod.accept.delete(c)));
