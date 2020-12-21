@@ -1,4 +1,4 @@
-export { Router, LocationProvider, useLoc } from './router.js';
+export { Router, LocationProvider, useLoc, useLocation } from './router.js';
 export { default as lazy, ErrorBoundary }  from './lazy.js';
 export { default as hydrate } from './hydrate.js';
 
