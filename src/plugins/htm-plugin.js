@@ -48,10 +48,11 @@ export default function htmPlugin({ include, production = true } = {}) {
 						jsxTransform,
 						{
 							import: {
-								module: 'htm/preact'
+								module: 'htm/preact',
+								export: 'html'
 							},
-							// @TODO: enable this to avoid a likely variable collision:
-							// tag: '$$html',
+							// avoid a variable collisions:
+							tag: '$$html',
 							terse: true
 						}
 					]
