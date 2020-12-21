@@ -118,6 +118,7 @@ export default function wmrMiddleware({
 		onChange({ changes: Array.from(pendingChanges), duration: 0 });
 		pendingChanges.clear();
 	}
+
 	watcher.on('change', filename => {
 		NonRollup.watchChange(resolve(cwd, filename));
 		// normalize paths to 'nix:
@@ -267,7 +268,10 @@ export const TRANSFORMS = {
 	async js({ id, file, prefix, res, cwd, out, NonRollup }) {
 		res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
 
-		const cacheKey = id.replace(/^[\0\b]/, '');
+		const cacheKey = id
+			.replace(/^[\0\b]/, '')
+			.split(sep)
+			.join(posix.sep);
 		if (WRITE_CACHE.has(cacheKey)) return WRITE_CACHE.get(cacheKey);
 
 		const resolved = await NonRollup.resolveId(id);
