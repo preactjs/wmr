@@ -127,7 +127,9 @@ async function workerCode({ cwd, out, publicPath }) {
 		const body = (result && result.html) || result;
 
 		// Inject HTML links at the end of <head> for any stylesheets injected during rendering of the page:
-		const styles = [...new Set(head.map(c => `<link rel="${c.rel}" href="${c.href}">`))].join('');
+		const styles = [
+			...new Set(head.filter(c => c.rel && c.href).map(c => `<link rel="${c.rel}" href="${c.href}">`))
+		].join('');
 		let html = tpl.replace(/(<\/head>)/, styles + '$1');
 
 		// Inject pre-rendered HTML into the start of <body>:
