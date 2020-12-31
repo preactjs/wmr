@@ -139,7 +139,7 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = '\bnpm/', ext
 	};
 }
 
-const PACKAGE_SPECIFIER = /^((?:@[\w.-]{1,200}\/)?[\w.-]{1,200})(?:@([a-z0-9^.~>=<-]{1,50}))?(?:\/(.*))?$/i;
+const PACKAGE_SPECIFIER = /^((?:@[\w.-]{1,200}\/)?[\w.~-]{1,200})(?:@([a-z0-9^.~>=<-]{1,50}))?(?:\/(.*))?$/i;
 
 export const normalizeSpecifier = memo(spec => {
 	let [, module = '', version = '', path = ''] = spec.match(PACKAGE_SPECIFIER) || [];
@@ -154,5 +154,5 @@ export const normalizeSpecifier = memo(spec => {
 function isDiskPath(filename) {
 	// only check for windows paths if we're on windows
 	if (sep === '\\' && /^(([A-Z]+:)?\\|\.\.?(\\|$))/.test(filename)) return true;
-	return /^(file:\/\/)?([A-Z]:)?(\/|\.\.?(\/|$))/.test(filename);
+	return /^(file:\/\/)?([A-Z]:)?(\/|~\/|\.\.?(\/|$))/.test(filename);
 }
