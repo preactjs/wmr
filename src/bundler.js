@@ -101,7 +101,10 @@ export async function bundleProd({
 				production: true
 			}),
 			htmlEntriesPlugin({ cwd, publicDir, publicPath }),
-			(dynamicImportVars.default || dynamicImportVars)({ exclude: 'node_modules' }),
+			(dynamicImportVars.default || dynamicImportVars)({
+				include: /\.(m?jsx?|tsx?)$/,
+				exclude: /\/node_modules\//
+			}),
 			publicPathPlugin({ publicPath }),
 			aliasesPlugin({ aliases, cwd: root }),
 			htmPlugin({ production: true }),
