@@ -22,6 +22,7 @@ import optimizeGraphPlugin from './plugins/optimize-graph-plugin.js';
 import externalUrlsPlugin from './plugins/external-urls-plugin.js';
 import copyAssetsPlugin from './plugins/copy-assets-plugin.js';
 import nodeBuiltinsPlugin from './plugins/node-builtins-plugin.js';
+import dynamicImportVars from '@rollup/plugin-dynamic-import-vars';
 
 /** @param {string} p */
 const pathToPosix = p => p.split(sep).join(posix.sep);
@@ -100,6 +101,7 @@ export async function bundleProd({
 				production: true
 			}),
 			htmlEntriesPlugin({ cwd, publicDir, publicPath }),
+			(dynamicImportVars.default || dynamicImportVars)({ exclude: 'node_modules' }),
 			publicPathPlugin({ publicPath }),
 			aliasesPlugin({ aliases, cwd: root }),
 			htmPlugin({ production: true }),
@@ -125,7 +127,9 @@ export async function bundleProd({
 			optimizeGraphPlugin({ publicPath }),
 			minify && minifyCssPlugin({ sourcemap }),
 			copyAssetsPlugin({ cwd })
-		].concat(plugins || [])
+		]
+			.concat(plugins || [])
+			.filter(Boolean)
 	});
 
 	/** @type {import('rollup').OutputOptions} */
@@ -142,7 +146,7 @@ export async function bundleProd({
 			return fileName;
 		},
 		hoistTransitiveImports: true,
-		plugins: [minify && terser({ compress: true, sourcemap })],
+		plugins: minify ? [terser({ compress: true, sourcemap })] : [],
 		sourcemap,
 		sourcemapPathTransform(p, mapPath) {
 			let url = pathToPosix(relative(cwd, resolve(dirname(mapPath), p)));
