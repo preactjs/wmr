@@ -1,26 +1,26 @@
 {
-  "name": "preact-iso",
-  "version": "0.2.0",
-  "description": "Isomorphic utilities for Preact",
-  "main": "./index.js",
-  "module": "./index.js",
-  "types": "./index.d.ts",
-  "exports": {
-    ".": "./index.js",
-    "./router": "./router.js",
-    "./lazy": "./lazy.js",
-    "./prerender": "./prerender.js",
-    "./hydrate": "./hydrate.js"
-  },
-  "author": "The Preact Authors (https://preactjs.com)",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/preactjs/wmr",
-    "directory": "packages/preact-iso"
-  },
-  "license": "MIT",
-  "devDependencies": {
-    "preact": "^10.5.7",
-    "preact-render-to-string": "^5.1.12"
-  }
+	"name": "preact-iso",
+	"version": "0.3.0",
+	"description": "Isomorphic utilities for Preact",
+	"main": "./index.js",
+	"module": "./index.js",
+	"types": "./index.d.ts",
+	"exports": {
+		".": "./index.js",
+		"./router": "./router.js",
+		"./lazy": "./lazy.js",
+		"./prerender": "./prerender.js",
+		"./hydrate": "./hydrate.js"
+	},
+	"author": "The Preact Authors (https://preactjs.com)",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/preactjs/wmr",
+		"directory": "packages/preact-iso"
+	},
+	"license": "MIT",
+	"devDependencies": {
+		"preact": "^10.5.7",
+		"preact-render-to-string": "^5.1.12"
+	}
 }
