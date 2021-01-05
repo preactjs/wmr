@@ -1,6 +1,6 @@
 const CJS_KEYWORDS = /\b(module\.exports|exports)\b/;
 
-export const ESM_KEYWORDS = /(\bimport\s*(\{.*?\}\s*from|\s[\w$]\s+from)?\s*['"]|[\s;]export(\s+(default|const|var|let)[^\w$]|\s*\{))/;
+export const ESM_KEYWORDS = /(\bimport\s*(\{.*?\}\s*from|\s[\w$]+\s+from)?\s*['"]|[\s;]export(\s+(default|const|var|let|function|class)[^\w$]|\s*\{))/;
 
 const HELPER = `function $$cjs_default$$(m,i){for(i in m)if(i!='default')return m;return m.default||m}`;
 
