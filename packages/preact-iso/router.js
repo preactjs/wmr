@@ -122,7 +122,7 @@ export function Router(props) {
 	}, [url]);
 
 	curChildren.current = props.children
-		.map(vnode => exec(path, vnode.props.path, vnode.props) ? cloneElement(vnode, { path, query }) : null)
+		.map(vnode => exec(path, vnode.props.path, vnode.props) && cloneElement(vnode, { path, query }))
 		.filter(Boolean);
 
 	if (curChildren.current.length > 1) curChildren.current = curChildren.current.filter(x => !x.props.default)
