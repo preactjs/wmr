@@ -84,7 +84,7 @@ import { LocationProvider, Router, useLoc } from 'preact-iso/router';
 
 // Asynchronous (throws a promise)
 const Home = lazy(() => import('./routes/home.js'));
-const Profiles = lazy(() => import('./routes/profile.js'));
+const Profile = lazy(() => import('./routes/profile.js'));
 const Profiles = lazy(() => import('./routes/profiles.js'));
 
 const App = () => (
