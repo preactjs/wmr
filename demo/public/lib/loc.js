@@ -20,37 +20,25 @@ const UPDATE = (state, url, push) => {
 	return url;
 };
 
-const exec = (url, route) => {
-	let matches = {},
-		ret;
-
-	url = url.trim('/').split('/');
-	route = (route || '').trim('/').split('/');
-	let max = Math.max(url.length, route.length);
-	for (let i=0; i<max; i++) {
-		if (route[i] && route[i][0]==':') {
-			let flags = route[i].match(/[+*?]*$/)[0],
-				param = route[i].slice(1, -flags.length),
-				plus = ~flags.indexOf('+'),
-				star = ~flags.indexOf('*'),
-				val = url[i] || '';
-
-			if (!val && !star && (flags.indexOf('?')<0 || plus)) {
-				return;
-			}
-
-			matches[param] = decodeURIComponent(val);
-			if (plus || star) {
-				matches[param] = url.slice(i).map(decodeURIComponent).join('/');
-				break;
-			}
-		}
-		else if (route[i] !== url[i]) {
-			return;
-		}
-	}
-
-	return matches;
+const exec = (url, route, matches) => {
+  url = url.trim('/').split('/');
+  route = (route || '').trim('/').split('/');
+  for (let i=0, val; i<Math.max(url.length, route.length); i++) {
+    let [, m, param, flag] = (route[i] || '').match(/^(\:?)(.*?)([+*?]?)$/);
+    val = url[i];
+    // segment match:
+    if (!m && param==val) continue;
+    // segment mismatch / missing required field:
+    if (!m || !val && flag != '?' && flag != '*') return;
+    // field match:
+    matches[param] = val && decodeURIComponent(val);
+    // normal/optional field:
+    if (flag >= '?') continue;
+    // rest (+/*) match:
+    matches[param] = url.slice(i).map(decodeURIComponent).join('/');
+    break;
+  }
+  return matches;
 }
 
 export function LocationProvider(props) {
@@ -118,10 +106,11 @@ export function Router(props) {
 	}, [url]);
 
 	curChildren.current = props.children
-		.map((vnode, m) => (m = exec(path, vnode.props.path)) && cloneElement(vnode, { path, query, ...m }))
+		.map((vnode, m) => exec(path, vnode.props.path, m = { path, query }) && cloneElement(vnode, m))
 		.filter(Boolean);
 
 	if (curChildren.current.length === 0) curChildren.current = props.children.filter(x => x.props.default)
+
 	return curChildren.current.concat(prevChildren.current || []);
 }
 
