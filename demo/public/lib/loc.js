@@ -1,6 +1,8 @@
 import { h, createContext, cloneElement } from 'preact';
 import { useContext, useMemo, useReducer, useEffect, useRef } from 'preact/hooks';
 
+const EMPTY = {};
+
 const UPDATE = (state, url, push) => {
 	if (url && url.type === 'click') {
 		const link = url.target.closest('a[href]');
@@ -18,8 +20,8 @@ const UPDATE = (state, url, push) => {
 	return url;
 };
 
-const EMPTY = {};
-function exec(url, route, opts) {
+const segmentize = (url) => url.replace(/(^\/+|\/+$)/g, '').split('/');
+const exec = (url, route, opts) => {
 	let reg = /(?:\?([^#]*))?(#.*)?$/,
 		c = url.match(reg),
 		matches = {},
@@ -64,24 +66,6 @@ function exec(url, route, opts) {
 	if (opts.default!==true && ret===false) return false;
 
 	return matches;
-}
-
-const segmentize = (url) => url.replace(/(^\/+|\/+$)/g, '').split('/');
-const rankSegment = (segment) => segment.charAt(0)==':' ? (1 + '*+?'.indexOf(segment.charAt(segment.length-1))) || 4 : 5;
-const rank = (path) => segmentize(path).map(rankSegment).join('');
-const rankChild = (vnode) => vnode.props.default ? 0 : rank(vnode.props.path);
-
-const pathRankSort = (a, b) => (
-	(a.rank < b.rank) ? 1 :
-		(a.rank > b.rank) ? -1 :
-			(a.index - b.index)
-);
-
-// filter out VNodes without attributes (which are unrankeable), and add `index`/`rank` properties to be used in sorting.
-function prepareVNodeForRanking(vnode, index) {
-	vnode.index = index;
-	vnode.rank = rankChild(vnode);
-	return vnode.props;
 }
 
 export function LocationProvider(props) {
@@ -149,8 +133,6 @@ export function Router(props) {
 	}, [url]);
 
 	curChildren.current = props.children
-		.filter(prepareVNodeForRanking)
-		.sort(pathRankSort)
 		.map(vnode => exec(url, vnode.props.path, vnode.props) ? cloneElement(vnode, { path, query }) : null)
 		.filter(Boolean);
 

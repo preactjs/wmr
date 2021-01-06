@@ -100,7 +100,7 @@ const App = () => (
 );
 ```
 
-During prerendering, the generated HTML includes our full `<Home>` and `<Profile>` component output because it waits for the `lazy()`-wrapped `import()` to resolve.
+During prerendering, the generated HTML includes our full `<Home>` and `<Profiles>` component output because it waits for the `lazy()`-wrapped `import()` to resolve.
 
 **Progressive Hydration:** When the app is hydrated on the client, the route (`Home` or `Profile` in this case) suspends. This causes hydration for that part of the page to be deferred until the route's `import()` is resolved, at which point that part of the page automatically finishes hydrating.
 
