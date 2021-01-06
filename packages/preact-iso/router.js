@@ -23,17 +23,8 @@ const UPDATE = (state, url, push) => {
 const segmentize = (url) => url.replace(/(^\/+|\/+$)/g, '').split('/');
 const exec = (url, route, opts) => {
 	let reg = /(?:\?([^#]*))?(#.*)?$/,
-		c = url.match(reg),
 		matches = {},
 		ret;
-
-	if (c && c[1]) {
-		let p = c[1].split('&');
-		for (let i=0; i<p.length; i++) {
-			let r = p[i].split('=');
-			matches[decodeURIComponent(r[0])] = decodeURIComponent(r.slice(1).join('='));
-		}
-	}
 
 	url = segmentize(url.replace(reg, ''));
 	route = segmentize(route || '');
