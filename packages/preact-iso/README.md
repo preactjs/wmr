@@ -66,7 +66,9 @@ const { html, links } = await prerender(<App />, { maxDepth: 10 });
 import hydrate from 'preact-iso/hydrate';
 
 const App = () => (
-	<div class="app"><h1>Hello World</h1></div>
+	<div class="app">
+		<h1>Hello World</h1>
+	</div>
 );
 
 hydrate(<App />);
@@ -82,14 +84,16 @@ import { LocationProvider, Router, useLoc } from 'preact-iso/router';
 
 // Asynchronous (throws a promise)
 const Home = lazy(() => import('./routes/home.js'));
-const Profile = lazy(() => import('./routes/profile.js'));
+const Profiles = lazy(() => import('./routes/profile.js'));
+const Profiles = lazy(() => import('./routes/profiles.js'));
 
 const App = () => (
 	<LocationProvider>
 		<ErrorBoundary>
 			<Router>
 				<Home path="/" />
-				<Profile path="/profile" />
+				<Profiles path="/profiles" />
+				<Profile path="/profiles/:id" />
 			</Router>
 		</ErrorBoundary>
 	</LocationProvider>
