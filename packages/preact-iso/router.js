@@ -22,11 +22,10 @@ const UPDATE = (state, url, push) => {
 
 const segmentize = (url) => url.replace(/(^\/+|\/+$)/g, '').split('/');
 const exec = (url, route, opts) => {
-	let reg = /(?:\?([^#]*))?(#.*)?$/,
-		matches = {},
+	let matches = {},
 		ret;
 
-	url = segmentize(url.replace(reg, ''));
+	url = segmentize(url);
 	route = segmentize(route || '');
 	let max = Math.max(url.length, route.length);
 	for (let i=0; i<max; i++) {
