@@ -20,7 +20,7 @@ const UPDATE = (state, url, push) => {
 	return url;
 };
 
-const exec = (url, route, opts) => {
+const exec = (url, route) => {
 	let matches = {},
 		ret;
 
@@ -28,16 +28,15 @@ const exec = (url, route, opts) => {
 	route = (route || '').trim('/').split('/');
 	let max = Math.max(url.length, route.length);
 	for (let i=0; i<max; i++) {
-		if (route[i] && route[i].charAt(0)===':') {
-			let param = route[i].replace(/(^:|[+*?]+$)/g, ''),
-				flags = (route[i].match(/[+*?]+$/) || EMPTY)[0] || '',
+		if (route[i] && route[i][0]==':') {
+			let flags = route[i].match(/[+*?]*$/)[0],
+				param = route[i].slice(1, -flags.length),
 				plus = ~flags.indexOf('+'),
 				star = ~flags.indexOf('*'),
 				val = url[i] || '';
 
 			if (!val && !star && (flags.indexOf('?')<0 || plus)) {
-				ret = false;
-				break;
+				return;
 			}
 
 			matches[param] = decodeURIComponent(val);
@@ -47,12 +46,9 @@ const exec = (url, route, opts) => {
 			}
 		}
 		else if (route[i] !== url[i]) {
-			ret = false;
-			break;
+			return;
 		}
 	}
-
-	if (opts.default!==true && ret===false) return false;
 
 	return matches;
 }
@@ -122,7 +118,7 @@ export function Router(props) {
 	}, [url]);
 
 	curChildren.current = props.children
-		.map(vnode => exec(path, vnode.props.path, vnode.props) && cloneElement(vnode, { path, query }))
+		.map((vnode, m) => (m = exec(path, vnode.props.path)) && cloneElement(vnode, { path, query, ...m }))
 		.filter(Boolean);
 
 	if (curChildren.current.length > 1) curChildren.current = curChildren.current.filter(x => !x.props.default)
