@@ -22,7 +22,7 @@ export function App() {
 					<Router>
 						<Home path="/" />
 						<About path="/about" />
-						<Home path="/about/:id" />
+						<Home path="/profile/:id" />
 						<CompatPage path="/compat" />
 						<ClassFields path="/class-fields" />
 						<Files path="/files" />
