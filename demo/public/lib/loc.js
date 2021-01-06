@@ -22,20 +22,10 @@ const UPDATE = (state, url, push) => {
 
 const segmentize = (url) => url.replace(/(^\/+|\/+$)/g, '').split('/');
 const exec = (url, route, opts) => {
-	let reg = /(?:\?([^#]*))?(#.*)?$/,
-		c = url.match(reg),
-		matches = {},
+	let matches = {},
 		ret;
 
-	if (c && c[1]) {
-		let p = c[1].split('&');
-		for (let i=0; i<p.length; i++) {
-			let r = p[i].split('=');
-			matches[decodeURIComponent(r[0])] = decodeURIComponent(r.slice(1).join('='));
-		}
-	}
-
-	url = segmentize(url.replace(reg, ''));
+	url = segmentize(url);
 	route = segmentize(route || '');
 	let max = Math.max(url.length, route.length);
 	for (let i=0; i<max; i++) {
@@ -133,7 +123,7 @@ export function Router(props) {
 	}, [url]);
 
 	curChildren.current = props.children
-		.map(vnode => exec(url, vnode.props.path, vnode.props) ? cloneElement(vnode, { path, query }) : null)
+		.map(vnode => exec(path, vnode.props.path, vnode.props) ? cloneElement(vnode, { path, query }) : null)
 		.filter(Boolean);
 
 	if (curChildren.current.length > 1) curChildren.current = curChildren.current.filter(x => typeof x === 'function' && !x.props.default)
