@@ -1,5 +1,5 @@
 import { h, render } from 'preact';
-import { Loc, Router } from './lib/loc.js';
+import { LocationProvider as Loc, Router } from './lib/loc.js';
 import lazy, { ErrorBoundary } from './lib/lazy.js';
 import Home from './pages/home.js';
 // import About from './pages/about/index.js';
@@ -22,6 +22,7 @@ export function App() {
 					<Router>
 						<Home path="/" />
 						<About path="/about" />
+						<Home path="/about/:id" />
 						<CompatPage path="/compat" />
 						<ClassFields path="/class-fields" />
 						<Files path="/files" />

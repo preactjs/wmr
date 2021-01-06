@@ -1,5 +1,6 @@
 import styles from './style.module.css';
 import { useState } from 'preact/hooks';
+import { useLoc } from '../../lib/loc';
 
 export default function Home() {
 	const [count, setCount] = useState(0);
