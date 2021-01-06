@@ -126,7 +126,7 @@ export function Router(props) {
 		.map(vnode => exec(path, vnode.props.path, vnode.props) ? cloneElement(vnode, { path, query }) : null)
 		.filter(Boolean);
 
-	if (curChildren.current.length > 1) curChildren.current = curChildren.current.filter(x => typeof x === 'function' && !x.props.default)
+	if (curChildren.current.length > 1) curChildren.current = curChildren.current.filter(x => !x.props.default)
 
 	return curChildren.current.concat(prevChildren.current || []);
 }
