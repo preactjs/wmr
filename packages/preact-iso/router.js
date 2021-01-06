@@ -20,13 +20,12 @@ const UPDATE = (state, url, push) => {
 	return url;
 };
 
-const segmentize = (url) => url.replace(/(^\/+|\/+$)/g, '').split('/');
 const exec = (url, route, opts) => {
 	let matches = {},
 		ret;
 
-	url = segmentize(url);
-	route = segmentize(route || '');
+	url = url.trim('/').split('/');
+	route = (route || '').trim('/').split('/');
 	let max = Math.max(url.length, route.length);
 	for (let i=0; i<max; i++) {
 		if (route[i] && route[i].charAt(0)===':') {
