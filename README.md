@@ -183,35 +183,6 @@ WMR supports Rollup plugins, and there's a growing list of [**configurations and
 - [implement filesystem-based routing](https://github.com/preactjs/wmr/wiki/Configuration-Recipes#filesystem-based-routing--page-component-loading)
 - [add a service worker](https://github.com/preactjs/wmr/wiki/Configuration-Recipes#service-worker)
 
-### Absolute Imports
-
-It can sometimes be less than ideal to write `../../../components/App.js` when you have a deeply nested directory structure. This will help you import like `~/components/App.js`.
-
-Add the following to your config file (`wmr.config.js`):
-
-```js
-export default function (config) {
-	config.plugins.push({
-		name: 'root-resolve',
-		resolveId(spec, importer) {
-			if (!spec.startsWith('~/')) return;
-			return path.resolve(config.cwd, spec.substring(2));
-		}
-	});
-}
-```
-
-Then, to correct your `tsconfig.json`, add:
-
-```json
-{
-	"baseUrl": ".",
-	"paths": {
-		"~/*": ["public/*"]
-	}
-}
-```
-
 ## Contributing
 
 ```sh
