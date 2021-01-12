@@ -111,7 +111,7 @@ export function Router(props) {
 
 	if (curChildren.current.length === 0) curChildren.current = props.children.filter(x => x.props.default)
 
-	return curChildren.current.concat(prevChildren.current || []);
+	return [...curChildren.current[0], ...(prevChildren.current || [])];
 }
 
 Router.Provider = LocationProvider;
