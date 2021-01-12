@@ -105,7 +105,7 @@ export function Router(props) {
 		} else commit();
 	}, [url]);
 
-	curChildren.current = props.children
+	curChildren.current = [].concat(props.children || [])
 		.map((vnode, m) => exec(path, vnode.props.path, m = { path, query }) && cloneElement(vnode, m))
 		.filter(Boolean);
 
