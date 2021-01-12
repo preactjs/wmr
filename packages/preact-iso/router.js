@@ -105,6 +105,7 @@ export function Router(props) {
 		} else commit();
 	}, [url]);
 
+<<<<<<< HEAD
 	curChildren.current = [].concat(props.children || [])
 		.map((vnode, m) => exec(path, vnode.props.path, m = { path, query }) && cloneElement(vnode, m))
 		.filter(Boolean);
@@ -112,6 +113,16 @@ export function Router(props) {
 	if (curChildren.current.length === 0) curChildren.current = props.children.filter(x => x.props.default)
 
 	return [curChildren.current[0], ...(prevChildren.current || [])];
+=======
+	let p, d, m;
+	[].concat(props.children || []).some(vnode =>
+		exec(path, vnode.props.path, m = { path, query }) ?
+			p = cloneElement(vnode, m) :
+			(vnode.props.default ? d = cloneElement(vnode, m) : 0, undefined)
+	);
+
+	return [curChildren.current = p || d, prevChildren.current];
+>>>>>>> new solution
 }
 
 Router.Provider = LocationProvider;
