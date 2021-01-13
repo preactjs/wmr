@@ -1,8 +1,6 @@
 import { h, createContext, cloneElement } from 'preact';
 import { useContext, useMemo, useReducer, useEffect, useRef } from 'preact/hooks';
 
-const EMPTY = {};
-
 const UPDATE = (state, url, push) => {
 	if (url && url.type === 'click') {
 		const link = url.target.closest('a[href]');
