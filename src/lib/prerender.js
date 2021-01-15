@@ -47,13 +47,38 @@ async function workerCode({ cwd, out, publicPath }) {
 
 	globalThis.document = /** @type {object} */ ({
 		createElement(type) {
-			return { type };
+			const element = {
+				type,
+				attributes: [],
+				innerHTML: '',
+				setAttribute: function setAttribute(name, value) {
+					this.attributes.push([name, value]);
+					this[name] = value;
+				},
+				toString: function toString() {
+					let attrs = this.attributes.map(([name, value]) => `${name}="${value}"`).join(' ');
+					let content = `<${this.type}`;
+
+					if (attrs) {
+						content = content + ' ' + attrs;
+					}
+
+					if (!this.innerHTML) {
+						return content + '>';
+					}
+
+					return `${content}>${this.innerHTML}</${this.type}>`;
+				}
+			};
+
+			return element;
 		},
 		querySelector() {},
 		head: {
 			children: /** @type {any[]} */ ([]),
 			appendChild(c) {
 				this.children.push(c);
+				return c;
 			}
 		}
 	});
@@ -127,9 +152,7 @@ async function workerCode({ cwd, out, publicPath }) {
 		const body = (result && result.html) || result;
 
 		// Inject HTML links at the end of <head> for any stylesheets injected during rendering of the page:
-		const styles = [
-			...new Set(head.filter(c => c.rel && c.href).map(c => `<link rel="${c.rel}" href="${c.href}">`))
-		].join('');
+		const styles = [...new Set(head.filter(Boolean))].join('');
 		let html = tpl.replace(/(<\/head>)/, styles + '$1');
 
 		// Inject pre-rendered HTML into the start of <body>:

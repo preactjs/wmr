@@ -1,8 +1,14 @@
 import styles from './style.module.css';
 import { useState } from 'preact/hooks';
+import { useHead } from 'hoofd/preact';
 
 export default function Home() {
 	const [count, setCount] = useState(0);
+
+	useHead({
+		title: 'hoofd: Home',
+		language: 'en'
+	});
 
 	return (
 		<>
