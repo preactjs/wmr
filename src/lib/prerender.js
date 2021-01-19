@@ -49,14 +49,19 @@ async function workerCode({ cwd, out, publicPath }) {
 		createElement(type) {
 			const element = {
 				type,
+				/** @type {Array<{name: string, value: any}>} */
 				attributes: [],
-				innerHTML: '',
+				/**
+				 * set attribute function
+				 * @param {string} name
+				 * @param {any} value
+				 */
 				setAttribute(name, value) {
 					this.attributes.push({ name, value });
 					this[name] = value;
 				},
 				get innerHTML() {
-					let attrs = this.attributes.map(([name, value]) => `${name}="${value}"`).join(' ');
+					let attrs = this.attributes.map(({ name, value }) => `${name}="${value}"`).join(' ');
 					let content = `<${this.type}`;
 
 					if (attrs) {
