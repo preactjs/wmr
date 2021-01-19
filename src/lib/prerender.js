@@ -51,8 +51,8 @@ async function workerCode({ cwd, out, publicPath }) {
 				type,
 				attributes: [],
 				innerHTML: '',
-				setAttribute: function setAttribute(name, value) {
-					this.attributes.push([name, value]);
+				setAttribute(name, value) {
+					this.attributes.push({ name, value });
 					this[name] = value;
 				},
 				toString: function toString() {
