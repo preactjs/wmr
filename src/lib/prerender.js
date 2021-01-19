@@ -55,7 +55,7 @@ async function workerCode({ cwd, out, publicPath }) {
 					this.attributes.push({ name, value });
 					this[name] = value;
 				},
-				toString: function toString() {
+				get innerHTML() {
 					let attrs = this.attributes.map(([name, value]) => `${name}="${value}"`).join(' ');
 					let content = `<${this.type}`;
 
