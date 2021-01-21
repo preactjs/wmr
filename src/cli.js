@@ -8,6 +8,10 @@ import * as kl from 'kolorist';
 
 const prog = sade('wmr');
 
+function bool(v) {
+	return v !== false && !/false|0/.test(v);
+}
+
 prog
 	.option('--public', 'Your web app root directory (default: ./public)')
 	.option('--out', 'Where to store generated files (default: ./dist)')
@@ -25,7 +29,7 @@ prog
 	.option('--http2', 'Use HTTP/2 (default: false)')
 	.option('--compress', 'Enable compression (default: enabled)')
 	.action(opts => {
-		opts.compress = /true|false/.test(opts.compress) ? opts.compress !== 'false' : opts.compress || true;
+		opts.compress = bool(opts.compress);
 		run(serve(opts));
 	})
 	.command('start', 'Start a development server', { default: true })
@@ -38,7 +42,7 @@ prog
 	.option('--reload', 'Switch off hmr and reload on file saves')
 	.action(opts => {
 		opts.optimize = !/false|0/.test(opts.compress);
-		if (/true|false/.test(opts.compress)) opts.compress = opts.compress !== 'false';
+		opts.compress = bool(opts.compress);
 		if (/true/.test(process.env.PROFILE)) opts.profile = true;
 		run(start(opts));
 	});
