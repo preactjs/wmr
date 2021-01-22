@@ -20,6 +20,7 @@ import sirv from 'sirv';
  * @property {string} [port]
  * @property {boolean} [http2]
  * @property {boolean|number} [compress]
+ * @property {polka.Middleware[]} [middleware] Additional Polka middlewares to inject
  * @property {Record<string, string>} [env]
  */
 
@@ -58,6 +59,10 @@ export default async function serve(options = {}) {
 	if (options.compress) {
 		const threshold = options.compress === true ? 1024 : options.compress;
 		app.use(compression({ threshold }));
+	}
+
+	if (options.middleware && options.middleware.length) {
+		app.use(...options.middleware);
 	}
 
 	app.use(
