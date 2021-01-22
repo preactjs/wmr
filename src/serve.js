@@ -60,6 +60,10 @@ export default async function serve(options = {}) {
 		app.use(compression({ threshold }));
 	}
 
+	if (options.middleware) {
+		app.use(...options.middleware);
+	}
+
 	app.use(
 		sirv(options.out, {
 			single: true,
