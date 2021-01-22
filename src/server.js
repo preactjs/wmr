@@ -79,6 +79,7 @@ export default async function server({ cwd, root, overlayDir, middleware, http2,
 	}
 	if (!app.server) {
 		app.server = createServer();
+		app.server.keepAliveTimeout = 60 * 1000;
 		app.http2 = false;
 	}
 
