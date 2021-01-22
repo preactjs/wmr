@@ -60,7 +60,7 @@ export default async function serve(options = {}) {
 		app.use(compression({ threshold }));
 	}
 
-	if (options.middleware) {
+	if (options.middleware && options.middleware.length) {
 		app.use(...options.middleware);
 	}
 
