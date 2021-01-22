@@ -20,6 +20,7 @@ import sirv from 'sirv';
  * @property {string} [port]
  * @property {boolean} [http2]
  * @property {boolean|number} [compress]
+ * @property {polka.Middleware[]} [middleware] Additional Polka middlewares to inject
  * @property {Record<string, string>} [env]
  */
 
