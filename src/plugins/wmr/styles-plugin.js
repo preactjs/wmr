@@ -142,7 +142,7 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath } = {}) {
 				.map(m => {
 					const matches = m.match(/^(['"]?)([^:'"]+?)\1:(.+)$/);
 					if (!matches) return;
-					let name = matches[2].replace(/-[a-z]/gi, s => s[1].toUpperCase());
+					let name = matches[2].replace(/-+[a-z]/gi, s => s[s.length - 1].toUpperCase());
 					if (name.match(/^\d/)) name = '$' + name;
 					return name + '=' + matches[3];
 				})
