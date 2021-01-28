@@ -1,8 +1,6 @@
 import { resolve, dirname, relative, sep, posix } from 'path';
 import { promises as fs, createReadStream } from 'fs';
 import chokidar from 'chokidar';
-import htmPlugin from './plugins/htm-plugin.js';
-import sucrasePlugin from './plugins/sucrase-plugin.js';
 import wmrPlugin, { getWmrClient } from './plugins/wmr/plugin.js';
 import wmrStylesPlugin, { modularizeCss, processSass } from './plugins/wmr/styles-plugin.js';
 import { createPluginContainer } from './lib/rollup-plugin-container.js';
@@ -11,7 +9,7 @@ import aliasesPlugin from './plugins/aliases-plugin.js';
 import urlPlugin from './plugins/url-plugin.js';
 import { normalizeSpecifier } from './plugins/npm-plugin/index.js';
 import sassPlugin from './plugins/sass-plugin.js';
-import processGlobalPlugin from './plugins/process-global-plugin.js';
+import esbuild from 'rollup-plugin-esbuild';
 import { getMimeType } from './lib/mimetypes.js';
 import fastCjsPlugin from './plugins/fast-cjs-plugin.js';
 import resolveExtensionsPlugin from './plugins/resolve-extensions-plugin.js';
@@ -19,7 +17,6 @@ import bundlePlugin from './plugins/bundle-plugin.js';
 import nodeBuiltinsPlugin from './plugins/node-builtins-plugin.js';
 import jsonPlugin from './plugins/json-plugin.js';
 import externalUrlsPlugin from './plugins/external-urls-plugin.js';
-// import { resolvePackageVersion } from './plugins/npm-plugin/registry.js';
 
 const NOOP = () => {};
 
@@ -68,14 +65,25 @@ export default function wmrMiddleware({
 			jsonPlugin(),
 			bundlePlugin({ inline: true, cwd }),
 			aliasesPlugin({ aliases, cwd: root }),
-			sucrasePlugin({
-				typescript: true,
-				sourcemap: false,
-				production: false
+			esbuild({
+				minify: false,
+				target: 'es2017',
+				jsxFactory: 'h',
+				jsxFragment: 'Fragment',
+				loaders: {
+					'.js': 'jsx'
+				},
+				define: {
+					NODE_ENV: JSON.stringify('development'),
+					...Object.keys(env).reduce(function (acc, key) {
+						return {
+							...acc,
+							[key]: JSON.stringify(env[key])
+						};
+					}, {})
+				}
 			}),
-			processGlobalPlugin({ NODE_ENV: 'development', env }),
 			sassPlugin(),
-			htmPlugin({ production: false }),
 			wmrPlugin({ hot: true }),
 			fastCjsPlugin({
 				// Only transpile CommonJS in node_modules and explicit .cjs files:

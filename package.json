@@ -155,5 +155,9 @@
 	},
 	"engines": {
 		"node": ">=12"
+	},
+	"dependencies": {
+		"esbuild": "^0.8.36",
+		"rollup-plugin-esbuild": "^2.6.1"
 	}
 }

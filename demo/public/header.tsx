@@ -1,4 +1,5 @@
 import { useLoc } from './lib/loc.js';
+import { h } from 'preact';
 
 export default function Header() {
 	const { url }: { url: string } = useLoc();
