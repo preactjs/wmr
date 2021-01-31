@@ -1,21 +1,17 @@
-import terser from 'terser';
+import { transform } from '../lib/esbuild-service.js';
 
 /** @returns {import('rollup').Plugin} */
 export default function fastMinifyPlugin({ sourcemap = false, warnThreshold = 50, compress = false } = {}) {
 	return {
 		name: 'fast-minify',
-		renderChunk(code, chunk) {
+		async renderChunk(code, chunk) {
 			const start = Date.now();
-			const out = terser.minify(code, {
-				sourceMap: sourcemap,
-				mangle: true,
-				compress,
-				module: true,
-				ecma: 9,
-				safari10: true,
-				output: {
-					comments: false
-				}
+
+			const out = await transform(code, {
+				minify: !!compress,
+				sourcefile: chunk.fileName,
+				sourcemap: sourcemap === true,
+				target: 'es6'
 			});
 
 			// TODO: Check if tersers typings are wrong
