@@ -1,8 +1,8 @@
 import { resolve, dirname, relative, sep, posix } from 'path';
 import { promises as fs, createReadStream } from 'fs';
 import chokidar from 'chokidar';
+import swc from 'rollup-plugin-swc';
 import htmPlugin from './plugins/htm-plugin.js';
-import sucrasePlugin from './plugins/sucrase-plugin.js';
 import wmrPlugin, { getWmrClient } from './plugins/wmr/plugin.js';
 import wmrStylesPlugin, { modularizeCss, processSass } from './plugins/wmr/styles-plugin.js';
 import { createPluginContainer } from './lib/rollup-plugin-container.js';
@@ -19,7 +19,6 @@ import bundlePlugin from './plugins/bundle-plugin.js';
 import nodeBuiltinsPlugin from './plugins/node-builtins-plugin.js';
 import jsonPlugin from './plugins/json-plugin.js';
 import externalUrlsPlugin from './plugins/external-urls-plugin.js';
-// import { resolvePackageVersion } from './plugins/npm-plugin/registry.js';
 
 const NOOP = () => {};
 
@@ -71,10 +70,16 @@ export default function wmrMiddleware({
 			jsonPlugin(),
 			bundlePlugin({ inline: true, cwd }),
 			aliasesPlugin({ aliases, cwd: root }),
-			sucrasePlugin({
-				typescript: true,
-				sourcemap: false,
-				production: false
+			swc({
+				jsc: {
+					parser: {
+						syntax: 'typescript',
+						jsx: false,
+						tsx: false,
+						dynamicImport: true
+					},
+					target: 'es2017' // can also be ES5
+				}
 			}),
 			processGlobalPlugin({ NODE_ENV: 'development', env }),
 			sassPlugin(),

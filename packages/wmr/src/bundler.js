@@ -1,7 +1,7 @@
 import { relative, sep, posix, resolve, dirname } from 'path';
 import * as rollup from 'rollup';
+import swc from 'rollup-plugin-swc';
 import htmPlugin from './plugins/htm-plugin.js';
-import sucrasePlugin from './plugins/sucrase-plugin.js';
 import wmrPlugin from './plugins/wmr/plugin.js';
 import wmrStylesPlugin from './plugins/wmr/styles-plugin.js';
 import sassPlugin from './plugins/sass-plugin.js';
@@ -95,10 +95,16 @@ export async function bundleProd({
 		plugins: plugins.concat([
 			nodeBuiltinsPlugin({ production: true }),
 			externalUrlsPlugin(),
-			sucrasePlugin({
-				typescript: true,
-				sourcemap,
-				production: true
+			swc({
+				jsc: {
+					parser: {
+						syntax: 'typescript',
+						jsx: false,
+						tsx: false,
+						dynamicImport: true
+					},
+					target: 'es2017' // can also be ES5
+				}
 			}),
 			htmlEntriesPlugin({ cwd, publicDir, publicPath }),
 			(dynamicImportVars.default || dynamicImportVars)({
