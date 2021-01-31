@@ -23,6 +23,7 @@ import externalUrlsPlugin from './plugins/external-urls-plugin.js';
 import copyAssetsPlugin from './plugins/copy-assets-plugin.js';
 import nodeBuiltinsPlugin from './plugins/node-builtins-plugin.js';
 import dynamicImportVars from '@rollup/plugin-dynamic-import-vars';
+import sucrasePlugin from './plugins/sucrase-plugin.js';
 
 /** @param {string} p */
 const pathToPosix = p => p.split(sep).join(posix.sep);
@@ -95,14 +96,14 @@ export async function bundleProd({
 		plugins: plugins.concat([
 			nodeBuiltinsPlugin({ production: true }),
 			externalUrlsPlugin(),
+			sucrasePlugin({
+				typescript: true,
+				sourcemap,
+				production: true
+			}),
 			swc({
+				minify: true,
 				jsc: {
-					parser: {
-						syntax: 'typescript',
-						jsx: false,
-						tsx: false,
-						dynamicImport: true
-					},
 					target: 'es2017' // can also be ES5
 				}
 			}),

@@ -19,6 +19,7 @@ import bundlePlugin from './plugins/bundle-plugin.js';
 import nodeBuiltinsPlugin from './plugins/node-builtins-plugin.js';
 import jsonPlugin from './plugins/json-plugin.js';
 import externalUrlsPlugin from './plugins/external-urls-plugin.js';
+import sucrasePlugin from './plugins/sucrase-plugin.js';
 
 const NOOP = () => {};
 
@@ -68,16 +69,15 @@ export default function wmrMiddleware({
 			nodeBuiltinsPlugin({}),
 			urlPlugin({ inline: true, cwd }),
 			jsonPlugin(),
+			sucrasePlugin({
+				typescript: true,
+				sourcemap: true,
+				production: false
+			}),
 			bundlePlugin({ inline: true, cwd }),
 			aliasesPlugin({ aliases, cwd: root }),
 			swc({
 				jsc: {
-					parser: {
-						syntax: 'typescript',
-						jsx: false,
-						tsx: false,
-						dynamicImport: true
-					},
 					target: 'es2017' // can also be ES5
 				}
 			}),
