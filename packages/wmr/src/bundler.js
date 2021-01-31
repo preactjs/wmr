@@ -1,6 +1,5 @@
 import { relative, sep, posix, resolve, dirname } from 'path';
 import * as rollup from 'rollup';
-import swc from 'rollup-plugin-swc';
 import htmPlugin from './plugins/htm-plugin.js';
 import wmrPlugin from './plugins/wmr/plugin.js';
 import wmrStylesPlugin from './plugins/wmr/styles-plugin.js';
@@ -100,12 +99,6 @@ export async function bundleProd({
 				typescript: true,
 				sourcemap,
 				production: true
-			}),
-			swc({
-				minify: true,
-				jsc: {
-					target: 'es2017' // can also be ES5
-				}
 			}),
 			htmlEntriesPlugin({ cwd, publicDir, publicPath }),
 			(dynamicImportVars.default || dynamicImportVars)({

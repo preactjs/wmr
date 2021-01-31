@@ -1,7 +1,6 @@
 import { resolve, dirname, relative, sep, posix } from 'path';
 import { promises as fs, createReadStream } from 'fs';
 import chokidar from 'chokidar';
-import swc from 'rollup-plugin-swc';
 import htmPlugin from './plugins/htm-plugin.js';
 import wmrPlugin, { getWmrClient } from './plugins/wmr/plugin.js';
 import wmrStylesPlugin, { modularizeCss, processSass } from './plugins/wmr/styles-plugin.js';
@@ -76,11 +75,6 @@ export default function wmrMiddleware({
 			}),
 			bundlePlugin({ inline: true, cwd }),
 			aliasesPlugin({ aliases, cwd: root }),
-			swc({
-				jsc: {
-					target: 'es2017' // can also be ES5
-				}
-			}),
 			processGlobalPlugin({ NODE_ENV: 'development', env }),
 			sassPlugin(),
 			htmPlugin({ production: false }),
