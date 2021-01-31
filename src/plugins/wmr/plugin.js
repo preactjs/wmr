@@ -37,7 +37,7 @@ export function getWmrClient({ hot = true } = {}) {
  * @param {object} options
  * @returns {import('rollup').Plugin}
  */
-export default function wmrPlugin({ hot = true } = {}) {
+export default function wmrPlugin({ hot = true, preact } = {}) {
 	if (BYPASS_HMR) hot = false;
 
 	return {
@@ -76,7 +76,9 @@ export default function wmrPlugin({ hot = true } = {}) {
 			if (code.match(/html`[^`]*<([a-zA-Z][a-zA-Z0-9.:-]*|\$\{.+?\})[^>]*>/) && hasExport) {
 				// if (this.getModuleInfo(id).hasJSX) {
 				hasHot = true;
-				after += '\n' + PREFRESH;
+				if (preact) {
+					after += '\n' + PREFRESH;
+				}
 				// }
 			}
 

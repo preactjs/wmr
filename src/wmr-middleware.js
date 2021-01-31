@@ -53,7 +53,8 @@ export default function wmrMiddleware({
 	aliases,
 	onError = NOOP,
 	onChange = NOOP,
-	plugins
+	plugins,
+	preact
 } = {}) {
 	cwd = resolve(process.cwd(), cwd || '.');
 	distDir = resolve(dirname(out), distDir);
@@ -76,7 +77,7 @@ export default function wmrMiddleware({
 			processGlobalPlugin({ NODE_ENV: 'development', env }),
 			sassPlugin(),
 			htmPlugin({ production: false }),
-			wmrPlugin({ hot: true }),
+			wmrPlugin({ hot: true, preact }),
 			fastCjsPlugin({
 				// Only transpile CommonJS in node_modules and explicit .cjs files:
 				include: /(?:[/\\]node_modules[/\\]|\.cjs$)/

@@ -26,6 +26,7 @@ declare module "wmr" {
 		middleware: Middleware[];
 		plugins: Plugin[];
 		output: OutputOption[];
+		preact: boolean;
 	}
 }
 
