@@ -1,4 +1,4 @@
-import babel from '@babel/standalone';
+import { transform } from '@swc/core';
 
 /** @param {import('../../types').Options} options */
 export default function (options) {
@@ -18,7 +18,7 @@ function nomodulePlugin({} = {}) {
 			for (const fileName in bundle) {
 				const chunk = bundle[fileName];
 				if (chunk.type !== 'chunk') continue;
-				const legacy = downlevel(chunk.code, fileName);
+				const legacy = await downlevel(chunk.code, fileName);
 				if (!legacy) continue;
 				const legacyFileName = chunk.fileName.replace(/\.js/, '.legacy.js');
 				this.emitFile({
@@ -48,44 +48,16 @@ function nomodulePlugin({} = {}) {
 	};
 }
 
-function downlevel(code, fileName) {
-	const result = babel.transform(code, {
-		compact: true,
-		minified: true,
-		configFile: false,
-		babelrc: false,
-		filename: fileName,
-		presets: [
-			[
-				'env',
-				{
-					targets: 'defaults',
-					shippedProposals: true,
-					loose: true,
-					bugfixes: true,
-					corejs: false,
-					useBuiltIns: false,
-					modules: false
-				}
-			]
-		],
-		plugins: [
-			{
-				visitor: {
-					ImportDeclaration(path) {
-						path.node.source.value = path.node.source.value.replace(/(\.legacy)?\.js$/, '.legacy.js');
-					},
-					Import(path) {
-						const p = path.parentPath;
-						if (!p.isCallExpression()) return;
-						const arg = p.get('arguments.0');
-						// the things I do to make TypeScript happy...
-						if (Array.isArray(arg) || !arg.isStringLiteral()) return;
-						arg.node.value = arg.node.value.replace(/(\.legacy)?\.js$/, '.legacy.js');
-					}
-				}
-			}
-		]
-	});
+async function downlevel(code, fileName) {
+	const result = await transform(code, {
+		fileName,
+		jsc: {
+			parser: {
+				dynamicImport: true,
+			},
+			target: 'es5'
+		},
+		minify: true,
+	})
 	return result.code;
 }
