@@ -68,13 +68,13 @@ export default function wmrMiddleware({
 			nodeBuiltinsPlugin({}),
 			urlPlugin({ inline: true, cwd }),
 			jsonPlugin(),
-			sucrasePlugin({
-				typescript: true,
-				sourcemap: true,
-				production: false
-			}),
 			bundlePlugin({ inline: true, cwd }),
 			aliasesPlugin({ aliases, cwd: root }),
+			sucrasePlugin({
+				typescript: true,
+				sourcemap: false,
+				production: false
+			}),
 			processGlobalPlugin({ NODE_ENV: 'development', env }),
 			sassPlugin(),
 			htmPlugin({ production: false }),
