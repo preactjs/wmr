@@ -1,11 +1,11 @@
 import { relative, sep, posix, resolve, dirname } from 'path';
 import * as rollup from 'rollup';
 import htmPlugin from './plugins/htm-plugin.js';
-import sucrasePlugin from './plugins/sucrase-plugin.js';
 import wmrPlugin from './plugins/wmr/plugin.js';
 import wmrStylesPlugin from './plugins/wmr/styles-plugin.js';
 import sassPlugin from './plugins/sass-plugin.js';
-import terser from './plugins/fast-minify.js';
+import fastMinifyPlugin from './plugins/fast-minify.js';
+import fastTypesPlugin from './plugins/fast-types.js';
 import npmPlugin from './plugins/npm-plugin/index.js';
 import publicPathPlugin from './plugins/public-path-plugin.js';
 import minifyCssPlugin from './plugins/minify-css-plugin.js';
@@ -92,9 +92,10 @@ export async function bundleProd({
 		preserveEntrySignatures: 'allow-extension',
 		manualChunks: npmChunks ? extractNpmChunks : undefined,
 		plugins: [
+			htmPlugin({ production: true }),
 			nodeBuiltinsPlugin({ production: true }),
 			externalUrlsPlugin(),
-			sucrasePlugin({
+			fastTypesPlugin({
 				typescript: true,
 				sourcemap,
 				production: true
@@ -102,7 +103,6 @@ export async function bundleProd({
 			htmlEntriesPlugin({ cwd, publicDir, publicPath }),
 			publicPathPlugin({ publicPath }),
 			aliasesPlugin({ aliases, cwd: root }),
-			htmPlugin({ production: true }),
 			sassPlugin({ production: true }),
 			wmrStylesPlugin({ hot: false, cwd }),
 			wmrPlugin({ hot: false }),
@@ -142,7 +142,7 @@ export async function bundleProd({
 			return fileName;
 		},
 		hoistTransitiveImports: true,
-		plugins: [minify && terser({ compress: true, sourcemap })],
+		plugins: [minify && fastMinifyPlugin({ production: true, compress: true, sourcemap })],
 		sourcemap,
 		sourcemapPathTransform(p, mapPath) {
 			let url = pathToPosix(relative(cwd, resolve(dirname(mapPath), p)));
