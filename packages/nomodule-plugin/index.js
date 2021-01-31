@@ -1,9 +1,16 @@
 import { transform } from '@swc/core';
+import Visitor from "@swc/core/Visitor";
 
 /** @param {import('../../types').Options} options */
 export default function (options) {
 	if (options.mode && options.mode !== 'build') return;
 	options.plugins.push(nomodulePlugin({}));
+}
+class LegacyRewriter extends Visitor {
+  visitImportDeclaration(e: CallExpression): Expression {
+		path.node.source.value = path.node.source.value.replace(/(\.legacy)?\.js$/, '.legacy.js');
+		return path
+  }
 }
 
 /**
@@ -58,6 +65,7 @@ async function downlevel(code, fileName) {
 			target: 'es5'
 		},
 		minify: true,
+		plugin: m => new LegacyRewriter().visitProgram(m)
 	})
 	return result.code;
 }
