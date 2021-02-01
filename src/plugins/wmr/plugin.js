@@ -72,14 +72,9 @@ export default function wmrPlugin({ hot = true, preact } = {}) {
 
 			// Detect modules that appear to have both JSX and an export, and inject prefresh:
 			// @todo: move to separate plugin.
-			// if (code.match(/\/\*@@prefresh_include\*\//) && code.match(/\bexport\b/)) {
-			if (code.match(/html`[^`]*<([a-zA-Z][a-zA-Z0-9.:-]*|\$\{.+?\})[^>]*>/) && hasExport) {
-				// if (this.getModuleInfo(id).hasJSX) {
+			if (code.match(/html`[^`]*<([a-zA-Z][a-zA-Z0-9.:-]*|\$\{.+?\})[^>]*>/) && hasExport && preact) {
 				hasHot = true;
-				if (preact) {
-					after += '\n' + PREFRESH;
-				}
-				// }
+				after += '\n' + PREFRESH;
 			}
 
 			if ((!hasHot && !hot) || !hasEsmKeywords) return null;
