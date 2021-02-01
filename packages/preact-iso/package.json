@@ -5,6 +5,7 @@
 	"main": "./index.js",
 	"module": "./index.js",
 	"types": "./index.d.ts",
+	"type": "module",
 	"exports": {
 		".": "./index.js",
 		"./router": "./router.js",
@@ -22,5 +23,9 @@
 	"devDependencies": {
 		"preact": "^10.5.7",
 		"preact-render-to-string": "^5.1.12"
+	},
+	"peerDependencies": {
+		"preact": ">=10",
+		"preact-render-to-string": ">=5"
 	}
 }
