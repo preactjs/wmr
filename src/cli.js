@@ -40,9 +40,9 @@ prog
 	.option('--sourcemap', 'Enable Source Maps')
 	.option('--profile', 'Generate build statistics')
 	.option('--reload', 'Switch off hmr and reload on file saves')
-	.option('--preact', 'Switch wmr to Preact specific mode (default: enabled)')
+	.option('--no-preact', 'Switch wmr to Preact specific mode')
 	.action(opts => {
-		opts.preact = bool(opts.preact || 'true');
+		opts.preact = !bool(opts['no-preact'] || 'false');
 		opts.optimize = !/false|0/.test(opts.compress);
 		opts.compress = bool(opts.compress);
 		if (/true/.test(process.env.PROFILE)) opts.profile = true;
