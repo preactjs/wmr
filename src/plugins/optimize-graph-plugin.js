@@ -479,7 +479,7 @@ function constructAssetToChunkMap(bundle) {
  * @param {(fn: string, url: string, quote: string) => string | null | undefined} replacer Return replacement code, or `null`/`undefined` to preserve the matched call.
  */
 function replaceSimpleFunctionCall(code, replacer) {
-	return code.replace(/([a-z$_][a-z0-9$_]*)\((['"`])(.*?)\2\)/gi, (s, fn, quote, url) => {
+	return code.replace(/([a-z$_][a-z0-9$_]*)\((['"`])((?:(?!\2)[^\\]|\\.)*?)\2\)/gi, (s, fn, quote, url) => {
 		const ret = replacer(fn, url, quote);
 		return ret == null ? s : ret;
 	});
