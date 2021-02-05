@@ -1,47 +1,64 @@
-import swcPlugin from 'rollup-plugin-swc';
 import Visitor from '@swc/core/Visitor.js';
+import swc from '@swc/core';
 
-class ConsoleStripper extends Visitor.default {
-	visitProgram(e) {
+class JSXImportAppender extends Visitor.default {
+	visitModule(e) {
 		const preactImport = e.body.find(d => d.type === 'ImportDeclaration' && d.source && d.source.value === 'preact');
+
 		if (!preactImport) {
-			return {
-				...e,
-				body: [
+			e.body.unshift({
+				type: 'ImportDeclaration',
+				span: { start: 0, end: 0, ctxt: 0 },
+				specifiers: [
 					{
-						type: 'ImportDeclaration',
-						specifiers: [
-							{
-								type: 'ImportSpecifier',
-								local: {
-									type: 'Identifier',
-									value: 'h'
-								}
-							},
-							{
-								type: 'ImportSpecifier',
-								local: {
-									type: 'Identifier',
-									value: 'Fragment'
-								}
-							}
-						],
-						source: {
-							type: 'StringLiteral',
-							value: 'preact'
+						type: 'ImportSpecifier',
+						span: { start: 0, end: 0, ctxt: 0 },
+						local: {
+							type: 'Identifier',
+							span: { start: 0, end: 0, ctxt: 0 },
+							value: 'h',
+							typeAnnotation: null,
+							optional: false
 						}
 					},
-					...e.body
-				]
-			};
+					{
+						type: 'ImportSpecifier',
+						span: { start: 0, end: 0, ctxt: 0 },
+						local: {
+							type: 'Identifier',
+							span: { start: 0, end: 0, ctxt: 0 },
+							value: 'Fragment',
+							typeAnnotation: null,
+							optional: false
+						}
+					}
+				],
+				source: {
+					type: 'StringLiteral',
+					span: { start: 0, end: 0, ctxt: 0 },
+					value: 'preact',
+					hasEscape: false,
+					kind: { type: 'normal', containsQuote: true }
+				},
+				typeAnnotation: null,
+				optional: false
+			});
+
+			return { ...e, body: [...e.body] };
 		}
 
 		if (!preactImport.specifiers.find(x => x.local.value === 'h')) {
 			preactImport.specifiers.push({
 				type: 'ImportSpecifier',
+				span: { start: 0, end: 0, ctxt: 0 },
+				typeAnnotation: null,
+				optional: false,
 				local: {
 					type: 'Identifier',
-					value: 'h'
+					span: { start: 0, end: 0, ctxt: 0 },
+					value: 'h',
+					typeAnnotation: null,
+					optional: false
 				}
 			});
 		}
@@ -49,22 +66,38 @@ class ConsoleStripper extends Visitor.default {
 		if (!preactImport.specifiers.find(x => x.local.value === 'Fragment')) {
 			preactImport.specifiers.push({
 				type: 'ImportSpecifier',
+				span: { start: 0, end: 0, ctxt: 0 },
+				typeAnnotation: null,
+				optional: false,
 				local: {
 					type: 'Identifier',
-					value: 'Fragment'
+					span: { start: 0, end: 0, ctxt: 0 },
+					value: 'Fragment',
+					typeAnnotation: null,
+					optional: false
 				}
 			});
 		}
 
-		return e;
+		return { ...e, body: [...e.body] };
 	}
 }
+
+const swcPlugin = (options = {}) => ({
+	name: 'swc',
+	async transform(code, filename) {
+		options.filename = filename;
+		const result = await swc.transform(code, options);
+		return result;
+	}
+});
 
 export const createSwcPlugin = type => {
 	if (type === 'typescript') {
 		return swcPlugin({
-			plugin: m => new ConsoleStripper().visitProgram(m),
+			plugin: m => new JSXImportAppender().visitProgram(m),
 			jsc: {
+				loose: true,
 				transform: {
 					react: {
 						pragma: 'h',
@@ -81,8 +114,10 @@ export const createSwcPlugin = type => {
 		});
 	} else if (type === 'jsx') {
 		return swcPlugin({
-			plugin: m => new ConsoleStripper().visitProgram(m),
+			plugin: m => new JSXImportAppender().visitProgram(m),
+			test: '.*.ts$',
 			jsc: {
+				loose: true,
 				transform: {
 					react: {
 						pragma: 'h',

@@ -70,7 +70,7 @@ export default function wmrMiddleware({
 			bundlePlugin({ inline: true, cwd }),
 			aliasesPlugin({ aliases, cwd: root }),
 			createSwcPlugin('typescript'),
-			createSwcPlugin('jsx'),
+			// createSwcPlugin('jsx'),
 			processGlobalPlugin({ NODE_ENV: 'development', env }),
 			sassPlugin(),
 			wmrPlugin({ hot: true, preact: features.preact }),
