@@ -10,6 +10,10 @@ declare module "wmr" {
 
 	export type OutputOption = OutputOptions | ((opts: OutputOptions) => OutputOptions);
 
+	export type Features = {
+		preact: boolean;
+	}
+
 	export interface Options {
 		prod: boolean;
 		minify: boolean;
@@ -26,7 +30,7 @@ declare module "wmr" {
 		middleware: Middleware[];
 		plugins: Plugin[];
 		output: OutputOption[];
-		'no-preact': boolean;
+		features: Features;
 	}
 }
 
