@@ -243,11 +243,13 @@ describe('production', () => {
 			expect(index).toMatch('<title>Page: /</title>');
 			expect(index).toMatch('<link rel="icon" href="data:,favicon-for-/">');
 			expect(index).toMatch('<h1>page = /</h1>');
+			expect(index).toMatch(`<meta property="og:title" content="Become an SEO Expert">`);
 
 			const other = await fs.readFile(path.join(env.tmp.path, 'dist', 'other.html'), 'utf8');
 			expect(other).toMatch('<title>Page: /other.html</title>');
 			expect(other).toMatch('<link rel="icon" href="data:,favicon-for-/other.html">');
 			expect(other).toMatch('<h1>page = /other.html</h1>');
+			expect(other).toMatch(`<meta property="og:title" content="Become an SEO Expert">`);
 		});
 	});
 });
