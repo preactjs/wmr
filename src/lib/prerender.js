@@ -42,6 +42,12 @@ async function workerCode({ cwd, out, publicPath }) {
 
 	const path = require('path');
 	const fs = require('fs').promises;
+	const BEFORE = Symbol('before');
+	const AFTER = Symbol('after');
+
+	function enc(str) {
+		return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+	}
 
 	globalThis.location = /** @type {object} */ ({});
 
@@ -51,9 +57,15 @@ async function workerCode({ cwd, out, publicPath }) {
 		},
 		querySelector() {},
 		head: {
+			[BEFORE]: '',
+			[AFTER]: '',
 			children: /** @type {any[]} */ ([]),
 			appendChild(c) {
 				this.children.push(c);
+			},
+			/** @param {'afterbegin'|'beforeend'} position @param {string} html */
+			insertAdjacentHTML(position, html) {
+				this[position === 'afterbegin' ? BEFORE : AFTER] += String(html);
 			}
 		}
 	});
@@ -93,7 +105,8 @@ async function workerCode({ cwd, out, publicPath }) {
 	for (const route of routes) {
 		if (!route.url) continue;
 
-		const outFile = path.resolve(cwd, out, route.url.replace(/(^\/|\/$)/g, ''), 'index.html');
+		const outDir = route.url.replace(/(^\/|\/$)/g, '');
+		const outFile = path.resolve(cwd, out, outDir, outDir.endsWith('.html') ? '' : 'index.html');
 		// const outFile = toPath(new URL(`../dist${route.url.replace(/\/$/, '')}/index.html`, selfUrl));
 
 		// Update `location` to current URL so routers can use things like location.pathname:
@@ -107,6 +120,7 @@ async function workerCode({ cwd, out, publicPath }) {
 		// Reset document.head so that CSS for the current route will be injected into it:
 		// @ts-ignore
 		const head = (document.head.children = []);
+		document.head[BEFORE] = document.head[AFTER] = '';
 
 		// Do pre-rendering, as defined by the entry chunk:
 		const result = await doPrerender({ ssr: true, url: route.url, route });
@@ -127,10 +141,25 @@ async function workerCode({ cwd, out, publicPath }) {
 		const body = (result && result.html) || result;
 
 		// Inject HTML links at the end of <head> for any stylesheets injected during rendering of the page:
-		const styles = [
-			...new Set(head.filter(c => c.rel && c.href).map(c => `<link rel="${c.rel}" href="${c.href}">`))
+		let headHtml = [
+			document.head[BEFORE],
+			...new Set(head.filter(c => c.rel && c.href).map(c => `<link rel="${enc(c.rel)}" href="${enc(c.href)}">`)),
+			document.head[AFTER]
 		].join('');
-		let html = tpl.replace(/(<\/head>)/, styles + '$1');
+
+		let html = tpl;
+
+		if (document.title) {
+			const title = `<title>${enc(document.title)}</title>`;
+			const matchTitle = /<title>([^<>]*?)<\/title>/i;
+			if (matchTitle.test(html)) {
+				html = html.replace(matchTitle, title);
+			} else {
+				headHtml = title + headHtml;
+			}
+		}
+
+		html = html.replace(/(<\/head>)/, headHtml + '$1');
 
 		// Inject pre-rendered HTML into the start of <body>:
 		html = html.replace(/(<body(\s[^>]*?)?>)/, '$1' + body);
