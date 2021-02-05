@@ -193,5 +193,5 @@ async function fwrite(filename, data) {
  */
 function getCachePath({ module, version, path }, cwd) {
 	const tfPath = (path || '').replace(/\//g, '---');
-	return resolve(cwd || '.', `node_modules/${module}/.cache/${version}--${tfPath}.js`);
+	return resolve(cwd || '.', `.cache/@npm/${module}@${version}/${tfPath}.js`);
 }

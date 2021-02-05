@@ -150,6 +150,13 @@ describe('acorn-traverse', () => {
 			);"
 			`);
 		});
+
+		it('should handle root memberExpression component names', () => {
+			const doTransform = code => transformWithPlugin(code, transformJsxToHtm, { generatorOpts: { compact: true } });
+
+			// Should keep the newlines formatting
+			expect(doTransform(`<A.B>hi</A.B>;`)).toMatchInlineSnapshot(`"html\`<\${A.B}>hi</\${A.B}>\`;"`);
+		});
 	});
 
 	describe('fixtures', () => {

@@ -442,7 +442,21 @@ const TYPES = {
 	isNodesEquivalent(a, b) {
 		if (a instanceof Path) a = a.node;
 		if (b instanceof Path) b = b.node;
-		return a && b && a.type === b.type && a.name === b.name && a.value === b.value;
+		if (a == b) return true;
+		if (typeof a !== 'object' || typeof b !== 'object') return false;
+		if (!a || !b || a.type !== b.type) return false;
+		for (let i in a) {
+			const bi = b[i];
+			const ai = a[i];
+			if (i[0] === '_' || ai === bi) continue;
+			if (typeof ai !== typeof bi) return false;
+			if (Array.isArray(ai)) {
+				if (!Array.isArray(bi) || bi.length !== ai.length) return false;
+				for (let x = 0; x < ai.length; x++) {
+					if (TYPES.isNodesEquivalent(ai[x], bi[x]) === false) return false;
+				}
+			} else if (TYPES.isNodesEquivalent(ai, bi) === false) return false;
+		}
 	},
 	/** @type {(a:Node,b?:Node)=>boolean} */
 	isIdentifier(a, b) {
