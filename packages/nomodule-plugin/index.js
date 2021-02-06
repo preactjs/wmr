@@ -1,16 +1,9 @@
-import { transform } from '@swc/core';
-import Visitor from "@swc/core/Visitor";
+import babel from '@babel/standalone';
 
 /** @param {import('../../types').Options} options */
 export default function (options) {
 	if (options.mode && options.mode !== 'build') return;
 	options.plugins.push(nomodulePlugin({}));
-}
-class LegacyRewriter extends Visitor {
-  visitImportDeclaration(e: CallExpression): Expression {
-		path.node.source.value = path.node.source.value.replace(/(\.legacy)?\.js$/, '.legacy.js');
-		return path
-  }
 }
 
 /**
@@ -55,17 +48,45 @@ function nomodulePlugin({} = {}) {
 	};
 }
 
-async function downlevel(code, fileName) {
-	const result = await transform(code, {
-		fileName,
-		jsc: {
-			parser: {
-				dynamicImport: true,
-			},
-			target: 'es5'
-		},
-		minify: true,
-		plugin: m => new LegacyRewriter().visitProgram(m)
-	})
+function downlevel(code, fileName) {
+	const result = babel.transform(code, {
+		compact: true,
+		minified: true,
+		configFile: false,
+		babelrc: false,
+		filename: fileName,
+		presets: [
+			[
+				'env',
+				{
+					targets: 'defaults',
+					shippedProposals: true,
+					loose: true,
+					bugfixes: true,
+					corejs: false,
+					useBuiltIns: false,
+					modules: false
+				}
+			]
+		],
+		plugins: [
+			{
+				visitor: {
+					ImportDeclaration(path) {
+						path.node.source.value = path.node.source.value.replace(/(\.legacy)?\.js$/, '.legacy.js');
+					},
+					Import(path) {
+						const p = path.parentPath;
+						if (!p.isCallExpression()) return;
+						const arg = p.get('arguments.0');
+						// the things I do to make TypeScript happy...
+						if (Array.isArray(arg) || !arg.isStringLiteral()) return;
+						arg.node.value = arg.node.value.replace(/(\.legacy)?\.js$/, '.legacy.js');
+					}
+				}
+			}
+		]
+	});
+
 	return result.code;
 }

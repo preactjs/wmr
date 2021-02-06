@@ -17,7 +17,7 @@ import bundlePlugin from './plugins/bundle-plugin.js';
 import nodeBuiltinsPlugin from './plugins/node-builtins-plugin.js';
 import jsonPlugin from './plugins/json-plugin.js';
 import externalUrlsPlugin from './plugins/external-urls-plugin.js';
-import { createSwcPlugin } from './plugins/transpile.js';
+import swcPlugin from './plugins/swc-plugin.js';
 
 const NOOP = () => {};
 
@@ -69,8 +69,8 @@ export default function wmrMiddleware({
 			jsonPlugin(),
 			bundlePlugin({ inline: true, cwd }),
 			aliasesPlugin({ aliases, cwd: root }),
-			createSwcPlugin('typescript'),
-			// createSwcPlugin('jsx'),
+			swcPlugin('typescript'),
+			swcPlugin('jsx'),
 			processGlobalPlugin({ NODE_ENV: 'development', env }),
 			sassPlugin(),
 			wmrPlugin({ hot: true, preact: features.preact }),
