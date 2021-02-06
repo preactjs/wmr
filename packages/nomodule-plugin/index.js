@@ -18,7 +18,7 @@ function nomodulePlugin({} = {}) {
 			for (const fileName in bundle) {
 				const chunk = bundle[fileName];
 				if (chunk.type !== 'chunk') continue;
-				const legacy = await downlevel(chunk.code, fileName);
+				const legacy = downlevel(chunk.code, fileName);
 				if (!legacy) continue;
 				const legacyFileName = chunk.fileName.replace(/\.js/, '.legacy.js');
 				this.emitFile({
