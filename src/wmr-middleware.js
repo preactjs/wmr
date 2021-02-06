@@ -54,7 +54,7 @@ export default function wmrMiddleware({
 	onError = NOOP,
 	onChange = NOOP,
 	plugins,
-	features = { preact: true }
+	features
 } = {}) {
 	cwd = resolve(process.cwd(), cwd || '.');
 	distDir = resolve(dirname(out), distDir);
