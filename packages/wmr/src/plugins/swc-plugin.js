@@ -116,7 +116,6 @@ const jsxOptions = {
 	plugin: m => {
 		return new JSXImportAppender().visitModule(m);
 	},
-},
 	jsc: {
 		loose: true,
 		transform: {
