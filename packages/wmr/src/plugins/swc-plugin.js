@@ -3,9 +3,7 @@ import swc from '@swc/core';
 
 class JSXImportAppender extends Visitor.default {
 	visitModule(e) {
-		const preactImport = e.body.find(
-			d => d.type === 'ImportDeclaration' && d.source && d.source.value.includes('preact')
-		);
+		const preactImport = e.body.find(d => d.type === 'ImportDeclaration' && d.source && d.source.value === 'preact');
 
 		if (!preactImport) {
 			e.body.unshift({
