@@ -3,7 +3,8 @@ import swc from '@swc/core';
 
 class JSXImportAppender extends Visitor.default {
 	visitModule(e) {
-		const preactImport = e.body.find(d => d.type === 'ImportDeclaration' && d.source && d.source.value === 'preact');
+		const imports = e.body.filter(d => d.type === 'ImportDeclaration');
+		const preactImport = imports.find(imp => imp.source.value === 'preact');
 
 		if (!preactImport) {
 			e.body.unshift({
@@ -47,7 +48,8 @@ class JSXImportAppender extends Visitor.default {
 			return { ...e, body: [...e.body] };
 		}
 
-		if (!preactImport.specifiers.find(x => x.local.value === 'h')) {
+		const hasH = imports.find(imp => !!imp.specifiers.find(x => x.local.value === 'h'));
+		if (!hasH) {
 			preactImport.specifiers.push({
 				type: 'ImportSpecifier',
 				span: { start: 0, end: 0, ctxt: 0 },
@@ -63,7 +65,8 @@ class JSXImportAppender extends Visitor.default {
 			});
 		}
 
-		if (!preactImport.specifiers.find(x => x.local.value === 'Fragment')) {
+		const hasFrag = imports.find(imp => !!imp.specifiers.find(x => x.local.value === 'Fragment'));
+		if (!hasFrag) {
 			preactImport.specifiers.push({
 				type: 'ImportSpecifier',
 				span: { start: 0, end: 0, ctxt: 0 },
@@ -113,6 +116,7 @@ const jsxOptions = {
 	plugin: m => {
 		return new JSXImportAppender().visitModule(m);
 	},
+},
 	jsc: {
 		loose: true,
 		transform: {
