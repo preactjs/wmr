@@ -5,7 +5,6 @@ class JSXImportAppender extends Visitor.default {
 	visitModule(e) {
 		const preactImport = e.body.find(d => d.type === 'ImportDeclaration' && d.source && d.source.value === 'preact');
 
-		console.dir(preactImport, { depth: 10 });
 		if (!preactImport) {
 			e.body.unshift({
 				type: 'ImportDeclaration',
@@ -95,6 +94,7 @@ const swcPlugin = (options = {}) => ({
 const createSwcPlugin = type => {
 	if (type === 'typescript') {
 		return swcPlugin({
+			test: '.*.tsx?$',
 			plugin: m => {
 				return new JSXImportAppender().visitModule(m);
 			},
@@ -116,6 +116,7 @@ const createSwcPlugin = type => {
 		});
 	} else if (type === 'jsx') {
 		return swcPlugin({
+			test: '.*.jsx?$',
 			plugin: m => {
 				return new JSXImportAppender().visitModule(m);
 			},
