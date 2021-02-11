@@ -5,6 +5,7 @@ class JSXImportAppender extends Visitor.default {
 	visitModule(e) {
 		const preactImport = e.body.find(d => d.type === 'ImportDeclaration' && d.source && d.source.value === 'preact');
 
+		console.dir(preactImport, { depth: 10 });
 		if (!preactImport) {
 			e.body.unshift({
 				type: 'ImportDeclaration',
@@ -40,8 +41,8 @@ class JSXImportAppender extends Visitor.default {
 					hasEscape: false,
 					kind: { type: 'normal', containsQuote: true }
 				},
-				typeAnnotation: null,
-				optional: false
+				asserts: null,
+				typeOnly: false
 			});
 
 			return { ...e, body: [...e.body] };
@@ -87,9 +88,7 @@ const swcPlugin = (options = {}) => ({
 	name: 'swc',
 	async transform(code, filename) {
 		options.filename = filename;
-		console.log('transforming', filename);
-		const result = await swc.transform(code, options);
-		return result;
+		return await swc.transform(code, { ...options });
 	}
 });
 
@@ -97,7 +96,6 @@ const createSwcPlugin = type => {
 	if (type === 'typescript') {
 		return swcPlugin({
 			plugin: m => {
-				console.log('mod', m);
 				return new JSXImportAppender().visitModule(m);
 			},
 			jsc: {
@@ -118,7 +116,9 @@ const createSwcPlugin = type => {
 		});
 	} else if (type === 'jsx') {
 		return swcPlugin({
-			plugin: m => new JSXImportAppender().visitProgram(m),
+			plugin: m => {
+				return new JSXImportAppender().visitModule(m);
+			},
 			jsc: {
 				loose: true,
 				transform: {
