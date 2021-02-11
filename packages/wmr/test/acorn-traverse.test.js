@@ -5,7 +5,6 @@ import * as acorn from 'acorn';
 import acornJsx from 'acorn-jsx';
 import { transform, generate } from '../src/lib/acorn-traverse.js';
 import transformJsxToHtm from 'babel-plugin-transform-jsx-to-htm';
-// import transformJsxToHtmLite from '../src/lib/transform-jsx-to-htm-lite.js';
 
 const fixtures = path.join(__dirname, 'fixtures/_unit');
 

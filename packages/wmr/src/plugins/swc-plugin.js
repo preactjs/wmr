@@ -86,6 +86,7 @@ class JSXImportAppender extends Visitor.default {
 const swcPlugin = (options = {}) => ({
 	name: 'swc',
 	async transform(code, filename) {
+		if (filename.includes('npm') || !/\.(jsx?|tsx?)$/.test(filename)) return null;
 		options.filename = filename;
 		return await swc.transform(code, { ...options });
 	}

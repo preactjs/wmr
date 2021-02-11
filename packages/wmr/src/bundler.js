@@ -1,6 +1,5 @@
 import { relative, sep, posix, resolve, dirname } from 'path';
 import * as rollup from 'rollup';
-import htmPlugin from './plugins/htm-plugin.js';
 import wmrPlugin from './plugins/wmr/plugin.js';
 import wmrStylesPlugin from './plugins/wmr/styles-plugin.js';
 import sassPlugin from './plugins/sass-plugin.js';
@@ -22,7 +21,7 @@ import externalUrlsPlugin from './plugins/external-urls-plugin.js';
 import copyAssetsPlugin from './plugins/copy-assets-plugin.js';
 import nodeBuiltinsPlugin from './plugins/node-builtins-plugin.js';
 import dynamicImportVars from '@rollup/plugin-dynamic-import-vars';
-import sucrasePlugin from './plugins/sucrase-plugin.js';
+import swcPlugin from './plugins/swc-plugin.js';
 
 /** @param {string} p */
 const pathToPosix = p => p.split(sep).join(posix.sep);
@@ -95,11 +94,8 @@ export async function bundleProd({
 		plugins: plugins.concat([
 			nodeBuiltinsPlugin({ production: true }),
 			externalUrlsPlugin(),
-			sucrasePlugin({
-				typescript: true,
-				sourcemap,
-				production: true
-			}),
+			swcPlugin('typescript'),
+			swcPlugin('jsx'),
 			htmlEntriesPlugin({ cwd, publicDir, publicPath }),
 			(dynamicImportVars.default || dynamicImportVars)({
 				include: /\.(m?jsx?|tsx?)$/,
@@ -107,7 +103,6 @@ export async function bundleProd({
 			}),
 			publicPathPlugin({ publicPath }),
 			aliasesPlugin({ aliases, cwd: root }),
-			htmPlugin({ production: true }),
 			sassPlugin({ production: true }),
 			wmrStylesPlugin({ hot: false, cwd }),
 			wmrPlugin({ hot: false }),

@@ -1,7 +1,6 @@
 import * as rollup from 'rollup';
 import wmrPlugin from '../plugins/wmr/plugin.js';
-import htmPlugin from '../plugins/htm-plugin.js';
-import sucrasePlugin from '../plugins/sucrase-plugin.js';
+import swcPlugin from '../plugins/swc-plugin.js';
 // import localNpmPlugin from './plugins/local-npm-plugin.js';
 
 // disabled for now
@@ -47,15 +46,9 @@ export const compileSingleModule = withCache(async (input, { cwd, out }) => {
 					return { id, external: true, moduleSideEffects: true };
 				}
 			},
-			sucrasePlugin({
-				typescript: true,
-				sourcemap: false,
-				production: false
-			}),
-			// localNpmPlugin(),
-			// wmrStylesPlugin({ cwd }),
-			wmrPlugin(),
-			htmPlugin()
+			swcPlugin('tsx'),
+			swcPlugin('jsx'),
+			wmrPlugin()
 		]
 	});
 	cache = bundle.cache;
