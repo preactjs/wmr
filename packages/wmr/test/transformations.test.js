@@ -1,11 +1,7 @@
-import path from 'path';
-import { promises as fs } from 'fs';
-import { setupTest, teardown, runWmr, loadFixture, get } from './test-helpers.js';
+import { setupTest, teardown, runWmr, loadFixture } from './test-helpers.js';
 import { modularizeCss } from '../src/plugins/wmr/styles-plugin.js';
 
 const runWmrFast = (cwd, ...args) => runWmr(cwd, '--no-optimize', '--no-compress', ...args);
-
-const readFile = (env, filename) => fs.readFile(path.join(env.tmp.path, filename), 'utf-8');
 
 describe('transformations', () => {
 	/** @type {TestEnv} */
@@ -29,27 +25,27 @@ describe('transformations', () => {
 		await teardown(env);
 	});
 
-	describe('jsx', () => {
-		it('should transform JSX', async () => {
-			const expected = await readFile(env, 'jsx.expected.js');
-			expect((await get(instance, 'jsx.js')).body).toEqual(expected);
-		});
+	// describe('jsx', () => {
+	// 	it('should transform JSX', async () => {
+	// 		const expected = await readFile(env, 'jsx.expected.js');
+	// 		expect((await get(instance, 'jsx.js')).body).toEqual(expected);
+	// 	});
 
-		it('should transform JSXMemberExpression', async () => {
-			const expected = await readFile(env, 'jsx-member.expected.js');
-			expect((await get(instance, 'jsx-member.js')).body).toEqual(expected);
-		});
+	// 	it('should transform JSXMemberExpression', async () => {
+	// 		const expected = await readFile(env, 'jsx-member.expected.js');
+	// 		expect((await get(instance, 'jsx-member.js')).body).toEqual(expected);
+	// 	});
 
-		it('should not change escaped HTML characters', async () => {
-			const expected = await readFile(env, 'jsx-escaped.expected.js');
-			expect((await get(instance, 'jsx-escaped.js')).body).toEqual(expected);
-		});
+	// 	it('should not change escaped HTML characters', async () => {
+	// 		const expected = await readFile(env, 'jsx-escaped.expected.js');
+	// 		expect((await get(instance, 'jsx-escaped.js')).body).toEqual(expected);
+	// 	});
 
-		it('should transform self-closed components', async () => {
-			const expected = await readFile(env, 'jsx-self-closed.expected.js');
-			expect((await get(instance, 'jsx-self-closed.js')).body).toEqual(expected);
-		});
-	});
+	// 	it('should transform self-closed components', async () => {
+	// 		const expected = await readFile(env, 'jsx-self-closed.expected.js');
+	// 		expect((await get(instance, 'jsx-self-closed.js')).body).toEqual(expected);
+	// 	});
+	// });
 
 	describe('css', () => {
 		// wmr/162
