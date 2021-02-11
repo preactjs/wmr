@@ -83,6 +83,11 @@ class JSXImportAppender extends Visitor.default {
 	}
 }
 
+/**
+ * Transform SASS files with node-sass.
+ * @param {import('@swc/core').Options} [options]
+ * @returns {import('rollup').Plugin}
+ */
 const swcPlugin = (options = {}) => ({
 	name: 'swc',
 	async transform(code, filename) {
@@ -92,6 +97,11 @@ const swcPlugin = (options = {}) => ({
 	}
 });
 
+/**
+ * Transform SASS files with node-sass.
+ * @param {'typescript' | 'jsx'} [type]
+ * @returns {import('rollup').Plugin}
+ */
 const createSwcPlugin = type => {
 	if (type === 'typescript') {
 		return swcPlugin({
@@ -104,7 +114,10 @@ const createSwcPlugin = type => {
 				transform: {
 					react: {
 						pragma: 'h',
-						pragmaFrag: 'Fragment'
+						pragmaFrag: 'Fragment',
+						development: false,
+						throwIfNamespace: false,
+						useBuiltins: false
 					}
 				},
 				parser: {
@@ -126,7 +139,10 @@ const createSwcPlugin = type => {
 				transform: {
 					react: {
 						pragma: 'h',
-						pragmaFrag: 'Fragment'
+						pragmaFrag: 'Fragment',
+						development: false,
+						throwIfNamespace: false,
+						useBuiltins: false
 					}
 				},
 				parser: {
