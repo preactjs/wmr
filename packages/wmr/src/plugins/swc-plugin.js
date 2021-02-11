@@ -135,20 +135,16 @@ const jsxOptions = {
 
 /**
  * Transform SASS files with node-sass.
- * @param {object} [options]
- * @param {boolean} [options.jsx]
- * @param {boolean} [options.typescript]
  * @returns {import('rollup').Plugin}
  */
-const swcPlugin = (options = {}) => ({
+const swcPlugin = () => ({
 	name: 'swc',
 	async transform(code, filename) {
-		if (!options.typescript && !options.jsx) return null;
-		if (filename.includes('npm') || !/\.(jsx?|tsx?)$/.test(filename)) return null;
+		if (/^[\0\b]/.test(filename) || !/\.(mjs|jsx?|tsx?)$/.test(filename)) return null;
 
 		let result = { code };
-		if (options.typescript) result = await swc.transform(result.code, { ...typeScriptOptions, filename });
-		if (options.jsx) result = await swc.transform(result.code, { ...jsxOptions, filename });
+		if (/tsx?$/.test(filename)) result = await swc.transform(result.code, { ...typeScriptOptions, filename });
+		else result = await swc.transform(result.code, { ...jsxOptions, filename });
 
 		return result;
 	}

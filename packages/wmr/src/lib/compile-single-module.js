@@ -46,7 +46,7 @@ export const compileSingleModule = withCache(async (input, { cwd, out }) => {
 					return { id, external: true, moduleSideEffects: true };
 				}
 			},
-			swcPlugin({ typescript: true, jsx: true }),
+			swcPlugin(),
 			wmrPlugin()
 		]
 	});

@@ -69,7 +69,7 @@ export default function wmrMiddleware({
 			jsonPlugin(),
 			bundlePlugin({ inline: true, cwd }),
 			aliasesPlugin({ aliases, cwd: root }),
-			swcPlugin({ typescript: true, jsx: true }),
+			swcPlugin(),
 			processGlobalPlugin({ NODE_ENV: 'development', env }),
 			sassPlugin(),
 			wmrPlugin({ hot: true, preact: features.preact }),
