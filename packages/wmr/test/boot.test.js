@@ -47,7 +47,7 @@ describe('boot', () => {
 		await waitForMessage(instance.output, /Wrote/);
 
 		const files = (await fs.readdir(env.tmp.path)).filter(file => !file.startsWith('.env'));
-		expect(files).toEqual(['dist', 'public']);
+		expect(files).toEqual(['dist', 'node_modules', 'public']);
 
 		const dist = await fs.readdir(path.join(env.tmp.path, 'dist'));
 		expect(dist).toContainEqual(expect.stringMatching(/^index\.[a-z0-9]+\.js$/));
