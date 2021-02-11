@@ -83,77 +83,75 @@ class JSXImportAppender extends Visitor.default {
 	}
 }
 
+const typeScriptOptions = {
+	test: '.*.tsx?$',
+	plugin: m => {
+		return new JSXImportAppender().visitModule(m);
+	},
+	jsc: {
+		loose: true,
+		transform: {
+			react: {
+				pragma: 'h',
+				pragmaFrag: 'Fragment',
+				development: false,
+				throwIfNamespace: false,
+				useBuiltins: false
+			}
+		},
+		parser: {
+			syntax: 'typescript',
+			tsx: true,
+			dynamicImport: true
+		},
+		target: 'es2018'
+	}
+};
+
+const jsxOptions = {
+	test: '.*.jsx?$',
+	plugin: m => {
+		return new JSXImportAppender().visitModule(m);
+	},
+	jsc: {
+		loose: true,
+		transform: {
+			react: {
+				pragma: 'h',
+				pragmaFrag: 'Fragment',
+				development: false,
+				throwIfNamespace: false,
+				useBuiltins: false
+			}
+		},
+		parser: {
+			syntax: 'ecmascript',
+			jsx: true,
+			dynamicImport: true
+		},
+		target: 'es2018'
+	}
+};
+
 /**
  * Transform SASS files with node-sass.
- * @param {import('@swc/core').Options} [options]
+ * @param {object} [options]
+ * @param {boolean} [options.jsx]
+ * @param {boolean} [options.typescript]
  * @returns {import('rollup').Plugin}
  */
 const swcPlugin = (options = {}) => ({
 	name: 'swc',
 	async transform(code, filename) {
+		if (!options.typescript && !options.jsx) return null;
 		if (filename.includes('npm') || !/\.(jsx?|tsx?)$/.test(filename)) return null;
-		options.filename = filename;
-		return await swc.transform(code, { ...options });
+
+		let result = { code };
+		if (options.typescript) result = await swc.transform(result.code, { ...typeScriptOptions, filename });
+		if (options.jsx) result = await swc.transform(result.code, { ...jsxOptions, filename });
+
+		return result;
 	}
 });
 
-/**
- * Transform SASS files with node-sass.
- * @param {'typescript' | 'jsx'} [type]
- * @returns {import('rollup').Plugin}
- */
-const createSwcPlugin = type => {
-	if (type === 'typescript') {
-		return swcPlugin({
-			test: '.*.tsx?$',
-			plugin: m => {
-				return new JSXImportAppender().visitModule(m);
-			},
-			jsc: {
-				loose: true,
-				transform: {
-					react: {
-						pragma: 'h',
-						pragmaFrag: 'Fragment',
-						development: false,
-						throwIfNamespace: false,
-						useBuiltins: false
-					}
-				},
-				parser: {
-					syntax: 'typescript',
-					tsx: true,
-					dynamicImport: true
-				},
-				target: 'es2018'
-			}
-		});
-	} else if (type === 'jsx') {
-		return swcPlugin({
-			test: '.*.jsx?$',
-			plugin: m => {
-				return new JSXImportAppender().visitModule(m);
-			},
-			jsc: {
-				loose: true,
-				transform: {
-					react: {
-						pragma: 'h',
-						pragmaFrag: 'Fragment',
-						development: false,
-						throwIfNamespace: false,
-						useBuiltins: false
-					}
-				},
-				parser: {
-					syntax: 'ecmascript',
-					jsx: true,
-					dynamicImport: true
-				},
-				target: 'es2018'
-			}
-		});
-	}
-};
-
-export default createSwcPlugin;
+export default swcPlugin;

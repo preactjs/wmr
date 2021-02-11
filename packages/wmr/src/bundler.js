@@ -94,8 +94,7 @@ export async function bundleProd({
 		plugins: plugins.concat([
 			nodeBuiltinsPlugin({ production: true }),
 			externalUrlsPlugin(),
-			swcPlugin('typescript'),
-			swcPlugin('jsx'),
+			swcPlugin({ typescript: true, jsx: true }),
 			htmlEntriesPlugin({ cwd, publicDir, publicPath }),
 			(dynamicImportVars.default || dynamicImportVars)({
 				include: /\.(m?jsx?|tsx?)$/,
