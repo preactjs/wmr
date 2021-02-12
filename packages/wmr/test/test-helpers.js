@@ -159,6 +159,7 @@ export async function waitFor(fn, timeout = 2000) {
  */
 export async function waitForMessage(haystack, message, timeout = 5000) {
 	const found = await waitFor(() => {
+		console.log(haystack);
 		if (typeof message === 'string') {
 			if (haystack.includes(message)) {
 				return true;

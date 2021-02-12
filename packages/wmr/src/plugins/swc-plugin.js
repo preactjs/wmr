@@ -2,7 +2,25 @@ import Visitor from '@swc/core/Visitor.js';
 import swc from '@swc/core';
 
 class JSXImportAppender extends Visitor.default {
+	constructor() {
+		super();
+		this.hasJSX = false;
+	}
+
+	visitTsType(e) {
+		return e;
+	}
+
+	visitJSXOpeningElement(e) {
+		this.hasJSX = true;
+		return super.visitJSXOpeningElement(e);
+	}
+
 	visitModule(e) {
+		super.visitModule(e);
+
+		if (!this.hasJSX) return e;
+
 		const imports = e.body.filter(d => d.type === 'ImportDeclaration');
 		const preactImport = imports.find(imp => imp.source.value === 'preact');
 
