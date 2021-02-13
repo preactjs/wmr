@@ -35,6 +35,7 @@ const pathToPosix = p => p.split(sep).join(posix.sep);
  * @property {string} [root = ''] cwd without implicit ./public dir
  * @property {string} [publicDir = '']
  * @property {string} [publicPath = '/']
+ * @property {object} [features]
  * @property {string} [out = '.cache']
  * @property {boolean} [sourcemap]
  * @property {boolean} [minify = true]
@@ -71,7 +72,8 @@ export async function bundleProd({
 	plugins,
 	output,
 	minify = true,
-	npmChunks = false
+	npmChunks = false,
+	features
 }) {
 	cwd = cwd || '';
 	root = root || cwd;
@@ -94,7 +96,7 @@ export async function bundleProd({
 		plugins: plugins.concat([
 			nodeBuiltinsPlugin({ production: true }),
 			externalUrlsPlugin(),
-			swcPlugin(),
+			swcPlugin({ jsx: features.jsx, from: features.from }),
 			htmlEntriesPlugin({ cwd, publicDir, publicPath }),
 			(dynamicImportVars.default || dynamicImportVars)({
 				include: /\.(m?jsx?|tsx?)$/,

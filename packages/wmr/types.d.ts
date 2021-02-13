@@ -12,7 +12,9 @@ declare module 'wmr' {
 
 	export type Features = {
 		preact: boolean;
-	};
+		jsx: string;
+		from: string;
+	}
 
 	export interface Options {
 		prod: boolean;
