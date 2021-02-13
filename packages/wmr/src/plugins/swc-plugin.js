@@ -143,10 +143,9 @@ const swcPlugin = ({ jsx = 'h', from = 'preact' }) => ({
 				filename,
 				plugin: m => {
 					return new JSXImportAppender({ jsx, from }).visitModule(m);
-				},
+				}
 			});
-		}
-		else {
+		} else {
 			result = await swc.transform(result.code, {
 				test: '.*.jsx?$',
 				jsc: {
@@ -170,7 +169,7 @@ const swcPlugin = ({ jsx = 'h', from = 'preact' }) => ({
 				filename,
 				plugin: m => {
 					return new JSXImportAppender({ jsx, from }).visitModule(m);
-				},
+				}
 			});
 		}
 
