@@ -17,6 +17,7 @@ export async function normalizeOptions(options, mode) {
 	options.plugins = [];
 	options.output = [];
 	options.middleware = [];
+	options.features = { preact: true };
 
 	// `wmr` / `wmr start` is a development command.
 	// `wmr build` / `wmr serve` are production commands.
