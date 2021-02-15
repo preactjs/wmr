@@ -22,11 +22,6 @@ import externalUrlsPlugin from './plugins/external-urls-plugin.js';
 // import { resolvePackageVersion } from './plugins/npm-plugin/registry.js';
 
 const NOOP = () => {};
-const getCacheKeyById = id =>
-	id
-		.replace(/^[\0\b]/, '')
-		.split(sep)
-		.join(posix.sep);
 
 /**
  * In-memory cache of files that have been generated and written to .cache/
@@ -159,8 +154,12 @@ export default function wmrMiddleware({
 
 		let file = resolve(cwd, osPath);
 
-		// Rollup-style CWD-relative path "id":
-		let id = relative(cwd, file).replace(/^\.\//, '');
+		// Rollup-style CWD-relative Unix-normalized path "id":
+		let id = relative(cwd, file)
+			.replace(/^\.\//, '')
+			.replace(/^[\0\b]/, '')
+			.split(sep)
+			.join(posix.sep);
 
 		// add back any prefix if there was one:
 		file = prefix + file;
@@ -274,8 +273,7 @@ export const TRANSFORMS = {
 	async js({ id, file, prefix, res, cwd, out, NonRollup }) {
 		res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
 
-		const cacheKey = getCacheKeyById(id);
-		if (WRITE_CACHE.has(cacheKey)) return WRITE_CACHE.get(cacheKey);
+		if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
 
 		const resolved = await NonRollup.resolveId(id);
 		const resolvedId = typeof resolved == 'object' ? resolved && resolved.id : resolved;
@@ -350,7 +348,7 @@ export const TRANSFORMS = {
 			}
 		});
 
-		writeCacheFile(out, cacheKey, code);
+		writeCacheFile(out, id, code);
 
 		return code;
 	},
@@ -359,9 +357,8 @@ export const TRANSFORMS = {
 	async cssModule({ id, file, cwd, out, res }) {
 		res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
 
-		const cacheKey = getCacheKeyById(id);
 		// Cache the generated mapping/proxy module with a .js extension (the CSS itself is also cached)
-		if (WRITE_CACHE.has(cacheKey)) return WRITE_CACHE.get(cacheKey);
+		if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
 
 		file = file.replace(/\.js$/, '');
 
@@ -397,7 +394,7 @@ export const TRANSFORMS = {
 			}
 		});
 
-		writeCacheFile(out, cacheKey, code);
+		writeCacheFile(out, id, code);
 
 		return code;
 	},
@@ -412,8 +409,7 @@ export const TRANSFORMS = {
 
 		res.setHeader('Content-Type', 'text/css;charset=utf-8');
 
-		const cacheKey = getCacheKeyById(id);
-		if (WRITE_CACHE.has(cacheKey)) return WRITE_CACHE.get(cacheKey);
+		if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
 
 		const idAbsolute = resolve(cwd, file);
 		let code = await fs.readFile(idAbsolute, 'utf-8');
@@ -433,7 +429,7 @@ export const TRANSFORMS = {
 		// };
 		// await plugin.load.call(context, file);
 
-		writeCacheFile(out, cacheKey, code);
+		writeCacheFile(out, id, code);
 
 		return code;
 	},
