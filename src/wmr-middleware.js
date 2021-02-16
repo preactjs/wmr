@@ -154,8 +154,12 @@ export default function wmrMiddleware({
 
 		let file = resolve(cwd, osPath);
 
-		// Rollup-style CWD-relative path "id":
-		let id = relative(cwd, file).replace(/^\.\//, '');
+		// Rollup-style CWD-relative Unix-normalized path "id":
+		let id = relative(cwd, file)
+			.replace(/^\.\//, '')
+			.replace(/^[\0\b]/, '')
+			.split(sep)
+			.join(posix.sep);
 
 		// add back any prefix if there was one:
 		file = prefix + file;
@@ -269,11 +273,7 @@ export const TRANSFORMS = {
 	async js({ id, file, prefix, res, cwd, out, NonRollup }) {
 		res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
 
-		const cacheKey = id
-			.replace(/^[\0\b]/, '')
-			.split(sep)
-			.join(posix.sep);
-		if (WRITE_CACHE.has(cacheKey)) return WRITE_CACHE.get(cacheKey);
+		if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
 
 		const resolved = await NonRollup.resolveId(id);
 		const resolvedId = typeof resolved == 'object' ? resolved && resolved.id : resolved;
@@ -348,7 +348,7 @@ export const TRANSFORMS = {
 			}
 		});
 
-		writeCacheFile(out, cacheKey, code);
+		writeCacheFile(out, id, code);
 
 		return code;
 	},
