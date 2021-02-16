@@ -147,7 +147,7 @@ export async function bundleProd({
 			return fileName;
 		},
 		hoistTransitiveImports: true,
-		plugins: minify ? [terser({ compress: true, sourcemap })] : [],
+		plugins: [minify && terser({ compress: true, sourcemap })],
 		sourcemap,
 		sourcemapPathTransform(p, mapPath) {
 			let url = pathToPosix(relative(cwd, resolve(dirname(mapPath), p)));
