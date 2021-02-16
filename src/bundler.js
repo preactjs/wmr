@@ -130,9 +130,7 @@ export async function bundleProd({
 			optimizeGraphPlugin({ publicPath }),
 			minify && minifyCssPlugin({ sourcemap }),
 			copyAssetsPlugin({ cwd })
-		]
-			.concat(plugins || [])
-			.filter(Boolean)
+		])
 	});
 
 	/** @type {import('rollup').OutputOptions} */
