@@ -150,7 +150,7 @@ export function style(filename, id) {
 function updateStyleSheet(url) {
 	const sheets = document.styleSheets;
 	for (let i = 0; i < sheets.length; i++) {
-		if (strip(sheets[i].href) === url) {
+		if (sheets[i].href && strip(sheets[i].href) === url) {
 			// @ts-ignore
 			sheets[i].ownerNode.href = strip(url) + '?t=' + Date.now();
 			return true;

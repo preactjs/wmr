@@ -42,7 +42,7 @@ const pathToPosix = p => p.split(sep).join(posix.sep);
  * @property {Record<string, string>} [aliases] module aliases
  * @property {boolean} [profile] Enable bundler performance profiling
  * @property {Record<string, string>} [env]
- * @property {import('rollup').Plugin[]} [plugins]
+ * @property {import('rollup').Plugin[]} plugins
  * @property {Output | Output[]} [output]
  * @property {(error: BuildError)=>void} [onError]
  * @property {(error: BuildEvent)=>void} [onBuild]
@@ -92,7 +92,7 @@ export async function bundleProd({
 		perf: !!profile,
 		preserveEntrySignatures: 'allow-extension',
 		manualChunks: npmChunks ? extractNpmChunks : undefined,
-		plugins: [
+		plugins: plugins.concat([
 			nodeBuiltinsPlugin({ production: true }),
 			externalUrlsPlugin(),
 			sucrasePlugin({

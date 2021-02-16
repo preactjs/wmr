@@ -6,7 +6,7 @@
  * @returns {import('rollup').Plugin}
  */
 export default function processGlobalPlugin({ NODE_ENV = 'development', env = {} } = {}) {
-	const processObj = `{env:${JSON.stringify({ ...env, NODE_ENV })}}`;
+	const processObj = JSON.stringify({ browser: true, env: { ...env, NODE_ENV } });
 
 	return {
 		name: 'process-global',

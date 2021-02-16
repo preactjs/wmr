@@ -127,8 +127,9 @@ function App() {
 
 ## Configuration and plugins
 
-WMR supports a `wmr.config.js` (or `wmr.config.mjs`) configuration file.
-You can export a `default` config function, or individual config functions for each of the `start`, `build` and `serve` commands:
+WMR supports a `wmr.config.js` _(or `wmr.config.mjs`)_ configuration file, which can be used to set [WMR's options](https://github.com/preactjs/wmr/blob/master/types.d.ts) and inject [Rollup plugins](https://github.com/rollup/plugins) or [Polka/Express middleware](https://github.com/lukeed/polka#middleware).
+
+You can export a `default` config function applied to all WMR commands, or individual functions for `start`, `build` and `serve`:
 
 ```js
 // wmr.config.mjs
@@ -154,50 +155,33 @@ export default async function (config) {
 	}
 }
 
-// OR
-
+// Or configure each WMR command separately:
 export async function start(config) {
 	// equivalent to `config.mode === 'start'`
 }
-
 export async function build(config) {
 	// equivalent to `config.mode === 'build'`
 }
-
 export async function serve(config) {
 	// equivalent to `config.mode === 'serve'`
 }
 ```
 
+> **Note:** remember to add `"type":"module"` to your package.json _or_ use the `.mjs` file extension to make the file a JS module.
+
 See [the full list of options](https://github.com/preactjs/wmr/blob/master/types.d.ts).
 
 ## Recipes
 
-Here we'll outline some recipes that might come in handy when making an application with `wmr`.
+Most applications can be built with WMR without any configuration or plugins.
+However, sometimes a bit of configuration can help optimize the output or simplify your development workflow.
 
-### Minifying HTML
+WMR supports Rollup plugins, and there's a growing list of [**configurations and recipes**](https://github.com/preactjs/wmr/wiki/Configuration-Recipes) in the wiki, including:
 
-To minify HTML we can use [rollup-plugin-html-minifier](https://www.npmjs.com/package/rollup-plugin-html-minifier).
-
-```sh
-yarn add rollup-plugin-html-minifier
-## or
-npm i --save rollup-plugin-html-minifier
-```
-
-After we've installed this package we can add it to the config file (`wmr.config.js`).
-
-```js
-import htmlMinifier from 'rollup-plugin-html-minifier';
-
-export function build({ plugins }) {
-	plugins.push(
-		htmlMinifier({
-			// any options here
-		})
-	);
-}
-```
+- [minify the HTML output](https://github.com/preactjs/wmr/wiki/Configuration-Recipes#minifying-html)
+- [import directories of modules](https://github.com/preactjs/wmr/wiki/Configuration-Recipes#importing-directories-of-files)
+- [implement filesystem-based routing](https://github.com/preactjs/wmr/wiki/Configuration-Recipes#filesystem-based-routing--page-component-loading)
+- [add a service worker](https://github.com/preactjs/wmr/wiki/Configuration-Recipes#service-worker)
 
 ## Contributing
 

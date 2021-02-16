@@ -1,6 +1,6 @@
 {
 	"name": "create-wmr",
-	"version": "0.1.2",
+	"version": "0.1.3",
 	"description": "",
 	"main": "./dist/index.js",
 	"bin": "./dist/index.js",
@@ -23,6 +23,6 @@
 		"sade": "^1.7.4"
 	},
 	"engines": {
-		"node": ">=14"
+		"node": ">=12"
 	}
 }

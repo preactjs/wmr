@@ -21,6 +21,12 @@ describe('fixtures', () => {
 		instance.close();
 	});
 
+	it('should import absolute file', async () => {
+		await loadFixture('import-absolute', env);
+		instance = await runWmrFast(env.tmp.path);
+		expect(await getOutput(env, instance)).toMatch(`foo`);
+	});
+
 	it('should import relative file', async () => {
 		await loadFixture('import-relative', env);
 		instance = await runWmrFast(env.tmp.path);

@@ -94,28 +94,6 @@ function resolveExportMap(exp, entry, envKeys) {
 	let isFileListing;
 	let isDirectoryExposed = false;
 
-	// Alternative Version: prioritized export keys
-	// We could use this to prefer `module` over `browser`.
-	// const keys = Object.keys(exp);
-	// if (keys.length === 0) return false;
-	// isFileListing = keys[0][0] === '.';
-	// if (isFileListing) {
-	// 	for (const i of keys) {
-	// 		if (i === entry) {
-	// 			return resolveExportMap(exp[i], entry, envKeys);
-	// 		}
-	// 		if (!isDirectoryExposed && i.endsWith('/') && entry.startsWith(i)) {
-	// 			isDirectoryExposed = true;
-	// 		}
-	// 	}
-	// } else {
-	// 	for (let i of envKeys) {
-	// 		if (exp.hasOwnProperty(i)) {
-	// 			return resolveExportMap(exp[i], entry, envKeys);
-	// 		}
-	// 	}
-	// }
-
 	let fallbacks = [];
 	for (let i in exp) {
 		if (isFileListing === undefined) isFileListing = i[0] === '.';
