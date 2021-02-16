@@ -67,6 +67,12 @@ export function Router(props) {
 	let a = children.filter(c => c.props.path === path);
 	if (a.length == 0) a = children.filter(c => c.props.default);
 	curChildren.current = a.map((p, i) => cloneElement(p, { path, query }));
+
+	// If our only children is resolved, no need to render the fallback(prevChildren)
+	if (typeof curChildren.current[0].type._r || !!curChildren.current[0].type._r) {
+		return curChildren.current;
+	}
+
 	return curChildren.current.concat(prevChildren.current || []);
 }
 

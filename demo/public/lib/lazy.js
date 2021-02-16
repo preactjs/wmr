@@ -3,14 +3,19 @@ import { useState, useRef } from 'preact/hooks';
 
 export default function lazy(load) {
 	let p, c;
-	return props => {
+	function inner(props) {
 		if (!p) p = load().then(m => ((c = (m && m.default) || m), 1));
 		const [, update] = useState(0);
 		const r = useRef(c);
 		if (!r.current) r.current = p.then(update);
 		if (c === undefined) throw p;
+		inner._r = true;
 		return h(c, props);
-	};
+	}
+
+	inner._r = false;
+
+	return inner;
 }
 
 export function ErrorBoundary(props) {
