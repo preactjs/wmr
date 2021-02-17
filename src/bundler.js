@@ -177,6 +177,8 @@ export async function bundleProd({
 		}
 	}
 
+	await bundle.close();
+
 	return result;
 }
 
