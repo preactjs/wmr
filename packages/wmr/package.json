@@ -1,3 +1,4 @@
+
 {
 	"name": "wmr",
 	"version": "1.1.0",
@@ -7,7 +8,7 @@
 		"demo": "cd demo && node --experimental-modules ../src/cli.js 2>&1",
 		"demo:prod": "cd demo && node --experimental-modules ../src/cli.js build --prerender 2>&1",
 		"demo:serve": "cd demo && node --experimental-modules ../src/cli.js serve",
-		"dev": "PROFILE=true nodemon -w src --exec \"npm run -s demo\"",
+		"dev": "cross-env PROFILE=true nodemon -w src --exec \"npm run -s demo\"",
 		"build": "rollup -c",
 		"ci": "npm run build && cd demo && node ../wmr.cjs build --prerender",
 		"prepack": "node --experimental-modules ./src/lib/~publish.js",
@@ -137,13 +138,13 @@
 		"premove": "^3.0.1",
 		"prettier": "^2.0.5",
 		"puppeteer": "^3.3.0",
-		"rollup": "^2.21.0",
+		"rollup": "^2.39.0",
 		"rollup-plugin-preserve-shebang": "^1.0.1",
 		"sade": "^1.7.3",
 		"semver": "^7.3.2",
 		"sirv": "^1.0.6",
 		"stylis": "^4.0.2",
-		"sucrase": "^3.17.0",
+		"sucrase": "^3.15.0",
 		"tar-stream": "^2.1.3",
 		"terser": "^4.8.0",
 		"tmp-promise": "^3.0.2",
@@ -156,8 +157,5 @@
 	},
 	"engines": {
 		"node": ">=12"
-	},
-	"dependencies": {
-		"@swc/core": "^1.2.47"
 	}
 }
