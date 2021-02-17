@@ -4,6 +4,6 @@ dist
 node_modules
 wmr.cjs
 package-lock.json
-!node_modules/fake-lib
-!test/fixtures/package-exports/node_modules
+!packages/wmr/test/fixtures/node_modules/fake-lib
+!packages/wmr/test/fixtures/package-exports/node_modules
 .DS_Store
