@@ -1,0 +1,10 @@
+{
+	"alias": {
+		"react": "preact/compat",
+		"react-dom": "preact/compat",
+		"@material/dom/dist/mdc.dom.js": "@material/dom"
+	},
+	"resolutions": {
+		"@material/**": "^5.0.0"
+	}
+}
