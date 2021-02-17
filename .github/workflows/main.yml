@@ -21,11 +21,11 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - name: Install
-        run: cd packages/wmr && npm ci
+        run: yarn --frozen-lockfile
       - name: Build
-        run: cd packages/wmr && npm run build
+        run: yarn workspace wmr build
       - name: Test
-        run: ncd packages/wmr && pm test
+        run: yarn workspace wmr test
   lhci:
     runs-on: ubuntu-latest
     steps:
@@ -36,10 +36,10 @@ jobs:
         with:
           node-version: 14.x
       - name: Prepare LHCI
-        run: cd packages/wmr && npm install -g @lhci/cli@0.4.x
+        run: npm install -g @lhci/cli@0.4.x
       - name: Install
-        run: cd packages/wmr && npm ci
+        run: yarn --frozen-lockfile
       - name: Build
-        run: cd packages/wmr && npm run ci
+        run: yarn workspace wmr ci
       - name: LHCI
         run: cd packages/wmr && lhci autorun --upload.target=temporary-public-storage --collect.url="http://localhost:8080" --collect.startServerCommand="npm run demo:serve" --upload.githubAppToken=${{ secrets.LHCI_GITHUB_APP_TOKEN }}

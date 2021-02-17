@@ -1,11 +1,8 @@
 {
-	"name": "wmr-monorepo",
+	"name": "wmr",
 	"version": "1.1.0",
 	"bin": "wmr.cjs",
 	"type": "module",
-	"workspaces": [
-		"packages/**"
-	],
 	"scripts": {
 		"demo": "cd demo && node --experimental-modules ../src/cli.js 2>&1",
 		"demo:prod": "cd demo && node --experimental-modules ../src/cli.js build --prerender 2>&1",

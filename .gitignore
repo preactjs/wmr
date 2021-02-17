@@ -3,7 +3,7 @@
 dist
 node_modules
 wmr.cjs
-yarn.lock
+package-lock.lock
 !node_modules/fake-lib
 !test/fixtures/package-exports/node_modules
 .DS_Store
