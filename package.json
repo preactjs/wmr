@@ -4,9 +4,11 @@
 	"workspaces": {
 		"packages": [
 			"./packages/*"
-		],
-		"nohoist": ["**/devcert/**"]
-}	,
+		]
+	},
+	"scripts": {
+		"ci": "yarn workspace wmr ci"
+	},
 	"eslintConfig": {
 		"extends": [
 			"developit",

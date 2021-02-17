@@ -13,6 +13,6 @@ jobs:
         uses: preactjs/compressed-size-action@v2
         with:
           pattern: 'packages/demo/{wmr.cjs,demo/dist/**/*.{js,css,html}}'
-          build-script: workspace wmr ci
+          build-script: ci
           strip-hash: "\\.(\\w{8})\\.(?:js|css)$"
           repo-token: '${{ secrets.GITHUB_TOKEN }}'
