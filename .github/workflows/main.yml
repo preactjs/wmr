@@ -21,11 +21,11 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - name: Install
-        run: npm ci
+        run: cd packages/wmr && npm ci
       - name: Build
-        run: npm run build
+        run: cd packages/wmr && npm run build
       - name: Test
-        run: npm test
+        run: ncd packages/wmr && pm test
   lhci:
     runs-on: ubuntu-latest
     steps:
@@ -36,10 +36,10 @@ jobs:
         with:
           node-version: 14.x
       - name: Prepare LHCI
-        run: npm install -g @lhci/cli@0.4.x
+        run: cd packages/wmr && npm install -g @lhci/cli@0.4.x
       - name: Install
-        run: npm ci
+        run: cd packages/wmr && npm ci
       - name: Build
-        run: npm run ci
+        run: cd packages/wmr && npm run ci
       - name: LHCI
-        run: lhci autorun --upload.target=temporary-public-storage --collect.url="http://localhost:8080" --collect.startServerCommand="npm run demo:serve" --upload.githubAppToken=${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+        run: cd packages/wmr && lhci autorun --upload.target=temporary-public-storage --collect.url="http://localhost:8080" --collect.startServerCommand="npm run demo:serve" --upload.githubAppToken=${{ secrets.LHCI_GITHUB_APP_TOKEN }}
