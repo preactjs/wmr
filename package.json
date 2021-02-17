@@ -74,6 +74,8 @@
 		"preset": "jest-puppeteer"
 	},
 	"devDependencies": {
+		"@changesets/changelog-github": "^0.2.7",
+    "@changesets/cli": "^2.12.0",
 		"eslint": "^7.4.0",
 		"eslint-config-developit": "^1.2.0",
 		"eslint-config-prettier": "^6.11.0",
@@ -81,7 +83,6 @@
 		"eslint-plugin-prettier": "^3.1.4",
 		"husky": "^4.2.5",
 		"lint-staged": "^10.2.11",
-		"npm-merge-driver-install": "^1.1.1",
 		"prettier": "^2.0.5"
 	}
 }
