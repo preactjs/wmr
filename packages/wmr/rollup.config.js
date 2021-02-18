@@ -24,7 +24,6 @@ const config = {
 			{
 				name: 'minify',
 				renderChunk(code) {
-					return code;
 					const result = terser.minify(code, {
 						ecma: 2019,
 						module: true,
