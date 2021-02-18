@@ -91,7 +91,7 @@ export function Router(props) {
 	curChildren.current = a.map((p, i) => cloneElement(p, { path, query }));
 
 	// If our only children is resolved, no need to render the fallback(prevChildren)
-	if (typeof curChildren.current[0].type._r || !!curChildren.current[0].type._r) {
+	if (typeof curChildren.current[0].type._resolved === 'undefined' || !!curChildren.current[0].type._resolved) {
 		return curChildren.current;
 	}
 
