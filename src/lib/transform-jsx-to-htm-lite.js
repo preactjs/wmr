@@ -63,9 +63,10 @@ export default function transformJsxToHtmLite({ types: t }, options = {}) {
 
 				if (isRootElement(path)) {
 					path.prependString(tagString + '`');
-				}
-				if (path.node.selfClosing) {
-					path.appendString('`');
+
+					if (path.node.selfClosing) {
+						path.appendString('`');
+					}
 				}
 			},
 			JSXClosingElement(path) {
