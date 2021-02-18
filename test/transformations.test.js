@@ -44,6 +44,11 @@ describe('transformations', () => {
 			const expected = await readFile(env, 'jsx-escaped.expected.js');
 			expect((await get(instance, 'jsx-escaped.js')).body).toEqual(expected);
 		});
+
+		it('should transform self-closed components', async () => {
+			const expected = await readFile(env, 'jsx-self-closed.expected.js');
+			expect((await get(instance, 'jsx-self-closed.js')).body).toEqual(expected);
+		});
 	});
 
 	describe('css', () => {
