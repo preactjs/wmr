@@ -181,6 +181,7 @@ WMR supports Rollup plugins, and there's a growing list of [**configurations and
 - [minify the HTML output](https://github.com/preactjs/wmr/wiki/Configuration-Recipes#minifying-html)
 - [import directories of modules](https://github.com/preactjs/wmr/wiki/Configuration-Recipes#importing-directories-of-files)
 - [implement filesystem-based routing](https://github.com/preactjs/wmr/wiki/Configuration-Recipes#filesystem-based-routing--page-component-loading)
+- [add a service worker](https://github.com/preactjs/wmr/wiki/Configuration-Recipes#service-worker)
 
 ## Contributing
 
