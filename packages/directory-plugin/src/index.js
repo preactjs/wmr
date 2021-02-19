@@ -8,7 +8,7 @@ const pathToPosix = p => p.split(path.sep).join(path.posix.sep);
  * @param {string} [options.cwd]
  * @returns {import('rollup').Plugin}
  */
-function lsPlugin({ cwd } = {}) {
+function directoryPlugin({ cwd } = {}) {
   return {
     name: 'directory',
     async resolveId(id, importer) {
@@ -37,4 +37,4 @@ function lsPlugin({ cwd } = {}) {
   };
 }
 
-export default lsPlugin;
+export default directoryPlugin;

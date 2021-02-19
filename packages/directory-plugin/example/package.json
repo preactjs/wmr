@@ -1,6 +1,6 @@
 {
 	"scripts": {
-		"dev": "cross-env DEBUG=1 node --experimental-modules ../../wmr/src/cli.js 2>&1"
+		"dev": "cross-env node --experimental-modules ../../wmr/src/cli.js 2>&1"
 	},
 	"type": "module",
 	"devDependencies": {
