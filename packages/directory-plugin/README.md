@@ -3,7 +3,7 @@
 Allows you to import multiple files like this:
 
 ```js
-import files from 'ls:./pages';
+import files from 'directory:./pages';
 console.log(files); // ['home.js', 'about.js']
 ```
 
