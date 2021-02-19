@@ -2,7 +2,7 @@
   "$schema": "https://unpkg.com/@changesets/config@1.1.0/schema.json",
   "changelog": [
     "@changesets/changelog-github",
-    { "repo": "JoviDeCroock/prefresh" }
+    { "repo": "preactjs/wmr" }
   ],
   "commit": false,
   "access": "public",
