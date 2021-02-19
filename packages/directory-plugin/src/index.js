@@ -12,19 +12,19 @@ function lsPlugin({ cwd } = {}) {
   return {
     name: 'directory',
     async resolveId(id, importer) {
-			if (!id.startsWith('ls:')) return;
+			if (!id.startsWith('directory:')) return;
 
-      const resolved = await this.resolve(id.slice(3) + '\0', importer, { skipSelf: true });
+      const resolved = await this.resolve(id.slice(10) + '\0', importer, { skipSelf: true });
 
       if (resolved) {
-				return '\0ls:' + pathToPosix(resolved.id).replace(/\0$/, '');
+				return '\0directory:' + pathToPosix(resolved.id).replace(/\0$/, '');
 			}
     },
     async load(id) {
-      if (!id.startsWith('\0ls:')) return;
+      if (!id.startsWith('\0directory:')) return;
 
       // remove the "\0ls:" prefix and convert to an absolute path:
-      id = path.resolve(cwd || '.', id.slice(4));
+      id = path.resolve(cwd || '.', id.slice(11));
 
       // watch the directory for changes:
       this.addWatchFile(id);
