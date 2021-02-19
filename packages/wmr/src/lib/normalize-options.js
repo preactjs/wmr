@@ -1,5 +1,6 @@
 import { resolve, join } from 'path';
 import { promises as fs } from 'fs';
+import url from 'url';
 import { readEnvFiles } from './environment.js';
 
 /**
@@ -67,13 +68,14 @@ export async function normalizeOptions(options, mode) {
 			initialError;
 		try {
 			const resolved = resolve(options.root, initialConfigFile);
+			const fileUrl = url.pathToFileURL(resolved);
 			// Note: the eval() below is to prevent Rollup from transforming import() and require().
 			// Using the native functions allows us to load ESM and CJS with Node's own semantics.
 			try {
-				custom = await eval('(x => import(x))')(resolved);
+				custom = await eval('(x => import(x))')(fileUrl);
 			} catch (err) {
 				initialError = err;
-				custom = eval('(x => require(x))')(resolved);
+				custom = eval('(x => require(x))')(fileUrl);
 			}
 		} catch (e) {
 			if (hasMjsConfig || !/import statement/.test(e)) {
