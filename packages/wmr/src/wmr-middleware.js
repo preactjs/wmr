@@ -29,6 +29,8 @@ const NOOP = () => {};
  */
 const WRITE_CACHE = new Map();
 
+export const moduleGraph = new Map();
+
 /**
  * @param {object} [options]
  * @param {string} [options.cwd = '.']
@@ -120,16 +122,43 @@ export default function wmrMiddleware({
 		pendingChanges.clear();
 	}
 
+	function bubbleUpdates(filename) {
+		// Delete file from the in-memory cache:
+		WRITE_CACHE.delete(filename);
+
+		filename = '/' + filename;
+		const mod = moduleGraph.get(filename);
+
+		if (!mod) return false;
+
+		if (mod.acceptingUpdates) {
+			pendingChanges.add(filename);
+		} else if (mod.dependents.size) {
+			mod.dependents.forEach(function (value) {
+				mod.stale = true;
+				bubbleUpdates(value);
+			});
+		} else {
+			// We need a full-reload signal
+			return false;
+		}
+
+		return true;
+	}
+
 	watcher.on('change', filename => {
 		NonRollup.watchChange(resolve(cwd, filename));
 		// normalize paths to 'nix:
 		filename = filename.split(sep).join(posix.sep);
-		if (!pendingChanges.size) setTimeout(flushChanges, 60);
-		pendingChanges.add('/' + filename);
-		// Delete file from the in-memory cache:
-		WRITE_CACHE.delete(filename);
+
 		// Delete any generated CSS Modules mapping modules:
 		if (/\.module\.css$/.test(filename)) WRITE_CACHE.delete(filename + '.js');
+
+		if (!pendingChanges.size) setTimeout(flushChanges, 60);
+		const result = bubbleUpdates(filename);
+		if (!result) {
+			onChange({ type: 'reload' });
+		}
 	});
 
 	return async (req, res, next) => {
@@ -296,6 +325,11 @@ export const TRANSFORMS = {
 				if (spec === 'wmr') return '/_wmr.js';
 				if (/^(data:|https?:|\/\/)/.test(spec)) return spec;
 
+				if (!moduleGraph.has(importer)) {
+					moduleGraph.set(importer, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
+				}
+				const mod = moduleGraph.get(importer);
+
 				// const resolved = await NonRollup.resolveId(spec, importer);
 				const resolved = await NonRollup.resolveId(spec, file);
 				if (resolved) {
@@ -342,6 +376,19 @@ export const TRANSFORMS = {
 
 					// Option 3: omit root package versions
 					spec = `/@npm/${meta.module}${meta.path ? '/' + meta.path : ''}`;
+				}
+
+				const modSpec = spec.replace('../', '/').replace('./', '/');
+				mod.dependencies.add(modSpec);
+				if (!moduleGraph.has(modSpec)) {
+					moduleGraph.set(modSpec, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
+				}
+
+				const specModule = moduleGraph.get(modSpec);
+				specModule.dependents.add(importer);
+				if (specModule.stale) {
+					specModule.stale = false;
+					return spec + `?t=${Date.now()}`;
 				}
 
 				return spec;

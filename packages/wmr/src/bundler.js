@@ -22,6 +22,7 @@ import optimizeGraphPlugin from './plugins/optimize-graph-plugin.js';
 import externalUrlsPlugin from './plugins/external-urls-plugin.js';
 import copyAssetsPlugin from './plugins/copy-assets-plugin.js';
 import nodeBuiltinsPlugin from './plugins/node-builtins-plugin.js';
+import dynamicImportVars from '@rollup/plugin-dynamic-import-vars';
 
 /** @param {string} p */
 const pathToPosix = p => p.split(sep).join(posix.sep);
@@ -100,6 +101,10 @@ export async function bundleProd({
 				production: true
 			}),
 			htmlEntriesPlugin({ cwd, publicDir, publicPath }),
+			(dynamicImportVars.default || dynamicImportVars)({
+				include: /\.(m?jsx?|tsx?)$/,
+				exclude: /\/node_modules\//
+			}),
 			publicPathPlugin({ publicPath }),
 			aliasesPlugin({ aliases, cwd: root }),
 			htmPlugin({ production: true }),
@@ -171,6 +176,8 @@ export async function bundleProd({
 			);
 		}
 	}
+
+	await bundle.close();
 
 	return result;
 }

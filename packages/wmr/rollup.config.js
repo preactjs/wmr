@@ -92,7 +92,7 @@ const config = {
 			transform(code, id) {
 				if (/devcert[/\\]dist[/\\]platforms[/\\]index\.js$/.test(id)) {
 					const platforms = require('fs')
-						.readdirSync('node_modules/devcert/dist/platforms')
+						.readdirSync('../../node_modules/devcert/dist/platforms')
 						.reduce((str, p) => {
 							const name = p.replace(/\.js$/, '');
 							if (name !== p && name !== 'index') {

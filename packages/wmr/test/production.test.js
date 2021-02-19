@@ -223,4 +223,46 @@ describe('production', () => {
 			expect(html.includes(`src="https://cdn.example.com/${roots[2]}"`)).toBe(true);
 		});
 	});
+
+	describe('Code Splitting', () => {
+		it('should support variables in dynamic import', async () => {
+			await loadFixture('dynamic-import', env);
+			instance = await runWmr(env.tmp.path, 'build', '--prerender');
+			const code = await instance.done;
+			expect(code).toBe(0);
+
+			// make sure all the code ran during prerendering
+			expect(instance.output).toContain(`hello from index.js`);
+			expect(instance.output).toContain(`hello from page one`);
+			expect(instance.output).toContain(`hello from page two`);
+			expect(instance.output).toContain(`loaded pages`);
+			expect(instance.output).toContain(`page one,page two`);
+
+			const readdir = async f => (await fs.readdir(path.join(env.tmp.path, f))).filter(f => f[0] !== '.');
+
+			const root = await readdir('dist');
+			expect(root).toContain('chunks');
+
+			const chunks = await readdir('dist/chunks');
+			expect(chunks).toEqual([expect.stringMatching(/^one\.\w+\.js$/), expect.stringMatching(/^two\.\w+\.js$/)]);
+
+			const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+			cleanup.push(stop);
+
+			const logs = [];
+			env.page.on('console', m => logs.push(m.text()));
+
+			await env.page.goto(address, {
+				waitUntil: ['networkidle0', 'load']
+			});
+
+			expect(logs).toEqual([
+				`hello from index.js`,
+				`hello from page one`,
+				`hello from page two`,
+				`loaded pages`,
+				`page one,page two`
+			]);
+		});
+	});
 });

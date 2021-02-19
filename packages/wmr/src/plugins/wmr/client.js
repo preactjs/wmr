@@ -5,16 +5,24 @@ function log(...args) {
 const strip = url => url.replace(/\?t=\d+/g, '');
 
 const resolve = url => new URL(url, location.origin).href;
-
 let ws;
+
 function connect() {
-	// Pared-down inline version of https://github.com/lukeed/sockette <3
-	ws = new WebSocket(location.origin.replace('http', 'ws') + '/_hmr');
-	ws.onmessage = handleMessage;
-	ws.onerror = handleError;
+	ws = new WebSocket(location.origin.replace('http', 'ws') + '/_hmr', 'hmr');
+	function sendSocketMessage(msg) {
+		ws.send(JSON.stringify(msg));
+	}
+
+	ws.addEventListener('open', () => {
+		queue.forEach(sendSocketMessage);
+		queue = [];
+	});
+
+	ws.addEventListener('message', handleMessage);
+	ws.addEventListener('error', handleError);
 }
 
-setTimeout(connect);
+connect();
 
 let errorCount = 0;
 
@@ -22,6 +30,7 @@ const URL_SUFFIX = /\/(index\.html)?$/;
 
 function handleMessage(e) {
 	const data = JSON.parse(e.data);
+
 	switch (data.type) {
 		case 'reload':
 			window.location.reload();
@@ -94,6 +103,7 @@ function update(url) {
 	const accept = Array.from(mod.accept);
 	const newUrl = url + '?t=' + Date.now();
 	const p = mod.import ? mod.import(newUrl) : import(newUrl);
+
 	return p
 		.then(m => {
 			accept.forEach(c => (c({ module: m }), mod.accept.delete(c)));
@@ -114,11 +124,19 @@ function getMod(url) {
 	return mod;
 }
 
+let queue = [];
+
 // HMR API
 export function createHotContext(url) {
 	const mod = getMod(url);
 	return {
 		accept(fn) {
+			if (!ws || ws.readyState !== ws.OPEN) {
+				queue.push({ id: url.replace(location.origin, ''), type: 'hotAccepted' });
+			} else {
+				ws.send(JSON.stringify({ id: url.replace(location.origin, ''), type: 'hotAccepted' }));
+			}
+
 			mod.accept.add(fn);
 		},
 		dispose(fn) {
