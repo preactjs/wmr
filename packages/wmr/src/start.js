@@ -53,8 +53,8 @@ export default async function start(options = {}) {
 	}
 
 	// eslint-disable-next-line
-	function sendChanges({ changes }) {
-		if (options.reload) {
+	function sendChanges({ changes, reload }) {
+		if (options.reload || reload) {
 			app.ws.broadcast({ type: 'reload' });
 		} else {
 			app.ws.broadcast({

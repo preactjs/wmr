@@ -1,5 +1,6 @@
 import parse from '@polka/url';
 import ws from 'ws';
+import { moduleGraph } from '../wmr-middleware.js';
 
 /**
  * A WebSocket server that can be mounted at a path.
@@ -9,7 +10,23 @@ export default class WebSocketServer extends ws.Server {
 	constructor(server, mountPath) {
 		super({ noServer: true });
 		this.mountPath = mountPath;
+
+		server.on('connection', this.registerListener.bind(this));
 		server.on('upgrade', this._handleUpgrade.bind(this));
+	}
+
+	registerListener(client) {
+		client.on('message', function (data) {
+			const message = JSON.parse(data.toString());
+			if (message.type === 'hotAccepted') {
+				if (!moduleGraph.has(message.id)) {
+					moduleGraph.set(message.id, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
+				}
+
+				const entry = moduleGraph.get(message.id);
+				entry.acceptingUpdates = true;
+			}
+		});
 	}
 
 	broadcast(data) {
@@ -20,10 +37,15 @@ export default class WebSocketServer extends ws.Server {
 	}
 
 	_handleUpgrade(req, socket, head) {
+		if (req.headers['sec-websocket-protocol'] !== 'hmr') {
+			return;
+		}
+
 		const pathname = parse(req).pathname;
 		if (pathname == this.mountPath) {
 			this.handleUpgrade(req, socket, head, client => {
 				client.emit('connection', client, req);
+				this.registerListener(client);
 			});
 		} else {
 			socket.destroy();
