@@ -181,7 +181,6 @@ WMR supports Rollup plugins, and there's a growing list of [**configurations and
 - [minify the HTML output](https://github.com/preactjs/wmr/wiki/Configuration-Recipes#minifying-html)
 - [import directories of modules](https://github.com/preactjs/wmr/wiki/Configuration-Recipes#importing-directories-of-files)
 - [implement filesystem-based routing](https://github.com/preactjs/wmr/wiki/Configuration-Recipes#filesystem-based-routing--page-component-loading)
-- [add a service worker](https://github.com/preactjs/wmr/wiki/Configuration-Recipes#service-worker)
 
 ## Contributing
 
@@ -199,3 +198,15 @@ npm run demo:prod && npm run demo:serve
 # build the single-file CLI:
 npm run build
 ```
+
+### Adding a changeset
+
+Don't forget to also include a changeset, by runing this command at the root of the project:
+
+```sh
+npx changeset
+```
+
+This will take you through a process of selecting the changed packages, the version updates and a description of the change. Aferwards, `changesets`, will generate a `.md` file inside a `.changeset` directory. Please commit that file as well.
+
+After all that, you are good to go. :+1
