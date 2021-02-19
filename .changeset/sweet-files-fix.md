@@ -1,5 +1,5 @@
 ---
-'@wmr/ls-plugin': minor
+'@wmr/directory-plugin': minor
 ---
 
 Initial release
