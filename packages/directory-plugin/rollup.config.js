@@ -8,7 +8,7 @@ const config = {
 	input: 'src/index.js',
 	inlineDynamicImports: true,
 	output: {
-		file: 'ls-plugin.cjs',
+		file: 'directory-plugin.cjs',
 		format: 'cjs',
 		compact: true,
 		freeze: false,

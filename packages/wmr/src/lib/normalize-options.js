@@ -1,4 +1,4 @@
-import { resolve, join } from 'path';
+import { posix, resolve, join } from 'path';
 import { promises as fs } from 'fs';
 import url from 'url';
 import { readEnvFiles } from './environment.js';
@@ -67,6 +67,7 @@ export async function normalizeOptions(options, mode) {
 			initialConfigFile = hasMjsConfig ? 'wmr.config.mjs' : 'wmr.config.js',
 			initialError;
 		try {
+			// TODO: this bugs on windows, prepending file:// fixes it
 			const resolved = resolve(options.root, initialConfigFile);
 			const fileUrl = url.pathToFileURL(resolved);
 			// Note: the eval() below is to prevent Rollup from transforming import() and require().

@@ -1,5 +1,5 @@
 {
-	"name": "@wmr/ls-plugin",
+	"name": "@wmr/directory-plugin",
 	"version": "0.0.0",
 	"type": "module",
 	"scripts": {
@@ -7,23 +7,24 @@
 	},
 	"author": "The Preact Authors (https://preactjs.com)",
 	"license": "MIT",
-  	"repository": {
-		"type": "git",
-		"url": "https://github.com/preactjs/wmr.git",
-    		"directory": "packages/ls-plugin"
-  	},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/preactjs/wmr.git",
+    "directory": "packages/directory-plugin"
+  },
 	"files": [
-		"ls-plugin.cjs",
+		"directory-plugin.cjs",
 		"types.d.ts"
 	],
 	"types": "./types.d.ts",
 	"devDependencies": {
 		"@rollup/plugin-commonjs": "^14.0.0",
 		"@rollup/plugin-node-resolve": "^8.1.0",
-		"rollup": "^2.39.0"
+		"rollup": "^2.39.0",
+		"wmr": "^1.2.0"
 	},
-	"optionalDependencies": {
-		"fsevents": "^2.1.3"
+	"peerDependencies": {
+		"wmr": ">=1.0.0"
 	},
 	"engines": {
 		"node": ">=12"
