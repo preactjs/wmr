@@ -1,4 +1,4 @@
-# @wmr/directory-plugin
+# @wmr-plugins/directory-plugin
 
 Allows you to import multiple files like this:
 
@@ -10,9 +10,9 @@ console.log(files); // ['home.js', 'about.js']
 ## Installation
 
 ```sh
-yarn add @wmr/directory-plugin
+yarn add @wmr-plugins/directory-plugin
 ## or
-npm i --save @wmr/directory-plugin
+npm i --save @wmr-plugins/directory-plugin
 ```
 
 ## Usage
@@ -20,7 +20,7 @@ npm i --save @wmr/directory-plugin
 Enable the plugin by importing _(or pasting!)_ it into your `wmr.config.js`:
 
 ```js
-import lsPlugin from '@wmr/directory-plugin';
+import lsPlugin from '@wmr-plugins/directory-plugin';
 
 export default function (config) {
 	config.plugins.push(lsPlugin(config));
