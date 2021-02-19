@@ -199,3 +199,15 @@ npm run demo:prod && npm run demo:serve
 # build the single-file CLI:
 npm run build
 ```
+
+### Adding a changeset
+
+Don't forget to also include a changeset, by runing this command at the root of the project:
+
+```sh
+npx changeset
+```
+
+This will take you through a process of selecting the changed packages, the version updates and a description of the change. Aferwards, `changesets`, will generate a `.md` file inside a `.changeset` directory. Please commit that file as well.
+
+After all that, you are good to go. :+1
