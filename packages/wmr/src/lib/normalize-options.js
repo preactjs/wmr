@@ -1,4 +1,4 @@
-import { posix, resolve, join } from 'path';
+import { resolve, join } from 'path';
 import { promises as fs } from 'fs';
 import url from 'url';
 import { readEnvFiles } from './environment.js';
