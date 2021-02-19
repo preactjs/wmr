@@ -23,7 +23,7 @@ function lsPlugin({ cwd } = {}) {
     async load(id) {
       if (!id.startsWith('\0directory:')) return;
 
-      // remove the "\0ls:" prefix and convert to an absolute path:
+      // remove the "\0directory:" prefix and convert to an absolute path:
       id = path.resolve(cwd || '.', id.slice(11));
 
       // watch the directory for changes:
