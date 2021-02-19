@@ -6,9 +6,7 @@ const Ctx = {
 };
 
 export default function Demo() {
-	return (
-		$$html`<${Ctx.Foo} value=${{ foo: 123 }}>
+	return $$html`<${Ctx.Foo} value=${{ foo: 123 }}>
 			<div />
-		<//>`
-	);
+		<//>`;
 }

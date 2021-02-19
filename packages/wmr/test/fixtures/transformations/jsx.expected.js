@@ -6,16 +6,16 @@ const LIST = [
 ];
 
 export default function Demo({ name = 'Bob', list = LIST }) {
-	return (
-		$$html`<div id="app">
+	return $$html`<div id="app">
 			<h1>Hello</h1>
 			<p>Name: ${name}</p>
 			<ul>
-				${list.map(item => (
-					$$html`<li ...${item.props} key=${item.id}>
+				${list.map(
+					item =>
+						$$html`<li ...${item.props} key=${item.id}>
 						${item.text}
 					</li>`
-				))}
+				)}
 			</ul>
 			<br />
 			<div>
@@ -23,6 +23,5 @@ export default function Demo({ name = 'Bob', list = LIST }) {
 				<img src=${'/string.jpg'} />
 				<img src=${`/dynamic.${name}.jpg`} />
 			</div>
-		</div>`
-	);
+		</div>`;
 }

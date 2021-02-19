@@ -11,7 +11,7 @@ export async function* x({z: [, {...y}] = [0, {}]} = {}) {
 		<Foo {...y}/>
 	</>;
 }
-const Foo = ({a = 'a'}) => null;
-export {default as foo} from 'data:;text/javascript,export default 42';
+const Foo = ({ a = 'a' }) => null;
+export { default as foo } from 'data:;text/javascript,export default 42';
 import a, { b } from 'data:;text/javascript,export default "a";export const b=43';
 console.log(...[a, b]);

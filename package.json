@@ -44,10 +44,10 @@
 		}
 	},
 	"eslintIgnore": [
-		"wmr.cjs",
-		"test/fixtures/**/*.expected.*",
-		"test/fixtures/*/dist",
-		"test/fixtures/*/.cache"
+		"*.cjs",
+		"packages/wmr/test/fixtures/**/*.expected.*",
+		"packages/wmr/test/fixtures/*/dist",
+		"packages/wmr/test/fixtures/*/.cache"
 	],
 	"prettier": {
 		"singleQuote": true,
