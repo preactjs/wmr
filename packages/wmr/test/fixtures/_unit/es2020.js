@@ -1,4 +1,3 @@
-
 /* eslint-disable */
 // prettier-ignore
 export async function* x({z: [, {...y}] = [0, {}]} = {}) {
