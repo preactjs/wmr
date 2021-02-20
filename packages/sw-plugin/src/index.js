@@ -19,8 +19,9 @@ export default function swPlugin(options) {
 
 	const wmrProxyPlugin = {
 		resolveId(id) {
+			const normalizedId = (id[1] + id[2] === ':\\') ? pathToPosix(id.slice(2)) : id;
 			if (id.startsWith('/@npm/')) return id;
-			if (!/^\.*\//.test(id)) return '/@npm/' + id;
+			if (!/^\.*\//.test(normalizedId)) return '/@npm/' + id;
 		},
 		load(id) {
 			if (id.startsWith('/@npm/'))
@@ -28,9 +29,11 @@ export default function swPlugin(options) {
 					request({ ...loopback, path: id }, res => {
 						let data = '';
 						res.setEncoding('utf-8');
+
 						res.on('data', c => {
 							data += c;
 						});
+
 						res.on('end', () => {
 							y(data);
 						});
@@ -63,12 +66,12 @@ export default function swPlugin(options) {
 			}
 
 			// In development, we bundle to IIFE via Rollup, but use WMR's HTTP server to transpile dependencies:
-			id = path.resolve(options.cwd || '.', id.slice(4));
+			id = path.resolve(options.cwd, id.slice(4));
 
 			try {
 				var { rollup } = await import('rollup');
 			} catch (e) {
-				console.error((e = 'Error: Service Worker compilation requires that you install Rollup:\n  npm i rollup'));
+				console.error((e = 'Error: Service Worker compilation requires that you install Rollup:\n  npm i --save-dev rollup'));
 				return `export default null; throw ${JSON.stringify(e)};`;
 			}
 

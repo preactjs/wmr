@@ -1,5 +1,5 @@
 ---
-'@wmr-plugins/sw-plugin': minor
+'@wmr-plugins/service-worker': minor
 ---
 
 Initial release
