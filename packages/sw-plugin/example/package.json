@@ -1,0 +1,11 @@
+{
+	"scripts": {
+		"dev": "cross-env node --experimental-modules ../../wmr/src/cli.js 2>&1"
+	},
+	"type": "module",
+	"devDependencies": {
+		"cross-env": "7.0.3",
+		"wmr": "latest",
+		"workbox-recipes": "^6.1.0"
+	}
+}

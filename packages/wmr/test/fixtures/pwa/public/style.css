@@ -10,21 +10,21 @@ header {
 	background: #ddd;
 }
 
-header>nav {
+header > nav {
 	flex: 1;
 	display: flex;
 }
 
-header>nav a {
+header > nav a {
 	padding: 10px;
 	color: #673ab8;
 	text-decoration: none;
 }
 
-header>nav a:hover {
+header > nav a:hover {
 	background-color: #f1e9ff;
 }
 
-.app>section {
+.app > section {
 	padding: 20px;
 }

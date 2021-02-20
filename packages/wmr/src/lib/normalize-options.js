@@ -74,6 +74,7 @@ export async function normalizeOptions(options, mode) {
 			try {
 				custom = await eval('(x => import(x))')(fileUrl);
 			} catch (err) {
+				console.log(err);
 				initialError = err;
 				custom = eval('(x => require(x))')(fileUrl);
 			}
