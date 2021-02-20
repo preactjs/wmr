@@ -1,5 +1,7 @@
 /**
- * 
+ * To run the benchmark:
+ * $ npm install benchmarkjs-pretty
+ * $ node test/bench/jsx.js
  */
 
 import fs from 'fs';
