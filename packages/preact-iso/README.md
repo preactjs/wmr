@@ -66,7 +66,9 @@ const { html, links } = await prerender(<App />, { maxDepth: 10 });
 import hydrate from 'preact-iso/hydrate';
 
 const App = () => (
-	<div class="app"><h1>Hello World</h1></div>
+	<div class="app">
+		<h1>Hello World</h1>
+	</div>
 );
 
 hydrate(<App />);

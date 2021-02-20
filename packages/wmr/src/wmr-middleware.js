@@ -350,7 +350,7 @@ export const TRANSFORMS = {
 					}
 				}
 
-				// \0abc:foo --> /@abc/foo
+				// \0abc:foo --> /@abcF/foo
 				spec = spec.replace(/^\0?([a-z-]+):(.+)$/, (s, prefix, spec) => {
 					// \0abc:/abs/disk/path --> /@abc/cwd-relative-path
 					if (spec[0] === '/' || spec[0] === sep) {
@@ -520,6 +520,8 @@ export const TRANSFORMS = {
  * @param {string|Buffer|Uint8Array} data
  */
 async function writeCacheFile(rootDir, fileName, data) {
+	if (fileName.includes('\0')) return;
+
 	WRITE_CACHE.set(fileName, data);
 	const filePath = resolve(rootDir, fileName);
 	if (dirname(filePath) !== rootDir) {

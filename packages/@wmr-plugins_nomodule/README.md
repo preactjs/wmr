@@ -13,6 +13,6 @@ Add this to your `wmr.config.js`:
 import nomodule from '@wmr-plugins/nomodule';
 
 export function build(config) {
-  nomodule(config);
+	nomodule(config);
 }
 ```
