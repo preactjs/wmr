@@ -8,7 +8,7 @@ const config = {
 	input: 'src/index.js',
 	inlineDynamicImports: true,
 	output: {
-		file: 'directory-plugin.cjs',
+		file: 'sw-plugin.cjs',
 		format: 'cjs',
 		compact: true,
 		freeze: false,

@@ -1,13 +1,13 @@
-# @wmr/sw-plugin
+# @wmr-plugins/sw-plugin
 
 Allows you to add a service-worker.
 
 ## Installation
 
 ```sh
-yarn add @wmr/sw-plugin
+yarn add @wmr-plugins/sw-plugin
 ## or
-npm i --save @wmr/sw-plugin
+npm i --save @wmr-plugins/sw-plugin
 ```
 
 ## Usage
@@ -34,7 +34,7 @@ And finally we'll add the plugin to our `wmr-config`.
 
 ```js
 // wmr.config.js
-import swPlugin from '@wmr/sw-plugin';
+import swPlugin from '@wmr-plugins/sw-plugin';
 
 export default function (options) {
 	swPlugin(options);

@@ -1,6 +1,8 @@
 import path from 'path';
 import { request } from 'http';
 
+const pathToPosix = p => p.split(path.sep).join(path.posix.sep);
+
 /**
  * Service Worker plugin for WMR.
  * @param {import('wmr').Options} options
@@ -44,7 +46,7 @@ export default function swPlugin(options) {
 		async resolveId(id, importer) {
 			if (!id.startsWith('sw:')) return;
 			const resolved = await this.resolve(id.slice(3), importer);
-			if (resolved) return `\0sw:${resolved.id}`;
+			if (resolved) return `\0sw:${pathToPosix(resolved.id)}`;
 		},
 		async load(id) {
 			if (!id.startsWith('\0sw:')) return;
@@ -56,11 +58,12 @@ export default function swPlugin(options) {
 					id: id.slice(4),
 					fileName: 'sw.js'
 				});
+
 				return `export default import.meta.ROLLUP_FILE_URL_${fileId}`;
 			}
 
 			// In development, we bundle to IIFE via Rollup, but use WMR's HTTP server to transpile dependencies:
-			id = path.resolve(options.cwd, id.slice(4));
+			id = path.resolve(options.cwd || '.', id.slice(4));
 
 			try {
 				var { rollup } = await import('rollup');
