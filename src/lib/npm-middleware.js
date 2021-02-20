@@ -27,6 +27,7 @@ async function handleAsset(meta, res) {
 	}
 	res.writeHead(200, {
 		'content-type': type || 'text/plain',
+		'cache-control': 'public,max-age=31536000,immutable',
 		'content-length': Buffer.byteLength(code)
 	});
 	res.end(code);
@@ -46,11 +47,16 @@ export default function npmMiddleware({ source = 'npm', aliases, optimize, cwd }
 		const mod = req.path.replace(/^\//, '');
 
 		const meta = normalizeSpecifier(mod);
+		const urlVersion = meta.version;
 
 		try {
 			await resolvePackageVersion(meta);
 		} catch (e) {
 			return next(e);
+		}
+
+		if (urlVersion) {
+			res.setHeader('cache-control', 'public,max-age=31536000,immutable');
 		}
 
 		try {
@@ -80,7 +86,11 @@ export default function npmMiddleware({ source = 'npm', aliases, optimize, cwd }
 			// console.log(`Bundle dep: ${mod}: ${Date.now() - start}ms`);
 
 			// send it!
-			res.writeHead(200, { 'content-length': Buffer.byteLength(code) }).end(code);
+			res.writeHead(200, {
+				'content-length': Buffer.byteLength(code),
+				'cache-control': 'max-age=1,stale-while-revalidate=59'
+			});
+			res.end(code);
 
 			// store the bundle in memory and disk caches
 			setCachedBundle(etag, code, meta, cwd);

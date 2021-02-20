@@ -163,6 +163,7 @@ export function setCachedBundle(etag, code, { module, path, version }, cwd) {
 export function sendCachedBundle(req, res, { code, brotli, cacheStatus }) {
 	const headers = {
 		'content-length': Buffer.byteLength(code),
+		'cache-control': 'public,max-age=31536000,immutable',
 		'x-cache-status': cacheStatus
 	};
 	if (brotli && /\bbr\b/.test(req.headers['accept-encoding'] + '')) {

@@ -14,7 +14,7 @@ import totalist from 'totalist';
 import aliasesPlugin from './plugins/aliases-plugin.js';
 import processGlobalPlugin from './plugins/process-global-plugin.js';
 import urlPlugin from './plugins/url-plugin.js';
-import resolveExtensionsPlugin from './plugins/resolve-extensions-plugin.js';
+// import resolveExtensionsPlugin from './plugins/resolve-extensions-plugin.js';
 import fastCjsPlugin from './plugins/fast-cjs-plugin.js';
 import bundlePlugin from './plugins/bundle-plugin.js';
 import jsonPlugin from './plugins/json-plugin.js';
@@ -92,6 +92,12 @@ export async function bundleProd({
 		preserveEntrySignatures: 'allow-extension',
 		manualChunks: npmChunks ? extractNpmChunks : undefined,
 		plugins: [
+			// {
+			// 	name: 'logger',
+			// 	resolveId(id, importer) {
+			// 		console.log('resolve: ', id, importer);
+			// 	}
+			// },
 			nodeBuiltinsPlugin({ production: true }),
 			externalUrlsPlugin(),
 			sucrasePlugin({
@@ -110,10 +116,10 @@ export async function bundleProd({
 				env,
 				NODE_ENV: 'production'
 			}),
-			resolveExtensionsPlugin({
-				typescript: true,
-				index: true
-			}),
+			// resolveExtensionsPlugin({
+			// 	typescript: true,
+			// 	index: true
+			// }),
 			fastCjsPlugin({
 				// Only transpile CommonJS in node_modules and explicit .cjs files:
 				include: /(?:^[\b]npm\/|[/\\]node_modules[/\\]|\.cjs$)/

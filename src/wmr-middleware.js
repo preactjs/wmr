@@ -19,6 +19,7 @@ import bundlePlugin from './plugins/bundle-plugin.js';
 import nodeBuiltinsPlugin from './plugins/node-builtins-plugin.js';
 import jsonPlugin from './plugins/json-plugin.js';
 import externalUrlsPlugin from './plugins/external-urls-plugin.js';
+import { resolvePackageVersion } from './plugins/npm-plugin/registry.js';
 // import { resolvePackageVersion } from './plugins/npm-plugin/registry.js';
 
 const NOOP = () => {};
@@ -28,6 +29,12 @@ const NOOP = () => {};
  * @type {Map<string, string | Buffer | Uint8Array>}
  */
 const WRITE_CACHE = new Map();
+
+/**
+ * In-memory cache of written file metadata
+ * @type {Map<string, { mtime: number, source: 'watch' | 'write' }>}
+ */
+const WRITE_META = new Map();
 
 /**
  * @param {object} [options]
@@ -127,6 +134,7 @@ export default function wmrMiddleware({
 		pendingChanges.add('/' + filename);
 		// Delete file from the in-memory cache:
 		WRITE_CACHE.delete(filename);
+		WRITE_META.set(filename, { mtime: Date.now(), source: 'watch' });
 		// Delete any generated CSS Modules mapping modules:
 		if (/\.module\.css$/.test(filename)) WRITE_CACHE.delete(filename + '.js');
 	});
@@ -265,14 +273,15 @@ export const TRANSFORMS = {
 	},
 
 	// Handle individual JavaScript modules
-	async js({ id, file, prefix, res, cwd, out, NonRollup }) {
+	async js({ id, file, prefix, req, res, cwd, out, NonRollup }) {
 		res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
 
 		const cacheKey = id
 			.replace(/^[\0\b]/, '')
 			.split(sep)
 			.join(posix.sep);
-		if (WRITE_CACHE.has(cacheKey)) return WRITE_CACHE.get(cacheKey);
+
+		if (respondFromCache(cacheKey, req, res)) return;
 
 		const resolved = await NonRollup.resolveId(id);
 		const resolvedId = typeof resolved == 'object' ? resolved && resolved.id : resolved;
@@ -331,33 +340,33 @@ export const TRANSFORMS = {
 				if (!/^\0?\.?\.?[/\\]/.test(spec)) {
 					const meta = normalizeSpecifier(spec);
 
-					// // Option 1: resolve all package verions (note: adds non-trivial delay to imports)
-					// await resolvePackageVersion(meta);
+					// Option 1: resolve all package verions (note: adds non-trivial delay to imports)
+					await resolvePackageVersion(meta);
 					// // Option 2: omit package versions that resolve to the root
 					// // if ((await resolvePackageVersion({ module: meta.module, version: '' })).version === meta.version) {
 					// // 	meta.version = '';
 					// // }
-					// spec = `/@npm/${meta.module}${meta.version ? '@' + meta.version : ''}${meta.path ? '/' + meta.path : ''}`;
+					spec = `/@npm/${meta.module}${meta.version ? '@' + meta.version : ''}${meta.path ? '/' + meta.path : ''}`;
 
 					// Option 3: omit root package versions
-					spec = `/@npm/${meta.module}${meta.path ? '/' + meta.path : ''}`;
+					// spec = `/@npm/${meta.module}${meta.path ? '/' + meta.path : ''}`;
 				}
 
 				return spec;
 			}
 		});
 
+		res.setHeader('Last-Modified', new Date().toUTCString());
 		writeCacheFile(out, cacheKey, code);
 
 		return code;
 	},
 
 	// Handles "CSS Modules" proxy modules (style.module.css.js)
-	async cssModule({ id, file, cwd, out, res }) {
+	async cssModule({ id, file, cwd, out, req, res }) {
 		res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
 
-		// Cache the generated mapping/proxy module with a .js extension (the CSS itself is also cached)
-		if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
+		if (respondFromCache(id, req, res)) return;
 
 		file = file.replace(/\.js$/, '');
 
@@ -389,17 +398,19 @@ export const TRANSFORMS = {
 			resolveId(spec) {
 				if (spec === 'wmr') return '/_wmr.js';
 				console.warn('unresolved specifier: ', spec);
+				console.log('CSSM', spec);
 				return null;
 			}
 		});
 
+		res.setHeader('Last-Modified', new Date().toUTCString());
 		writeCacheFile(out, id, code);
 
 		return code;
 	},
 
 	// Handles CSS Modules (the actual CSS)
-	async css({ id, path, file, cwd, out, res }) {
+	async css({ id, path, file, cwd, out, req, res }) {
 		if (!/\.(css|s[ac]ss)$/.test(path)) throw null;
 
 		const isModular = /\.module\.(css|s[ac]ss)$/.test(path);
@@ -408,7 +419,8 @@ export const TRANSFORMS = {
 
 		res.setHeader('Content-Type', 'text/css;charset=utf-8');
 
-		if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
+		if (respondFromCache(id, req, res)) return;
+		// if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
 
 		const idAbsolute = resolve(cwd, file);
 		let code = await fs.readFile(idAbsolute, 'utf-8');
@@ -428,6 +440,7 @@ export const TRANSFORMS = {
 		// };
 		// await plugin.load.call(context, file);
 
+		res.setHeader('Last-Modified', new Date().toUTCString());
 		writeCacheFile(out, id, code);
 
 		return code;
@@ -472,10 +485,41 @@ export const TRANSFORMS = {
  * @param {string|Buffer|Uint8Array} data
  */
 async function writeCacheFile(rootDir, fileName, data) {
+	let mtime = Date.now();
+	mtime = mtime - (mtime % 1000);
 	WRITE_CACHE.set(fileName, data);
+	WRITE_META.set(fileName, { mtime, source: 'write' });
 	const filePath = resolve(rootDir, fileName);
 	if (dirname(filePath) !== rootDir) {
 		await fs.mkdir(dirname(filePath), { recursive: true });
 	}
 	await fs.writeFile(filePath, data);
+}
+
+/**
+ * @param {string} id rollup-style cwd-relative file identifier
+ * @param {InstanceType<import('http')['IncomingMessage']>} req HTTP Request object
+ * @param {InstanceType<import('http')['ServerResponse']>} res HTTP Response object
+ * @returns {boolean} `true` if a cached response was sent
+ */
+function respondFromCache(id, req, res) {
+	const ims = req.headers['if-modified-since'];
+	const meta = WRITE_META.get(id);
+	if (ims && meta && meta.mtime <= new Date(ims).getTime()) {
+		res.writeHead(304);
+		res.end();
+		return true;
+	}
+
+	// Cache the generated mapping/proxy module with a .js extension (the CSS itself is also cached)
+	const cached = WRITE_CACHE.get(id);
+	if (cached == null) return false;
+
+	const modified = meta && meta.mtime ? new Date(meta.mtime) : new Date();
+	res.writeHead(200, {
+		'Content-Length': Buffer.byteLength(cached, 'utf-8'),
+		'Last-Modified': modified.toUTCString()
+	});
+	res.end(cached);
+	return true;
 }

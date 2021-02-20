@@ -25,6 +25,7 @@ export default function aliasesPlugin({ aliases = {}, cwd } = {}) {
 		}
 		aliasesLoaded = null;
 	}
+	const CACHE = new Map();
 	return {
 		name: 'aliases',
 		async buildStart() {
@@ -32,7 +33,7 @@ export default function aliasesPlugin({ aliases = {}, cwd } = {}) {
 				pkgFilename = resolve(cwd, 'package.json');
 				this.addWatchFile(pkgFilename);
 			} else {
-				const resolved = await this.resolve('./package.json');
+				const resolved = await this.resolve('./package.json', undefined, { skipSelf: true });
 				if (resolved) {
 					pkgFilename = resolved.id;
 					this.addWatchFile(pkgFilename);
@@ -45,8 +46,11 @@ export default function aliasesPlugin({ aliases = {}, cwd } = {}) {
 			}
 		},
 		async resolveId(id, importer) {
+			let cacheKey = id;
+			if (importer) cacheKey += '\n' + importer;
+			if (CACHE.has(cacheKey)) return CACHE.get(cacheKey);
 			if (aliasesLoaded) await aliasesLoaded;
-			if (typeof id !== 'string' || id.match(/^(\0|\.\.?\/)/)) return;
+			if (typeof id !== 'string' || id.match(/^(?:[\0\b]|\.\.?\/)/)) return;
 			let aliased;
 			for (let i in aliases) {
 				if (id === i) {
@@ -60,6 +64,7 @@ export default function aliasesPlugin({ aliases = {}, cwd } = {}) {
 					break;
 				}
 			}
+			CACHE.set(cacheKey, null);
 			if (aliased == null) return;
 			if (aliased.startsWith('./')) {
 				aliased = resolve(dirname(pkgFilename), aliased);
@@ -67,7 +72,11 @@ export default function aliasesPlugin({ aliases = {}, cwd } = {}) {
 			if (aliased === id) return;
 			// now allow other resolvers to handle the aliased version
 			// (this is important since they may mark as external!)
-			return await this.resolve(aliased, importer, { skipSelf: true });
+			// return await this.resolve(aliased, importer, { skipSelf: true });
+			const res = await this.resolve(aliased, importer, { skipSelf: true });
+			CACHE.set(cacheKey, res);
+			// if (res && res.external) return res;
+			return res;
 		}
 	};
 }

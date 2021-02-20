@@ -88,10 +88,10 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = '\bnpm/', ext
 			// Versions that resolve to the root are removed
 			// (see "Option 3" in wmr-middleware.jsL247)
 			let emitVersion = true;
-			if ((await resolvePackageVersion({ module: meta.module, version: '' })).version === meta.version) {
-				emitVersion = false;
-				// meta.version = '';
-			}
+			// if ((await resolvePackageVersion({ module: meta.module, version: '' })).version === meta.version) {
+			// 	emitVersion = false;
+			// 	// meta.version = '';
+			// }
 
 			// Mark everything except self-imports as external: (eg: "preact/hooks" importing "preact")
 			// Note: if `external=false` here, we're building a combined bundle and want to merge npm deps.
@@ -123,10 +123,12 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = '\bnpm/', ext
 
 			// CSS files are not handled by this plugin.
 			if (/\.css$/.test(id) && (await hasFile(resolvedPath))) {
-				return `./node_modules/${meta.module}/${resolvedPath}`;
+				return `${prefix}${meta.module}${emitVersion && meta.version ? '@' + meta.version : ''}/${resolvedPath}`;
+				// return `./node_modules/${meta.module}${emitVersion && meta.version ? '@' + meta.version : ''}/${resolvedPath}`;
+				// return `./node_modules/${meta.module}/${resolvedPath}`;
 			}
 
-			return `${prefix}${meta.module}${meta.version ? '@' + meta.version : ''}/${resolvedPath}`;
+			return `${prefix}${meta.module}${emitVersion && meta.version ? '@' + meta.version : ''}/${resolvedPath}`;
 		},
 		load(id) {
 			// only load modules this plugin resolved
