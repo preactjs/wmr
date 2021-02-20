@@ -10,8 +10,6 @@ const routes = pages.map(name => ({
   url: '/' + name.replace(/(index)?\.\w+$/, '')  // strip file extension and "index"
 }));
 
-console.log({ pages, routes });
-
 function App() {
   return (
     <LocationProvider>
