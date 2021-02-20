@@ -3,8 +3,12 @@ name: CI
 on:
   push:
     branches:
-    - main
+      - main
+    paths:
+      - packages/wmr/**
   pull_request:
+    paths:
+      - packages/wmr/**
 
 jobs:
   build:
