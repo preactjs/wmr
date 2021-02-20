@@ -20,10 +20,10 @@ npm i --save @wmr-plugins/directory-import
 Enable the plugin by importing _(or pasting!)_ it into your `wmr.config.js`:
 
 ```js
-import lsPlugin from '@wmr-plugins/directory-import';
+import directoryPlugin from '@wmr-plugins/directory-import';
 
 export default function (config) {
-	config.plugins.push(lsPlugin(config));
+	config.plugins.push(directoryPlugin(config));
 }
 ```
 

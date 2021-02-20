@@ -1,5 +1,5 @@
-import lsPlugin from '../src/index.js';
+import directoryPlugin from '../src/index.js';
 
 export default function (config) {
-  config.plugins.push(lsPlugin(config));
+  config.plugins.push(directoryPlugin(config));
 }
