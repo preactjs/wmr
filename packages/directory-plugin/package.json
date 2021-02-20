@@ -7,11 +7,11 @@
 	},
 	"author": "The Preact Authors (https://preactjs.com)",
 	"license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/preactjs/wmr.git",
-    "directory": "packages/directory-plugin"
-  },
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/preactjs/wmr.git",
+		"directory": "packages/directory-plugin"
+	},
 	"files": [
 		"directory-plugin.cjs",
 		"types.d.ts"
