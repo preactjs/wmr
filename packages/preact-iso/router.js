@@ -63,7 +63,11 @@ export function Router(props) {
 	}
 
 	this.componentDidCatch = err => {
-		if (err && err.then) pending.current = err;
+		if (err && err.then) {
+			// Trigger an update so the rendering login will pickup the pending promise.
+			update(1);
+			pending.current = err;
+		}
 	};
 
 	useEffect(() => {
@@ -90,9 +94,9 @@ export function Router(props) {
 
 	curChildren.current = a.map((p, i) => cloneElement(p, { path, query }));
 
-	// If our only children is resolved, no need to render the fallback(prevChildren)
-	if (typeof curChildren.current[0].type._resolved === 'undefined' || !!curChildren.current[0].type._resolved) {
-		return curChildren.current;
+	// Only show the previous children where there's an active pending promise.
+	if (pending.current) {
+		return curChildren.current.concat(prevChildren.current || []);
 	}
 
 	return curChildren.current.concat(prevChildren.current || []);

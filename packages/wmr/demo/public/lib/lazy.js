@@ -9,11 +9,8 @@ export default function lazy(load) {
 		const r = useRef(c);
 		if (!r.current) r.current = p.then(update);
 		if (c === undefined) throw p;
-		inner._resolved = true;
 		return h(c, props);
 	}
-
-	inner._resolved = false;
 
 	return inner;
 }

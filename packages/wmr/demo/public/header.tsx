@@ -7,6 +7,7 @@ export default function Header() {
 			<nav>
 				<a href="/">Home</a>
 				<a href="/about">About</a>
+				<a href="/lazy-and-late">Lazy and Late</a>
 				<a href="/compat">Compat</a>
 				<a href="/class-fields">Class-Fields</a>
 				<a href="/files">Files</a>
