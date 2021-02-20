@@ -12,19 +12,19 @@ function directoryPlugin({ cwd } = {}) {
   return {
     name: 'directory',
     async resolveId(id, importer) {
-			if (!id.startsWith('directory:')) return;
+			if (!id.startsWith('dir:')) return;
 
-      const resolved = await this.resolve(id.slice(10) + '\0', importer, { skipSelf: true });
+      const resolved = await this.resolve(id.slice(4) + '\0', importer, { skipSelf: true });
 
       if (resolved) {
-				return '\0directory:' + pathToPosix(resolved.id).replace(/\0$/, '');
+				return '\0dir:' + pathToPosix(resolved.id).replace(/\0$/, '');
 			}
     },
     async load(id) {
-      if (!id.startsWith('\0directory:')) return;
+      if (!id.startsWith('\0dir:')) return;
 
-      // remove the "\0directory:" prefix and convert to an absolute path:
-      id = path.resolve(cwd || '.', id.slice(11));
+      // remove the "\dir:" prefix and convert to an absolute path:
+      id = path.resolve(cwd || '.', id.slice(5));
 
       // watch the directory for changes:
       this.addWatchFile(id);

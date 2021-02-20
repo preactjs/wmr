@@ -1,5 +1,5 @@
 {
-	"name": "@wmr-plugins/directory-plugin",
+	"name": "@wmr-plugins/directory-import",
 	"version": "0.0.0",
 	"type": "module",
 	"scripts": {

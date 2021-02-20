@@ -2,7 +2,7 @@ import hydrate from 'preact-iso/hydrate';
 import { LocationProvider, Router } from 'preact-iso/router';
 import lazy, { ErrorBoundary } from 'preact-iso/lazy';
 
-import pages from 'directory:./pages';
+import pages from 'dir:./pages';
 
 // Generate a Route component and URL for each "page" module:
 const routes = pages.map(name => ({

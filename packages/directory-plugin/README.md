@@ -1,18 +1,18 @@
-# @wmr-plugins/directory-plugin
+# @wmr-plugins/directory-import
 
 Allows you to import multiple files like this:
 
 ```js
-import files from 'directory:./pages';
+import files from 'dir:./pages';
 console.log(files); // ['home.js', 'about.js']
 ```
 
 ## Installation
 
 ```sh
-yarn add @wmr-plugins/directory-plugin
+yarn add @wmr-plugins/directory-import
 ## or
-npm i --save @wmr-plugins/directory-plugin
+npm i --save @wmr-plugins/directory-import
 ```
 
 ## Usage
@@ -20,7 +20,7 @@ npm i --save @wmr-plugins/directory-plugin
 Enable the plugin by importing _(or pasting!)_ it into your `wmr.config.js`:
 
 ```js
-import lsPlugin from '@wmr-plugins/directory-plugin';
+import lsPlugin from '@wmr-plugins/directory-import';
 
 export default function (config) {
 	config.plugins.push(lsPlugin(config));
