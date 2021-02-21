@@ -12,10 +12,10 @@
 		"react-dom": "preact/compat"
 	},
 	"dependencies": {
-		"preact": "latest",
-		"preact-iso": "latest"
+		"preact": "^10.5.12",
+		"preact-iso": "0.x"
 	},
 	"devDependencies": {
-		"wmr": "latest"
+		"wmr": "^1.2.0"
 	}
 }
