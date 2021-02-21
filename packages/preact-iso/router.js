@@ -109,10 +109,9 @@ export function Router(props) {
 		const matches = exec(path, vnode.props.path, m = { path, query });
 		if (matches) {
 			return p = cloneElement(vnode, { ...m, ...matches })
-		} else {
-			if (vnode.props.default) d = cloneElement(vnode, m);
-			return undefined;
 		}
+		
+		if (vnode.props.default) d = cloneElement(vnode, m);
 	});
 
 	return [curChildren.current = p || d, prevChildren.current];
