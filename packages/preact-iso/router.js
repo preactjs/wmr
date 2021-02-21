@@ -108,10 +108,10 @@ export function Router(props) {
 	[].concat(props.children || []).some(vnode => {
 		const matches = exec(path, vnode.props.path, m = { path, query });
 		if (matches) {
-			return p = (
-				<RouteContext.Provider value={{ ...matches }}>
-					{cloneElement(vnode, { ...m, ...matches })}
-				</RouteContext.Provider>
+			return p = h(
+				RouteContext.Provider,
+				{ value: {  ...matches } },
+				cloneElement(vnode, { ...m, ...matches })
 			);
 		}
 
