@@ -57,11 +57,14 @@
 		"arrowParens": "avoid"
 	},
 	"lint-staged": {
-		"{src,test}/**/*.js": [
+		"packages/{src,test}/**/*.js": [
 			"eslint --fix",
 			"prettier --write"
 		],
 		"*.md": [
+			"prettier --write"
+		],
+		"*.json": [
 			"prettier --write"
 		]
 	},
@@ -75,7 +78,7 @@
 	},
 	"devDependencies": {
 		"@changesets/changelog-github": "^0.2.7",
-    "@changesets/cli": "^2.12.0",
+		"@changesets/cli": "^2.12.0",
 		"eslint": "^7.4.0",
 		"eslint-config-developit": "^1.2.0",
 		"eslint-config-prettier": "^6.11.0",
