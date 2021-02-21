@@ -14,6 +14,8 @@ export const useLocation: () => LocationHook;
 /** @deprecated renamed to useLocation() */
 export const useLoc: () => LocationHook;
 
+export const useRoute: () => { [key: string]: string };
+
 interface RoutableProps {
 	path?: string;
 	default?: boolean;
