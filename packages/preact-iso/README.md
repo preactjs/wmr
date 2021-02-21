@@ -85,20 +85,22 @@ import { LocationProvider, Router, useLoc } from 'preact-iso/router';
 // Asynchronous (throws a promise)
 const Home = lazy(() => import('./routes/home.js'));
 const Profile = lazy(() => import('./routes/profile.js'));
+const Profiles = lazy(() => import('./routes/profiles.js'));
 
 const App = () => (
 	<LocationProvider>
 		<ErrorBoundary>
 			<Router>
 				<Home path="/" />
-				<Profile path="/profile" />
+				<Profiles path="/profiles" />
+				<Profile path="/profiles/:id" />
 			</Router>
 		</ErrorBoundary>
 	</LocationProvider>
 );
 ```
 
-During prerendering, the generated HTML includes our full `<Home>` and `<Profile>` component output because it waits for the `lazy()`-wrapped `import()` to resolve.
+During prerendering, the generated HTML includes our full `<Home>` and `<Profiles>` component output because it waits for the `lazy()`-wrapped `import()` to resolve.
 
 **Progressive Hydration:** When the app is hydrated on the client, the route (`Home` or `Profile` in this case) suspends. This causes hydration for that part of the page to be deferred until the route's `import()` is resolved, at which point that part of the page automatically finishes hydrating.
 
