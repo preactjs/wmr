@@ -5,51 +5,89 @@ const UPDATE = (state, url, push) => {
 	if (url && url.type === 'click') {
 		const link = url.target.closest('a[href]');
 		if (!link || link.origin != location.origin) return state;
+
 		url.preventDefault();
 		push = true;
 		url = link.href.replace(location.origin, '');
-	} else if (typeof url !== 'string') url = location.pathname + location.search;
+	} else if (typeof url !== 'string') {
+		url = location.pathname + location.search;
+	}
+
 	if (push === true) history.pushState(null, '', url);
 	else if (push === false) history.replaceState(null, '', url);
 	return url;
 };
 
-export function Loc(props) {
+const exec = (url, route, matches) => {
+	url = url.trim('/').split('/');
+	route = (route || '').trim('/').split('/');
+	for (let i = 0, val; i < Math.max(url.length, route.length); i++) {
+		let [, m, param, flag] = (route[i] || '').match(/^(\:?)(.*?)([+*?]?)$/);
+		val = url[i];
+		// segment match:
+		if (!m && param == val) continue;
+		// segment mismatch / missing required field:
+		if (!m || (!val && flag != '?' && flag != '*')) return;
+		// field match:
+		matches[param] = val && decodeURIComponent(val);
+		// normal/optional field:
+		if (flag >= '?') continue;
+		// rest (+/*) match:
+		matches[param] = url.slice(i).map(decodeURIComponent).join('/');
+		break;
+	}
+
+	return matches;
+};
+
+export function LocationProvider(props) {
 	const [url, route] = useReducer(UPDATE, location.pathname + location.search);
+
 	const value = useMemo(() => {
 		const u = new URL(url, location.origin);
 		const path = u.pathname.replace(/(.)\/$/g, '$1');
+		// @ts-ignore-next
 		return { url, path, query: Object.fromEntries(u.searchParams), route };
 	}, [url]);
+
 	useEffect(() => {
 		addEventListener('click', route);
 		addEventListener('popstate', route);
+
 		return () => {
 			removeEventListener('click', route);
 			removeEventListener('popstate', route);
 		};
 	});
-	return h(Loc.ctx.Provider, { value }, props.children);
+
+	// @ts-ignore
+	return h(LocationProvider.ctx.Provider, { value }, props.children);
 }
 
 export function Router(props) {
 	const [, update] = useReducer(c => c + 1, 0);
+
 	const loc = useLoc();
+
 	const { url, path, query } = loc;
+
 	const cur = useRef(loc);
 	const prev = useRef();
 	const curChildren = useRef();
 	const prevChildren = useRef();
 	const pending = useRef();
+
 	if (url !== cur.current.url) {
 		pending.current = null;
 		prev.current = cur.current;
 		prevChildren.current = curChildren.current;
 		cur.current = loc;
 	}
+
 	this.componentDidCatch = err => {
 		if (err && err.then) pending.current = err;
 	};
+
 	useEffect(() => {
 		let p = pending.current;
 		const commit = () => {
@@ -58,20 +96,37 @@ export function Router(props) {
 			prev.current = prevChildren.current = null;
 			update(0);
 		};
+
 		if (p) {
 			if (props.onLoadStart) props.onLoadStart(url);
 			p.then(commit);
 		} else commit();
 	}, [url]);
-	const children = [].concat(...props.children);
-	let a = children.filter(c => c.props.path === path);
-	if (a.length == 0) a = children.filter(c => c.props.default);
-	curChildren.current = a.map((p, i) => cloneElement(p, { path, query }));
-	return curChildren.current.concat(prevChildren.current || []);
+
+	let p, d, m;
+	[].concat(props.children || []).some(vnode => {
+		const matches = exec(path, vnode.props.path, (m = { path, query }));
+		if (matches) {
+			return p = (
+				<RouteContext.Provider value={{ ...matches }}>
+					{cloneElement(vnode, { ...m, ...matches })}
+				</RouteContext.Provider>
+			);
+		} else {
+			if (vnode.props.default) d = cloneElement(vnode, m);
+			return undefined;
+		}
+	});
+
+	return [(curChildren.current = p || d), prevChildren.current];
 }
 
-Loc.Router = Router;
+Router.Provider = LocationProvider;
 
-Loc.ctx = createContext(/** @type {{ url: string, path: string, query: object, route }} */ ({}));
+LocationProvider.ctx = createContext(/** @type {{ url: string, path: string, query: object, route }} */ ({}));
 
-export const useLoc = () => useContext(Loc.ctx);
+const RouteContext = createContext({});
+
+export const useLoc = () => useContext(LocationProvider.ctx);
+export const useLocation = useLoc;
+export const useRoute = () => useContext(RouteContext);

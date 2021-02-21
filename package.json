@@ -45,6 +45,7 @@
 	},
 	"eslintIgnore": [
 		"*.cjs",
+		"*.ts",
 		"packages/wmr/test/fixtures/**/*.expected.*",
 		"packages/wmr/test/fixtures/*/dist",
 		"packages/wmr/test/fixtures/*/.cache"

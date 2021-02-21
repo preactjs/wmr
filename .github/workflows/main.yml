@@ -6,9 +6,11 @@ on:
       - main
     paths:
       - packages/wmr/**
+      - packages/preact-iso/**
   pull_request:
     paths:
       - packages/wmr/**
+      - packages/preact-iso/**
 
 jobs:
   build:
@@ -28,8 +30,11 @@ jobs:
         run: yarn --frozen-lockfile
       - name: Build
         run: yarn workspace wmr build
-      - name: Test
+      - name: Test wmr
         run: yarn workspace wmr test
+      - name: Test preact-iso
+        run: yarn workspace preact-iso test
+
   lhci:
     runs-on: ubuntu-latest
     steps:
