@@ -1,5 +1,5 @@
 import { h, createContext, cloneElement } from 'preact';
-import { useContext, useMemo, useReducer, useEffect, useRef } from 'preact/hooks';
+import { useContext, useMemo, useReducer, useEffect, useRef, useState } from 'preact/hooks';
 
 const UPDATE = (state, url, push) => {
 	if (url && url.type === 'click') {
@@ -18,14 +18,37 @@ const UPDATE = (state, url, push) => {
 	return url;
 };
 
+const exec = (url, route, matches) => {
+  url = url.trim('/').split('/');
+  route = (route || '').trim('/').split('/');
+  for (let i=0, val; i<Math.max(url.length, route.length); i++) {
+    let [, m, param, flag] = (route[i] || '').match(/^(\:?)(.*?)([+*?]?)$/);
+    val = url[i];
+    // segment match:
+    if (!m && param==val) continue;
+    // segment mismatch / missing required field:
+    if (!m || !val && flag != '?' && flag != '*') return;
+    // field match:
+    matches[param] = val && decodeURIComponent(val);
+    // normal/optional field:
+    if (flag >= '?') continue;
+    // rest (+/*) match:
+    matches[param] = url.slice(i).map(decodeURIComponent).join('/');
+    break;
+	}
+
+  return matches;
+}
+
 export function LocationProvider(props) {
 	const [url, route] = useReducer(UPDATE, location.pathname + location.search);
+	const [matchedRoute, setMatchedRoute] = useState();
 
 	const value = useMemo(() => {
 		const u = new URL(url, location.origin);
 		const path = u.pathname.replace(/(.)\/$/g, '$1');
 		// @ts-ignore-next
-		return { url, path, query: Object.fromEntries(u.searchParams), route };
+		return { url, path, query: Object.fromEntries(u.searchParams), route, setMatchedRoute };
 	}, [url]);
 
 	useEffect(() => {
@@ -82,15 +105,17 @@ export function Router(props) {
 		} else commit();
 	}, [url]);
 
-	const children = [].concat(...props.children);
+	let p, d, m;
+	[].concat(props.children || []).some(vnode => {
+		const matches = exec(path, vnode.props.path, m = { path, query });
+		if (matches) {
+			return p = cloneElement(vnode, { ...m, ...matches })
+		} else {
+			return vnode.props.default ? d = cloneElement(vnode, m) : 0, undefined
+		}
+	});
 
-	let a = children.filter(c => c.props.path === path);
-
-	if (a.length == 0) a = children.filter(c => c.props.default);
-
-	curChildren.current = a.map((p, i) => cloneElement(p, { path, query }));
-
-	return curChildren.current.concat(prevChildren.current || []);
+	return [curChildren.current = p || d, prevChildren.current];
 }
 
 Router.Provider = LocationProvider;
