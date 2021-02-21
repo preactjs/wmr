@@ -7,12 +7,7 @@
 	"types": "./index.d.ts",
 	"type": "module",
 	"scripts": {
-		"test": "jest"
-	},
-	"babel": {
-		"plugins": [
-			"@babel/plugin-transform-modules-commonjs"
-		]
+		"test": "node --experimental-vm-modules node_modules/.bin/jest"
 	},
 	"exports": {
 		".": "./index.js",
@@ -29,8 +24,6 @@
 	},
 	"license": "MIT",
 	"devDependencies": {
-		"@babel/plugin-transform-modules-commonjs": "7.12.13",
-		"babel-jest": "^26.1.0",
 		"jest": "26.6.3",
 		"preact": "^10.5.7",
 		"preact-render-to-string": "^5.1.12"
