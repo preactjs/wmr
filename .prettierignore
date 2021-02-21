@@ -1,6 +1,7 @@
-wmr.cjs
+*.cjs
 package-lock.json
-test/fixtures/**/*.expected.*
-test/fixtures/*/dist
-test/fixtures/*/.cache
-test/fixtures/_unit
+yarn.lock
+packages/wmr/test/fixtures/**/*.expected.*
+packages/wmr/test/fixtures/*/dist
+packages/wmr/test/fixtures/*/.cache
+packages/wmr/test/fixtures/_unit

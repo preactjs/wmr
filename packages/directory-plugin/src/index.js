@@ -8,8 +8,8 @@ const pathToPosix = p => p.split(path.sep).join(path.posix.sep);
  * @param {string} [options.cwd]
  * @returns {import('rollup').Plugin}
  */
-function directoryPlugin({ cwd } = {}) {
-	return {
+function directoryPlugin(options) {
+	options.plugins.push({
 		name: 'directory',
 		async resolveId(id, importer) {
 			if (!id.startsWith('dir:')) return;
@@ -24,7 +24,7 @@ function directoryPlugin({ cwd } = {}) {
 			if (!id.startsWith('\0dir:')) return;
 
 			// remove the "\dir:" prefix and convert to an absolute path:
-			id = path.resolve(cwd || '.', id.slice(5));
+			id = path.resolve(options.cwd || '.', id.slice(5));
 
 			// watch the directory for changes:
 			this.addWatchFile(id);
@@ -34,7 +34,7 @@ function directoryPlugin({ cwd } = {}) {
 
 			return `export default ${JSON.stringify(files)}`;
 		}
-	};
+	});
 }
 
 export default directoryPlugin;

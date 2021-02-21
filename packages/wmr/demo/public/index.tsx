@@ -1,5 +1,5 @@
 import { h, render } from 'preact';
-import { Loc, Router } from './lib/loc.js';
+import { LocationProvider, Router } from './lib/loc.js';
 import lazy, { ErrorBoundary } from './lib/lazy.js';
 import Home from './pages/home.js';
 // import About from './pages/about/index.js';
@@ -23,7 +23,7 @@ const Environment = lazy(async () => (await import('./pages/environment/index.js
 
 export function App() {
 	return (
-		<Loc>
+		<LocationProvider>
 			<div class="app">
 				<Header />
 				<ErrorBoundary>
@@ -39,7 +39,7 @@ export function App() {
 					</Router>
 				</ErrorBoundary>
 			</div>
-		</Loc>
+		</LocationProvider>
 	);
 }
 
