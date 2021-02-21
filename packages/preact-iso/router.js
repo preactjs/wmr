@@ -19,26 +19,26 @@ const UPDATE = (state, url, push) => {
 };
 
 export const exec = (url, route, matches) => {
-  url = url.trim('/').split('/');
-  route = (route || '').trim('/').split('/');
-  for (let i=0, val; i<Math.max(url.length, route.length); i++) {
-    let [, m, param, flag] = (route[i] || '').match(/^(\:?)(.*?)([+*?]?)$/);
-    val = url[i];
-    // segment match:
-    if (!m && param==val) continue;
-    // segment mismatch / missing required field:
-    if (!m || !val && flag != '?' && flag != '*') return;
-    // field match:
-    matches[param] = val && decodeURIComponent(val);
-    // normal/optional field:
-    if (flag >= '?') continue;
-    // rest (+/*) match:
-    matches[param] = url.slice(i).map(decodeURIComponent).join('/');
-    break;
+	url = url.trim('/').split('/');
+	route = (route || '').trim('/').split('/');
+	for (let i = 0, val; i < Math.max(url.length, route.length); i++) {
+		let [, m, param, flag] = (route[i] || '').match(/^(:?)(.*?)([+*?]?)$/);
+		val = url[i];
+		// segment match:
+		if (!m && param == val) continue;
+		// segment mismatch / missing required field:
+		if (!m || (!val && flag != '?' && flag != '*')) return;
+		// field match:
+		matches[param] = val && decodeURIComponent(val);
+		// normal/optional field:
+		if (flag >= '?') continue;
+		// rest (+/*) match:
+		matches[param] = url.slice(i).map(decodeURIComponent).join('/');
+		break;
 	}
 
-  return matches;
-}
+	return matches;
+};
 
 export function LocationProvider(props) {
 	const [url, route] = useReducer(UPDATE, location.pathname + location.search);
@@ -106,19 +106,15 @@ export function Router(props) {
 
 	let p, d, m;
 	[].concat(props.children || []).some(vnode => {
-		const matches = exec(path, vnode.props.path, m = { path, query });
+		const matches = exec(path, vnode.props.path, (m = { path, query }));
 		if (matches) {
-			return p = h(
-				RouteContext.Provider,
-				{ value: m },
-				cloneElement(vnode, m)
-			);
+			return (p = h(RouteContext.Provider, { value: m }, cloneElement(vnode, m)));
 		}
 
 		if (vnode.props.default) d = cloneElement(vnode, m);
 	});
 
-	return [curChildren.current = p || d, prevChildren.current];
+	return [(curChildren.current = p || d), prevChildren.current];
 }
 
 Router.Provider = LocationProvider;
