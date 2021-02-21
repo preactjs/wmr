@@ -102,6 +102,8 @@ const App = () => (
 
 During prerendering, the generated HTML includes our full `<Home>` and `<Profiles>` component output because it waits for the `lazy()`-wrapped `import()` to resolve.
 
+You can use the `useRoute` hook to get information of the route you are currently on.
+
 **Progressive Hydration:** When the app is hydrated on the client, the route (`Home` or `Profile` in this case) suspends. This causes hydration for that part of the page to be deferred until the route's `import()` is resolved, at which point that part of the page automatically finishes hydrating.
 
 **Seamless Routing:** Switch switching between routes on the client, the Router is aware of asynchronous dependencies in routes. Instead of clearing the current route and showing a loading spinner while waiting for the next route (or its data), the router preserves the current route in-place until the incoming route has finished loading, then they are swapped.

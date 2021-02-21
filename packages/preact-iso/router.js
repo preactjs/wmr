@@ -108,9 +108,13 @@ export function Router(props) {
 	[].concat(props.children || []).some(vnode => {
 		const matches = exec(path, vnode.props.path, m = { path, query });
 		if (matches) {
-			return p = cloneElement(vnode, { ...m, ...matches })
+			return p = (
+				<RouteContext.Provider value={{ ...matches }}>
+					{cloneElement(vnode, { ...m, ...matches })}
+				</RouteContext.Provider>
+			);
 		}
-		
+
 		if (vnode.props.default) d = cloneElement(vnode, m);
 	});
 
@@ -120,6 +124,8 @@ export function Router(props) {
 Router.Provider = LocationProvider;
 
 LocationProvider.ctx = createContext(/** @type {{ url: string, path: string, query: object, route }} */ ({}));
+const RouteContext = createContext({});
 
 export const useLoc = () => useContext(LocationProvider.ctx);
 export const useLocation = useLoc;
+export const useRoute = () => useContext(RouteContext);
