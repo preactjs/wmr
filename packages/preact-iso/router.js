@@ -110,8 +110,8 @@ export function Router(props) {
 		if (matches) {
 			return p = h(
 				RouteContext.Provider,
-				{ value: {  ...matches } },
-				cloneElement(vnode, { ...m, ...matches })
+				{ value: m },
+				cloneElement(vnode, m)
 			);
 		}
 
