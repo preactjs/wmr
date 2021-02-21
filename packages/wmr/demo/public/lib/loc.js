@@ -105,11 +105,12 @@ export function Router(props) {
 
 	let p, d, m;
 	[].concat(props.children || []).some(vnode => {
+		console.log(path, vnode.props.path, query);
 		const matches = exec(path, vnode.props.path, m = { path, query });
 		if (matches) {
 			return p = cloneElement(vnode, { ...m, ...matches })
 		} else {
-			vnode.props.default && d = cloneElement(vnode, m);
+			if (vnode.props.default) d = cloneElement(vnode, m);
 			return undefined;
 		}
 	});

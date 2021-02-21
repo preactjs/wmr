@@ -110,7 +110,7 @@ export function Router(props) {
 		if (matches) {
 			return p = cloneElement(vnode, { ...m, ...matches })
 		} else {
-			vnode.props.default && d = cloneElement(vnode, m);
+			if (vnode.props.default) d = cloneElement(vnode, m);
 			return undefined;
 		}
 	});
