@@ -5,10 +5,12 @@ on:
     branches:
       - main
     paths:
-      - packages/{wmr,preact-iso}/**
+      - packages/wmr/**
+      - packages/preact-iso/**
   pull_request:
     paths:
-      - packages/{wmr,preact-iso}/**
+      - packages/wmr/**
+      - packages/preact-iso/**
 
 jobs:
   build:
