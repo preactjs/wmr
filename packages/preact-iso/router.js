@@ -1,5 +1,5 @@
 import { h, createContext, cloneElement } from 'preact';
-import { useContext, useMemo, useReducer, useEffect, useRef, useState } from 'preact/hooks';
+import { useContext, useMemo, useReducer, useEffect, useRef } from 'preact/hooks';
 
 const UPDATE = (state, url, push) => {
 	if (url && url.type === 'click') {
@@ -42,13 +42,12 @@ const exec = (url, route, matches) => {
 
 export function LocationProvider(props) {
 	const [url, route] = useReducer(UPDATE, location.pathname + location.search);
-	const [matchedRoute, setMatchedRoute] = useState();
 
 	const value = useMemo(() => {
 		const u = new URL(url, location.origin);
 		const path = u.pathname.replace(/(.)\/$/g, '$1');
 		// @ts-ignore-next
-		return { url, path, query: Object.fromEntries(u.searchParams), route, setMatchedRoute };
+		return { url, path, query: Object.fromEntries(u.searchParams), route };
 	}, [url]);
 
 	useEffect(() => {
