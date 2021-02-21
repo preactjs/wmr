@@ -23,7 +23,7 @@ Enable the plugin by importing _(or pasting!)_ it into your `wmr.config.js`:
 import directoryPlugin from '@wmr-plugins/directory-import';
 
 export default function (config) {
-	config.plugins.push(directoryPlugin(config));
+	directoryPlugin(config);
 }
 ```
 
