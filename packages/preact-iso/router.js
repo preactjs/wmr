@@ -18,7 +18,7 @@ const UPDATE = (state, url, push) => {
 	return url;
 };
 
-const exec = (url, route, matches) => {
+export const exec = (url, route, matches) => {
   url = url.trim('/').split('/');
   route = (route || '').trim('/').split('/');
   for (let i=0, val; i<Math.max(url.length, route.length); i++) {
@@ -110,7 +110,8 @@ export function Router(props) {
 		if (matches) {
 			return p = cloneElement(vnode, { ...m, ...matches })
 		} else {
-			return vnode.props.default ? d = cloneElement(vnode, m) : 0, undefined
+			vnode.props.default && d = cloneElement(vnode, m);
+			return undefined;
 		}
 	});
 
