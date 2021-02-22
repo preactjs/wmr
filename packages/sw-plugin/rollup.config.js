@@ -17,7 +17,7 @@ const config = {
 		externalLiveBindings: false,
 		preferConst: true
 	},
-	external: [...builtins],
+	external: [...builtins, 'wmr', 'rollup'],
 	plugins: [
 		commonjs({
 			exclude: [/\.mjs$/, /\/rollup\//, resolve('src')],

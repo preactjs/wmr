@@ -25,6 +25,7 @@
 		"wmr": "^1.3.0"
 	},
 	"peerDependencies": {
+		"rollup": "^2.0.0",
 		"wmr": ">=1.0.0"
 	},
 	"engines": {
