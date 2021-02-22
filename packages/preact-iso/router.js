@@ -1,4 +1,4 @@
-import { h, createContext, Fragment, cloneElement } from 'preact';
+import { h, createContext, cloneElement } from 'preact';
 import { useContext, useMemo, useReducer, useEffect, useLayoutEffect, useRef } from 'preact/hooks';
 
 const UPDATE = (state, url, push) => {
@@ -67,7 +67,7 @@ export function LocationProvider(props) {
 export function Router(props) {
 	const [, update] = useReducer(c => c + 1, 0);
 
-	const loc = useLoc();
+	const loc = useLocation();
 
 	const { url, path, query } = loc;
 
@@ -133,6 +133,5 @@ Router.Provider = LocationProvider;
 LocationProvider.ctx = createContext(/** @type {{ url: string, path: string, query: object, route }} */ ({}));
 const RouteContext = createContext({});
 
-export const useLoc = () => useContext(LocationProvider.ctx);
-export const useLocation = useLoc;
+export const useLocaction = () => useContext(LocationProvider.ctx);
 export const useRoute = () => useContext(RouteContext);
