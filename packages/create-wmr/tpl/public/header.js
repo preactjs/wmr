@@ -1,7 +1,7 @@
-import { useLoc } from 'preact-iso/router';
+import { useLocation } from 'preact-iso/router';
 
 export default function Header() {
-	const { url } = useLoc();
+	const { url } = useLocation();
 	return (
 		<header>
 			<nav>

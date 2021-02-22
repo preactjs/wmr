@@ -67,7 +67,7 @@ export function LocationProvider(props) {
 export function Router(props) {
 	const [, update] = useReducer(c => c + 1, 0);
 
-	const loc = useLoc();
+	const loc = useLocation();
 
 	const { url, path, query } = loc;
 
@@ -130,6 +130,5 @@ LocationProvider.ctx = createContext(/** @type {{ url: string, path: string, que
 
 const RouteContext = createContext({});
 
-export const useLoc = () => useContext(LocationProvider.ctx);
-export const useLocation = useLoc;
+export const useLocation = () => useContext(LocationProvider.ctx);
 export const useRoute = () => useContext(RouteContext);
