@@ -1,6 +1,6 @@
 {
 	"name": "preact-iso",
-	"version": "0.3.1",
+	"version": "1.0.0",
 	"description": "Isomorphic utilities for Preact",
 	"main": "./index.js",
 	"module": "./index.js",
