@@ -10,6 +10,7 @@
 		"dev": "cross-env PROFILE=true nodemon -w src --exec \"npm run -s demo\"",
 		"build": "rollup -c",
 		"ci": "yarn build && cd demo && node ../wmr.cjs build --prerender",
+		"prepublishOnly": "yarn build",
 		"prepack": "node --experimental-modules ./src/lib/~publish.js",
 		"test-e2e": "cross-env JEST_PUPPETEER_CONFIG=jest-puppeteer.config.cjs jest",
 		"test": "eslint src test && npm run test-e2e"
