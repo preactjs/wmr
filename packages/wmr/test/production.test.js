@@ -224,6 +224,35 @@ describe('production', () => {
 		});
 	});
 
+	describe('prerender', () => {
+		it('should support prerendered HTML, title & meta tags', async () => {
+			await loadFixture('prod-head', env);
+			instance = await runWmr(env.tmp.path, 'build', '--prerender');
+			const code = await instance.done;
+			console.info(instance.output.join('\n'));
+			expect(code).toBe(0);
+
+			const readdir = async f => (await fs.readdir(path.join(env.tmp.path, f))).filter(f => f[0] !== '.');
+
+			const pages = await readdir('dist');
+
+			expect(pages).toContain('index.html');
+			expect(pages).toContain('other.html');
+
+			const index = await fs.readFile(path.join(env.tmp.path, 'dist', 'index.html'), 'utf8');
+			expect(index).toMatch('<title>Page: /</title>');
+			expect(index).toMatch('<link rel="icon" href="data:,favicon-for-/">');
+			expect(index).toMatch('<h1>page = /</h1>');
+			expect(index).toMatch(`<meta property="og:title" content="Become an SEO Expert">`);
+
+			const other = await fs.readFile(path.join(env.tmp.path, 'dist', 'other.html'), 'utf8');
+			expect(other).toMatch('<title>Page: /other.html</title>');
+			expect(other).toMatch('<link rel="icon" href="data:,favicon-for-/other.html">');
+			expect(other).toMatch('<h1>page = /other.html</h1>');
+			expect(other).toMatch(`<meta property="og:title" content="Become an SEO Expert">`);
+		});
+	});
+
 	describe('Code Splitting', () => {
 		it('should support variables in dynamic import', async () => {
 			await loadFixture('dynamic-import', env);
