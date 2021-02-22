@@ -3,7 +3,8 @@
 	"version": "0.1.0",
 	"type": "module",
 	"scripts": {
-		"build": "rollup -c"
+		"build": "rollup -c",
+		"prepublishOnly": "yarn build"
 	},
 	"author": "The Preact Authors (https://preactjs.com)",
 	"license": "MIT",

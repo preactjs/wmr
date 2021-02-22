@@ -27,7 +27,7 @@ const config = {
 		nodeResolve({
 			preferBuiltins: true,
 			extensions: ['.mjs', '.js', '.json', '.es6', '.node']
-		})
+		}),
 	]
 };
 
