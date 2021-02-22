@@ -12,7 +12,7 @@
 		"react-dom": "preact/compat"
 	},
 	"dependencies": {
-		"preact-iso": "^0.2.0"
+		"preact-iso": "^1.0.0"
 	},
 	"devDependencies": {
 		"wmr": "^1.0.0"
