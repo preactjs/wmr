@@ -13,7 +13,7 @@
 	},
 	"dependencies": {
 		"preact": "^10.5.12",
-		"preact-iso": "0.x"
+		"preact-iso": "^1.0.0"
 	},
 	"devDependencies": {
 		"wmr": "^1.2.0"
