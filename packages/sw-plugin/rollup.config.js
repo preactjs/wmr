@@ -6,7 +6,7 @@ import builtins from 'builtin-modules';
 /** @type {import('rollup').RollupOptions} */
 const config = {
 	input: 'src/index.js',
-	inlineDynamicImports: true,
+	inlineDynamicImports: false,
 	output: {
 		file: 'sw-plugin.cjs',
 		format: 'cjs',
@@ -17,7 +17,7 @@ const config = {
 		externalLiveBindings: false,
 		preferConst: true
 	},
-	external: [...builtins],
+	external: [...builtins, 'wmr', 'rollup'],
 	plugins: [
 		commonjs({
 			exclude: [/\.mjs$/, /\/rollup\//, resolve('src')],
@@ -27,7 +27,7 @@ const config = {
 		nodeResolve({
 			preferBuiltins: true,
 			extensions: ['.mjs', '.js', '.json', '.es6', '.node']
-		})
+		}),
 	]
 };
 

@@ -12,7 +12,8 @@
 		"require": "./dist/index.cjs"
 	},
 	"scripts": {
-		"prepare": "npx cjyes"
+		"prepare": "npx cjyes",
+		"prepublishOnly": "cjyes"
 	},
 	"author": "The Preact Authors (https://preactjs.com)",
 	"repository": "preactjs/wmr",
@@ -21,6 +22,9 @@
 		"index.js",
 		"dist"
 	],
+	"devDependencies": {
+		"cjyes": "^0.3.1"
+	},
 	"dependencies": {
 		"@babel/standalone": "^7.11.6"
 	}
