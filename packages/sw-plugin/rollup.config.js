@@ -6,7 +6,7 @@ import builtins from 'builtin-modules';
 /** @type {import('rollup').RollupOptions} */
 const config = {
 	input: 'src/index.js',
-	inlineDynamicImports: true,
+	inlineDynamicImports: false,
 	output: {
 		file: 'sw-plugin.cjs',
 		format: 'cjs',
