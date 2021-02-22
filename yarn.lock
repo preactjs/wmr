@@ -4604,7 +4604,7 @@ hsla-regex@^1.0.0:
   resolved "https://registry.yarnpkg.com/hsla-regex/-/hsla-regex-1.0.0.tgz#c1ce7a3168c8c6614033a4b5f7877f3b225f9c38"
   integrity sha1-wc56MWjIxmFAM6S194d/OyJfnDg=
 
-htm@^3.0.0:
+htm@^3.0.0, htm@^3.0.4:
   version "3.0.4"
   resolved "https://registry.yarnpkg.com/htm/-/htm-3.0.4.tgz#c90c891645d2d792bdb9f8c867964b18e3503718"
   integrity sha512-VRdvxX3tmrXuT/Ovt59NMp/ORMFi4bceFMDjos1PV4E0mV+5votuID8R60egR9A4U8nLt238R/snlJGz3UYiTQ==
@@ -7383,7 +7383,7 @@ preact-render-to-string@^5.1.12:
   dependencies:
     pretty-format "^3.8.0"
 
-preact@^10.5.7:
+preact@^10.5.12:
   version "10.5.12"
   resolved "https://registry.yarnpkg.com/preact/-/preact-10.5.12.tgz#6a8ee8bf40a695c505df9abebacd924e4dd37704"
   integrity sha512-r6siDkuD36oszwlCkcqDJCAKBQxGoeEGytw2DGMD5A/GGdu5Tymw+N2OBXwvOLxg6d1FeY8MgMV3cc5aVQo4Cg==
