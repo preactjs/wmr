@@ -1,5 +1,5 @@
-import { h, createContext, cloneElement } from 'preact';
-import { useContext, useMemo, useReducer, useEffect, useRef } from 'preact/hooks';
+import { h, createContext, Fragment, cloneElement } from 'preact';
+import { useContext, useMemo, useReducer, useEffect, useLayoutEffect, useRef } from 'preact/hooks';
 
 const UPDATE = (state, url, push) => {
 	if (url && url.type === 'click') {
@@ -58,7 +58,7 @@ export function LocationProvider(props) {
 			removeEventListener('click', route);
 			removeEventListener('popstate', route);
 		};
-	});
+	}, []);
 
 	// @ts-ignore
 	return h(LocationProvider.ctx.Provider, { value }, props.children);
@@ -81,20 +81,33 @@ export function Router(props) {
 		pending.current = null;
 		prev.current = cur.current;
 		prevChildren.current = curChildren.current;
+		// old <Committer> uses the pending promise ref to know whether to render
+		prevChildren.current.props.pending = pending;
 		cur.current = loc;
 	}
+
+	curChildren.current = useMemo(() => {
+		let p, d, m;
+		[].concat(props.children || []).some(vnode => {
+			const matches = exec(path, vnode.props.path, (m = { path, query }));
+			if (matches) return (p = cloneElement(vnode, m));
+			if (vnode.props.default) d = cloneElement(vnode, m);
+		});
+
+		return h(Committer, {}, h(RouteContext.Provider, { value: m }, p || d));
+	}, [url]);
 
 	this.componentDidCatch = err => {
 		if (err && err.then) pending.current = err;
 	};
 
-	useEffect(() => {
+	useLayoutEffect(() => {
 		let p = pending.current;
 
 		const commit = () => {
 			if (cur.current.url !== url || pending.current !== p) return;
+			prev.current = prevChildren.current = pending.current = null;
 			if (props.onLoadEnd) props.onLoadEnd(url);
-			prev.current = prevChildren.current = null;
 			update(0);
 		};
 
@@ -104,17 +117,15 @@ export function Router(props) {
 		} else commit();
 	}, [url]);
 
-	let p, d, m;
-	[].concat(props.children || []).some(vnode => {
-		const matches = exec(path, vnode.props.path, (m = { path, query }));
-		if (matches) {
-			return (p = h(RouteContext.Provider, { value: m }, cloneElement(vnode, m)));
-		}
+	// Hi! Wondering what this horrid line is for? That's totally reasonable, it is gross.
+	// It prevents the old route from being remounted because it got shifted in the children Array.
+	if (this.__v && this.__v.__k) this.__v.__k.reverse();
 
-		if (vnode.props.default) d = cloneElement(vnode, m);
-	});
+	return [curChildren.current, prevChildren.current];
+}
 
-	return [(curChildren.current = p || d), prevChildren.current];
+function Committer({ pending, children }) {
+	return pending && !pending.current ? null : children;
 }
 
 Router.Provider = LocationProvider;

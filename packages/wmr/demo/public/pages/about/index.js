@@ -1,8 +1,8 @@
 import styles from './style.module.css';
 
-const About = ({ query }) => (
+const About = ({ query, title }) => (
 	<section class={styles.about}>
-		<h1>About</h1>
+		<h1>{title || 'About'}</h1>
 		<p>My name is Jason.</p>
 		<pre>{JSON.stringify(query)}</pre>
 	</section>

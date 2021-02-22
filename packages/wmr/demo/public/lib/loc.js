@@ -85,7 +85,11 @@ export function Router(props) {
 	}
 
 	this.componentDidCatch = err => {
-		if (err && err.then) pending.current = err;
+		if (err && err.then) {
+			// Trigger an update so the rendering login will pickup the pending promise.
+			update(1);
+			pending.current = err;
+		}
 	};
 
 	useEffect(() => {
@@ -107,15 +111,14 @@ export function Router(props) {
 	[].concat(props.children || []).some(vnode => {
 		const matches = exec(path, vnode.props.path, (m = { path, query }));
 		if (matches) {
-			return p = (
+			return (p = (
 				<RouteContext.Provider value={{ ...matches }}>
 					{cloneElement(vnode, { ...m, ...matches })}
 				</RouteContext.Provider>
-			);
-		} else {
-			if (vnode.props.default) d = cloneElement(vnode, m);
-			return undefined;
+			));
 		}
+		if (vnode.props.default) d = cloneElement(vnode, m);
+		return undefined;
 	});
 
 	return [(curChildren.current = p || d), prevChildren.current];
