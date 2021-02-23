@@ -1,3 +1,7 @@
+/*
+ * Note:
+ * This Rollup config is used to build both the `wmr` and `create-wmr` packages.
+ */
 import { resolve, sep } from 'path';
 import shebangPlugin from 'rollup-plugin-preserve-shebang';
 import commonjs from '@rollup/plugin-commonjs';
