@@ -158,13 +158,12 @@ export default function wmrMiddleware({
 
 		if (!pendingChanges.size) timeout = setTimeout(flushChanges, 60);
 
-		if (filename.endsWith('.css') && !/\.module\.css$/.test(filename)) {
+		if (filename.endsWith('.css')) {
 			WRITE_CACHE.delete(filename);
 			pendingChanges.add('/' + filename);
 		} else if (/\.[tj]sx?$/.test(filename)) {
 			if (!bubbleUpdates(filename)) {
 				clearTimeout(timeout);
-				WRITE_CACHE.delete(filename);
 				onChange({ type: 'reload' });
 			}
 		} else {
