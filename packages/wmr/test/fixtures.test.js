@@ -251,13 +251,13 @@ describe('fixtures', () => {
 			instance = await runWmrFast(env.tmp.path);
 			await getOutput(env, instance);
 
-			expect(await page.$eval('body', e => getComputedStyle(e).background)).toBe('rgb(51, 51, 51)');
+			expect(await page.$eval('body', e => getComputedStyle(e).color)).toBe('rgb(51, 51, 51)');
 
-			await updateFile(env.tmp.path, 'index.css', content => content.replace('background: #333;', 'background: #000;'));
+			await updateFile(env.tmp.path, 'index.css', content => content.replace('color: #333;', 'color: #000;'));
 
 			await timeout(1000);
 
-			expect(await page.$eval('body', e => getComputedStyle(e).background)).toBe('rgb(0, 0, 0)');
+			expect(await page.$eval('body', e => getComputedStyle(e).color)).toBe('rgb(0, 0, 0)');
 		});
 
 		it('should hot reload a module css-file', async () => {
