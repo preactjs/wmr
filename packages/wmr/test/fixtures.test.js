@@ -222,6 +222,31 @@ describe('fixtures', () => {
 			expect(text).toEqual('Away');
 		});
 
+		it('should hot reload for a newly created file', async () => {
+			await loadFixture('hmr', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			const compPath = path.join(env.tmp.path, 'child.js');
+			await fs.writeFile(compPath, `export default function Child() {return <p class="child">child</p>}`);
+
+			const home = await env.page.$('.home');
+			let text = home ? await home.evaluate(el => el.textContent) : null;
+			expect(text).toEqual('Home');
+
+			await updateFile(env.tmp.path, 'home.js', content => {
+				content += `import Child from './child.js'
+				${content}`;
+				return content.replace('<p class="home">Home</p>', '<p class="home">Away</p>');
+			});
+
+			await timeout(1000);
+
+			const child = await env.page.$('.child');
+			text = child ? await child.evaluate(el => el.textContent) : null;
+			expect(text).toEqual('Home');
+		});
+
 		it('should hot reload the css-file', async () => {
 			await loadFixture('hmr', env);
 			instance = await runWmrFast(env.tmp.path);
