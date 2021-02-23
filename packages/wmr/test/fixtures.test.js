@@ -227,13 +227,13 @@ describe('fixtures', () => {
 			instance = await runWmrFast(env.tmp.path);
 			await getOutput(env, instance);
 
-			expect(await page.$eval('main', e => getComputedStyle(e).color)).toBe('#333');
+			expect(await page.$eval('main', e => getComputedStyle(e).color)).toBe('rgb(51, 51, 51)');
 
 			await updateFile(env.tmp.path, 'style.module.js', content => content.replace('color: #333;', 'color: #000;'));
 
 			await timeout(1000);
 
-			expect(await page.$eval('main', e => getComputedStyle(e).color)).toBe('#000');
+			expect(await page.$eval('main', e => getComputedStyle(e).color)).toBe('rgb(0, 0, 0)');
 		});
 	});
 
