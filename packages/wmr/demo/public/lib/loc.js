@@ -1,5 +1,5 @@
 import { h, createContext, cloneElement } from 'preact';
-import { useContext, useMemo, useReducer, useEffect, useRef } from 'preact/hooks';
+import { useContext, useMemo, useReducer, useEffect, useLayoutEffect, useRef } from 'preact/hooks';
 
 const UPDATE = (state, url, push) => {
 	if (url && url.type === 'click') {
@@ -18,11 +18,11 @@ const UPDATE = (state, url, push) => {
 	return url;
 };
 
-const exec = (url, route, matches) => {
+export const exec = (url, route, matches) => {
 	url = url.trim('/').split('/');
 	route = (route || '').trim('/').split('/');
 	for (let i = 0, val; i < Math.max(url.length, route.length); i++) {
-		let [, m, param, flag] = (route[i] || '').match(/^(\:?)(.*?)([+*?]?)$/);
+		let [, m, param, flag] = (route[i] || '').match(/^(:?)(.*?)([+*?]?)$/);
 		val = url[i];
 		// segment match:
 		if (!m && param == val) continue;
@@ -58,7 +58,7 @@ export function LocationProvider(props) {
 			removeEventListener('click', route);
 			removeEventListener('popstate', route);
 		};
-	});
+	}, []);
 
 	// @ts-ignore
 	return h(LocationProvider.ctx.Provider, { value }, props.children);
@@ -77,27 +77,39 @@ export function Router(props) {
 	const prevChildren = useRef();
 	const pending = useRef();
 
+	let reverse = false;
 	if (url !== cur.current.url) {
+		reverse = true;
 		pending.current = null;
 		prev.current = cur.current;
 		prevChildren.current = curChildren.current;
+		// old <Committer> uses the pending promise ref to know whether to render
+		prevChildren.current.props.pending = pending;
 		cur.current = loc;
 	}
 
+	curChildren.current = useMemo(() => {
+		let p, d, m;
+		[].concat(props.children || []).some(vnode => {
+			const matches = exec(path, vnode.props.path, (m = { path, query }));
+			if (matches) return (p = cloneElement(vnode, m));
+			if (vnode.props.default) d = cloneElement(vnode, m);
+		});
+
+		return h(Committer, {}, h(RouteContext.Provider, { value: m }, p || d));
+	}, [url]);
+
 	this.componentDidCatch = err => {
-		if (err && err.then) {
-			// Trigger an update so the rendering login will pickup the pending promise.
-			update(1);
-			pending.current = err;
-		}
+		if (err && err.then) pending.current = err;
 	};
 
-	useEffect(() => {
+	useLayoutEffect(() => {
 		let p = pending.current;
+
 		const commit = () => {
 			if (cur.current.url !== url || pending.current !== p) return;
+			prev.current = prevChildren.current = pending.current = null;
 			if (props.onLoadEnd) props.onLoadEnd(url);
-			prev.current = prevChildren.current = null;
 			update(0);
 		};
 
@@ -107,27 +119,20 @@ export function Router(props) {
 		} else commit();
 	}, [url]);
 
-	let p, d, m;
-	[].concat(props.children || []).some(vnode => {
-		const matches = exec(path, vnode.props.path, (m = { path, query }));
-		if (matches) {
-			return (p = (
-				<RouteContext.Provider value={{ ...matches }}>
-					{cloneElement(vnode, { ...m, ...matches })}
-				</RouteContext.Provider>
-			));
-		}
-		if (vnode.props.default) d = cloneElement(vnode, m);
-		return undefined;
-	});
+	// Hi! Wondering what this horrid line is for? That's totally reasonable, it is gross.
+	// It prevents the old route from being remounted because it got shifted in the children Array.
+	if (reverse && this.__v && this.__v.__k) this.__v.__k.reverse();
 
-	return [(curChildren.current = p || d), prevChildren.current];
+	return [curChildren.current, prevChildren.current];
+}
+
+function Committer({ pending, children }) {
+	return pending && !pending.current ? null : children;
 }
 
 Router.Provider = LocationProvider;
 
 LocationProvider.ctx = createContext(/** @type {{ url: string, path: string, query: object, route }} */ ({}));
-
 const RouteContext = createContext({});
 
 export const useLocation = () => useContext(LocationProvider.ctx);

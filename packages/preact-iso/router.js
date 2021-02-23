@@ -77,7 +77,9 @@ export function Router(props) {
 	const prevChildren = useRef();
 	const pending = useRef();
 
+	let reverse = false;
 	if (url !== cur.current.url) {
+		reverse = true;
 		pending.current = null;
 		prev.current = cur.current;
 		prevChildren.current = curChildren.current;
@@ -119,7 +121,7 @@ export function Router(props) {
 
 	// Hi! Wondering what this horrid line is for? That's totally reasonable, it is gross.
 	// It prevents the old route from being remounted because it got shifted in the children Array.
-	if (this.__v && this.__v.__k) this.__v.__k.reverse();
+	if (reverse && this.__v && this.__v.__k) this.__v.__k.reverse();
 
 	return [curChildren.current, prevChildren.current];
 }
