@@ -253,7 +253,7 @@ describe('fixtures', () => {
 
 			expect(await page.$eval('main', e => getComputedStyle(e).color)).toBe('rgb(51, 51, 51)');
 
-			await updateFile(env.tmp.path, 'style.module.js', content => content.replace('color: #333;', 'color: #000;'));
+			await updateFile(env.tmp.path, 'style.module.css', content => content.replace('color: #333;', 'color: #000;'));
 
 			await timeout(1000);
 
