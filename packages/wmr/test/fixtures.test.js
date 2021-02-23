@@ -244,7 +244,7 @@ describe('fixtures', () => {
 
 			const child = await env.page.$('.child');
 			text = child ? await child.evaluate(el => el.textContent) : null;
-			expect(text).toEqual('Home');
+			expect(text).toEqual('child');
 		});
 
 		it('should hot reload the css-file', async () => {
