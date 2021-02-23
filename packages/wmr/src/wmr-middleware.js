@@ -117,7 +117,9 @@ export default function wmrMiddleware({
 	});
 	const pendingChanges = new Set();
 
+	let timeout = null;
 	function flushChanges() {
+		timeout = null;
 		onChange({ changes: Array.from(pendingChanges), duration: 0 });
 		pendingChanges.clear();
 	}
@@ -154,9 +156,20 @@ export default function wmrMiddleware({
 		// Delete any generated CSS Modules mapping modules:
 		if (/\.module\.css$/.test(filename)) WRITE_CACHE.delete(filename + '.js');
 
-		if (!pendingChanges.size) setTimeout(flushChanges, 60);
-		const result = bubbleUpdates(filename);
-		if (!result) {
+		if (!pendingChanges.size) timeout = setTimeout(flushChanges, 60);
+
+		if (filename.endsWith('.css') && !/\.module\.css$/.test(filename)) {
+			WRITE_CACHE.delete(filename);
+			pendingChanges.add('/' + filename);
+		} else if (/\.[tj]sx?$/.test(filename)) {
+			if (!bubbleUpdates(filename)) {
+				clearTimeout(timeout);
+				WRITE_CACHE.delete(filename);
+				onChange({ type: 'reload' });
+			}
+		} else {
+			WRITE_CACHE.delete(filename);
+			clearTimeout(timeout);
 			onChange({ type: 'reload' });
 		}
 	});
