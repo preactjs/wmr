@@ -40,7 +40,7 @@ function handleMessage(e) {
 				url = resolve(url);
 
 				if (!mods.get(url)) {
-					if (/\.css$/.test(url)) {
+					if (/\.css$/.test(url) || /\.s[ac]ss$/.test(url)) {
 						if (mods.has(url + '.js')) {
 							url += '.js';
 						} else {
@@ -164,13 +164,32 @@ export function style(filename, id) {
 	}
 }
 
+function traverseSheet(sheet, target) {
+	for (let i = 0; i < sheet.rules.length; i++) {
+		if (sheet.rules[i].href && resolve(strip(sheet.rules[i].href)) === strip(target)) {
+			return sheet.rules[i];
+		} else if (sheet.rules[i].styleSheet) {
+			return traverseSheet(sheet.rules[i].styleSheet, target);
+		}
+	}
+}
+
 // Update a non-imported stylesheet
 function updateStyleSheet(url) {
 	const sheets = document.styleSheets;
+
 	for (let i = 0; i < sheets.length; i++) {
 		if (sheets[i].href && strip(sheets[i].href) === url) {
 			// @ts-ignore
 			sheets[i].ownerNode.href = strip(url) + '?t=' + Date.now();
+			return true;
+		}
+
+		const found = traverseSheet(sheets[i], url);
+		if (found) {
+			const index = [...found.parentStyleSheet.rules].indexOf(found);
+			found.parentStyleSheet.insertRule(`@import url("${strip(url) + '?t=' + Date.now()}")`, index);
+			found.parentStyleSheet.deleteRule(index + 1);
 			return true;
 		}
 	}
