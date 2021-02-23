@@ -158,7 +158,7 @@ export default function wmrMiddleware({
 
 		if (!pendingChanges.size) timeout = setTimeout(flushChanges, 60);
 
-		if (filename.endsWith('.css')) {
+		if (filename.endsWith('.css') || /\.s[ac]ss$/.test(filename)) {
 			WRITE_CACHE.delete(filename);
 			pendingChanges.add('/' + filename);
 		} else if (/\.[tj]sx?$/.test(filename)) {
