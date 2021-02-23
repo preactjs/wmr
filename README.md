@@ -54,7 +54,7 @@ yarn add -D wmr
 
 > 🔥 _You can also use `npx wmr` anywhere!_
 
-**2.** Next you'll want to create a `public/index.html` file. You can use [this example](https://github.com/preactjs/wmr/blob/master/demo/public/index.html), though there's really nothing special about this HTML file. Just make sure your scripts are ES Modules by including `type="module"`:
+**2.** Next you'll want to create a `public/index.html` file. You can use [this example](https://github.com/preactjs/wmr/blob/main/packages/wmr/demo/public/index.html), though there's really nothing special about this HTML file. Just make sure your scripts are ES Modules by including `type="module"`:
 
 ```html
 <!DOCTYPE html>
@@ -127,7 +127,7 @@ function App() {
 
 ## Configuration and plugins
 
-WMR supports a `wmr.config.js` _(or `wmr.config.mjs`)_ configuration file, which can be used to set [WMR's options](https://github.com/preactjs/wmr/blob/master/types.d.ts) and inject [Rollup plugins](https://github.com/rollup/plugins) or [Polka/Express middleware](https://github.com/lukeed/polka#middleware).
+WMR supports a `wmr.config.js` _(or `wmr.config.mjs`)_ configuration file, which can be used to set [WMR's options](https://github.com/preactjs/wmr/blob/main/packages/wmr/types.d.ts) and inject [Rollup plugins](https://github.com/rollup/plugins) or [Polka/Express middleware](https://github.com/lukeed/polka#middleware).
 
 You can export a `default` config function applied to all WMR commands, or individual functions for `start`, `build` and `serve`:
 
@@ -169,7 +169,7 @@ export async function serve(config) {
 
 > **Note:** remember to add `"type":"module"` to your package.json _or_ use the `.mjs` file extension to make the file a JS module.
 
-See [the full list of options](https://github.com/preactjs/wmr/blob/master/types.d.ts).
+See [the full list of options](https://github.com/preactjs/wmr/blob/main/packages/wmr/types.d.ts).
 
 ## Recipes
 
