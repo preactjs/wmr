@@ -194,6 +194,49 @@ describe('fixtures', () => {
 		});
 	});
 
+	describe('hmr', () => {
+		async function updateFile(tempDir, file, replacer) {
+			const compPath = path.join(tempDir, file);
+			const content = await fs.readFile(compPath, 'utf-8');
+			await fs.writeFile(compPath, replacer(content));
+		}
+
+		const timeout = n => new Promise(r => setTimeout(r, n));
+
+		it('should hot reload the child-file', async () => {
+			await loadFixture('hmr', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			const home = await env.page.$('.home');
+			let text = home ? await home.evaluate(el => el.textContent) : null;
+			expect(text).toEqual('Home');
+
+			await updateFile(env.tmp.path, 'home.js', content =>
+				content.replace('<p class="home">Home</p>', '<p class="home">Away</p>')
+			);
+
+			await timeout(1000);
+
+			text = home ? await home.evaluate(el => el.textContent) : null;
+			expect(text).toEqual('Away');
+		});
+
+		it('should hot reload the css-file', async () => {
+			await loadFixture('hmr', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			expect(await page.$eval('main', e => getComputedStyle(e).color)).toBe('#333');
+
+			await updateFile(env.tmp.path, 'style.module.js', content => content.replace('color: #333;', 'color: #000;'));
+
+			await timeout(1000);
+
+			expect(await page.$eval('main', e => getComputedStyle(e).color)).toBe('#000');
+		});
+	});
+
 	describe('commonjs', () => {
 		it('should transpile .cjs files', async () => {
 			await loadFixture('commonjs', env);
