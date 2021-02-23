@@ -11,12 +11,19 @@ const { dim, bold, cyan, red } = kleur;
 
 sade('create-wmr [dir]', true)
 	.option('--eslint', 'Set up the Preact ESLint configuration (takes a lot longer)', false)
+	.option('--force', 'Force install into an existing directory', false)
 	.describe('Initialize a WMR project')
 	.example('npm init wmr ./some-directory')
 	.action(async (dir, opts) => {
 		const origCwd = process.cwd();
 		let cwd = process.cwd();
 		if (dir) {
+			if ((await fs.stat(dir)).isDirectory() && !opts.force) {
+				process.stderr.write(
+					`${red(`Refusing to overwrite directory! Please specify a different directory or use the '--force' flag`)}\n`
+				);
+				process.exit(1);
+			}
 			cwd = resolve(cwd, dir || '.');
 			await fs.mkdir(cwd, { recursive: true });
 			process.chdir(cwd);
