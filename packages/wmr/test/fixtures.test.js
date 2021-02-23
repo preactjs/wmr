@@ -246,7 +246,21 @@ describe('fixtures', () => {
 			expect(text).toEqual('child');
 		});
 
-		it('should hot reload the css-file', async () => {
+		it('should hot reload a css-file imported from index.html', async () => {
+			await loadFixture('hmr', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			expect(await page.$eval('body', e => getComputedStyle(e).background)).toBe('rgb(51, 51, 51)');
+
+			await updateFile(env.tmp.path, 'index.css', content => content.replace('background: #333;', 'background: #000;'));
+
+			await timeout(1000);
+
+			expect(await page.$eval('body', e => getComputedStyle(e).background)).toBe('rgb(0, 0, 0)');
+		});
+
+		it('should hot reload a module css-file', async () => {
 			await loadFixture('hmr', env);
 			instance = await runWmrFast(env.tmp.path);
 			await getOutput(env, instance);
