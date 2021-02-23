@@ -235,9 +235,8 @@ describe('fixtures', () => {
 			expect(text).toEqual('Home');
 
 			await updateFile(env.tmp.path, 'home.js', content => {
-				content += `import Child from './child.js'
-				${content}`;
-				return content.replace('<p class="home">Home</p>', '<p class="home">Away</p>');
+				const newContent = `import Child from './child.js'${content}`;
+				return newContent.replace('<p class="home">Home</p>', '<Child />');
 			});
 
 			await timeout(1000);
