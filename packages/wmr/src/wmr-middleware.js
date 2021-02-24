@@ -164,12 +164,12 @@ export default function wmrMiddleware({
 		} else if (/\.[tj]sx?$/.test(filename)) {
 			if (!bubbleUpdates(filename)) {
 				clearTimeout(timeout);
-				onChange({ type: 'reload' });
+				onChange({ reload: true });
 			}
 		} else {
 			WRITE_CACHE.delete(filename);
 			clearTimeout(timeout);
-			onChange({ type: 'reload' });
+			onChange({ reload: true });
 		}
 	});
 
