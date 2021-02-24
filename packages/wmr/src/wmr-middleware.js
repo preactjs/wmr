@@ -135,17 +135,15 @@ export default function wmrMiddleware({
 
 		if (mod.acceptingUpdates) {
 			pendingChanges.add(filename);
+			return true;
 		} else if (mod.dependents.size) {
-			return mod.dependents.some(function (value) {
+			return mod.dependents.every(function (value) {
 				mod.stale = true;
 				return bubbleUpdates(value);
 			});
-		} else {
-			// We need a full-reload signal
-			return false;
 		}
-
-		return true;
+		// We need a full-reload signal
+		return false;
 	}
 
 	watcher.on('change', filename => {
