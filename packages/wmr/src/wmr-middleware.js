@@ -124,7 +124,9 @@ export default function wmrMiddleware({
 		pendingChanges.clear();
 	}
 
-	function bubbleUpdates(filename) {
+	function bubbleUpdates(filename, visited = new Set()) {
+		if (visited.has(filename)) return true;
+		visited.add(filename);
 		// Delete file from the in-memory cache:
 		WRITE_CACHE.delete(filename);
 
@@ -139,7 +141,7 @@ export default function wmrMiddleware({
 		} else if (mod.dependents.size) {
 			return mod.dependents.every(function (value) {
 				mod.stale = true;
-				return bubbleUpdates(value);
+				return bubbleUpdates(value, visited);
 			});
 		}
 		// We need a full-reload signal
