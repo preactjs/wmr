@@ -40,6 +40,17 @@ or
 
 [Check out the docs to learn more](packages/wmr/README.md)
 
+## Packages
+
+| Package                                                    | Version                                                                                                                                              |
+| ---------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [wmr](packages/wmr)                                        | [![wmr npm](https://img.shields.io/npm/v/wmr.svg)](https://npm.im/wmr)                                                                               |
+| [create-wmr](packages/create-wmr)                          | [![create-wmr npm](https://img.shields.io/npm/v/create-wmr.svg)](https://npm.im/create-wmr)                                                          |
+| [@wmr-plugins/directory-import](packages/directory-plugin) | [![@wmr-plugins/directory-import npm](https://img.shields.io/npm/v/@wmr-plugins/directory-import.svg)](https://npm.im/@wmr-plugins/directory-import) |
+| [@wmr-plugins/nomodule](packages/nomodule-plugin)          | [![@wmr-plugins/nomodule npm](https://img.shields.io/npm/v/@wmr-plugins/nomodule.svg)](https://npm.im/@wmr-plugins/nomodule)                         |
+| [@wmr-plugins/service-worker](packages/sw-plugin)          | [![@wmr-plugins/service-worker npm](https://img.shields.io/npm/v/@wmr-plugins/service-worker.svg)](https://npm.im/@wmr-plugins/service-worker)       |
+| [preact-iso](packages/preact-iso)                          | [![preact-iso npm](https://img.shields.io/npm/v/preact-iso.svg)](https://npm.im/preact-iso)                                                          |
+
 ## Contributing
 
 ```sh
