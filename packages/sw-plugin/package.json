@@ -1,0 +1,36 @@
+{
+	"name": "@wmr-plugins/service-worker",
+	"version": "0.1.0",
+	"type": "module",
+	"scripts": {
+		"build": "rollup -c",
+		"prepublishOnly": "yarn build"
+	},
+	"author": "The Preact Authors (https://preactjs.com)",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/preactjs/wmr.git",
+		"directory": "packages/sw-plugin"
+	},
+	"files": [
+		"sw-plugin.cjs",
+		"types.d.ts"
+	],
+	"types": "./types.d.ts",
+	"devDependencies": {
+		"@rollup/plugin-commonjs": "^14.0.0",
+		"@rollup/plugin-node-resolve": "^8.1.0",
+		"rollup": "^2.39.0",
+		"wmr": "^1.3.0"
+	},
+	"dependencies": {
+		"rollup": "^2.0.0"
+	},
+	"peerDependencies": {
+		"wmr": ">=1.0.0"
+	},
+	"engines": {
+		"node": ">=12"
+	}
+}

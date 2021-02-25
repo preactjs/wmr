@@ -1,31 +1,13 @@
 {
-	"name": "wmr",
-	"version": "1.1.0",
-	"bin": "wmr.cjs",
-	"type": "module",
-	"scripts": {
-		"demo": "cd demo && node --experimental-modules ../src/cli.js 2>&1",
-		"demo:prod": "cd demo && node --experimental-modules ../src/cli.js build --prerender 2>&1",
-		"demo:serve": "cd demo && node --experimental-modules ../src/cli.js serve",
-		"dev": "cross-env PROFILE=true nodemon -w src --exec \"npm run -s demo\"",
-		"build": "rollup -c",
-		"ci": "npm run build && cd demo && node ../wmr.cjs build --prerender",
-		"prepack": "node --experimental-modules ./src/lib/~publish.js",
-		"test-e2e": "cross-env JEST_PUPPETEER_CONFIG=jest-puppeteer.config.cjs jest",
-		"test": "eslint src test && npm run test-e2e"
-	},
-	"author": "The Preact Authors (https://preactjs.com)",
-	"license": "MIT",
-	"repository": "preactjs/wmr",
-	"files": [
-		"wmr.cjs",
-		"types.d.ts"
-	],
-	"types": "./types.d.ts",
-	"babel": {
-		"plugins": [
-			"@babel/plugin-transform-modules-commonjs"
+	"name": "@wmr/monorepo",
+	"private": true,
+	"workspaces": {
+		"packages": [
+			"./packages/*"
 		]
+	},
+	"scripts": {
+		"ci": "yarn workspace wmr ci"
 	},
 	"eslintConfig": {
 		"extends": [
@@ -62,10 +44,11 @@
 		}
 	},
 	"eslintIgnore": [
-		"wmr.cjs",
-		"test/fixtures/**/*.expected.*",
-		"test/fixtures/*/dist",
-		"test/fixtures/*/.cache"
+		"*.cjs",
+		"*.ts",
+		"packages/wmr/test/fixtures/**/*.expected.*",
+		"packages/wmr/test/fixtures/*/dist",
+		"packages/wmr/test/fixtures/*/.cache"
 	],
 	"prettier": {
 		"singleQuote": true,
@@ -75,11 +58,14 @@
 		"arrowParens": "avoid"
 	},
 	"lint-staged": {
-		"{src,test}/**/*.js": [
+		"packages/**/{src,test}/**/*.js": [
 			"eslint --fix",
 			"prettier --write"
 		],
 		"*.md": [
+			"prettier --write"
+		],
+		"*.json": [
 			"prettier --write"
 		]
 	},
@@ -92,68 +78,15 @@
 		"preset": "jest-puppeteer"
 	},
 	"devDependencies": {
-		"@babel/core": "^7.11.6",
-		"@babel/plugin-transform-modules-commonjs": "^7.10.4",
-		"@rollup/plugin-alias": "^3.1.1",
-		"@rollup/plugin-commonjs": "^14.0.0",
-		"@rollup/plugin-json": "^4.1.0",
-		"@rollup/plugin-node-resolve": "^8.1.0",
-		"@rollup/plugin-virtual": "^2.0.3",
-		"@types/jest": "^26.0.4",
-		"acorn-class-fields": "^0.3.7",
-		"acorn-jsx": "^5.2.0",
-		"acorn-jsx-walk": "^2.0.0",
-		"acorn-walk": "^7.2.0",
-		"astring": "^1.4.3",
-		"async-disk-cache": "^2.1.0",
-		"babel-jest": "^26.1.0",
-		"babel-plugin-transform-jsx-to-htm": "^2.0.0",
-		"bufferutil": "^4.0.1",
-		"chokidar": "^3.4.0",
-		"cross-env": "^7.0.2",
-		"cssnano": "^4.1.10",
-		"devcert": "^1.1.2",
-		"es-module-lexer": "^0.3.24",
+		"@changesets/changelog-github": "^0.2.7",
+		"@changesets/cli": "^2.12.0",
 		"eslint": "^7.4.0",
 		"eslint-config-developit": "^1.2.0",
 		"eslint-config-prettier": "^6.11.0",
 		"eslint-plugin-import": "^2.22.0",
 		"eslint-plugin-prettier": "^3.1.4",
 		"husky": "^4.2.5",
-		"jest": "^26.1.0",
-		"jest-puppeteer": "^4.4.0",
-		"kolorist": "^1.2.7",
 		"lint-staged": "^10.2.11",
-		"magic-string": "^0.25.7",
-		"ncp": "^2.0.0",
-		"node-fetch": "^2.6.1",
-		"nodemon": "^2.0.4",
-		"npm-merge-driver-install": "^1.1.1",
-		"polka": "^0.5.2",
-		"postcss": "^7.0.32",
-		"postcss-es6": "github:postcss/postcss#7.0.32",
-		"posthtml": "^0.13.1",
-		"premove": "^3.0.1",
-		"prettier": "^2.0.5",
-		"puppeteer": "^3.3.0",
-		"rollup": "^2.21.0",
-		"rollup-plugin-preserve-shebang": "^1.0.1",
-		"sade": "^1.7.3",
-		"semver": "^7.3.2",
-		"sirv": "^1.0.6",
-		"stylis": "^4.0.2",
-		"sucrase": "^3.15.0",
-		"tar-stream": "^2.1.3",
-		"terser": "^4.8.0",
-		"tmp-promise": "^3.0.2",
-		"totalist": "^1.1.0",
-		"utf-8-validate": "^5.0.2",
-		"ws": "^7.3.1"
-	},
-	"optionalDependencies": {
-		"fsevents": "^2.1.3"
-	},
-	"engines": {
-		"node": ">=12"
+		"prettier": "^2.0.5"
 	}
 }

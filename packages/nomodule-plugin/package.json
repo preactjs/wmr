@@ -1,0 +1,31 @@
+{
+	"name": "@wmr-plugins/nomodule",
+	"publishConfig": {
+		"access": "public"
+	},
+	"version": "0.1.0",
+	"description": "Generate legacy bundles and serve them to older browsers as a fallback.",
+	"main": "./dist/index.js",
+	"type": "module",
+	"exports": {
+		"import": "./index.js",
+		"require": "./dist/index.cjs"
+	},
+	"scripts": {
+		"prepare": "npx cjyes",
+		"prepublishOnly": "cjyes"
+	},
+	"author": "The Preact Authors (https://preactjs.com)",
+	"repository": "preactjs/wmr",
+	"license": "MIT",
+	"files": [
+		"index.js",
+		"dist"
+	],
+	"devDependencies": {
+		"cjyes": "^0.3.1"
+	},
+	"dependencies": {
+		"@babel/standalone": "^7.11.6"
+	}
+}

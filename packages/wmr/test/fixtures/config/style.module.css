@@ -1,0 +1,21 @@
+.fetcher {
+	padding: 10px;
+	background: #eee;
+}
+.fetcher h3 {
+	margin: 0 0 0.5em;
+	color: #4152be;
+}
+.header {
+	display: flex;
+	margin: 0;
+	color: #121f75;
+}
+.header dt {
+	font-weight: bold;
+	text-align: right;
+	min-width: 10em;
+}
+.header dd {
+	margin: 0;
+}
