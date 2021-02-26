@@ -6,7 +6,7 @@
 	"module": "./src/index.js",
 	"exports": {
 		"import": "./src/index.js",
-		"require": "./directory-plugin.cjs"
+		"default": "./directory-plugin.cjs"
 	},
 	"scripts": {
 		"build": "rollup -c",
