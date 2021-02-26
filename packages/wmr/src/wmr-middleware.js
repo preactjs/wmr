@@ -158,10 +158,10 @@ export default function wmrMiddleware({
 
 		if (!pendingChanges.size) timeout = setTimeout(flushChanges, 60);
 
-		if (filename.endsWith('.css') || /\.s[ac]ss$/.test(filename)) {
+		if (/\.(css|s[ac]ss)$/.test(filename)) {
 			WRITE_CACHE.delete(filename);
 			pendingChanges.add('/' + filename);
-		} else if (/\.[tj]sx?$/.test(filename)) {
+		} else if (/\.(mjs|[tj]sx?)$/.test(filename)) {
 			if (!bubbleUpdates(filename)) {
 				clearTimeout(timeout);
 				onChange({ type: 'reload' });
