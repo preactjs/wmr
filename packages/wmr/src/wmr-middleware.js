@@ -117,12 +117,16 @@ export default function wmrMiddleware({
 	});
 	const pendingChanges = new Set();
 
+	let timeout = null;
 	function flushChanges() {
+		timeout = null;
 		onChange({ changes: Array.from(pendingChanges), duration: 0 });
 		pendingChanges.clear();
 	}
 
-	function bubbleUpdates(filename) {
+	function bubbleUpdates(filename, visited = new Set()) {
+		if (visited.has(filename)) return true;
+		visited.add(filename);
 		// Delete file from the in-memory cache:
 		WRITE_CACHE.delete(filename);
 
@@ -133,17 +137,15 @@ export default function wmrMiddleware({
 
 		if (mod.acceptingUpdates) {
 			pendingChanges.add(filename);
+			return true;
 		} else if (mod.dependents.size) {
-			mod.dependents.forEach(function (value) {
+			return mod.dependents.every(function (value) {
 				mod.stale = true;
-				bubbleUpdates(value);
+				return bubbleUpdates(value, visited);
 			});
-		} else {
-			// We need a full-reload signal
-			return false;
 		}
-
-		return true;
+		// We need a full-reload signal
+		return false;
 	}
 
 	watcher.on('change', filename => {
@@ -154,10 +156,20 @@ export default function wmrMiddleware({
 		// Delete any generated CSS Modules mapping modules:
 		if (/\.module\.css$/.test(filename)) WRITE_CACHE.delete(filename + '.js');
 
-		if (!pendingChanges.size) setTimeout(flushChanges, 60);
-		const result = bubbleUpdates(filename);
-		if (!result) {
-			onChange({ type: 'reload' });
+		if (!pendingChanges.size) timeout = setTimeout(flushChanges, 60);
+
+		if (/\.(css|s[ac]ss)$/.test(filename)) {
+			WRITE_CACHE.delete(filename);
+			pendingChanges.add('/' + filename);
+		} else if (/\.(mjs|[tj]sx?)$/.test(filename)) {
+			if (!bubbleUpdates(filename)) {
+				clearTimeout(timeout);
+				onChange({ reload: true });
+			}
+		} else {
+			WRITE_CACHE.delete(filename);
+			clearTimeout(timeout);
+			onChange({ reload: true });
 		}
 	});
 
