@@ -25,7 +25,16 @@ sade('create-wmr [dir]', true)
 				process.exit(1);
 			}
 			cwd = resolve(cwd, dir || '.');
-			await fs.mkdir(cwd, { recursive: true });
+			try {
+				await fs.mkdir(cwd, { recursive: true });
+			} catch {
+				process.stderr.write(
+					`${red(
+						`There is already a file with the same name as the directory you specified. Please provide a different directory name`
+					)}\n`
+				);
+				process.exit(1);
+			}
 			process.chdir(cwd);
 		}
 		const ctx = {
