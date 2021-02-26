@@ -188,8 +188,9 @@ function updateStyleSheet(url) {
 		const found = traverseSheet(sheets[i], url);
 		if (found) {
 			const index = [].indexOf.call(found.parentStyleSheet.rules, found);
-			const keyword = found.cssText.includes('@import') ? '@import' : '@use';
-			found.parentStyleSheet.insertRule(`${keyword} url("${strip(url) + '?t=' + Date.now()}")`, index);
+			const urlStr = JSON.stringify(strip(url) + '?t=' + Date.now());
+			const css = found.cssText.replace(/^(@import|@use)\s*(?:url\([^)]*\)|(['"]).*?\2)/, '$1 ' + urlStr);
+			found.parentStyleSheet.insertRule(css, index);
 			found.parentStyleSheet.deleteRule(index + 1);
 			return true;
 		}
