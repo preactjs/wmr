@@ -20,7 +20,8 @@
 	"repository": "preactjs/wmr",
 	"files": [
 		"wmr.cjs",
-		"types.d.ts"
+		"types.d.ts",
+		"README.md"
 	],
 	"types": "./types.d.ts",
 	"babel": {
