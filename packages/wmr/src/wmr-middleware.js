@@ -124,7 +124,9 @@ export default function wmrMiddleware({
 		pendingChanges.clear();
 	}
 
-	function bubbleUpdates(filename) {
+	function bubbleUpdates(filename, visited = new Set()) {
+		if (visited.has(filename)) return true;
+		visited.add(filename);
 		// Delete file from the in-memory cache:
 		WRITE_CACHE.delete(filename);
 
@@ -135,17 +137,15 @@ export default function wmrMiddleware({
 
 		if (mod.acceptingUpdates) {
 			pendingChanges.add(filename);
+			return true;
 		} else if (mod.dependents.size) {
-			mod.dependents.forEach(function (value) {
+			return mod.dependents.every(function (value) {
 				mod.stale = true;
-				bubbleUpdates(value);
+				return bubbleUpdates(value, visited);
 			});
-		} else {
-			// We need a full-reload signal
-			return false;
 		}
-
-		return true;
+		// We need a full-reload signal
+		return false;
 	}
 
 	watcher.on('change', filename => {
@@ -164,12 +164,12 @@ export default function wmrMiddleware({
 		} else if (/\.(mjs|[tj]sx?)$/.test(filename)) {
 			if (!bubbleUpdates(filename)) {
 				clearTimeout(timeout);
-				onChange({ type: 'reload' });
+				onChange({ reload: true });
 			}
 		} else {
 			WRITE_CACHE.delete(filename);
 			clearTimeout(timeout);
-			onChange({ type: 'reload' });
+			onChange({ reload: true });
 		}
 	});
 

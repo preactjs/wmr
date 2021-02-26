@@ -275,6 +275,44 @@ describe('fixtures', () => {
 		});
 	});
 
+	describe('hmr-scss', () => {
+		async function updateFile(tempDir, file, replacer) {
+			const compPath = path.join(tempDir, file);
+			const content = await fs.readFile(compPath, 'utf-8');
+			await fs.writeFile(compPath, replacer(content));
+		}
+
+		const timeout = n => new Promise(r => setTimeout(r, n));
+
+		it('should hot reload an scss-file imported from index.html', async () => {
+			await loadFixture('hmr-scss', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			expect(await page.$eval('body', e => getComputedStyle(e).color)).toBe('rgb(51, 51, 51)');
+
+			await updateFile(env.tmp.path, 'index.scss', content => content.replace('color: #333;', 'color: #000;'));
+
+			await timeout(1000);
+
+			expect(await page.$eval('body', e => getComputedStyle(e).color)).toBe('rgb(0, 0, 0)');
+		});
+
+		it('should hot reload an imported scss-file from another scss-file', async () => {
+			await loadFixture('hmr-scss', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			expect(await page.$eval('main', e => getComputedStyle(e).color)).toBe('rgb(51, 51, 51)');
+
+			await updateFile(env.tmp.path, 'home.scss', content => content.replace('color: #333;', 'color: #000;'));
+
+			await timeout(1000);
+
+			expect(await page.$eval('main', e => getComputedStyle(e).color)).toBe('rgb(0, 0, 0)');
+		});
+	});
+
 	describe('commonjs', () => {
 		it('should transpile .cjs files', async () => {
 			await loadFixture('commonjs', env);
