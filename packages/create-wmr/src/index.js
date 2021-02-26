@@ -18,12 +18,16 @@ sade('create-wmr [dir]', true)
 		const origCwd = process.cwd();
 		let cwd = process.cwd();
 		if (dir) {
-			if ((await fs.stat(dir)).isDirectory() && !opts.force) {
-				process.stderr.write(
-					`${red(`Refusing to overwrite directory! Please specify a different directory or use the '--force' flag`)}\n`
-				);
-				process.exit(1);
-			}
+			try {
+				if ((await fs.stat(dir)).isDirectory() && !opts.force) {
+					process.stderr.write(
+						`${red(
+							`Refusing to overwrite directory! Please specify a different directory or use the '--force' flag`
+						)}\n`
+					);
+					process.exit(1);
+				}
+			} catch {}
 			cwd = resolve(cwd, dir || '.');
 			await fs.mkdir(cwd, { recursive: true });
 			process.chdir(cwd);
