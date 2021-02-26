@@ -187,7 +187,7 @@ function updateStyleSheet(url) {
 
 		const found = traverseSheet(sheets[i], url);
 		if (found) {
-			const index = [...found.parentStyleSheet.rules].indexOf(found);
+			const index = [].indexOf.call(found.parentStyleSheet.rules, found);
 			const keyword = found.cssText.includes('@import') ? '@import' : '@use';
 			found.parentStyleSheet.insertRule(`${keyword} url("${strip(url) + '?t=' + Date.now()}")`, index);
 			found.parentStyleSheet.deleteRule(index + 1);
