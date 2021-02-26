@@ -1,0 +1,11 @@
+{
+	"name": "@wmr/docs",
+	"scripts": {
+		"dev": "wmr",
+		"build": "wmr build --prerender"
+	},
+	"devDependencies": {
+		"@wmr-plugins/directory-import": "latest",
+		"wmr": "latest"
+	}
+}
