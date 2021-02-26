@@ -2,6 +2,12 @@
 	"name": "@wmr-plugins/service-worker",
 	"version": "0.1.0",
 	"type": "module",
+	"main": "./sw-plugin.cjs",
+	"module": "./src/index.js",
+	"exports": {
+		"import": "./src/index.js",
+		"default": "./sw-plugin.cjs"
+	},
 	"scripts": {
 		"build": "rollup -c",
 		"prepublishOnly": "yarn build"
@@ -15,6 +21,7 @@
 	},
 	"files": [
 		"sw-plugin.cjs",
+		"src/index.js",
 		"types.d.ts"
 	],
 	"types": "./types.d.ts",

@@ -2,6 +2,12 @@
 	"name": "@wmr-plugins/directory-import",
 	"version": "0.1.0",
 	"type": "module",
+	"main": "./directory-plugin.cjs",
+	"module": "./src/index.js",
+	"exports": {
+		"import": "./src/index.js",
+		"default": "./directory-plugin.cjs"
+	},
 	"scripts": {
 		"build": "rollup -c",
 		"prepublishOnly": "yarn build"
@@ -15,6 +21,7 @@
 	},
 	"files": [
 		"directory-plugin.cjs",
+		"src/index.js",
 		"types.d.ts"
 	],
 	"types": "./types.d.ts",
