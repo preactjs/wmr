@@ -5,6 +5,9 @@ import Home from './pages/home.js';
 // import About from './pages/about/index.js';
 import NotFound from './pages/_404.js';
 import Header from './header.tsx';
+import './a.css';
+import './b.css';
+import './c.css';
 // import './style.css';
 
 const About = lazy(() => import('./pages/about/index.js'));

@@ -223,8 +223,11 @@ function mergeAdjacentCss(graph) {
 		}
 
 		const base = /** @type {Asset} */ (graph.bundle[toMerge[0]]);
+		const visited = new Set();
 		for (let i = 1; i < toMerge.length; i++) {
 			const f = toMerge[i];
+			if (visited.has(f)) continue;
+			visited.add(f);
 			const asset = /** @type {Asset} */ (graph.bundle[f]);
 			base.source += '\n' + asset.source;
 			chunk.referencedFiles.splice(chunk.referencedFiles.indexOf(f), 1);
@@ -262,7 +265,7 @@ function hoistEntryCss(graph) {
 
 			for (let i = 0; i < chunk.referencedFiles.length; i++) {
 				const f = chunk.referencedFiles[i];
-				if (!isCssFilename(f)) continue;
+				if (!isCssFilename(f) || !graph.bundle[f]) continue;
 				if (cssAsset) {
 					if (DEBUG) console.log(`Hoisting CSS "${f}" imported by ${id} into parent HTML import "${cssImport}".`);
 					// @TODO: this needs to update the hash of the chunk into which CSS got merged.
