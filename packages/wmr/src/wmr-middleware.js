@@ -63,7 +63,6 @@ export default function wmrMiddleware({
 
 	root = root || cwd;
 
-	console.log(features);
 	const NonRollup = createPluginContainer(
 		[
 			externalUrlsPlugin(),
