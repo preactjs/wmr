@@ -29,7 +29,6 @@ export default function optimizeGraphPlugin({ publicPath = '', cssMinSize = 1000
 			mergeAdjacentCss(graph);
 			hoistCascadedCss(graph, { cssMinSize });
 			hoistEntryCss(graph);
-			graph.commit();
 			hoistTransitiveImports(graph);
 		}
 	};
@@ -43,18 +42,11 @@ export default function optimizeGraphPlugin({ publicPath = '', cssMinSize = 1000
 class ChunkGraph {
 	constructor(bundle, { publicPath }) {
 		this.bundle = bundle;
-		this.bundleRemoved = new Set();
 		this.assetToChunkMap = constructAssetToChunkMap(bundle);
 		this.entries = this.findEntryChunks();
 		this.meta = new Map();
 		this.publicPath = publicPath;
 		// this.entryAssets = this.findEntryAssets();
-	}
-
-	commit() {
-		this.bundleRemoved.forEach(f => {
-			delete this.bundle[f];
-		});
 	}
 
 	/**
