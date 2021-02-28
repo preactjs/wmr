@@ -222,6 +222,32 @@ describe('fixtures', () => {
 			expect(text).toEqual('Away');
 		});
 
+		it('should bubble up updates in non-accepted files', async () => {
+			await loadFixture('hmr', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			const count = await env.page.$('.count');
+			let text = count ? await count.evaluate(el => el.textContent) : null;
+			expect(text).toEqual('0');
+
+			let increment = await env.page.$('.increment');
+			await increment.click();
+			text = count ? await count.evaluate(el => el.textContent) : null;
+			expect(text).toEqual('1');
+
+			await updateFile(env.tmp.path, 'useCounter.js', content =>
+				content.replace('() => setCount(count + 1)', '() => setCount(count + 2)')
+			);
+
+			await timeout(2000);
+
+			increment = await env.page.$('.increment');
+			await increment.click();
+			text = count ? await count.evaluate(el => el.textContent) : null;
+			expect(text).toEqual('3');
+		});
+
 		it('should hot reload for a newly created file', async () => {
 			await loadFixture('hmr', env);
 			instance = await runWmrFast(env.tmp.path);
