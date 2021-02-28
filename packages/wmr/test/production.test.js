@@ -183,6 +183,37 @@ describe('production', () => {
 				expect.stringMatching(/^\/assets\/style\.\w+\.css$/)
 			]);
 		});
+
+		it('should merge duplicate CSS imports', async () => {
+			await loadFixture('css-duplicates', env);
+			instance = await runWmr(env.tmp.path, 'build');
+			const code = await instance.done;
+			console.info(instance.output.join('\n'));
+			expect(code).toBe(0);
+
+			const readdir = async f => (await fs.readdir(path.join(env.tmp.path, f))).filter(f => f[0] !== '.');
+			const readfile = async f => await fs.readFile(path.join(env.tmp.path, f), 'utf-8');
+
+			const dist = await readdir('dist');
+
+			const chunks = await readdir('dist/chunks');
+			expect(chunks).toEqual([expect.stringMatching(/^lazy\.\w+\.js$/)]);
+
+			const assets = await readdir('dist/assets');
+			// TODO: Rollup seems to randomly pick which asset ID to use for duplicated assets:
+			expect(assets).toEqual([expect.stringMatching(/^[ab]\.\w+\.css$/)]);
+
+			const css = await readfile('dist/assets/' + assets[0]);
+
+			// ensure all the CSS properties got merged into a single rule:
+			expect(css).toMatch(/a{[^{}]+}/);
+
+			const properties = css.slice(2, -1).split(';').sort();
+			expect(properties).toEqual(['color:#00f', 'color:red', 'text-decoration:underline']);
+
+			const index = await readfile('dist/' + dist.find(f => f.match(/^index\.\w+\.js$/)));
+			expect(index).toContain(`("/assets/${assets[0]}")`);
+		});
 	});
 
 	describe('config.publicPath', () => {

@@ -209,11 +209,13 @@ function mergeAdjacentCss(graph) {
 		const chunk = graph.bundle[fileName];
 		if (chunk.type !== 'chunk') continue;
 
-		const toMerge = chunk.referencedFiles.filter(assetFileName => {
-			if (!isCssFilename(assetFileName)) return false;
-			const chunkInfo = graph.assetToChunkMap.get(assetFileName);
-			return chunkInfo && chunkInfo.chunks.length === 1;
-		});
+		const toMerge = unique(
+			chunk.referencedFiles.filter(assetFileName => {
+				if (!isCssFilename(assetFileName)) return false;
+				const chunkInfo = graph.assetToChunkMap.get(assetFileName);
+				return chunkInfo && chunkInfo.chunks.length === 1;
+			})
+		);
 
 		if (toMerge.length < 2) continue;
 
@@ -494,3 +496,6 @@ function getAssetSource(asset) {
 	}
 	return code;
 }
+
+/** @param {Array<string>} arr @returns {Array<string>} */
+const unique = arr => Array.from(new Set(arr));
