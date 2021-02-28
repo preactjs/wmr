@@ -26,15 +26,10 @@ export default function optimizeGraphPlugin({ publicPath = '', cssMinSize = 1000
 		name: 'optimize-graph',
 		async generateBundle(_, bundle) {
 			const graph = new ChunkGraph(bundle, { publicPath });
-			let toRemove = [];
-			toRemove = [...toRemove, ...mergeAdjacentCss(graph)];
-			toRemove = [...toRemove, ...hoistCascadedCss(graph, { cssMinSize })];
-			toRemove = [...toRemove, ...hoistEntryCss(graph)];
-
-			toRemove.forEach(f => {
-				delete graph.bundle[f];
-			});
-
+			mergeAdjacentCss(graph);
+			hoistCascadedCss(graph, { cssMinSize });
+			hoistEntryCss(graph);
+			graph.commit();
 			hoistTransitiveImports(graph);
 		}
 	};
@@ -48,11 +43,18 @@ export default function optimizeGraphPlugin({ publicPath = '', cssMinSize = 1000
 class ChunkGraph {
 	constructor(bundle, { publicPath }) {
 		this.bundle = bundle;
+		this.bundleRemoved = new Set();
 		this.assetToChunkMap = constructAssetToChunkMap(bundle);
 		this.entries = this.findEntryChunks();
 		this.meta = new Map();
 		this.publicPath = publicPath;
 		// this.entryAssets = this.findEntryAssets();
+	}
+
+	commit() {
+		this.bundleRemoved.forEach(f => {
+			delete this.bundle[f];
+		});
 	}
 
 	/**
@@ -211,7 +213,6 @@ function toImport(publicPath, filename) {
  * @param {ChunkGraph} graph
  */
 function mergeAdjacentCss(graph) {
-	const toRemove = new Set();
 	for (const fileName in graph.bundle) {
 		const chunk = graph.bundle[fileName];
 		if (chunk.type !== 'chunk') continue;
@@ -235,7 +236,7 @@ function mergeAdjacentCss(graph) {
 			const asset = /** @type {Asset} */ (graph.bundle[f]);
 			base.source += '\n' + asset.source;
 			chunk.referencedFiles.splice(chunk.referencedFiles.indexOf(f), 1);
-			toRemove.add(f);
+			graph.bundleRemoved.add(f);
 		}
 
 		// Remove all but the first style("url") "import":
@@ -247,8 +248,6 @@ function mergeAdjacentCss(graph) {
 			return isFirst && toMerge[0];
 		});
 	}
-
-	return toRemove;
 }
 
 /**
@@ -256,7 +255,6 @@ function mergeAdjacentCss(graph) {
  * @param {ChunkGraph} graph
  */
 function hoistEntryCss(graph) {
-	const toRemove = new Set();
 	for (const fileName in graph.bundle) {
 		/** @type {ExtendedAsset | Chunk} */
 		const asset = graph.bundle[fileName];
@@ -278,7 +276,7 @@ function hoistEntryCss(graph) {
 					// @TODO: this needs to update the hash of the chunk into which CSS got merged.
 					cssAsset.source += '\n' + getAssetSource(graph.bundle[f]);
 					chunk.referencedFiles[i] = cssImport;
-					toRemove.add(f);
+					graph.bundleRemoved.add(f);
 					graph.replaceCssImport(chunk, f, false);
 					const chunkInfo = graph.assetToChunkMap.get(f);
 					if (chunkInfo) chunkInfo.mergedInto = cssImport;
@@ -300,8 +298,6 @@ function hoistEntryCss(graph) {
 			}
 		}
 	}
-
-	return toRemove;
 }
 
 /**
@@ -309,7 +305,6 @@ function hoistEntryCss(graph) {
  * @param {ChunkGraph} graph
  */
 function hoistCascadedCss(graph, { cssMinSize }) {
-	const toRemove = new Set();
 	for (const fileName in graph.bundle) {
 		const asset = graph.bundle[fileName];
 		if (asset.type !== 'asset' || !isCssFilename(asset.fileName)) continue;
@@ -344,7 +339,7 @@ function hoistCascadedCss(graph, { cssMinSize }) {
 				const parentAsset = /** @type {Asset} */ (graph.bundle[ownCss]);
 				parentAsset.source += '\n' + asset.source;
 				graph.replaceCssImport(ownerChunk, fileName, ownCss);
-				toRemove.add(fileName);
+				graph.bundleRemoved.add(fileName);
 				chunkInfo.mergedInto = ownCss;
 				// chunkInfo.chunks = [parentFileName];
 				chunkInfo.chunks.unshift(parentFileName);
@@ -366,8 +361,6 @@ function hoistCascadedCss(graph, { cssMinSize }) {
 			break;
 		}
 	}
-
-	return toRemove;
 }
 
 /**
