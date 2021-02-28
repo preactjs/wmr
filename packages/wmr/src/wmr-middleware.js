@@ -139,7 +139,7 @@ export default function wmrMiddleware({
 			pendingChanges.add(filename);
 			return true;
 		} else if (mod.dependents.size) {
-			return mod.dependents.every(function (value) {
+			return Array.from(mod.dependents).every(function (value) {
 				mod.stale = true;
 				return bubbleUpdates(value, visited);
 			});
