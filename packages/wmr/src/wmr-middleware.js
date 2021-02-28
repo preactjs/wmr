@@ -63,6 +63,7 @@ export default function wmrMiddleware({
 
 	root = root || cwd;
 
+	console.log(features);
 	const NonRollup = createPluginContainer(
 		[
 			externalUrlsPlugin(),
@@ -78,7 +79,7 @@ export default function wmrMiddleware({
 			}),
 			processGlobalPlugin({ NODE_ENV: 'development', env }),
 			sassPlugin(),
-			htmPlugin({ production: false }),
+			htmPlugin({ production: false, preact: features.preact }),
 			wmrPlugin({ hot: true, preact: features.preact }),
 			fastCjsPlugin({
 				// Only transpile CommonJS in node_modules and explicit .cjs files:

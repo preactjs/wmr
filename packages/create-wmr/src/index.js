@@ -12,6 +12,7 @@ const { dim, bold, cyan, red } = kleur;
 sade('create-wmr [dir]', true)
 	.option('--eslint', 'Set up the Preact ESLint configuration (takes a lot longer)', false)
 	.option('--force', 'Force install into an existing directory', false)
+	.option('--template', 'Choose a template (react, preact).', 'preact')
 	.describe('Initialize a WMR project')
 	.example('npm init wmr ./some-directory')
 	.action(async (dir, opts) => {
@@ -98,8 +99,12 @@ sade('create-wmr [dir]', true)
 	})
 	.parse(process.argv);
 
-async function scaffold({ cwd, fields }) {
-	await templateDir(resolve(__dirname, '../tpl'), resolve(cwd || '.'), fields);
+async function scaffold({ cwd, fields, template }) {
+	if (template === 'react') {
+		await templateDir(resolve(__dirname, '../tpl-react'), resolve(cwd || '.'), fields);
+	} else {
+		await templateDir(resolve(__dirname, '../tpl-preact'), resolve(cwd || '.'), fields);
+	}
 }
 
 async function templateDir(from, to, fields) {

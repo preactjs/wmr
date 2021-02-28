@@ -6,11 +6,12 @@ import transformJsxToHtmLite from '../lib/transform-jsx-to-htm-lite.js';
 /**
  * Convert JSX to HTM
  * @param {object} [options]
+ * @param {boolean} [options.preact] Whether to use the preact or react htm import.
  * @param {RegExp | ((filename: string) => boolean)} [options.include] Controls whether files are processed to transform JSX.
  * @param {boolean} [options.production = true] If `false`, a simpler whitespace-preserving transform is used.
  * @returns {import('rollup').Plugin}
  */
-export default function htmPlugin({ include, production = true } = {}) {
+export default function htmPlugin({ include, production = true, preact } = { preact: true }) {
 	return {
 		name: 'htm-plugin',
 
@@ -48,7 +49,7 @@ export default function htmPlugin({ include, production = true } = {}) {
 						jsxTransform,
 						{
 							import: {
-								module: 'htm/preact',
+								module: preact ? 'htm/preact' : 'htm/react',
 								export: 'html'
 							},
 							// avoid a variable collisions:

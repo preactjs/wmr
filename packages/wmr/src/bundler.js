@@ -72,7 +72,8 @@ export async function bundleProd({
 	plugins,
 	output,
 	minify = true,
-	npmChunks = false
+	npmChunks = false,
+	features
 }) {
 	cwd = cwd || '';
 	root = root || cwd;
@@ -107,7 +108,7 @@ export async function bundleProd({
 			}),
 			publicPathPlugin({ publicPath }),
 			aliasesPlugin({ aliases, cwd: root }),
-			htmPlugin({ production: true }),
+			htmPlugin({ production: true, preact: !!features.preact }),
 			sassPlugin({ production: true }),
 			wmrStylesPlugin({ hot: false, cwd }),
 			wmrPlugin({ hot: false }),
