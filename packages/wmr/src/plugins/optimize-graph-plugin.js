@@ -217,11 +217,13 @@ function mergeAdjacentCss(graph) {
 		const chunk = graph.bundle[fileName];
 		if (chunk.type !== 'chunk') continue;
 
-		const toMerge = chunk.referencedFiles.filter(assetFileName => {
-			if (!isCssFilename(assetFileName)) return false;
-			const chunkInfo = graph.assetToChunkMap.get(assetFileName);
-			return chunkInfo && chunkInfo.chunks.length === 1;
-		});
+		const toMerge = unique(
+			chunk.referencedFiles.filter(assetFileName => {
+				if (!isCssFilename(assetFileName)) return false;
+				const chunkInfo = graph.assetToChunkMap.get(assetFileName);
+				return chunkInfo && chunkInfo.chunks.length === 1;
+			})
+		);
 
 		if (toMerge.length < 2) continue;
 
@@ -236,7 +238,7 @@ function mergeAdjacentCss(graph) {
 			const asset = /** @type {Asset} */ (graph.bundle[f]);
 			base.source += '\n' + asset.source;
 			chunk.referencedFiles.splice(chunk.referencedFiles.indexOf(f), 1);
-			graph.bundleRemoved.add(f);
+			delete graph.bundle[f];
 		}
 
 		// Remove all but the first style("url") "import":
@@ -276,7 +278,7 @@ function hoistEntryCss(graph) {
 					// @TODO: this needs to update the hash of the chunk into which CSS got merged.
 					cssAsset.source += '\n' + getAssetSource(graph.bundle[f]);
 					chunk.referencedFiles[i] = cssImport;
-					graph.bundleRemoved.add(f);
+					delete graph.bundle[f];
 					graph.replaceCssImport(chunk, f, false);
 					const chunkInfo = graph.assetToChunkMap.get(f);
 					if (chunkInfo) chunkInfo.mergedInto = cssImport;
@@ -339,7 +341,7 @@ function hoistCascadedCss(graph, { cssMinSize }) {
 				const parentAsset = /** @type {Asset} */ (graph.bundle[ownCss]);
 				parentAsset.source += '\n' + asset.source;
 				graph.replaceCssImport(ownerChunk, fileName, ownCss);
-				graph.bundleRemoved.add(fileName);
+				delete graph.bundle[fileName];
 				chunkInfo.mergedInto = ownCss;
 				// chunkInfo.chunks = [parentFileName];
 				chunkInfo.chunks.unshift(parentFileName);
@@ -502,3 +504,6 @@ function getAssetSource(asset) {
 	}
 	return code;
 }
+
+/** @param {Array<string>} arr @returns {Array<string>} */
+const unique = arr => Array.from(new Set(arr));
