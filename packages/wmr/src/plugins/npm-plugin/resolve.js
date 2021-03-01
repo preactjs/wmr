@@ -1,3 +1,14 @@
+import { resolve as _resolveExports } from 'resolve.exports';
+
+function resolveExports(pkg, key) {
+	const conditions = [process.env.NODE_ENV === 'production' ? 'production' : 'development'];
+
+	return _resolveExports(pkg, key, {
+		browser: true,
+		conditions
+	});
+}
+
 /**
  * @param {string} path
  * @param {object} context
@@ -23,7 +34,7 @@ export async function resolveModule(path, { readFile, hasFile, module, internal 
 	if (!internal && pkg.exports) {
 		const entry = path ? `./${path}` : '.';
 
-		const mapped = resolveExportMap(pkg.exports, entry, ENV_KEYS);
+		const mapped = resolveExports(pkg.exports, entry);
 
 		if (!mapped) {
 			throw new Error(`Unknown package export ${entry} in ${module}.\n\n${JSON.stringify(pkg.exports, null, 2)}`);
@@ -75,51 +86,4 @@ function getLegacyEntry(pkg) {
 	const mainFields = [pkg.esmodules, pkg.modern, pkg.module, pkg['jsnext:main'], pkg.browser, pkg.main, 'index.js'];
 	const entry = mainFields.find(p => p && typeof p === 'string');
 	return '/' + entry.replace(/^\.?\//, '');
-}
-
-const ENV_KEYS = ['esmodules', 'import', 'module', 'require', 'browser', 'default', 'node'];
-
-/** Get the best resolution for an entry from an Export Map
- * @param {Object} exp `package.exports`
- * @param {string} entry `./foo` or `.`
- * @param {string[]} envKeys package environment keys
- * @returns {string | boolean} a resolved path, or a boolean indicating if the given entry is exposed
- */
-function resolveExportMap(exp, entry, envKeys) {
-	if (typeof exp === 'string') {
-		// {"exports":"./foo.js"}
-		// {"exports":{"./foo":"./foo.js"}}
-		return exp;
-	}
-	let isFileListing;
-	let isDirectoryExposed = false;
-
-	let fallbacks = [];
-	for (let i in exp) {
-		if (isFileListing === undefined) isFileListing = i[0] === '.';
-		if (isFileListing) {
-			// {"exports":{".":"./index.js"}}
-			if (i === entry) {
-				return resolveExportMap(exp[i], entry, envKeys);
-			}
-			if (!isDirectoryExposed && i.endsWith('/') && entry.startsWith(i)) {
-				isDirectoryExposed = true;
-			}
-		} else if (envKeys.includes(i)) {
-			// intentionally de-prioritize "require" and "default" keys
-			if (i === 'require' || i === 'default') {
-				fallbacks.push(i);
-			} else {
-				// {"exports":{"import":"./foo.js"}}
-				return resolveExportMap(exp[i], entry, envKeys);
-			}
-		}
-	}
-
-	// None of the in-order keys matched - fall back to require/default in the order specified
-	for (let i of fallbacks) {
-		return resolveExportMap(exp[i], entry, envKeys);
-	}
-
-	return isDirectoryExposed;
 }
