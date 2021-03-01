@@ -34,7 +34,7 @@ export async function resolveModule(path, { readFile, hasFile, module, internal 
 	if (!internal && pkg.exports) {
 		const entry = path ? `./${path}` : '.';
 
-		const mapped = resolveExports(pkg.exports, entry);
+		const mapped = resolveExports(pkg, entry);
 
 		if (!mapped) {
 			throw new Error(`Unknown package export ${entry} in ${module}.\n\n${JSON.stringify(pkg.exports, null, 2)}`);
