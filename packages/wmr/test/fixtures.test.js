@@ -521,12 +521,12 @@ describe('fixtures', () => {
 				default: 'import'
 			});
 			expect(await env.page.evaluate(`import('/@npm/exports-fallbacks-defaultfirst')`)).toEqual({
-				default: 'import'
+				default: 'default'
 			});
 
 			// When import/module/browser isn't present (but a random other one is!), we fall back to require/default:
 			expect(await env.page.evaluate(`import('/@npm/exports-fallbacks-requirefallback')`)).toEqual({
-				default: 'require'
+				default: 'default'
 			});
 			expect(await env.page.evaluate(`import('/@npm/exports-fallbacks-defaultfallback')`)).toEqual({
 				default: 'default'
