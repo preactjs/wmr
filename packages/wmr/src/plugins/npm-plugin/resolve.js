@@ -1,7 +1,13 @@
 import { resolve as _resolveExports, legacy as _resolveLegacyEntry } from 'resolve.exports';
 
 function resolveExports(pkg, key) {
-	const conditions = [process.env.NODE_ENV === 'production' ? 'production' : 'development', 'esmodules', 'module'];
+	const conditions = [
+		process.env.NODE_ENV === 'production' ? 'production' : 'development',
+		'esmodules',
+		'import',
+		'module',
+		'require'
+	];
 
 	return _resolveExports(pkg, key, {
 		browser: true,
