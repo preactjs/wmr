@@ -42,12 +42,12 @@ export async function resolveModule(path, { readFile, hasFile, module, internal 
 		// will normalize entry & will throw error if no match
 		const mapped = resolveExports(pkg, path || '.');
 		// `mapped:true` means directory access was allowed for this entry, but it was not resolved.
-		if (mapped && !mapped.endsWith('/') && !internal) return mapped.replace(/^\./, '');
+		if (!mapped.endsWith('/')) return mapped.replace(/^\./, '');
 	}
 
 	// path is a bare import of a package, use its legacy exports (module/main):
 	if (!path) {
-		path = resolveLegacyEntry(pkg);
+		path = resolveLegacyEntry(pkg, path || '.');
 	}
 
 	// fallback: implement basic commonjs-style resolution
@@ -60,7 +60,7 @@ export async function resolveModule(path, { readFile, hasFile, module, internal 
 	if (!isExportMappedSpecifier) {
 		try {
 			const subPkg = JSON.parse(await readFile(path + '/package.json'));
-			path += resolveLegacyEntry(subPkg);
+			path += resolveLegacyEntry(subPkg, '.');
 		} catch (e) {}
 	}
 
