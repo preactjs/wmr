@@ -1,7 +1,11 @@
 import { resolve as _resolveExports } from 'resolve.exports';
 
 function resolveExports(pkg, key) {
-	const conditions = [process.env.NODE_ENV === 'production' ? 'production' : 'development'];
+	const conditions = [
+		process.env.NODE_ENV === 'production' ? 'production' : 'development',
+		'esmodules',
+		'module'
+	];
 
 	return _resolveExports(pkg, key, {
 		browser: true,
