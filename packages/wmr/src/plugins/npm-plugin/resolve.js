@@ -77,7 +77,7 @@ function getLegacyEntry(pkg) {
 	return '/' + entry.replace(/^\.?\//, '');
 }
 
-const ENV_KEYS = ['esmodules', 'import', 'module', 'require', 'browser', 'node', 'default'];
+const ENV_KEYS = ['esmodules', 'import', 'module', 'require', 'browser', 'default', 'node'];
 
 /** Get the best resolution for an entry from an Export Map
  * @param {Object} exp `package.exports`
