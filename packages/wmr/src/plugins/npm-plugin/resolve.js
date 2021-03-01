@@ -10,12 +10,12 @@ function resolveExports(pkg, key) {
 }
 
 function resolveLegacyEntry(pkg, path) {
-	return (
+	const entry =
 		_resolveLegacyEntry(pkg, {
 			browser: true,
 			fields: ['esmodules', 'modern', 'module', 'jsnext:main', 'browser', 'main']
-		}) || 'index.js'
-	);
+		}) || 'index.js';
+	return '/' + entry.replace(/^\.?\//, '');
 }
 
 /**
