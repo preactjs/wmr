@@ -41,7 +41,7 @@ export async function resolveModule(path, { readFile, hasFile, module, internal 
 	if (!internal && pkg.exports) {
 		// will normalize entry & will throw error if no match
 		const mapped = resolveExports(pkg, path || '.');
-		// `mapped:true` means directory access was allowed for this entry, but it was not resolved.
+		// An entry ending in `/` remaps to a directory, but is not considered resolved.
 		if (!mapped.endsWith('/')) return mapped.replace(/^\./, '');
 	}
 
