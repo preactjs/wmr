@@ -42,7 +42,8 @@ export async function resolveModule(path, { readFile, hasFile, module, internal 
 		// will normalize entry & will throw error if no match
 		const mapped = resolveExports(pkg, path || '.');
 		// An entry ending in `/` remaps to a directory, but is not considered resolved.
-		if (!mapped.endsWith('/')) return mapped.replace(/^\./, '');
+		if (mapped.endsWith('/')) path = mapped;
+		else return mapped.replace(/^\./, '');
 	}
 
 	// path is a bare import of a package, use its legacy exports (module/main):
