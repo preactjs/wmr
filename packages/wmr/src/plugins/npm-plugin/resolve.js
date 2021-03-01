@@ -10,10 +10,12 @@ function resolveExports(pkg, key) {
 }
 
 function resolveLegacyEntry(pkg, path) {
-	_resolveLegacyEntry(pkg, {
-		browser: path,
-		fields: ['esmodules', 'modern', 'module', 'jsnext:main', 'browser', 'main']
-	}) || 'index.js';
+	return (
+		_resolveLegacyEntry(pkg, {
+			browser: true,
+			fields: ['esmodules', 'modern', 'module', 'jsnext:main', 'browser', 'main']
+		}) || 'index.js'
+	);
 }
 
 /**
