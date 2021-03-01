@@ -1,16 +1,19 @@
-import { resolve as _resolveExports } from 'resolve.exports';
+import { resolve as _resolveExports, legacy as _resolveLegacyEntry } from 'resolve.exports';
 
 function resolveExports(pkg, key) {
-	const conditions = [
-		process.env.NODE_ENV === 'production' ? 'production' : 'development',
-		'esmodules',
-		'module'
-	];
+	const conditions = [process.env.NODE_ENV === 'production' ? 'production' : 'development', 'esmodules', 'module'];
 
 	return _resolveExports(pkg, key, {
 		browser: true,
 		conditions
 	});
+}
+
+function resolveLegacyEntry(pkg, path) {
+	_resolveLegacyEntry(pkg, {
+		browser: path,
+		fields: ['esmodules', 'modern', 'module', 'jsnext:main']
+	}) || 'index.js';
 }
 
 /**
@@ -36,23 +39,15 @@ export async function resolveModule(path, { readFile, hasFile, module, internal 
 
 	// Package Export Maps
 	if (!internal && pkg.exports) {
-		const entry = path ? `./${path}` : '.';
-
-		const mapped = resolveExports(pkg, entry);
-
-		if (!mapped) {
-			throw new Error(`Unknown package export ${entry} in ${module}.\n\n${JSON.stringify(pkg.exports, null, 2)}`);
-		}
-
+		// will normalize entry & will throw error if no match
+		const mapped = resolveExports(pkg, path || '.');
 		// `mapped:true` means directory access was allowed for this entry, but it was not resolved.
-		if (mapped !== true && !internal) {
-			return mapped.replace(/^\./, '');
-		}
+		if (mapped && !mapped.endsWith('/') && !internal) return mapped.replace(/^\./, '');
 	}
 
 	// path is a bare import of a package, use its legacy exports (module/main):
 	if (!path) {
-		path = getLegacyEntry(pkg);
+		path = resolveLegacyEntry(pkg);
 	}
 
 	// fallback: implement basic commonjs-style resolution
@@ -65,7 +60,7 @@ export async function resolveModule(path, { readFile, hasFile, module, internal 
 	if (!isExportMappedSpecifier) {
 		try {
 			const subPkg = JSON.parse(await readFile(path + '/package.json'));
-			path += getLegacyEntry(subPkg);
+			path += resolveLegacyEntry(subPkg);
 		} catch (e) {}
 	}
 
@@ -80,14 +75,4 @@ export async function resolveModule(path, { readFile, hasFile, module, internal 
 	}
 
 	return path;
-}
-
-/**
- * Get the best possible entry from a package.json that doesn't have an Export Map
- * @TODO this does not currently support {"browser":{"./foo.js":"./browser-foo.js"}}
- */
-function getLegacyEntry(pkg) {
-	const mainFields = [pkg.esmodules, pkg.modern, pkg.module, pkg['jsnext:main'], pkg.browser, pkg.main, 'index.js'];
-	const entry = mainFields.find(p => p && typeof p === 'string');
-	return '/' + entry.replace(/^\.?\//, '');
 }
