@@ -6,4 +6,5 @@ wmr.cjs
 package-lock.json
 !packages/wmr/test/fixtures/commonjs/node_modules
 !packages/wmr/test/fixtures/package-exports/node_modules
+!packages/wmr/test/fixtures/exports/node_modules
 .DS_Store

@@ -482,6 +482,20 @@ describe('fixtures', () => {
 		});
 	});
 
+	describe('export-map', () => {
+		beforeEach(async () => {
+			await loadFixture('exports', env);
+			instance = await runWmrFast(env.tmp.path);
+			await env.page.goto(await instance.address);
+		});
+
+		it('should not pick node for a browser', async () => {
+			const test = await env.page.$('#test');
+			let text = test ? await test.evaluate(el => el.textContent) : null;
+			expect(text).toEqual('Browser implementation');
+		});
+	});
+
 	describe('package-exports', () => {
 		beforeEach(async () => {
 			await loadFixture('package-exports', env);
