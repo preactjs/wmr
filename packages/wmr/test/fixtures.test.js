@@ -490,7 +490,7 @@ describe('fixtures', () => {
 		});
 
 		it('should not pick node for a browser', async () => {
-			const test = await env.page.$('#test');
+			const test = await env.page.$('.test');
 			let text = test ? await test.evaluate(el => el.textContent) : null;
 			expect(text).toEqual('Browser implementation');
 		});
