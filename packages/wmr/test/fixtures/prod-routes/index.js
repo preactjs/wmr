@@ -29,9 +29,6 @@ if (typeof window !== 'undefined') {
 }
 
 export async function prerender(data) {
-	const { prerender } = await import('./lib/prerender.js');
+	const { prerender } = await import('preact-iso');
 	return await prerender(<App {...data} />);
 }
-
-// @ts-ignore
-if (module.hot) module.hot.accept(u => render(<u.module.App />, document.body));
