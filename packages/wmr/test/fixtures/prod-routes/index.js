@@ -1,7 +1,7 @@
 import { h, render } from 'preact';
 import { LocationProvider, Router, lazy, ErrorBoundary } from 'preact-iso';
 import NotFound from './_404.js';
-import Header from './header.tsx';
+import Header from './header.js';
 
 const About = lazy(() => import('./about.js'));
 

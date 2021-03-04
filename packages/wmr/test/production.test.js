@@ -336,10 +336,10 @@ describe('production', () => {
 			const readdir = async f => (await fs.readdir(path.join(env.tmp.path, f))).filter(f => f[0] !== '.');
 
 			const root = await readdir('dist');
-			expect(root).toContain('chunks');
+			expect(root).toContain('about');
 
-			const chunks = await readdir('dist/chunks');
-			expect(chunks).toEqual(['/', '/about']);
+			const chunks = await readdir('dist/about');
+			expect(chunks).toEqual(['index.html']);
 		});
 	});
 });
