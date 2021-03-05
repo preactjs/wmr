@@ -5,7 +5,7 @@
 		"build": "wmr build --prerender"
 	},
 	"devDependencies": {
-		"@wmr-plugins/directory-import": "latest",
-		"wmr": "latest"
+		"@wmr-plugins/directory-import": "0.1.1",
+		"wmr": "1.3.2"
 	}
 }

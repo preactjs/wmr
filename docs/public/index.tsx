@@ -3,29 +3,33 @@ import { h, render } from 'preact';
 import { LocationProvider, Router } from 'preact-iso/router';
 import { ErrorBoundary } from 'preact-iso/lazy';
 
-import { extractCss, setup } from 'goober';
+import { extractCss, setup, styled } from 'goober';
 import { prefix } from 'goober/prefixer';
 
 import Home from './pages/home.tsx';
 import Docs from './pages/docs.tsx';
 import Header from './header.tsx';
+import { GlobalStyles } from './GlobalStyles';
 
 setup(h, prefix);
+
+const Main = styled('div')`
+	padding: 0 64px;
+`;
 
 export function App() {
 	return (
 		<LocationProvider>
-			<div class="app">
-				<Header />
-				<ErrorBoundary>
-					<main class="app">
-						<Router>
-							<Home path="/" />
-							<Docs path="/docs" />
-						</Router>
-					</main>
-				</ErrorBoundary>
-			</div>
+			<GlobalStyles />
+			<Header />
+			<ErrorBoundary>
+				<Main>
+					<Router>
+						<Home path="/" />
+						<Docs path="/docs" />
+					</Router>
+				</Main>
+			</ErrorBoundary>
 		</LocationProvider>
 	);
 }
