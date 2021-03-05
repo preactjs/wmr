@@ -18,6 +18,7 @@ prog
 	.option('--cwd', 'The working directory - equivalent to "(cd FOO && wmr)"')
 	.command('build', 'make a production build')
 	.option('--prerender', 'Pre-render the application to HTML')
+	.option('--sourcemap', 'Enable Source Maps')
 	.action(opts => {
 		opts.minify = opts.minify !== false && !/false|0/.test(opts.minify);
 		run(build(opts));
@@ -37,7 +38,6 @@ prog
 	.option('--host', 'HTTP host to listen on (default: localhost)')
 	.option('--http2', 'Use HTTP/2 (default: false)')
 	.option('--compress', 'Enable compression (default: enabled)')
-	.option('--sourcemap', 'Enable Source Maps')
 	.option('--profile', 'Generate build statistics')
 	.option('--reload', 'Switch off hmr and reload on file saves')
 	.action(opts => {
