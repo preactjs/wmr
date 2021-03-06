@@ -482,6 +482,20 @@ describe('fixtures', () => {
 		});
 	});
 
+	describe('export-map', () => {
+		beforeEach(async () => {
+			await loadFixture('exports', env);
+			instance = await runWmrFast(env.tmp.path);
+			await env.page.goto(await instance.address);
+		});
+
+		it('should not pick node for a browser', async () => {
+			const test = await env.page.$('.test');
+			let text = test ? await test.evaluate(el => el.textContent) : null;
+			expect(text).toEqual('Browser implementation');
+		});
+	});
+
 	describe('package-exports', () => {
 		beforeEach(async () => {
 			await loadFixture('package-exports', env);
@@ -521,12 +535,12 @@ describe('fixtures', () => {
 				default: 'import'
 			});
 			expect(await env.page.evaluate(`import('/@npm/exports-fallbacks-defaultfirst')`)).toEqual({
-				default: 'import'
+				default: 'default'
 			});
 
 			// When import/module/browser isn't present (but a random other one is!), we fall back to require/default:
 			expect(await env.page.evaluate(`import('/@npm/exports-fallbacks-requirefallback')`)).toEqual({
-				default: 'require'
+				default: 'default'
 			});
 			expect(await env.page.evaluate(`import('/@npm/exports-fallbacks-defaultfallback')`)).toEqual({
 				default: 'default'

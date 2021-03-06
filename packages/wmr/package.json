@@ -139,6 +139,7 @@
 		"premove": "^3.0.1",
 		"prettier": "^2.0.5",
 		"puppeteer": "^3.3.0",
+		"resolve.exports": "^1.0.2",
 		"rollup": "^2.39.0",
 		"rollup-plugin-preserve-shebang": "^1.0.1",
 		"sade": "^1.7.3",
