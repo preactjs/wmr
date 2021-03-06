@@ -9,6 +9,7 @@ const Section = styled('section')`
 const H2 = styled('h2')`
 	text-align: center;
 	margin-top: 0;
+	max-width: 70%;
 `;
 
 const H3 = styled('h3')`
@@ -16,16 +17,20 @@ const H3 = styled('h3')`
 	margin-top: 0;
 `;
 
+const Code = styled('code')`
+	background-color: black;
+	color: white;
+	padding: 16px;
+`;
+
 export default function Home() {
 	return (
 		<Section>
-			<img src="/assets/wmr.png" alt="wmr logo" height="320" />
+			<img src="/assets/wmr.png" alt="wmr logo" height="300" />
 			<H2>The tiny all-in-one development tool for modern web apps, in a single 2mb file with no dependencies.</H2>
 			<div>
 				<H3>Getting started</H3>
-				<div>
-					<code>$ npm init wmr your-project-name</code>
-				</div>
+				<Code>$ npm init wmr your-project-name</Code>
 			</div>
 		</Section>
 	);

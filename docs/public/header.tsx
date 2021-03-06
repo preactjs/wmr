@@ -9,12 +9,13 @@ const HeaderArea = styled('header')`
 `;
 
 const Link = styled('a')`
-	text-decoration: none;
-	color: #eee;
+	color: #fff;
+	cursor: pointer;
+	font-weight: bold;
+	height: 100%;
 	padding: 0 1.25rem;
 	text-align: center;
-	cursor: pointer;
-	height: 100%;
+	text-decoration: none;
 `;
 
 export default function Header() {

@@ -27,6 +27,7 @@ export function App() {
 					<Router>
 						<Home path="/" />
 						<Docs path="/docs" />
+						<Docs path="/docs/:name" />
 					</Router>
 				</Main>
 			</ErrorBoundary>
