@@ -318,7 +318,7 @@ class Path {
 				ancestors.push(prev);
 			}
 		}
-		return new Path(node, ancestors, this.ctx);
+		return Array.isArray(node) ? node.map(x => new Path(x, ancestors, this.ctx)) : new Path(node, ancestors, this.ctx);
 	}
 
 	/** @param {Path | Node} node */
@@ -364,6 +364,10 @@ class Path {
 	/** @param {string} str */
 	appendString(str) {
 		this.ctx.out.appendRight(this.end, str);
+	}
+
+	insertAfter(node) {
+		// TODO: implement
 	}
 
 	_regenerate() {

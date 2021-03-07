@@ -16,10 +16,9 @@ export default function transformPrefreshRegistrations({ types: t, template }, o
 	const seenForOutro = new WeakSet();
 
 	const isComponentishName = name => typeof name === 'string' && name[0] >= 'A' && name[0] <= 'Z';
-
+	let i = 0;
 	function createRegistration(programPath, persistentID) {
-		const handle = programPath.scope.generateUidIdentifier('c');
-		console.log('registering', programPath, persistentID);
+		const handle = t.identifier(`_c${i++}`);
 		if (!registrationsByProgramPath.has(programPath)) {
 			registrationsByProgramPath.set(programPath, []);
 		}
@@ -40,15 +39,11 @@ export default function transformPrefreshRegistrations({ types: t, template }, o
 				if (!isComponentishName(node.name)) {
 					return false;
 				}
-				// export default hoc(Foo)
-				// const X = hoc(Foo)
+
 				callback(inferredName, node, null);
 				return true;
 			}
 			case 'FunctionDeclaration': {
-				// function Foo() {}
-				// export function Foo() {}
-				// export default function Foo() {}
 				callback(inferredName, node.id, null);
 				return true;
 			}
@@ -56,15 +51,11 @@ export default function transformPrefreshRegistrations({ types: t, template }, o
 				if (node.body.type === 'ArrowFunctionExpression') {
 					return false;
 				}
-				// let Foo = () => {}
-				// export default hoc1(hoc2(() => {}))
+
 				callback(inferredName, node, path);
 				return true;
 			}
 			case 'FunctionExpression': {
-				// let Foo = function() {}
-				// const Foo = hoc1(forwardRef(function renderFoo() {}))
-				// export default memo(function() {})
 				callback(inferredName, node, path);
 				return true;
 			}
@@ -73,6 +64,7 @@ export default function transformPrefreshRegistrations({ types: t, template }, o
 				if (argsPath === undefined || argsPath.length === 0) {
 					return false;
 				}
+
 				const calleePath = path.get('callee');
 				switch (calleePath.node.type) {
 					case 'MemberExpression':
@@ -140,7 +132,7 @@ export default function transformPrefreshRegistrations({ types: t, template }, o
 				if (foundInside) {
 					return true;
 				}
-				// See if this identifier is used in JSX. Then it's a component.
+				// TODO: See if this identifier is used in JSX. Then it's a component.
 				const binding = path.scope.getBinding(name);
 				if (binding === undefined) {
 					return;
@@ -400,51 +392,34 @@ export default function transformPrefreshRegistrations({ types: t, template }, o
 				// Don't mutate the tree above this point.
 
 				const declPaths = path.get('declarations');
-
-				// TODO: in babel this is just declPaths.length
-				if (declPaths.node.length !== 1) {
+				if (declPaths.length !== 1) {
 					return;
 				}
 
-				// TODO: to make this work the declPath should be an actual path, where we can get, ...
-				const declPath = declPaths.node[0];
-				const inferredName = declPath.id.name;
+				const declPath = declPaths[0];
+				const inferredName = declPath.node.id.name;
 				findInnerComponents(inferredName, declPath, (persistentID, targetExpr, targetPath) => {
 					if (targetPath === null) {
-						// For case like:
-						// export const Something = hoc(Foo)
-						// we don't want to wrap Foo inside the call.
-						// Instead we assume it's registered at definition.
 						return;
 					}
+
 					const handle = createRegistration(programPath, persistentID);
 					if (targetPath.parent.type === 'VariableDeclarator') {
-						// Special case when a variable would get an inferred name:
-						// let Foo = () => {}
-						// let Foo = function() {}
-						// let Foo = styled.div``;
-						// We'll register it on next line so that
-						// we don't mess up the inferred 'Foo' function name.
-						// (eg: with @babel/plugin-transform-react-display-name or
-						// babel-plugin-styled-components)
 						insertAfterPath.insertAfter(t.expressionStatement(t.assignmentExpression('=', handle, declPath.node.id)));
-						// Result: let Foo = () => {}; _c1 = Foo;
 					} else {
-						// let Foo = hoc(() => {})
 						targetPath.replaceWith(t.assignmentExpression('=', handle, targetExpr));
-						// Result: let Foo = hoc(_c1 = () => {})
 					}
 				});
 			},
 			Program: {
 				enter(path, state) {
-					// TODO: no fileHash
+					// TODO: we need the filename somewhere
 					state.set('filehash', hash(/*path.hub.file.opts.filename || */ 'unnamed'));
 					state.set('contexts', new Map());
 				},
 				exit(path) {
 					const registrations = registrationsByProgramPath.get(path);
-					console.log(registrationsByProgramPath);
+
 					if (registrations === undefined) {
 						return;
 					}
