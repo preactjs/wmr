@@ -179,7 +179,6 @@ for (let type in codeGenerator) {
 			}
 		}
 
-		// TODO: this seems to have an issue with "ExpressionStatement".expression because "node.expression.left" isn't there
 		fn.call(this, node, state);
 	};
 }
@@ -436,7 +435,9 @@ const TYPES = {
 		}
 		return clone;
 	},
+	assignmentExpression: (operator, left, right) => ({ type: 'AssignmentExpression', operator, left, right }),
 	variableDeclaration: (kind, declarations) => ({ type: 'VariableDeclaration', kind, declarations }),
+	variableDeclarator: id => ({ type: 'VariableDeclarator', id }),
 	identifier: name => ({ type: 'Identifier', name }),
 	stringLiteral: value => ({ type: 'StringLiteral', value }),
 	booleanLiteral: value => ({ type: 'BooleanLiteral', value }),

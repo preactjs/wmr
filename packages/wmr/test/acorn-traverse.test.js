@@ -81,7 +81,16 @@ describe('acorn-traverse', () => {
 			const doTransform = code => transformWithPlugin(code, transformPrefreshRegistrations);
 
 			// TODO: currently wrong
-			expect(doTransform(`const Component = () => {}`)).toMatchInlineSnapshot(`"const Component = () => {}"`);
+			expect(doTransform(`const Component = () => {}`)).toMatchInlineSnapshot(`
+			"var _c0;
+			_c0 = Component;
+			_c0 = Component;
+			const Component = () => {}
+			$RefreshReg$(_c0, 'Component');
+
+			$RefreshReg$(_c0, 'Component');
+			"
+		`);
 			expect(doTransform(`const nonComponent = () => {}`)).toMatchInlineSnapshot(`"const nonComponent = () => {}"`);
 		});
 	});
