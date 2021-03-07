@@ -41,11 +41,7 @@ export function App() {
 }
 
 if (typeof window !== 'undefined') {
-	if (document.querySelector('.app')) {
-		hydrate(<App />, document.body);
-	} else {
-		render(<App />, document.body);
-	}
+	hydrate(<App />, document.body);
 }
 
 export async function prerender(data) {
