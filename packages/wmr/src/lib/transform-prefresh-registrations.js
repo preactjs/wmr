@@ -434,12 +434,15 @@ export default function transformPrefreshRegistrations({ types: t, template }, o
 
 					registrationsByProgramPath.delete(path);
 					const declarators = [];
+					// TODO: currently this crashes somewhere due to a variableDeclaration missing an array of declarations
 					path.pushContainer('body', t.variableDeclaration('var', declarators));
 					registrations.forEach(({ handle, persistentID }) => {
+						// TODO: for some reason this is added twice...
 						path.pushContainer(
 							'body',
 							t.expressionStatement(t.callExpression(refreshReg, [handle, t.stringLiteral(persistentID)]))
 						);
+
 						declarators.push(t.variableDeclarator(handle));
 					});
 				}

@@ -178,6 +178,7 @@ for (let type in codeGenerator) {
 				} catch (e) {}
 			}
 		}
+
 		fn.call(this, node, state);
 	};
 }
@@ -429,6 +430,7 @@ const TYPES = {
 		}
 		return clone;
 	},
+	variableDeclarator: id => ({ type: 'VariableDeclarator', id }),
 	identifier: name => ({ type: 'Identifier', name }),
 	stringLiteral: value => ({ type: 'StringLiteral', value }),
 	booleanLiteral: value => ({ type: 'BooleanLiteral', value }),
