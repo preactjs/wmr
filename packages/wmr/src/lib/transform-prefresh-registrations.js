@@ -413,8 +413,7 @@ export default function transformPrefreshRegistrations({ types: t, template }, o
 			},
 			Program: {
 				enter(path, state) {
-					// TODO: we need the filename somewhere
-					state.set('filehash', hash(/*path.hub.file.opts.filename || */ 'unnamed'));
+					state.set('filehash', hash(path.ctx.filename || 'unnamed'));
 					state.set('contexts', new Map());
 				},
 				exit(path) {

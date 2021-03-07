@@ -25,6 +25,7 @@ function transformWithPlugin(code, plugin, options = {}) {
 	return transform(code, {
 		parse,
 		plugins: [plugin],
+		filename: 'test.jsx',
 		...options
 	}).code;
 }

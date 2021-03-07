@@ -624,10 +624,11 @@ function visit(root, visitors, state) {
  * @param {object} options
  * @param {string} options.code
  * @param {MagicString} options.out
+ * @param {string} options.filename
  * @param {typeof DEFAULTS['parse']} options.parse
  * @param {{ compact?: boolean }} options.generatorOpts
  */
-function createContext({ code, out, parse, generatorOpts }) {
+function createContext({ code, out, parse, generatorOpts, filename }) {
 	const ctx = {
 		paths: new WeakMap(),
 		/** @type {Set<Path>} */
@@ -639,7 +640,8 @@ function createContext({ code, out, parse, generatorOpts }) {
 		types,
 		visit,
 		template,
-		Path
+		Path,
+		filename
 	};
 
 	const bound = { ctx };
@@ -689,7 +691,7 @@ export function transform(
 	parse = parse || DEFAULTS.parse;
 	generatorOpts = generatorOpts || {};
 	const out = new MagicString(code);
-	const { types, template, visit } = createContext({ code, out, parse, generatorOpts });
+	const { types, template, visit } = createContext({ code, out, parse, generatorOpts, filename });
 
 	const allPlugins = [];
 	resolvePreset({ presets, plugins }, allPlugins);
