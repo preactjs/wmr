@@ -372,7 +372,7 @@ class Path {
 
 		const parentNode = this.parentPath.node;
 		const index = parentNode.body.findIndex(x => x === this.node);
-		parentNode.body.splice(index, 0, node);
+		parentNode.body.splice(index + 1, 0, node);
 		this._regenerateParent();
 	}
 
