@@ -1,13 +1,8 @@
 {
-	"name": "@wmr-plugins/service-worker",
+	"name": "@wmr-plugins/ssr",
 	"version": "0.1.1",
 	"type": "module",
-	"main": "./sw-plugin.cjs",
 	"module": "./src/index.js",
-	"exports": {
-		"import": "./src/index.js",
-		"default": "./sw-plugin.cjs"
-	},
 	"scripts": {
 		"build": "rollup -c",
 		"prepublishOnly": "yarn build"
@@ -17,25 +12,17 @@
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/preactjs/wmr.git",
-		"directory": "packages/sw-plugin"
+		"directory": "packages/ssr-plugin"
 	},
 	"files": [
-		"sw-plugin.cjs",
-		"src/index.js",
-		"types.d.ts"
+		"src/index.js"
 	],
-	"types": "./types.d.ts",
 	"devDependencies": {
-		"@rollup/plugin-commonjs": "^14.0.0",
-		"@rollup/plugin-node-resolve": "^8.1.0",
-		"rollup": "^2.39.0",
 		"wmr": "^1.3.2"
 	},
-	"dependencies": {
-		"rollup": "^2.0.0"
-	},
+	"dependencies": {},
 	"peerDependencies": {
-		"wmr": ">=1.0.0"
+		"wmr": ">=1.4.0"
 	},
 	"engines": {
 		"node": ">=12"
