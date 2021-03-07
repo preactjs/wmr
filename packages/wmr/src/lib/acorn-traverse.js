@@ -179,6 +179,7 @@ for (let type in codeGenerator) {
 			}
 		}
 
+		// TODO: this seems to have an issue with "ExpressionStatement".expression because "node.expression.left" isn't there
 		fn.call(this, node, state);
 	};
 }
@@ -368,7 +369,12 @@ class Path {
 	}
 
 	insertAfter(node) {
-		// TODO: implement
+		if (!this.parentPath) return;
+
+		const parentNode = this.parentPath.node;
+		const index = parentNode.body.findIndex(x => x === this.node);
+		parentNode.body.splice(index, 0, node);
+		this._regenerateParent();
 	}
 
 	_regenerate() {
@@ -430,7 +436,7 @@ const TYPES = {
 		}
 		return clone;
 	},
-	variableDeclarator: id => ({ type: 'VariableDeclarator', id }),
+	variableDeclaration: (kind, declarations) => ({ type: 'VariableDeclaration', kind, declarations }),
 	identifier: name => ({ type: 'Identifier', name }),
 	stringLiteral: value => ({ type: 'StringLiteral', value }),
 	booleanLiteral: value => ({ type: 'BooleanLiteral', value }),
