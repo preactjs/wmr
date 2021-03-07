@@ -5,6 +5,7 @@ import * as acorn from 'acorn';
 import acornJsx from 'acorn-jsx';
 import { transform, generate } from '../src/lib/acorn-traverse.js';
 import transformJsxToHtm from 'babel-plugin-transform-jsx-to-htm';
+import transformPrefreshRegistrations from '../src/lib/transform-prefresh-registrations.js';
 // import transformJsxToHtmLite from '../src/lib/transform-jsx-to-htm-lite.js';
 
 const fixtures = path.join(__dirname, 'fixtures/_unit');
@@ -71,6 +72,16 @@ describe('acorn-traverse', () => {
 			expect(transform('html`${x.map(([a,b,c]) => ({a,b,c}))}`;')).toMatchInlineSnapshot(
 				`"$tag(html)\`\${x.map(([a,b,c]) => ({a,b,c}))}\`;"`
 			);
+		});
+	});
+
+	describe('prefresh-registrations', () => {
+		it('should generate signatures for Prefresh', () => {
+			const doTransform = code => transformWithPlugin(code, transformPrefreshRegistrations);
+
+			// TODO: currently wrong
+			expect(doTransform(`const Component = () => {}`)).toMatchInlineSnapshot(`"const Component = () => {}"`);
+			expect(doTransform(`const nonComponent = () => {}`)).toMatchInlineSnapshot(`"const nonComponent = () => {}"`);
 		});
 	});
 
