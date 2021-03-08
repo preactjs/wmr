@@ -1,5 +1,7 @@
 import { promises as fs } from 'fs';
 import MagicString from 'magic-string';
+import transformPrefreshRegistrations from '../../lib/transform-prefresh-registrations.js';
+import { transform } from '../../lib/acorn-traverse.js';
 import { ESM_KEYWORDS } from '../fast-cjs-plugin.js';
 
 const BYPASS_HMR = process.env.BYPASS_HMR === 'true';
@@ -73,6 +75,15 @@ export default function wmrPlugin({ hot = true, preact } = {}) {
 			// Detect modules that appear to have both JSX and an export, and inject prefresh:
 			// @todo: move to separate plugin.
 			if (code.match(/html`[^`]*<([a-zA-Z][a-zA-Z0-9.:-]*|\$\{.+?\})[^>]*>/) && hasExport && preact) {
+				code = transform(code, {
+					plugins: [transformPrefreshRegistrations],
+					filename: id,
+					sourceMaps: false,
+					generatorOpts: {
+						compact: false
+					},
+					parse: this.parse
+				}).code;
 				hasHot = true;
 				after += '\n' + PREFRESH;
 			}
