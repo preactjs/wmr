@@ -370,11 +370,11 @@ class Path {
 	insertAfter(node) {
 		if (!this.parentPath) return;
 
-		const parentNode = this.parentPath.node;
 		let child = this;
 		while (child && !child.inList) {
 			child = child.parentPath;
 		}
+
 		if (!child) throw Error('Failed to insert node: no parent container');
 
 		// insert the child into the the container at the next index:
@@ -387,9 +387,7 @@ class Path {
 			if (p) p.key = index;
 		}
 		// create a Path entry for the inserted node, and regenerate the container:
-		const insertedPath = new Path(node, child.ancestors.slice(), this.ctx);
 		child._regenerateParent();
-		this._regenerateParent();
 	}
 
 	_regenerate() {

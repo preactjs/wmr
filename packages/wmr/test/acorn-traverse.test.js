@@ -83,11 +83,11 @@ describe('acorn-traverse', () => {
 			// TODO: currently wrong
 			expect(doTransform(`const Component = () => {}`)).toMatchInlineSnapshot(`
 			"var _c0;
-			_c0 = Component;
-			_c0 = Component;
 			const Component = () => {}
+			_c0 = Component;
 			$RefreshReg$(_c0, 'Component');
 
+			_c0 = Component;
 			$RefreshReg$(_c0, 'Component');
 			"
 		`);
