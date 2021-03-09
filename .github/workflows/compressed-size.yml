@@ -1,10 +1,8 @@
 name: compressed-size
 on:
   pull_request:
-    branches: 
+    branches:
       - main
-    paths:
-      - packages/wmr/**
 
 jobs:
   build:
@@ -12,7 +10,15 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            wmr:
+              - 'packages/wmr/**'
+
       - name: compressed-size-action
+        if: ${{ steps.filter.outputs.wmr == 'true' }}
         uses: preactjs/compressed-size-action@v2
         with:
           pattern: 'packages/wmr/{wmr.cjs,demo/dist/**/*.{js,css,html}}'
