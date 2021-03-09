@@ -99,7 +99,9 @@ sade('create-wmr [dir]', true)
 	.parse(process.argv);
 
 async function scaffold({ cwd, fields }) {
-	await templateDir(resolve(__dirname, '../tpl'), resolve(cwd || '.'), fields);
+	const to = resolve(cwd || '.');
+	await templateDir(resolve(__dirname, '../tpl'), to, fields);
+	await fs.rename(resolve(to, 'gitignore'), resolve(to, '.gitignore'));
 }
 
 async function templateDir(from, to, fields) {
