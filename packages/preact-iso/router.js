@@ -3,7 +3,7 @@ import { useContext, useMemo, useReducer, useEffect, useLayoutEffect, useRef } f
 
 const UPDATE = (state, url) => {
 	/** @type {boolean|undefined} - History state update strategy */
-	let push = undefined
+	let push = undefined;
 
 	// user click (Mouse event)
 	if (url && url.type === 'click') {
@@ -18,7 +18,7 @@ const UPDATE = (state, url) => {
 		url = location.pathname + location.search;
 	// manual invocation (useLocation().route)
 	} else {
-		push = false
+		push = false;
 	}
 
 	if (push === true) history.pushState(null, '', url);
