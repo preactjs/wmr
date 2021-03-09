@@ -31,7 +31,7 @@ export const exec = (url, route, matches) => {
 		// field match:
 		matches[param] = val && decodeURIComponent(val);
 		// normal/optional field:
-		if (flag >= "?" || !flag) continue;
+		if (flag >= "?" || flag === '') continue;
 		// rest (+/*) match:
 		matches[param] = url.slice(i).map(decodeURIComponent).join("/");
 		break;
