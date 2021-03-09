@@ -20,7 +20,7 @@ const UPDATE = (state, url, push) => {
 
 export const exec = (url, route, matches) => {
 	url = url.split('/').filter(Boolean)
-	route = (route || '').split('/').filter(Boolean);
+	route = (route || '').trim('/').split('/');
 	for (let i = 0, val; i < Math.max(url.length, route.length); i++) {
 		let [, m, param, flag] = (route[i] || '').match(/^(:?)(.*?)([+*?]?)$/);
 		val = url[i];
