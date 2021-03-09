@@ -1,24 +1,34 @@
 import { h, createContext, cloneElement } from 'preact';
 import { useContext, useMemo, useReducer, useEffect, useLayoutEffect, useRef } from 'preact/hooks';
 
+/**
+ * @param {string} state
+ * @param {MouseEvent|PopStateEvent|Object|string} url
+ * @return {string}
+ */
 const UPDATE = (state, url) => {
 	/** @type {boolean|undefined} - History state update strategy */
-	let push = undefined;
+	let push = undefined
 
-	// user click (Mouse event)
-	if (url && url.type === 'click') {
+	// user click
+	if (url instanceof MouseEvent) {
+		// @ts-ignore-next
 		const link = url.target.closest('a[href]');
 		if (!link || link.origin != location.origin) return state;
 
 		url.preventDefault();
 		push = true;
 		url = link.href.replace(location.origin, '');
-	// navigation (PopStateEvent)
-	} else if (typeof url !== 'string') {
+	// navigation
+	} else if (url instanceof PopStateEvent) {
 		url = location.pathname + location.search;
-	// manual invocation (useLocation().route)
+	// manual invocation: route({ path, replace })
+	} else if (typeof url === 'object') {
+		url = url.path;
+		push = !url.replace;
+	// manual invocation: route(path)
 	} else {
-		push = false;
+		push = true;
 	}
 
 	if (push === true) history.pushState(null, '', url);
