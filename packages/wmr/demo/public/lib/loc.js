@@ -27,11 +27,11 @@ export const exec = (url, route, matches) => {
 		// segment match:
 		if (!m && param == val) continue;
 		// segment mismatch / missing required field:
-		if (!m || (!val && flag != "?" && flag != "*")) break;
+		if (!m || (!val && flag != "?" && flag != "*")) return;
 		// field match:
 		matches[param] = val && decodeURIComponent(val);
 		// normal/optional field:
-		if (flag >= "?" || !flag) continue;
+		if (flag >= "?" || flag === '') continue;
 		// rest (+/*) match:
 		matches[param] = url.slice(i).map(decodeURIComponent).join("/");
 		break;
