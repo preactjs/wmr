@@ -1,7 +1,11 @@
 import { h, createContext, cloneElement } from 'preact';
 import { useContext, useMemo, useReducer, useEffect, useLayoutEffect, useRef } from 'preact/hooks';
 
-const UPDATE = (state, url, push) => {
+const UPDATE = (state, url) => {
+	/** @type {boolean|undefined} - History state update strategy */
+	let push = undefined
+
+	// user click (Mouse event)
 	if (url && url.type === 'click') {
 		const link = url.target.closest('a[href]');
 		if (!link || link.origin != location.origin) return state;
@@ -9,8 +13,12 @@ const UPDATE = (state, url, push) => {
 		url.preventDefault();
 		push = true;
 		url = link.href.replace(location.origin, '');
+	// navigation (PopStateEvent)
 	} else if (typeof url !== 'string') {
 		url = location.pathname + location.search;
+	// manual invocation (useLocation().route)
+	} else {
+		push = false
 	}
 
 	if (push === true) history.pushState(null, '', url);
