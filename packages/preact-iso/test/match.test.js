@@ -26,7 +26,7 @@ describe('match', () => {
 	});
 
 	it('Handles leading/trailing slashes', () => {
-		const result = exec('/about-late/_SEGMENT1_/_SEGMENT2_/', '/about-late/:seg1/:seg2/');
+		const result = exec('/about-late/_SEGMENT1_/_SEGMENT2_/', '/about-late/:seg1/:seg2/', {});
 		expect(result).toEqual({
 			seg1: '_SEGMENT1_',
 			seg2: '_SEGMENT2_'
