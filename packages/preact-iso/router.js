@@ -24,7 +24,7 @@ const UPDATE = (state, url) => {
 		url = location.pathname + location.search;
 	// manual invocation: route({ path, replace })
 	} else if (typeof url === 'object') {
-		url = url.path;
+		url = url.url;
 		push = !url.replace;
 	// manual invocation: route(path)
 	} else {
