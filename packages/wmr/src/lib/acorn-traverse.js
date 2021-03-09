@@ -371,8 +371,24 @@ class Path {
 		if (!this.parentPath) return;
 
 		const parentNode = this.parentPath.node;
-		const index = parentNode.body.findIndex(x => x === this.node);
-		parentNode.body.splice(index + 1, 0, node);
+		let child = this;
+		while (child && !child.inList) {
+			child = child.parentPath;
+		}
+		if (!child) throw Error('Failed to insert node: no parent container');
+
+		// insert the child into the the container at the next index:
+		const list = child.parent[child.listKey];
+		let index = child.key + 1;
+		list.splice(index, 0, node);
+		// update all subsequent Path keys to their shifted indices:
+		while (++index < list.length) {
+			const p = this.ctx.paths.get(list[index]);
+			if (p) p.key = index;
+		}
+		// create a Path entry for the inserted node, and regenerate the container:
+		const insertedPath = new Path(node, child.ancestors.slice(), this.ctx);
+		child._regenerateParent();
 		this._regenerateParent();
 	}
 
