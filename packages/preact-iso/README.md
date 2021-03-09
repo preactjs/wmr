@@ -80,7 +80,7 @@ A simple router for Preact with conventional and hooks-based APIs. The `<Router>
 
 ```js
 import { lazy, ErrorBoundary } from 'preact-iso/lazy';
-import { LocationProvider, Router, useLoc } from 'preact-iso/router';
+import { LocationProvider, Router, useLocation } from 'preact-iso/router';
 
 // Asynchronous (throws a promise)
 const Home = lazy(() => import('./routes/home.js'));
