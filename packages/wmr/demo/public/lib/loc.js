@@ -19,8 +19,8 @@ const UPDATE = (state, url, push) => {
 };
 
 export const exec = (url, route, matches) => {
-	url = url.trim('/').split('/');
-	route = (route || '').trim('/').split('/');
+	url = url.replace(/(^\/+|\/+$)/g, '').split('/');
+	route = (route || '').replace(/(^\/+|\/+$)/g, '').split('/');
 	for (let i = 0, val; i < Math.max(url.length, route.length); i++) {
 		let [, m, param, flag] = (route[i] || '').match(/^(:?)(.*?)([+*?]?)$/);
 		val = url[i];
