@@ -101,7 +101,9 @@ sade('create-wmr [dir]', true)
 async function scaffold({ cwd, fields }) {
 	const to = resolve(cwd || '.');
 	await templateDir(resolve(__dirname, '../tpl'), to, fields);
-	await fs.rename(resolve(to, 'gitignore'), resolve(to, '.gitignore'));
+	// Publishing to npm renames the .gitignore to .npmignore
+	// https://github.com/npm/npm/issues/7252#issuecomment-253339460
+	await fs.rename(resolve(to, '.npmignore'), resolve(to, '.gitignore'));
 }
 
 async function templateDir(from, to, fields) {
