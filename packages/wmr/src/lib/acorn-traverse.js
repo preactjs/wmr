@@ -336,7 +336,9 @@ class Path {
 		} else {
 			let str = generate(node, this.ctx);
 			this._hasString = true;
-			this.ctx.out.overwrite(this.start, this.end, str);
+			this.ctx.out.overwrite(this.start, this.end, str, { storeName: true });
+			this.end = str.length;
+			this.ctx.out = new MagicString(this.ctx?.out.toString());
 		}
 		this._requeue();
 	}
@@ -350,7 +352,8 @@ class Path {
 			return;
 		}
 		this._hasString = true;
-		this.ctx.out.overwrite(this.start, this.end, str);
+		this.ctx.out.overwrite(this.start, this.end, str, { storeName: true });
+		this.end = str.length;
 		this.ctx.out = new MagicString(this.ctx?.out.toString());
 	}
 
@@ -715,8 +718,8 @@ export function transform(
 	parse = parse || DEFAULTS.parse;
 	generatorOpts = generatorOpts || {};
 	const out = new MagicString(code);
-	const { types, template, visit } = createContext({ code, out, parse, generatorOpts, filename });
-
+	const ctx = createContext({ code, out, parse, generatorOpts, filename });
+	const { types, template, visit } = ctx;
 	const allPlugins = [];
 	resolvePreset({ presets, plugins }, allPlugins);
 
@@ -752,7 +755,7 @@ export function transform(
 	let map;
 	function getSourceMap() {
 		if (!map) {
-			map = out.generateMap({
+			map = ctx.out.generateMap({
 				includeContent: false,
 				source: sourceFileName
 			});
@@ -765,7 +768,7 @@ export function transform(
 	}
 
 	return {
-		code: out.toString(),
+		code: ctx.out.toString(),
 		get ast() {
 			return ast === true ? parsed : undefined;
 		},
