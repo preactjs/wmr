@@ -21,7 +21,7 @@ const ClassFields = lazy(() => import('./pages/class-fields.js'));
 const Files = lazy(() => import('./pages/files/index.js'));
 const Environment = lazy(async () => (await import('./pages/environment/index.js')).Environment);
 
-export function App() {
+function App() {
 	return (
 		<LocationProvider>
 			<div class="app">
@@ -51,6 +51,3 @@ export async function prerender(data) {
 	const { prerender } = await import('./lib/prerender.js');
 	return await prerender(<App {...data} />);
 }
-
-// @ts-ignore
-if (module.hot) module.hot.accept(u => render(<u.module.App />, document.body));

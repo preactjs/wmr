@@ -37,7 +37,11 @@ export default function transformJsxToHtmLite({ types: t }, options = {}) {
 						const lib = typeof tagImport === 'string' ? tagImport : tagImport.module;
 						let imp = (typeof tagImport === 'object' && tagImport.export) || tagString;
 						if (tagString !== imp) imp += ' as ' + tagString;
-						path.get('body').prependString(`import { ${imp} } from '${lib}';\n`);
+
+						path.unshiftContainer(
+							'body',
+							t.importDeclaration([t.importSpecifier(t.identifier(imp), t.identifier(imp))], t.stringLiteral(lib))
+						);
 					}
 				}
 			},

@@ -319,6 +319,7 @@ class Path {
 				ancestors.push(prev);
 			}
 		}
+
 		return Array.isArray(node) ? node.map(x => new Path(x, ancestors, this.ctx)) : new Path(node, ancestors, this.ctx);
 	}
 
