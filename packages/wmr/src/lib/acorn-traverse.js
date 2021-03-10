@@ -337,8 +337,6 @@ class Path {
 			let str = generate(node, this.ctx);
 			this._hasString = true;
 			this.ctx.out.overwrite(this.start, this.end, str, { storeName: true });
-			this.end = str.length;
-			this.ctx.out = new MagicString(this.ctx?.out.toString());
 		}
 		this._requeue();
 	}
@@ -391,7 +389,9 @@ class Path {
 			if (p) p.key = index;
 		}
 		// create a Path entry for the inserted node, and regenerate the container:
-		child._regenerateParent();
+		if (!this._regenerateParent()) {
+			this._regenerate();
+		}
 	}
 
 	_regenerate() {

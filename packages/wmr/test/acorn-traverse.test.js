@@ -90,22 +90,22 @@ describe('acorn-traverse', () => {
 		`);
 			expect(doTransform(`const nonComponent = () => {}`)).toMatchInlineSnapshot(`"const nonComponent = () => {}"`);
 
-			// 	expect(
-			// 		doTransform(`
-			// 	const Component = () => {};
-			// 	const Component2 = () => {};
+			expect(
+				doTransform(`
+				const Component = () => {};
+				const Component2 = () => {};
 
-			// 	`)
-			// 	).toMatchInlineSnapshot(`
-			// 	"var _c0, _c1;
-			// 	const Component = () => {};
-			// 	_c0 = Component;
-			// 	const Component2 = () => {};
-			// 	_c1 = Component2;
-			// 	$RefreshReg$(_c0, 'Component');
-			// 	$RefreshReg$(_c1, 'Component2');
-			// 	"
-			// `);
+				`)
+			).toMatchInlineSnapshot(`
+				"var _c0, _c1;
+				const Component = () => {};
+				_c0 = Component;
+				const Component2 = () => {};
+				_c1 = Component2;
+				$RefreshReg$(_c0, 'Component');
+				$RefreshReg$(_c1, 'Component2');
+				"
+			`);
 		});
 	});
 
