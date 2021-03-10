@@ -8,7 +8,7 @@ function hash(str) {
 	return (hash >>> 0).toString(36);
 }
 
-export default function transformPrefreshRegistrations({ types: t, template }, options = {}) {
+export default function transformPrefreshRegistrations({ types: t }, options = {}) {
 	const refreshReg = t.identifier('$RefreshReg$');
 
 	const registrationsByProgramPath = new Map();
@@ -178,19 +178,19 @@ export default function transformPrefreshRegistrations({ types: t, template }, o
 		return false;
 	}
 
-	const createContextTemplate = template(
-		`
-    Object.assign((CREATECONTEXT.IDENT || (CREATECONTEXT.IDENT=CREATECONTEXT(VALUE))), {__:VALUE});
-  `,
-		{ placeholderPattern: /^[A-Z]+$/ }
-	);
+	// const createContextTemplate = template(
+	// 	`
+	//   Object.assign((CREATECONTEXT.IDENT || (CREATECONTEXT.IDENT=CREATECONTEXT(VALUE))), {__:VALUE});
+	// `,
+	// 	{ placeholderPattern: /^[A-Z]+$/ }
+	// );
 
-	const emptyTemplate = template(`
-    (CREATECONTEXT.IDENT || (CREATECONTEXT.IDENT=CREATECONTEXT()));
-	`);
+	// const emptyTemplate = template(`
+	//   (CREATECONTEXT.IDENT || (CREATECONTEXT.IDENT=CREATECONTEXT()));
+	// `);
 
-	const getFirstNonTsExpression = expression =>
-		expression.type === 'TSAsExpression' ? getFirstNonTsExpression(expression.expression) : expression;
+	// const getFirstNonTsExpression = expression =>
+	// 	expression.type === 'TSAsExpression' ? getFirstNonTsExpression(expression.expression) : expression;
 
 	return {
 		name: 'transform-prefresh-registrations',
@@ -238,42 +238,43 @@ export default function transformPrefreshRegistrations({ types: t, template }, o
 					insertAfterPath.insertAfter(t.expressionStatement(t.assignmentExpression('=', handle, path.node.id)));
 				}
 			},
-			CallExpression(path, state) {
-				if (!path.get('callee').referencesImport('preact', 'createContext')) return;
+			// Not possible due to "referencesImport"
+			// CallExpression(path, state) {
+			// 	if (!path.get('callee').referencesImport('preact', 'createContext')) return;
 
-				let id = '';
-				if (t.isVariableDeclarator(path.parentPath)) {
-					id += '$' + path.parent.id.name;
-				} else if (t.isAssignmentExpression(path.parentPath)) {
-					if (t.isIdentifier(path.parent.left)) {
-						id += '_' + path.parent.left.name;
-					} else {
-						id += '_' + hash(path.parentPath.get('left').getSource());
-					}
-				}
-				const contexts = state.get('contexts');
-				let counter = (contexts.get(id) || -1) + 1;
-				contexts.set(id, counter);
-				if (counter) id += counter;
-				id = '_' + state.get('filehash') + id;
-				path.skip();
-				if (path.node.arguments[0]) {
-					path.replaceWith(
-						createContextTemplate({
-							CREATECONTEXT: path.get('callee').node,
-							IDENT: t.identifier(id),
-							VALUE: t.clone(getFirstNonTsExpression(path.node.arguments[0]))
-						})
-					);
-				} else {
-					path.replaceWith(
-						emptyTemplate({
-							CREATECONTEXT: path.get('callee').node,
-							IDENT: t.identifier(id)
-						})
-					);
-				}
-			},
+			// 	let id = '';
+			// 	if (t.isVariableDeclarator(path.parentPath)) {
+			// 		id += '$' + path.parent.id.name;
+			// 	} else if (t.isAssignmentExpression(path.parentPath)) {
+			// 		if (t.isIdentifier(path.parent.left)) {
+			// 			id += '_' + path.parent.left.name;
+			// 		} else {
+			// 			id += '_' + hash(path.parentPath.get('left').getSource());
+			// 		}
+			// 	}
+			// 	const contexts = state.get('contexts');
+			// 	let counter = (contexts.get(id) || -1) + 1;
+			// 	contexts.set(id, counter);
+			// 	if (counter) id += counter;
+			// 	id = '_' + state.get('filehash') + id;
+			// 	path.skip();
+			// 	if (path.node.arguments[0]) {
+			// 		path.replaceWith(
+			// 			createContextTemplate({
+			// 				CREATECONTEXT: path.get('callee').node,
+			// 				IDENT: t.identifier(id),
+			// 				VALUE: t.clone(getFirstNonTsExpression(path.node.arguments[0]))
+			// 			})
+			// 		);
+			// 	} else {
+			// 		path.replaceWith(
+			// 			emptyTemplate({
+			// 				CREATECONTEXT: path.get('callee').node,
+			// 				IDENT: t.identifier(id)
+			// 			})
+			// 		);
+			// 	}
+			// },
 			ExportDefaultDeclaration(path) {
 				const node = path.node;
 				const decl = node.declaration;

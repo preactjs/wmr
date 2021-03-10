@@ -77,9 +77,8 @@ describe('acorn-traverse', () => {
 	});
 
 	describe('prefresh-registrations', () => {
+		const doTransform = code => transformWithPlugin(code, transformPrefreshRegistrations);
 		it('should generate signatures for Prefresh', () => {
-			const doTransform = code => transformWithPlugin(code, transformPrefreshRegistrations);
-
 			// TODO: this var from insertAfter is missing
 			expect(doTransform(`const Component = () => {}`)).toMatchInlineSnapshot(`
 			"var _c0;
@@ -106,6 +105,163 @@ describe('acorn-traverse', () => {
 				$RefreshReg$(_c1, 'Component2');
 				"
 			`);
+
+			expect(
+				doTransform(`
+					function Hello() {
+						function handleClick() {}
+						return <h1 onClick={handleClick}>Hi</h1>;
+					}
+					function Bar() {
+						return <Hello />;
+					}
+			`)
+			).toMatchInlineSnapshot(`
+			"var _c0, _c1;
+			function Hello() {
+									function handleClick() {}
+									return <h1 onClick={handleClick}>Hi</h1>;
+								}
+			_c0 = Hello;
+			function Bar() {
+									return <Hello />;
+								}
+			_c1 = Bar;
+			$RefreshReg$(_c0, 'Hello');
+			$RefreshReg$(_c1, 'Bar');
+			"
+		`);
+		});
+
+		it('registers top-level exported function declarations', () => {
+			expect(
+				doTransform(`
+					export function Hello() {
+						function handleClick() {}
+						return <h1 onClick={handleClick}>Hi</h1>;
+					}
+					export default function Bar() {
+						return <Hello />;
+					}
+					function Baz() {
+						return <h1>OK</h1>;
+					}
+					const NotAComp = 'hi';
+					export { Baz, NotAComp };
+					export function sum() {}
+					export const Bad = 42;
+			`)
+			).toMatchInlineSnapshot(`
+			"var _c0, _c1, _c2;
+			export function Hello() {
+									function handleClick() {}
+									return <h1 onClick={handleClick}>Hi</h1>;
+								}
+			_c0 = Hello;
+			export default function Bar() {
+									return <Hello />;
+								}
+			_c1 = Bar;
+			function Baz() {
+									return <h1>OK</h1>;
+								}
+			_c2 = Baz;
+			const NotAComp = 'hi';
+			export {Baz, NotAComp};
+			export function sum() {}
+			export const Bad = 42;
+			$RefreshReg$(_c0, 'Hello');
+			$RefreshReg$(_c1, 'Bar');
+			$RefreshReg$(_c2, 'Baz');
+			"
+		`);
+		});
+
+		it('uses original function declaration if it get reassigned', () => {
+			expect(
+				doTransform(`
+					function Hello() {
+						return <h1>Hi</h1>;
+					}
+					Hello = connect(Hello);
+			`)
+			).toMatchInlineSnapshot(`
+			"var _c0;
+			function Hello() {
+									return <h1>Hi</h1>;
+								}
+			_c0 = Hello;
+			Hello = connect(Hello);
+			$RefreshReg$(_c0, 'Hello');
+			"
+		`);
+		});
+
+		it('registers HOCs', () => {
+			expect(
+				doTransform(`
+					const A = forwardRef(function() {
+						return <h1>Foo</h1>;
+					});
+					const B = memo(forwardRef(() => {
+						return <h1>Foo</h1>;
+					}));
+					export default memo(forwardRef((props, ref) => {
+						return <h1>Foo</h1>;
+					}));
+			`)
+			).toMatchInlineSnapshot(`
+			"var _c0, _c1, _c2, _c3, _c4, _c5, _c6, _c7;
+			const A = forwardRef(function () {
+			  return <h1>Foo</h1>;
+			});
+			_c1 = A;
+			_c0 = A;
+			const B = memo(forwardRef(() => {
+			  return <h1>Foo</h1>;
+			}));
+			_c4 = B;
+			_c3 = B;
+			_c2 = B;
+			export default _c7 = ;
+			$RefreshReg$(_c0, 'A$forwardRef');
+			$RefreshReg$(_c1, 'A');
+			$RefreshReg$(_c2, 'B$memo$forwardRef');
+			$RefreshReg$(_c3, 'B$memo');
+			$RefreshReg$(_c4, 'B');
+			$RefreshReg$(_c5, '%default%$memo$forwardRef');
+			$RefreshReg$(_c6, '%default%$memo');
+			$RefreshReg$(_c7, '%default%');
+			"
+		`);
+			expect(
+				doTransform(`
+					export default memo(forwardRef(function (props, ref) {
+						return <h1>Foo</h1>;
+					}));
+			`)
+			).toMatchInlineSnapshot(`
+			"var _c0, _c1, _c2;
+			export default _c2 = ;
+			$RefreshReg$(_c0, '%default%$memo$forwardRef');
+			$RefreshReg$(_c1, '%default%$memo');
+			$RefreshReg$(_c2, '%default%');
+			"
+		`);
+			expect(
+				doTransform(`
+					export default memo(forwardRef(function Named(props, ref) {
+						return <h1>Foo</h1>;
+					}));
+			`)
+			).toMatchInlineSnapshot(`
+			"var _c0, _c1, _c2;
+			export default _c2 = ;
+			$RefreshReg$(_c0, '%default%$memo$forwardRef');
+			$RefreshReg$(_c1, '%default%$memo');
+			$RefreshReg$(_c2, '%default%');
+			"
+		`);
 		});
 	});
 
