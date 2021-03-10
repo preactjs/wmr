@@ -27,7 +27,7 @@ jobs:
 
   build:
     needs: changes
-    runs-on: ubuntu-latest
+    runs-on: [ubuntu-latest, windows-latest]
     strategy:
       matrix:
         # Change the condition for ESM Dist Test below when changing this.
