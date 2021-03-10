@@ -81,15 +81,22 @@ let codeGenerator = {
 		const { specifiers = [], source } = node;
 		state.write('import ');
 		if (specifiers.length) {
-			let defaultSpecifier;
-			if (specifiers[0].type === 'ImportDefaultSpecifier') {
-				defaultSpecifier = specifiers.shift();
+			let defaultSpecifier = specifiers.find(x => x.type === 'ImportDefaultSpecifier');
+			if (defaultSpecifier) {
 				this[defaultSpecifier.type](defaultSpecifier, state);
 			}
-			if (specifiers.length) {
+
+			const length = defaultSpecifier && specifiers.length ? specifiers.length - 1 : specifiers.length;
+			if (specifiers.length && specifiers.length >= length) {
 				if (defaultSpecifier) state.write(', ');
 				state.write('{ ');
-				for (const s of specifiers) this[s.type](s, state);
+				for (const s of specifiers) {
+					if (s.type === 'ImportDefaultSpecifier') continue;
+					this[s.type](s, state);
+					if (specifiers.indexOf(s) !== specifiers.length - 1) {
+						state.write(', ');
+					}
+				}
 				state.write(' }');
 			}
 			state.write(' from ');
@@ -184,14 +191,14 @@ for (let type in codeGenerator) {
 }
 
 // Useful for debugging missing AST node serializers
-// codeGenerator = new Proxy(codeGenerator, {
-// 	get(target, key) {
-// 		if (Reflect.has(target, key)) {
-// 			return target[key];
-// 		}
-// 		throw Error(`No code generator defined for ${key}`);
-// 	}
-// });
+codeGenerator = new Proxy(codeGenerator, {
+	get(target, key) {
+		if (Reflect.has(target, key)) {
+			return target[key];
+		}
+		throw Error(`No code generator defined for ${key}`);
+	}
+});
 
 function template(str) {
 	str = String(str);

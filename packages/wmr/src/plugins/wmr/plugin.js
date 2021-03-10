@@ -7,17 +7,15 @@ import { ESM_KEYWORDS } from '../fast-cjs-plugin.js';
 const BYPASS_HMR = process.env.BYPASS_HMR === 'true';
 
 const PREFRESH = `
-import '@prefresh/core';
 if (import.meta.hot) {
-  let a=0, m=import(import.meta.url);
-  import.meta.hot.accept(async ({module}) => {
-    m = await m;
-    try {
-      if (!a++) for (let i in module) self.__PREFRESH__.replaceComponent(m[i], module[i]);
-    } catch (e) {
-      import.meta.hot.invalidate();
-      throw e;
-    }
+	self.$RefreshReg$ = prevRefreshReg;
+	self.$RefreshSig$ = prevRefreshSig;
+  import.meta.hot.accept(() => {
+		try {
+			flush();
+		} catch (e) {
+			self.location.reload();
+		}
   });
 }
 `;
@@ -63,6 +61,31 @@ export default function wmrPlugin({ hot = true, preact } = {}) {
 			let before = '';
 			let after = '';
 
+			const PRELUDE = `
+import '@prefresh/core';
+import { flush } from '@prefresh/utils';
+
+let prevRefreshReg;
+let prevRefreshSig;
+
+if (import.meta.hot) {
+	prevRefreshReg = self.$RefreshReg$ || (() => {});
+	prevRefreshSig = self.$RefreshSig$ || (() => (type) => type);
+	self.$RefreshReg$ = (type, id) => {
+		self.__PREFRESH__.register(type, ${JSON.stringify(id)} + " " + id);
+	}
+	self.$RefreshSig$ = () => {
+		let status = 'begin';
+		let savedType;
+		return (type, key, forceReset, getCustomHooks) => {
+			if (!savedType) savedType = type;
+			status = self.__PREFRESH__.sign(type || savedType, key, forceReset, getCustomHooks, status);
+			return type;
+		};
+	};
+};
+`;
+
 			// stub webpack-style `module.hot` using `import.meta.hot`:
 			if (code.match(/module\.hot/)) {
 				hasHot = true;
@@ -85,6 +108,7 @@ export default function wmrPlugin({ hot = true, preact } = {}) {
 					parse: this.parse
 				}).code;
 				hasHot = true;
+				before += '\n' + PRELUDE;
 				after += '\n' + PREFRESH;
 			}
 

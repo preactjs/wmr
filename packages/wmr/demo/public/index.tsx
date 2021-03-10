@@ -2,10 +2,8 @@ import { LocationProvider, Router } from './lib/loc.js';
 import lazy, { ErrorBoundary } from './lib/lazy.js';
 import hydrate from './lib/hydrate';
 import Home from './pages/home.js';
-// import About from './pages/about/index.js';
 import NotFound from './pages/_404.js';
 import Header from './header.tsx';
-// import './style.css';
 
 const About = lazy(() => import('./pages/about/index.js'));
 const LazyAndLate = lazy(
