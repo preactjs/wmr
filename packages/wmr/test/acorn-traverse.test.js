@@ -200,36 +200,36 @@ describe('acorn-traverse', () => {
 		it('preserves exports', () => {
 			expect(
 				doTransform(`
-					export const A = forwardRef(function() {
-						return <h1>Foo</h1>;
-					});
-			`)
+						export const A = forwardRef(function() {
+							return <h1>Foo</h1>;
+						});
+				`)
 			).toMatchInlineSnapshot(`
-			"var _c0, _c1;
-			export const A = forwardRef(_c0 = function () {
-			  return <h1>Foo</h1>;
-			});
-			_c1 = A;
-			$RefreshReg$(_c0, 'A$forwardRef');
-			$RefreshReg$(_c1, 'A');
-			"
-		`);
+				"var _c0, _c1;
+				export const A = forwardRef(_c0 = function () {
+				  return <h1>Foo</h1>;
+				});
+				_c1 = A;
+				$RefreshReg$(_c0, 'A$forwardRef');
+				$RefreshReg$(_c1, 'A');
+				"
+			`);
 
 			expect(
 				doTransform(`
-				export default forwardRef(function() {
+				export default forwardRef(function () {
 					return <h1>Foo</h1>;
 				});
 		`)
 			).toMatchInlineSnapshot(`
-		"var _c0, _c1;
-		export default _c1 = forwardRef(_c0 = function () {
-			return <h1>Foo</h1>;
-		});
-		$RefreshReg$(_c0, '%default%$forwardRef');
-		$RefreshReg$(_c1, '%default%');
-		"
-	`);
+			"var _c0, _c1;
+			export default _c1 = forwardRef(_c0 = function () {
+								return <h1>Foo</h1>;
+							});
+			$RefreshReg$(_c0, '%default%$forwardRef');
+			$RefreshReg$(_c1, '%default%');
+			"
+		`);
 		});
 
 		it('registers HOCs', () => {

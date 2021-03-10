@@ -342,9 +342,7 @@ class Path {
 		if (this._regenerateParent()) {
 			this._hasString = false;
 		} else {
-			let str = generate(node, this.ctx);
-			this._hasString = true;
-			this.ctx.out.overwrite(this.start, this.end, str, { storeName: true });
+			this._regenerate();
 		}
 		this._requeue();
 	}
