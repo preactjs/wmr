@@ -191,14 +191,14 @@ for (let type in codeGenerator) {
 }
 
 // Useful for debugging missing AST node serializers
-codeGenerator = new Proxy(codeGenerator, {
-	get(target, key) {
-		if (Reflect.has(target, key)) {
-			return target[key];
-		}
-		throw Error(`No code generator defined for ${key}`);
-	}
-});
+// codeGenerator = new Proxy(codeGenerator, {
+// 	get(target, key) {
+// 		if (Reflect.has(target, key)) {
+// 			return target[key];
+// 		}
+// 		throw Error(`No code generator defined for ${key}`);
+// 	}
+// });
 
 function template(str) {
 	str = String(str);

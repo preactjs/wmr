@@ -76,8 +76,7 @@ export default function transformPrefreshRegistrations({ types: t }, options = {
 						if (!foundInside) {
 							return false;
 						}
-						// const Foo = hoc1(hoc2(() => {}))
-						// export default memo(React.forwardRef(function() {}))
+
 						callback(inferredName, node, path);
 						return true;
 					}
@@ -91,18 +90,17 @@ export default function transformPrefreshRegistrations({ types: t }, options = {
 				if (init === null) {
 					return false;
 				}
+
 				const name = node.id.name;
 				if (!isComponentishName(name)) {
 					return false;
 				}
+
 				switch (init.type) {
 					case 'ArrowFunctionExpression':
 					case 'FunctionExpression':
-						// Likely component definitions.
 						break;
 					case 'CallExpression': {
-						// Maybe a HOC.
-						// Try to determine if this is some form of import.
 						const callee = init.callee;
 						const calleeType = callee.type;
 						if (calleeType === 'Import') {
@@ -113,16 +111,11 @@ export default function transformPrefreshRegistrations({ types: t }, options = {
 							} else if (callee.name.indexOf('import') === 0) {
 								return false;
 							}
-							// Neither require nor import. Might be a HOC.
-							// Pass through.
 						} else if (calleeType === 'MemberExpression') {
-							// Could be something like React.forwardRef(...)
-							// Pass through.
 						}
 						break;
 					}
 					case 'TaggedTemplateExpression':
-						// Maybe something like styled.div`...`
 						break;
 					default:
 						return false;
@@ -133,46 +126,46 @@ export default function transformPrefreshRegistrations({ types: t }, options = {
 					return true;
 				}
 				// TODO: See if this identifier is used in JSX. Then it's a component.
-				const binding = path.scope.getBinding(name);
-				if (binding === undefined) {
-					return;
-				}
-				let isLikelyUsedAsType = false;
-				const referencePaths = binding.referencePaths;
-				for (let i = 0; i < referencePaths.length; i++) {
-					const ref = referencePaths[i];
-					if (ref.node && ref.node.type !== 'JSXIdentifier' && ref.node.type !== 'Identifier') {
-						continue;
-					}
-					const refParent = ref.parent;
-					if (refParent.type === 'JSXOpeningElement') {
-						isLikelyUsedAsType = true;
-					} else if (refParent.type === 'CallExpression') {
-						const callee = refParent.callee;
-						let fnName;
-						switch (callee.type) {
-							case 'Identifier':
-								fnName = callee.name;
-								break;
-							case 'MemberExpression':
-								fnName = callee.property.name;
-								break;
-						}
-						switch (fnName) {
-							case 'createElement':
-							case 'jsx':
-							case 'jsxDEV':
-							case 'jsxs':
-								isLikelyUsedAsType = true;
-								break;
-						}
-					}
-					if (isLikelyUsedAsType) {
-						// const X = ... + later <X />
-						callback(inferredName, init, initPath);
-						return true;
-					}
-				}
+				// const binding = path.scope.getBinding(name);
+				// if (binding === undefined) {
+				// 	return;
+				// }
+				// let isLikelyUsedAsType = false;
+				// const referencePaths = binding.referencePaths;
+				// for (let i = 0; i < referencePaths.length; i++) {
+				// 	const ref = referencePaths[i];
+				// 	if (ref.node && ref.node.type !== 'JSXIdentifier' && ref.node.type !== 'Identifier') {
+				// 		continue;
+				// 	}
+				// 	const refParent = ref.parent;
+				// 	if (refParent.type === 'JSXOpeningElement') {
+				// 		isLikelyUsedAsType = true;
+				// 	} else if (refParent.type === 'CallExpression') {
+				// 		const callee = refParent.callee;
+				// 		let fnName;
+				// 		switch (callee.type) {
+				// 			case 'Identifier':
+				// 				fnName = callee.name;
+				// 				break;
+				// 			case 'MemberExpression':
+				// 				fnName = callee.property.name;
+				// 				break;
+				// 		}
+				// 		switch (fnName) {
+				// 			case 'createElement':
+				// 			case 'jsx':
+				// 			case 'jsxDEV':
+				// 			case 'jsxs':
+				// 				isLikelyUsedAsType = true;
+				// 				break;
+				// 		}
+				// 	}
+				// 	if (isLikelyUsedAsType) {
+				// 		// const X = ... + later <X />
+				// 		callback(inferredName, init, initPath);
+				// 		return true;
+				// 	}
+				// }
 			}
 		}
 		return false;
@@ -279,38 +272,13 @@ export default function transformPrefreshRegistrations({ types: t }, options = {
 				const node = path.node;
 				const decl = node.declaration;
 				const declPath = path.get('declaration');
-				if (decl.type !== 'CallExpression') {
-					// For now, we only support possible HOC calls here.
-					// Named function declarations are handled in FunctionDeclaration.
-					// Anonymous direct exports like export default function() {}
-					// are currently ignored.
-					return;
-				}
-
-				// Make sure we're not mutating the same tree twice.
-				// This can happen if another Babel plugin replaces parents.
-				if (seenForRegistration.has(node)) {
-					return;
-				}
+				if (decl.type !== 'CallExpression' || seenForRegistration.has(node)) return;
 				seenForRegistration.add(node);
-				// Don't mutate the tree above this point.
 
-				// This code path handles nested cases like:
-				// export default memo(() => {})
-				// In those cases it is more plausible people will omit names
-				// so they're worth handling despite possible false positives.
-				// More importantly, it handles the named case:
-				// export default memo(function Named() {})
 				const inferredName = '%default%';
 				const programPath = path.parentPath;
 				findInnerComponents(inferredName, declPath, (persistentID, targetExpr, targetPath) => {
-					if (targetPath === null) {
-						// For case like:
-						// export default hoc(Foo)
-						// we don't want to wrap Foo inside the call.
-						// Instead we assume it's registered at definition.
-						return;
-					}
+					if (targetPath === null) return;
 					const handle = createRegistration(programPath, persistentID);
 					targetPath.replaceWith(t.assignmentExpression('=', handle, targetExpr));
 				});
@@ -337,25 +305,18 @@ export default function transformPrefreshRegistrations({ types: t }, options = {
 							return;
 					}
 					const id = node.id;
-					if (id === null) {
-						// We don't currently handle anonymous default exports.
-						return;
-					}
+					if (id === null) return;
+
 					const inferredName = id.name;
 					if (!isComponentishName(inferredName)) {
 						return;
 					}
 
-					// Make sure we're not mutating the same tree twice.
-					// This can happen if another Babel plugin replaces parents.
 					if (seenForRegistration.has(node)) {
 						return;
 					}
 					seenForRegistration.add(node);
-					// Don't mutate the tree above this point.
 
-					// export function Named() {}
-					// function Named() {}
 					findInnerComponents(inferredName, path, (persistentID, targetExpr) => {
 						const handle = createRegistration(programPath, persistentID);
 						insertAfterPath.insertAfter(t.expressionStatement(t.assignmentExpression('=', handle, targetExpr)));
@@ -384,13 +345,8 @@ export default function transformPrefreshRegistrations({ types: t }, options = {
 						return;
 				}
 
-				// Make sure we're not mutating the same tree twice.
-				// This can happen if another Babel plugin replaces parents.
-				if (seenForRegistration.has(node)) {
-					return;
-				}
+				if (seenForRegistration.has(node)) return;
 				seenForRegistration.add(node);
-				// Don't mutate the tree above this point.
 
 				const declPaths = path.get('declarations');
 				if (declPaths.length !== 1) {
@@ -400,9 +356,7 @@ export default function transformPrefreshRegistrations({ types: t }, options = {
 				const declPath = declPaths[0];
 				const inferredName = declPath.node.id.name;
 				findInnerComponents(inferredName, declPath, (persistentID, targetExpr, targetPath) => {
-					if (targetPath === null) {
-						return;
-					}
+					if (targetPath === null) return;
 
 					const handle = createRegistration(programPath, persistentID);
 					if (targetPath.parent.type === 'VariableDeclarator') {

@@ -197,6 +197,41 @@ describe('acorn-traverse', () => {
 		`);
 		});
 
+		it('preserves exports', () => {
+			expect(
+				doTransform(`
+					export const A = forwardRef(function() {
+						return <h1>Foo</h1>;
+					});
+			`)
+			).toMatchInlineSnapshot(`
+			"var _c0, _c1;
+			export const A = forwardRef(_c0 = function () {
+			  return <h1>Foo</h1>;
+			});
+			_c1 = A;
+			$RefreshReg$(_c0, 'A$forwardRef');
+			$RefreshReg$(_c1, 'A');
+			"
+		`);
+
+			expect(
+				doTransform(`
+				export default forwardRef(function() {
+					return <h1>Foo</h1>;
+				});
+		`)
+			).toMatchInlineSnapshot(`
+		"var _c0, _c1;
+		export default _c1 = forwardRef(_c0 = function () {
+			return <h1>Foo</h1>;
+		});
+		$RefreshReg$(_c0, '%default%$forwardRef');
+		$RefreshReg$(_c1, '%default%');
+		"
+	`);
+		});
+
 		it('registers HOCs', () => {
 			expect(
 				doTransform(`
@@ -212,18 +247,19 @@ describe('acorn-traverse', () => {
 			`)
 			).toMatchInlineSnapshot(`
 			"var _c0, _c1, _c2, _c3, _c4, _c5, _c6, _c7;
-			const A = forwardRef(function () {
+			const A = forwardRef(_c0 = function () {
 			  return <h1>Foo</h1>;
 			});
 			_c1 = A;
-			_c0 = A;
-			const B = memo(forwardRef(() => {
+			const B = memo(_c3 = forwardRef(_c2 = () => {
 			  return <h1>Foo</h1>;
 			}));
 			_c4 = B;
-			_c3 = B;
-			_c2 = B;
-			export default _c7 = ;
+
+			export default _c7 = React.memo(_c6 = forwardRef(_c5 = (props, ref) => {
+				return <h1>Foo</h1>;
+			}));
+
 			$RefreshReg$(_c0, 'A$forwardRef');
 			$RefreshReg$(_c1, 'A');
 			$RefreshReg$(_c2, 'B$memo$forwardRef');
@@ -232,34 +268,6 @@ describe('acorn-traverse', () => {
 			$RefreshReg$(_c5, '%default%$memo$forwardRef');
 			$RefreshReg$(_c6, '%default%$memo');
 			$RefreshReg$(_c7, '%default%');
-			"
-		`);
-			expect(
-				doTransform(`
-					export default memo(forwardRef(function (props, ref) {
-						return <h1>Foo</h1>;
-					}));
-			`)
-			).toMatchInlineSnapshot(`
-			"var _c0, _c1, _c2;
-			export default _c2 = ;
-			$RefreshReg$(_c0, '%default%$memo$forwardRef');
-			$RefreshReg$(_c1, '%default%$memo');
-			$RefreshReg$(_c2, '%default%');
-			"
-		`);
-			expect(
-				doTransform(`
-					export default memo(forwardRef(function Named(props, ref) {
-						return <h1>Foo</h1>;
-					}));
-			`)
-			).toMatchInlineSnapshot(`
-			"var _c0, _c1, _c2;
-			export default _c2 = ;
-			$RefreshReg$(_c0, '%default%$memo$forwardRef');
-			$RefreshReg$(_c1, '%default%$memo');
-			$RefreshReg$(_c2, '%default%');
 			"
 		`);
 		});
