@@ -1,3 +1,4 @@
+var _c0;
 import { html as $$html } from '/@npm/htm/preact';
 const LIST = [
 	{ id: 'one', text: 'item 1', props: {} },
@@ -26,3 +27,5 @@ export default function Demo({ name = 'Bob', list = LIST }) {
 		</div>`
 	);
 }
+_c0 = Demo;
+$RefreshReg$(_c0, 'Demo');

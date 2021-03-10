@@ -1,3 +1,4 @@
+var _c0;
 import { html as $$html } from '/@npm/htm/preact';
 const Ctx = {
 	Foo: function Foo() {
@@ -12,3 +13,5 @@ export default function Demo() {
 		<//>`
 	);
 }
+_c0 = Demo;
+$RefreshReg$(_c0, 'Demo');
