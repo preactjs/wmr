@@ -27,9 +27,10 @@ jobs:
 
   build:
     needs: changes
-    runs-on: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [ubuntu-latest, windows-latest]
         # Change the condition for ESM Dist Test below when changing this.
         node-version: [12.18, 14.x]
     steps:
