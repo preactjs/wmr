@@ -83,7 +83,7 @@ describe('acorn-traverse', () => {
 			// TODO: this var from insertAfter is missing
 			expect(doTransform(`const Component = () => {}`)).toMatchInlineSnapshot(`
 			"var _c0;
-			const Component = () => {}
+			const Component = () => {};
 			_c0 = Component;
 			$RefreshReg$(_c0, 'Component');
 			"

@@ -351,8 +351,6 @@ class Path {
 		}
 		this._hasString = true;
 		this.ctx.out.overwrite(this.start, this.end, str, { storeName: true });
-		this.end = str.length;
-		this.ctx.out = new MagicString(this.ctx?.out.toString());
 	}
 
 	remove() {
