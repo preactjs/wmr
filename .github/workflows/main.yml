@@ -10,7 +10,7 @@ on:
 
 jobs:
   changes:
-    runs-on: ubuntu-latest
+    runs-on: [ubuntu-latest, windows-latest]
     outputs:
       wmr: ${{ steps.filter.outputs.wmr }}
       preact-iso: ${{ steps.filter.outputs.preact-iso }}
