@@ -322,9 +322,7 @@ class Path {
 			const name = token[1] || token[2];
 			const prev = node;
 			node = node[name];
-			if (!Array.isArray(node)) {
-				ancestors.push(prev);
-			}
+			ancestors.push(prev);
 		}
 
 		return Array.isArray(node) ? node.map(x => new Path(x, ancestors, this.ctx)) : new Path(node, ancestors, this.ctx);

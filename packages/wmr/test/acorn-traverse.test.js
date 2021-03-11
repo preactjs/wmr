@@ -205,15 +205,15 @@ describe('acorn-traverse', () => {
 						});
 				`)
 			).toMatchInlineSnapshot(`
-				"var _c0, _c1;
-				export const A = forwardRef(_c0 = function () {
-				  return <h1>Foo</h1>;
-				});
-				_c1 = A;
-				$RefreshReg$(_c0, 'A$forwardRef');
-				$RefreshReg$(_c1, 'A');
-				"
-			`);
+			"var _c0, _c1;
+			export const A = forwardRef(_c0 = function() {
+										return <h1>Foo</h1>;
+									});
+			_c1 = A;
+			$RefreshReg$(_c0, 'A$forwardRef');
+			$RefreshReg$(_c1, 'A');
+			"
+		`);
 
 			expect(
 				doTransform(`
@@ -247,13 +247,13 @@ describe('acorn-traverse', () => {
 			`)
 			).toMatchInlineSnapshot(`
 			"var _c0, _c1, _c2, _c3, _c4, _c5, _c6, _c7;
-			const A = forwardRef(_c0 = function () {
-			  return <h1>Foo</h1>;
-			});
+			const A = forwardRef(_c0 = function() {
+									return <h1>Foo</h1>;
+								});
 			_c1 = A;
 			const B = memo(_c3 = forwardRef(_c2 = () => {
-			  return <h1>Foo</h1>;
-			}));
+									return <h1>Foo</h1>;
+								}));
 			_c4 = B;
 			export default _c7 = memo(_c6 = forwardRef(_c5 = (props, ref) => {
 									return <h1>Foo</h1>;
