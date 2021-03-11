@@ -255,11 +255,9 @@ describe('acorn-traverse', () => {
 			  return <h1>Foo</h1>;
 			}));
 			_c4 = B;
-
-			export default _c7 = React.memo(_c6 = forwardRef(_c5 = (props, ref) => {
-				return <h1>Foo</h1>;
-			}));
-
+			export default _c7 = memo(_c6 = forwardRef(_c5 = (props, ref) => {
+									return <h1>Foo</h1>;
+								}));
 			$RefreshReg$(_c0, 'A$forwardRef');
 			$RefreshReg$(_c1, 'A');
 			$RefreshReg$(_c2, 'B$memo$forwardRef');
