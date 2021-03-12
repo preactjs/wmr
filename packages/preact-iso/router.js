@@ -153,5 +153,7 @@ Router.Provider = LocationProvider;
 LocationProvider.ctx = createContext(/** @type {{ url: string, path: string, query: object, route }} */ ({}));
 const RouteContext = createContext({});
 
+export const Route = (props) => h(props.component, props);
+
 export const useLocation = () => useContext(LocationProvider.ctx);
 export const useRoute = () => useContext(RouteContext);
