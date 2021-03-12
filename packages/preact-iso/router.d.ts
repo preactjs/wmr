@@ -1,4 +1,4 @@
-import { FunctionComponent, VNode } from 'preact';
+import { AnyComponent, FunctionComponent, VNode } from 'preact';
 
 export const LocationProvider: FunctionComponent;
 
@@ -9,7 +9,7 @@ interface LocationHook {
 	path: string;
 	query: Record<string, string>;
 	route: (url: string) => void;
-};
+}
 export const useLocation: () => LocationHook;
 
 export const useRoute: () => { [key: string]: string };
@@ -18,6 +18,12 @@ interface RoutableProps {
 	path?: string;
 	default?: boolean;
 }
+
+export interface RouteProps<Props> extends RoutableProps {
+	  component: AnyComponent<Props>;
+}
+
+export function Route<Props>(props: RouteProps<Props> & Partial<Props>): VNode;
 
 declare module 'preact' {
 	namespace JSX {
