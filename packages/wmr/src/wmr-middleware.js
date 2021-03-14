@@ -407,7 +407,7 @@ export const TRANSFORMS = {
 			}
 		});
 
-		writeCacheFile(out, id, code);
+		if (!code.includes('?t=')) writeCacheFile(out, id, code);
 
 		return code;
 	},
