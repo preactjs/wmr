@@ -316,13 +316,11 @@ describe('production', () => {
 				waitUntil: ['networkidle0', 'load']
 			});
 
-			expect(logs).toEqual([
-				`hello from index.js`,
-				`hello from page one`,
-				`hello from page two`,
-				`loaded pages`,
-				`page one,page two`
-			]);
+			expect(logs).toContain(`hello from index.js`);
+			expect(logs).toContain(`hello from page one`);
+			expect(logs).toContain(`hello from page two`);
+			expect(logs).toContain(`loaded pages`);
+			expect(logs).toContain(`page one,page two`);
 		});
 	});
 
