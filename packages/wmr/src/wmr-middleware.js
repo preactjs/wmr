@@ -399,7 +399,6 @@ export const TRANSFORMS = {
 				const specModule = moduleGraph.get(modSpec);
 				specModule.dependents.add(importer);
 				if (specModule.stale) {
-					specModule.stale = false;
 					return spec + `?t=${Date.now()}`;
 				}
 

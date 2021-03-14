@@ -248,6 +248,30 @@ describe('fixtures', () => {
 			expect(text).toEqual('3');
 		});
 
+		it('should bubble up updates in non-accepted files with multiple parents', async () => {
+			await loadFixture('hmr', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			let homeFoo = await env.page.$('#home-foo');
+			let rootFoo = await env.page.$('#root-foo');
+			let homeText = homeFoo ? await homeFoo.evaluate(el => el.textContent) : null;
+			let rootText = rootFoo ? await rootFoo.evaluate(el => el.textContent) : null;
+			expect(homeText).toEqual('42');
+			expect(rootText).toEqual('42');
+
+			await updateFile(env.tmp.path, 'store.js', content => content.replace('42', '43'));
+
+			await timeout(2000);
+
+			homeFoo = await env.page.$('#home-foo');
+			rootFoo = await env.page.$('#root-foo');
+			homeText = homeFoo ? await homeFoo.evaluate(el => el.textContent) : null;
+			rootText = rootFoo ? await rootFoo.evaluate(el => el.textContent) : null;
+			expect(homeText).toEqual('43');
+			expect(rootText).toEqual('43');
+		});
+
 		it('should hot reload for a newly created file', async () => {
 			await loadFixture('hmr', env);
 			instance = await runWmrFast(env.tmp.path);

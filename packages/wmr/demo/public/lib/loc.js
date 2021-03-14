@@ -39,7 +39,6 @@ export const exec = (url, route, matches) => {
 
 	return matches;
 };
-
 export function LocationProvider(props) {
 	const [url, route] = useReducer(UPDATE, location.pathname + location.search);
 
