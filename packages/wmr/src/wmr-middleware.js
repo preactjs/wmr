@@ -163,11 +163,15 @@ export default function wmrMiddleware({
 			pendingChanges.add('/' + filename);
 		} else if (/\.(mjs|[tj]sx?)$/.test(filename)) {
 			if (!bubbleUpdates(filename)) {
+				moduleGraph.clear();
+				pendingChanges.clear();
 				clearTimeout(timeout);
 				onChange({ reload: true });
 			}
 		} else {
 			WRITE_CACHE.delete(filename);
+			moduleGraph.clear();
+			pendingChanges.clear();
 			clearTimeout(timeout);
 			onChange({ reload: true });
 		}
