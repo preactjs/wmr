@@ -203,113 +203,119 @@ describe('fixtures', () => {
 
 		const timeout = n => new Promise(r => setTimeout(r, n));
 
-		it('should hot reload the child-file', async () => {
-			await loadFixture('hmr', env);
-			instance = await runWmrFast(env.tmp.path);
-			await getOutput(env, instance);
-
-			const home = await env.page.$('.home');
-			let text = home ? await home.evaluate(el => el.textContent) : null;
-			expect(text).toEqual('Home');
-
-			await updateFile(env.tmp.path, 'home.js', content =>
-				content.replace('<p class="home">Home</p>', '<p class="home">Away</p>')
-			);
-
-			await timeout(1000);
-
-			text = home ? await home.evaluate(el => el.textContent) : null;
-			expect(text).toEqual('Away');
-		});
-
-		it('should hot reload for a newly created file', async () => {
-			await loadFixture('hmr', env);
-			instance = await runWmrFast(env.tmp.path);
-			await getOutput(env, instance);
-
-			const compPath = path.join(env.tmp.path, 'child.js');
-			await fs.writeFile(compPath, `export default function Child() {return <p class="child">child</p>}`);
-
-			const home = await env.page.$('.home');
-			let text = home ? await home.evaluate(el => el.textContent) : null;
-			expect(text).toEqual('Home');
-
-			await updateFile(env.tmp.path, 'home.js', content => {
-				const newContent = `import Child from './child.js';\n\n${content}`;
-				return newContent.replace('<p class="home">Home</p>', '<Child />');
-			});
-
-			await timeout(1000);
-
-			const child = await env.page.$('.child');
-			text = child ? await child.evaluate(el => el.textContent) : null;
-			expect(text).toEqual('child');
-		});
-
-		it('should hot reload a css-file imported from index.html', async () => {
-			await loadFixture('hmr', env);
-			instance = await runWmrFast(env.tmp.path);
-			await getOutput(env, instance);
-
-			expect(await page.$eval('body', e => getComputedStyle(e).color)).toBe('rgb(51, 51, 51)');
-
-			await updateFile(env.tmp.path, 'index.css', content => content.replace('color: #333;', 'color: #000;'));
-
-			await timeout(1000);
-
-			expect(await page.$eval('body', e => getComputedStyle(e).color)).toBe('rgb(0, 0, 0)');
-		});
-
-		it('should hot reload a module css-file', async () => {
-			await loadFixture('hmr', env);
-			instance = await runWmrFast(env.tmp.path);
-			await getOutput(env, instance);
-
-			expect(await page.$eval('main', e => getComputedStyle(e).color)).toBe('rgb(51, 51, 51)');
-
-			await updateFile(env.tmp.path, 'style.module.css', content => content.replace('color: #333;', 'color: #000;'));
-
-			await timeout(1000);
-
-			expect(await page.$eval('main', e => getComputedStyle(e).color)).toBe('rgb(0, 0, 0)');
-		});
-	});
-
-	describe('hmr-scss', () => {
-		async function updateFile(tempDir, file, replacer) {
-			const compPath = path.join(tempDir, file);
-			const content = await fs.readFile(compPath, 'utf-8');
-			await fs.writeFile(compPath, replacer(content));
+		async function waitForText(element, text, timeoutAfter = 5000) {
+			const start = Date.now();
+			let t;
+			while (Date.now() - start < timeoutAfter) {
+				t = await element.evaluate(el => el.textContent);
+				if (t === text) break;
+				await timeout(100);
+			}
+			return t;
 		}
 
-		const timeout = n => new Promise(r => setTimeout(r, n));
+		async function waitForValue(page, fn, value) {
+			return (await page.waitForFunction(`value => (${fn})() === value`, { timeout: 1000 }, value)) && value;
+		}
 
-		it('should hot reload an scss-file imported from index.html', async () => {
-			await loadFixture('hmr-scss', env);
-			instance = await runWmrFast(env.tmp.path);
-			await getOutput(env, instance);
+		describe('JavaScript', () => {
+			it('should hot reload the child-file', async () => {
+				await loadFixture('hmr', env);
+				instance = await runWmrFast(env.tmp.path);
+				await getOutput(env, instance);
 
-			expect(await page.$eval('body', e => getComputedStyle(e).color)).toBe('rgb(51, 51, 51)');
+				const home = await env.page.$('.home');
+				expect(await waitForText(home, 'Home', 1000)).toEqual('Home');
 
-			await updateFile(env.tmp.path, 'index.scss', content => content.replace('color: #333;', 'color: #000;'));
+				await updateFile(env.tmp.path, 'home.js', content =>
+					content.replace('<p class="home">Home</p>', '<p class="home">Away</p>')
+				);
 
-			await timeout(1000);
+				expect(await waitForText(home, 'Away', 5000)).toEqual('Away');
+			});
 
-			expect(await page.$eval('body', e => getComputedStyle(e).color)).toBe('rgb(0, 0, 0)');
+			it('should hot reload for a newly created file', async () => {
+				await loadFixture('hmr', env);
+				instance = await runWmrFast(env.tmp.path);
+				await getOutput(env, instance);
+
+				const home = await env.page.waitForSelector('.home', { timeout: 1000 });
+				expect(home.evaluate(el => el.textContent)).toEqual('Home');
+
+				const compPath = path.join(env.tmp.path, 'child.js');
+				await fs.writeFile(compPath, `export default function Child() {return <p class="child">child</p>}`);
+
+				await timeout(1000);
+
+				expect(await home.evaluate(el => el.textContent)).toEqual('Home');
+
+				await updateFile(env.tmp.path, 'home.js', content => {
+					const newContent = `import Child from './child.js';\n\n${content}`;
+					return newContent.replace('<p class="home">Home</p>', '<Child />');
+				});
+
+				const child = await env.page.waitForSelector('.child', { timeout: 1000 });
+				expect(await child.evaluate(el => el.textContent)).toEqual('child');
+
+				// Ensure we're still on the page and haven't navigated away:
+				expect(await home.evaluate(el => el.textContent)).toEqual('Home');
+			});
 		});
 
-		it('should hot reload an imported scss-file from another scss-file', async () => {
-			await loadFixture('hmr-scss', env);
-			instance = await runWmrFast(env.tmp.path);
-			await getOutput(env, instance);
+		describe('CSS', () => {
+			it('should hot reload a css-file imported from index.html', async () => {
+				await loadFixture('hmr', env);
+				instance = await runWmrFast(env.tmp.path);
+				await getOutput(env, instance);
 
-			expect(await page.$eval('main', e => getComputedStyle(e).color)).toBe('rgb(51, 51, 51)');
+				expect(await page.$eval('body', e => getComputedStyle(e).color)).toBe('rgb(51, 51, 51)');
 
-			await updateFile(env.tmp.path, 'home.scss', content => content.replace('color: #333;', 'color: #000;'));
+				await updateFile(env.tmp.path, 'index.css', content => content.replace('color: #333;', 'color: #000;'));
 
-			await timeout(1000);
+				expect(await waitForValue(page, () => getComputedStyle(document.body), 'rgb(0, 0, 0)')).toBe('rgb(0, 0, 0)');
+			});
 
-			expect(await page.$eval('main', e => getComputedStyle(e).color)).toBe('rgb(0, 0, 0)');
+			it('should hot reload a module css-file', async () => {
+				await loadFixture('hmr', env);
+				instance = await runWmrFast(env.tmp.path);
+				await getOutput(env, instance);
+
+				expect(await page.$eval('main', e => getComputedStyle(e).color)).toBe('rgb(51, 51, 51)');
+
+				await updateFile(env.tmp.path, 'style.module.css', content => content.replace('color: #333;', 'color: #000;'));
+
+				expect(await waitForValue(page, () => getComputedStyle(document.querySelector('main')), 'rgb(0, 0, 0)')).toBe(
+					'rgb(0, 0, 0)'
+				);
+			});
+		});
+
+		describe('SCSS', () => {
+			it('should hot reload an scss-file imported from index.html', async () => {
+				await loadFixture('hmr-scss', env);
+				instance = await runWmrFast(env.tmp.path);
+				await getOutput(env, instance);
+
+				expect(await page.$eval('body', e => getComputedStyle(e).color)).toBe('rgb(51, 51, 51)');
+
+				await updateFile(env.tmp.path, 'index.scss', content => content.replace('color: #333;', 'color: #000;'));
+
+				expect(await waitForValue(page, () => getComputedStyle(document.body), 'rgb(0, 0, 0)')).toBe('rgb(0, 0, 0)');
+			});
+
+			it('should hot reload an imported scss-file from another scss-file', async () => {
+				await loadFixture('hmr-scss', env);
+				instance = await runWmrFast(env.tmp.path);
+				await getOutput(env, instance);
+
+				expect(await page.$eval('main', e => getComputedStyle(e).color)).toBe('rgb(51, 51, 51)');
+
+				await updateFile(env.tmp.path, 'home.scss', content => content.replace('color: #333;', 'color: #000;'));
+
+				expect(await waitForValue(page, () => getComputedStyle(document.querySelector('main')), 'rgb(0, 0, 0)')).toBe(
+					'rgb(0, 0, 0)'
+				);
+			});
 		});
 	});
 
