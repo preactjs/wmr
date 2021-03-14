@@ -229,7 +229,8 @@ describe('fixtures', () => {
 				expect(text).toEqual('0');
 
 				let increment = await env.page.$('.increment');
-				await increment?.click();
+				// @ts-ignore-next
+				await increment.click();
 				text = count ? await count.evaluate(el => el.textContent) : null;
 				expect(text).toEqual('1');
 
@@ -240,7 +241,8 @@ describe('fixtures', () => {
 				await timeout(2000);
 
 				increment = await env.page.$('.increment');
-				await increment?.click();
+				// @ts-ignore-next
+				await increment.click();
 				text = count ? await count.evaluate(el => el.textContent) : null;
 				expect(text).toEqual('3');
 			});
