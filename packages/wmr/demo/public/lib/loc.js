@@ -19,8 +19,8 @@ const UPDATE = (state, url, push) => {
 };
 
 export const exec = (url, route, matches) => {
-	url = url.trim('/').split('/');
-	route = (route || '').trim('/').split('/');
+	url = url.split('/').filter(Boolean);
+	route = (route || '').split('/').filter(Boolean);
 	for (let i = 0, val; i < Math.max(url.length, route.length); i++) {
 		let [, m, param, flag] = (route[i] || '').match(/^(:?)(.*?)([+*?]?)$/);
 		val = url[i];
@@ -31,7 +31,7 @@ export const exec = (url, route, matches) => {
 		// field match:
 		matches[param] = val && decodeURIComponent(val);
 		// normal/optional field:
-		if (flag >= '?') continue;
+		if (flag >= '?' || flag === '') continue;
 		// rest (+/*) match:
 		matches[param] = url.slice(i).map(decodeURIComponent).join('/');
 		break;
