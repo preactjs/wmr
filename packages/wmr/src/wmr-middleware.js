@@ -160,7 +160,6 @@ export default function wmrMiddleware({
 			WRITE_CACHE.delete(filename);
 			pendingChanges.add('/' + filename);
 		} else if (/\.(mjs|[tj]sx?)$/.test(filename)) {
-			console.log(filename, moduleGraph.has(filename));
 			if (!moduleGraph.has(filename)) {
 				clearTimeout(timeout);
 				return;
