@@ -139,7 +139,7 @@ export default function wmrMiddleware({
 			pendingChanges.add(filename);
 			return true;
 		} else if (mod.dependents.size) {
-			return mod.dependents.every(function (value) {
+			return [...mod.dependents].every(function (value) {
 				mod.stale = true;
 				return bubbleUpdates(value, visited);
 			});
@@ -399,7 +399,6 @@ export const TRANSFORMS = {
 				const specModule = moduleGraph.get(modSpec);
 				specModule.dependents.add(importer);
 				if (specModule.stale) {
-					specModule.stale = false;
 					return spec + `?t=${Date.now()}`;
 				}
 

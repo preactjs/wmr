@@ -1,16 +1,17 @@
 import { h, createContext, cloneElement } from 'preact';
 import { useContext, useMemo, useReducer, useEffect, useLayoutEffect, useRef } from 'preact/hooks';
 
-const UPDATE = (state, url, push) => {
+const UPDATE = (state, url) => {
+	let push = true;
 	if (url && url.type === 'click') {
 		const link = url.target.closest('a[href]');
 		if (!link || link.origin != location.origin) return state;
 
 		url.preventDefault();
-		push = true;
 		url = link.href.replace(location.origin, '');
 	} else if (typeof url !== 'string') {
 		url = location.pathname + location.search;
+		push = undefined;
 	}
 
 	if (push === true) history.pushState(null, '', url);
@@ -134,6 +135,8 @@ Router.Provider = LocationProvider;
 
 LocationProvider.ctx = createContext(/** @type {{ url: string, path: string, query: object, route }} */ ({}));
 const RouteContext = createContext({});
+
+export const Route = (props) => h(props.component, props);
 
 export const useLocation = () => useContext(LocationProvider.ctx);
 export const useRoute = () => useContext(RouteContext);

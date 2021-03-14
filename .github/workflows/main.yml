@@ -4,16 +4,29 @@ on:
   push:
     branches:
       - main
-    paths:
-      - packages/wmr/**
-      - packages/preact-iso/**
   pull_request:
-    paths:
-      - packages/wmr/**
-      - packages/preact-iso/**
+    branches:
+      - main
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      wmr: ${{ steps.filter.outputs.wmr }}
+      preact-iso: ${{ steps.filter.outputs.preact-iso }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            wmr:
+              - 'packages/wmr/**'
+            preact-iso:
+              - 'packages/preact-iso/**'
+
   build:
+    needs: changes
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -27,15 +40,21 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - name: Install
+        if: ${{ needs.changes.outputs.wmr == 'true' || needs.changes.outputs.preact-iso == 'true' }}
         run: yarn --frozen-lockfile
       - name: Build
+        if: ${{ needs.changes.outputs.wmr == 'true' }}
         run: yarn workspace wmr build
       - name: Test wmr
+        if: ${{ needs.changes.outputs.wmr == 'true' }}
         run: yarn workspace wmr test
       - name: Test preact-iso
+        if: ${{ needs.changes.outputs.preact-iso == 'true' }}
         run: yarn workspace preact-iso test
 
   lhci:
+    needs: changes
+    if: ${{ needs.changes.outputs.wmr == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

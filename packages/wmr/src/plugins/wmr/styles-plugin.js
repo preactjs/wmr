@@ -175,7 +175,8 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath } = {}) {
 			return {
 				code,
 				moduleSideEffects: true,
-				syntheticNamedExports: true
+				syntheticNamedExports: true,
+				map: null
 			};
 		}
 	};

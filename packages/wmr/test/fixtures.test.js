@@ -219,7 +219,57 @@ describe('fixtures', () => {
 		}
 
 		describe('JavaScript', () => {
-			it('should hot reload the child-file', async () => {
+			it('should bubble up updates in non-accepted files', async () => {
+				await loadFixture('hmr', env);
+				instance = await runWmrFast(env.tmp.path);
+				await getOutput(env, instance);
+
+				const count = await env.page.$('.count');
+				let text = count ? await count.evaluate(el => el.textContent) : null;
+				expect(text).toEqual('0');
+
+				let increment = await env.page.$('.increment');
+				await increment?.click();
+				text = count ? await count.evaluate(el => el.textContent) : null;
+				expect(text).toEqual('1');
+
+				await updateFile(env.tmp.path, 'useCounter.js', content =>
+					content.replace('() => setCount(count + 1)', '() => setCount(count + 2)')
+				);
+
+				await timeout(2000);
+
+				increment = await env.page.$('.increment');
+				await increment?.click();
+				text = count ? await count.evaluate(el => el.textContent) : null;
+				expect(text).toEqual('3');
+			});
+
+			it('should bubble up updates in non-accepted files with multiple parents', async () => {
+				await loadFixture('hmr', env);
+				instance = await runWmrFast(env.tmp.path);
+				await getOutput(env, instance);
+
+				let homeFoo = await env.page.$('#home-foo');
+				let rootFoo = await env.page.$('#root-foo');
+				let homeText = homeFoo ? await homeFoo.evaluate(el => el.textContent) : null;
+				let rootText = rootFoo ? await rootFoo.evaluate(el => el.textContent) : null;
+				expect(homeText).toEqual('42');
+				expect(rootText).toEqual('42');
+
+				await updateFile(env.tmp.path, 'store.js', content => content.replace('42', '43'));
+
+				await timeout(2000);
+
+				homeFoo = await env.page.$('#home-foo');
+				rootFoo = await env.page.$('#root-foo');
+				homeText = homeFoo ? await homeFoo.evaluate(el => el.textContent) : null;
+				rootText = rootFoo ? await rootFoo.evaluate(el => el.textContent) : null;
+				expect(homeText).toEqual('43');
+				expect(rootText).toEqual('43');
+			});
+
+			it('should hot reload for an updated file', async () => {
 				await loadFixture('hmr', env);
 				instance = await runWmrFast(env.tmp.path);
 				await getOutput(env, instance);
@@ -462,6 +512,20 @@ describe('fixtures', () => {
 		});
 	});
 
+	describe('export-map', () => {
+		beforeEach(async () => {
+			await loadFixture('exports', env);
+			instance = await runWmrFast(env.tmp.path);
+			await env.page.goto(await instance.address);
+		});
+
+		it('should not pick node for a browser', async () => {
+			const test = await env.page.$('.test');
+			let text = test ? await test.evaluate(el => el.textContent) : null;
+			expect(text).toEqual('Browser implementation');
+		});
+	});
+
 	describe('package-exports', () => {
 		beforeEach(async () => {
 			await loadFixture('package-exports', env);
@@ -501,12 +565,12 @@ describe('fixtures', () => {
 				default: 'import'
 			});
 			expect(await env.page.evaluate(`import('/@npm/exports-fallbacks-defaultfirst')`)).toEqual({
-				default: 'import'
+				default: 'default'
 			});
 
 			// When import/module/browser isn't present (but a random other one is!), we fall back to require/default:
 			expect(await env.page.evaluate(`import('/@npm/exports-fallbacks-requirefallback')`)).toEqual({
-				default: 'require'
+				default: 'default'
 			});
 			expect(await env.page.evaluate(`import('/@npm/exports-fallbacks-defaultfallback')`)).toEqual({
 				default: 'default'

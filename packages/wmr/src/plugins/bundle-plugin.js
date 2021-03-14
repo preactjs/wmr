@@ -16,7 +16,7 @@ export default function bundlePlugin({ cwd = '.', inline } = {}) {
 				if (inline) {
 					const url = '/' + relative(cwd, resolved.id).replace(/^\./, '');
 					return {
-						id: `data:text/javascript,export default${JSON.stringify(url)}`.replace(/#/g, '%23'),
+						id: `data:text/javascript,export default${encodeURIComponent(JSON.stringify(url))}`,
 						external: true
 					};
 				}

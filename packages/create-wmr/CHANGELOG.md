@@ -1,5 +1,11 @@
 # create-wmr
 
+## 0.3.0
+
+### Minor Changes
+
+- [`cf7d2f6`](https://github.com/preactjs/wmr/commit/cf7d2f666c8262ae98f50f0f5b1cfbd7118f52a5) [#390](https://github.com/preactjs/wmr/pull/390) Thanks [@JoviDeCroock](https://github.com/JoviDeCroock)! - Add `.gitignore`
+
 ## 0.2.1
 
 ### Patch Changes

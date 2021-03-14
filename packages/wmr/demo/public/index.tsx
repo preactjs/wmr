@@ -1,6 +1,6 @@
-import { h, render } from 'preact';
 import { LocationProvider, Router } from './lib/loc.js';
 import lazy, { ErrorBoundary } from './lib/lazy.js';
+import hydrate from './lib/hydrate';
 import Home from './pages/home.js';
 // import About from './pages/about/index.js';
 import NotFound from './pages/_404.js';
@@ -44,7 +44,7 @@ export function App() {
 }
 
 if (typeof window !== 'undefined') {
-	render(<App />, document.body);
+	hydrate(<App />, document.body);
 }
 
 export async function prerender(data) {
@@ -53,4 +53,4 @@ export async function prerender(data) {
 }
 
 // @ts-ignore
-if (module.hot) module.hot.accept(u => render(<u.module.App />, document.body));
+if (module.hot) module.hot.accept(u => hydrate(<u.module.App />, document.body));

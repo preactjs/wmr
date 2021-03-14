@@ -131,7 +131,7 @@ async function workerCode({ cwd, out, publicPath }) {
 		if (result.links) {
 			for (let url of result.links) {
 				const parsed = new URL(url, 'http://localhost');
-				url = parsed.pathname + parsed.search;
+				url = parsed.pathname;
 				// ignore external links and one's we've already picked up
 				if (seen.has(url) || parsed.origin !== 'http://localhost') continue;
 				seen.add(url);

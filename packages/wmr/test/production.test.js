@@ -323,4 +323,21 @@ describe('production', () => {
 			expect(logs).toContain(`page one,page two`);
 		});
 	});
+
+	describe('Prerender', () => {
+		it('should remove search params', async () => {
+			await loadFixture('prod-routes', env);
+			instance = await runWmr(env.tmp.path, 'build', '--prerender');
+			const code = await instance.done;
+			expect(code).toBe(0);
+
+			const readdir = async f => (await fs.readdir(path.join(env.tmp.path, f))).filter(f => f[0] !== '.');
+
+			const root = await readdir('dist');
+			expect(root).toContain('about');
+
+			const chunks = await readdir('dist/about');
+			expect(chunks).toEqual(['index.html']);
+		});
+	});
 });
