@@ -3,6 +3,7 @@
  * This is essentially the same plugins, but without SVGO.
  */
 import postcss from 'postcss';
+import cssDeclarationSorter from 'css-declaration-sorter';
 import discardComments from 'postcss-discard-comments';
 import postcssReduceInitial from 'postcss-reduce-initial';
 import postcssReduceTransforms from 'postcss-reduce-transforms';
@@ -50,27 +51,28 @@ const plugins = [
 	discardComments,
 	postcssReduceInitial,
 	postcssReduceTransforms,
-	postcssConvertValues,
-	postcssCalc,
+	postcssNormalizeDisplayValues,
 	postcssColormin,
+	postcssNormalizeTimingFunctions,
+	postcssCalc,
+	postcssConvertValues,
 	postcssOrderedValues,
 	postcssMinifySelectors,
 	postcssMinifyParams,
+	postcssDiscardOverridden,
+	postcssNormalizeString,
+	postcssNormalizeUnicode,
 	postcssMinifyFontValues,
 	postcssNormalizeUrl,
+	postcssNormalizeRepeatStyle,
+	postcssNormalizePositions,
+	postcssNormalizeWhitespace,
 	postcssMergeLonghand,
 	postcssDiscardDuplicates,
-	postcssDiscardOverridden,
-	postcssNormalizeRepeatStyle,
 	postcssMergeRules,
 	postcssDiscardEmpty,
 	postcssUniqueSelectors,
-	postcssNormalizeString,
-	postcssNormalizePositions,
-	postcssNormalizeWhitespace,
-	postcssNormalizeUnicode,
-	postcssNormalizeDisplayValues,
-	postcssNormalizeTimingFunctions,
+	cssDeclarationSorter,
 	rawCache
 ].map(fn => (fn && fn.default) || fn);
 
