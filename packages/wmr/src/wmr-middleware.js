@@ -130,9 +130,7 @@ export default function wmrMiddleware({
 		// Delete file from the in-memory cache:
 		WRITE_CACHE.delete(filename);
 
-		filename = '/' + filename;
 		const mod = moduleGraph.get(filename);
-
 		if (!mod) return false;
 
 		if (mod.acceptingUpdates) {
@@ -162,6 +160,7 @@ export default function wmrMiddleware({
 			WRITE_CACHE.delete(filename);
 			pendingChanges.add('/' + filename);
 		} else if (/\.(mjs|[tj]sx?)$/.test(filename)) {
+			console.log(filename, moduleGraph.has(filename));
 			if (!moduleGraph.has(filename)) {
 				clearTimeout(timeout);
 				return;
@@ -346,7 +345,7 @@ export const TRANSFORMS = {
 				if (spec === 'wmr') return '/_wmr.js';
 				if (/^(data:|https?:|\/\/)/.test(spec)) return spec;
 
-				let graphId = importer?.startsWith('/') ? importer : `/${importer}`;
+				let graphId = importer?.startsWith('/') ? importer.slice(1) : importer;
 				if (!moduleGraph.has(graphId)) {
 					moduleGraph.set(graphId, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
 				}
@@ -400,7 +399,7 @@ export const TRANSFORMS = {
 					spec = `/@npm/${meta.module}${meta.path ? '/' + meta.path : ''}`;
 				}
 
-				const modSpec = spec.startsWith('../') ? spec.replace('../', '/') : spec.replace('./', '/');
+				const modSpec = spec.startsWith('../') ? spec.replace(/..\/g/, '') : spec.replace('./', '');
 				mod.dependencies.add(modSpec);
 				if (!moduleGraph.has(modSpec)) {
 					moduleGraph.set(modSpec, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
