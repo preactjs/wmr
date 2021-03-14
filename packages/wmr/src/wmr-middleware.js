@@ -162,7 +162,7 @@ export default function wmrMiddleware({
 			WRITE_CACHE.delete(filename);
 			pendingChanges.add('/' + filename);
 		} else if (/\.(mjs|[tj]sx?)$/.test(filename)) {
-			if (!moduleGraph.get(filename)) {
+			if (!moduleGraph.has(filename)) {
 				clearTimeout(timeout);
 				return;
 			}
@@ -399,7 +399,7 @@ export const TRANSFORMS = {
 					spec = `/@npm/${meta.module}${meta.path ? '/' + meta.path : ''}`;
 				}
 
-				const modSpec = spec.replace('../', '/').replace('./', '/');
+				const modSpec = spec.startsWith('../') ? spec.replace('../', '') : spec.replace('./', '');
 				mod.dependencies.add(modSpec);
 				if (!moduleGraph.has(modSpec)) {
 					moduleGraph.set(modSpec, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
