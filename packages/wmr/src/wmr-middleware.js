@@ -346,10 +346,11 @@ export const TRANSFORMS = {
 				if (spec === 'wmr') return '/_wmr.js';
 				if (/^(data:|https?:|\/\/)/.test(spec)) return spec;
 
-				if (!moduleGraph.has(importer)) {
-					moduleGraph.set(importer, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
+				let graphId = importer?.startsWith('/') ? importer : `/${importer}`;
+				if (!moduleGraph.has(graphId)) {
+					moduleGraph.set(graphId, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
 				}
-				const mod = moduleGraph.get(importer);
+				const mod = moduleGraph.get(graphId);
 
 				// const resolved = await NonRollup.resolveId(spec, importer);
 				const resolved = await NonRollup.resolveId(spec, file);
@@ -399,14 +400,14 @@ export const TRANSFORMS = {
 					spec = `/@npm/${meta.module}${meta.path ? '/' + meta.path : ''}`;
 				}
 
-				const modSpec = spec.startsWith('../') ? spec.replace('../', '') : spec.replace('./', '');
+				const modSpec = spec.startsWith('../') ? spec.replace('../', '/') : spec.replace('./', '/');
 				mod.dependencies.add(modSpec);
 				if (!moduleGraph.has(modSpec)) {
 					moduleGraph.set(modSpec, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
 				}
 
 				const specModule = moduleGraph.get(modSpec);
-				specModule.dependents.add(importer);
+				specModule.dependents.add(graphId);
 				if (specModule.stale) {
 					return spec + `?t=${Date.now()}`;
 				}
