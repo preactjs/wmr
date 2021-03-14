@@ -19,21 +19,21 @@ const UPDATE = (state, url, push) => {
 };
 
 export const exec = (url, route, matches) => {
-	url = url.replace(/(^\/+|\/+$)/g, '').split('/');
-	route = (route || '').replace(/(^\/+|\/+$)/g, '').split('/');
+	url = url.split('/').filter(Boolean);
+	route = (route || '').split('/').filter(Boolean);
 	for (let i = 0, val; i < Math.max(url.length, route.length); i++) {
-		let [, m, param, flag] = (route[i] || "").match(/^(:?)(.*?)([+*?]?)$/);
+		let [, m, param, flag] = (route[i] || '').match(/^(:?)(.*?)([+*?]?)$/);
 		val = url[i];
 		// segment match:
 		if (!m && param == val) continue;
 		// segment mismatch / missing required field:
-		if (!m || (!val && flag != "?" && flag != "*")) return;
+		if (!m || (!val && flag != '?' && flag != '*')) return;
 		// field match:
 		matches[param] = val && decodeURIComponent(val);
 		// normal/optional field:
-		if (flag >= "?" || flag === '') continue;
+		if (flag >= '?' || flag === '') continue;
 		// rest (+/*) match:
-		matches[param] = url.slice(i).map(decodeURIComponent).join("/");
+		matches[param] = url.slice(i).map(decodeURIComponent).join('/');
 		break;
 	}
 
