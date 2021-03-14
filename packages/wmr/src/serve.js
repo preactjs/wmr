@@ -6,7 +6,6 @@ import { createServer } from 'http';
 import { createHttp2Server } from './lib/http2.js';
 import compression from './lib/polkompress.js';
 import sirv from 'sirv';
-
 /**
  * @typedef CustomServer
  * @type {polka.Polka & { server?: ReturnType<createServer> | import('http2').Http2Server, http2?: boolean } }
