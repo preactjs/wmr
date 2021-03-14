@@ -31,6 +31,7 @@ import postcssNormalizeTimingFunctions from 'postcss-normalize-timing-functions'
 
 const rawCache = postcss.plugin('cssnano-util-raw-cache', () => {
 	return (css, result) => {
+		// @ts-ignore-next
 		result.root.rawCache = {
 			colon: ':',
 			indent: '',
