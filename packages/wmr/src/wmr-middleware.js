@@ -344,7 +344,7 @@ export const TRANSFORMS = {
 				if (spec === 'wmr') return '/_wmr.js';
 				if (/^(data:|https?:|\/\/)/.test(spec)) return spec;
 
-				let graphId = importer?.startsWith('/') ? importer.slice(1) : importer;
+				let graphId = importer.startsWith('/') ? importer.slice(1) : importer;
 				if (!moduleGraph.has(graphId)) {
 					moduleGraph.set(graphId, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
 				}
