@@ -162,6 +162,11 @@ export default function wmrMiddleware({
 			WRITE_CACHE.delete(filename);
 			pendingChanges.add('/' + filename);
 		} else if (/\.(mjs|[tj]sx?)$/.test(filename)) {
+			if (!moduleGraph.get(filename)) {
+				clearTimeout(timeout);
+				return;
+			}
+
 			if (!bubbleUpdates(filename)) {
 				moduleGraph.clear();
 				pendingChanges.clear();
