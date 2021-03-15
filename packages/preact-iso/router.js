@@ -3,27 +3,31 @@ import { useContext, useMemo, useReducer, useEffect, useLayoutEffect, useRef } f
 
 /**
  * @param {string} state
- * @param {MouseEvent|PopStateEvent|Object|string} url
- * @return {string}
+ * @param {MouseEvent|PopStateEvent|Object|string} update
+ * @return {string|undefined}
  */
-const UPDATE = (state, url) => {
+const UPDATE = (state, update) => {
 	/** @type {boolean|undefined} - History state update strategy */
-	let push = true;
-	// user click
-	if (url instanceof MouseEvent) {
-		// @ts-ignore-next
-		const link = url.target.closest('a[href]');
+	let push, url;
+
+	if (!update || typeof update === 'string') {
+		// manual invocation: route(url)
+		url = update;
+		push = true;
+	} else if (update.type === 'click') {
+		// user click
+		const link = update.target.closest('a[href]');
 		if (!link || link.origin != location.origin) return state;
 
-		url.preventDefault();
-		url = link.href.replace(location.origin, '');
-	// navigation
-	} else if (url instanceof PopStateEvent) {
-		url = location.pathname + location.search;
-		push = undefined;
-	// manual invocation: route({ path, replace })
-	} else if (typeof url === 'object') {
-		url = url.url;
+		update.preventDefault();
+		url = link.pathname + link.search + link.hash;
+		push = true;
+	} else if (update.type === 'popstate') {
+		// navigation
+		url = location.pathname + location.search + location.hash;
+	} else {
+		// manual invocation: route({ url, replace })
+		url = update.url || update;
 		push = !url.replace;
 	}
 
