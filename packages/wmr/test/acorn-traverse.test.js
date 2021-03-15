@@ -92,7 +92,7 @@ describe('acorn-traverse', () => {
 			  a,
 			  b,
 			  c
-			}}</a>\`)}$\`;"
+			}}</a>\`)}\`;"
 		`);
 
 				expect(

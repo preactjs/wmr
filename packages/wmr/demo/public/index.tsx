@@ -53,4 +53,5 @@ export async function prerender(data) {
 }
 
 // @ts-ignore
-if (module.hot) module.hot.accept(u => render(<u.module.App />, document.body));
+if (module.hot) module.hot.accept(u => hydrate(<u.module.App />, document.body));
+

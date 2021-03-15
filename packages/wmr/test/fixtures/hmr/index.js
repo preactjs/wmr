@@ -1,11 +1,13 @@
 import { render } from 'preact';
 import styles from './style.module.css';
 import Home from './home.js';
+import { FOO } from './store.js';
 
 export function App() {
 	return (
 		<main class={styles.app}>
 			<header>
+				<p id="root-foo">{FOO}</p>
 				<nav>
 					<a href="/">Home</a>
 				</nav>

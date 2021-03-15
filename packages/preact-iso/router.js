@@ -8,8 +8,7 @@ import { useContext, useMemo, useReducer, useEffect, useLayoutEffect, useRef } f
  */
 const UPDATE = (state, url) => {
 	/** @type {boolean|undefined} - History state update strategy */
-	let push = undefined
-
+	let push = true;
 	// user click
 	if (url instanceof MouseEvent) {
 		// @ts-ignore-next
@@ -17,18 +16,15 @@ const UPDATE = (state, url) => {
 		if (!link || link.origin != location.origin) return state;
 
 		url.preventDefault();
-		push = true;
 		url = link.href.replace(location.origin, '');
 	// navigation
 	} else if (url instanceof PopStateEvent) {
 		url = location.pathname + location.search;
+		push = undefined;
 	// manual invocation: route({ path, replace })
 	} else if (typeof url === 'object') {
 		url = url.url;
 		push = !url.replace;
-	// manual invocation: route(path)
-	} else {
-		push = true;
 	}
 
 	if (push === true) history.pushState(null, '', url);
@@ -37,8 +33,8 @@ const UPDATE = (state, url) => {
 };
 
 export const exec = (url, route, matches) => {
-	url = url.trim('/').split('/');
-	route = (route || '').trim('/').split('/');
+	url = url.split('/').filter(Boolean);
+	route = (route || '').split('/').filter(Boolean);
 	for (let i = 0, val; i < Math.max(url.length, route.length); i++) {
 		let [, m, param, flag] = (route[i] || '').match(/^(:?)(.*?)([+*?]?)$/);
 		val = url[i];
@@ -49,7 +45,7 @@ export const exec = (url, route, matches) => {
 		// field match:
 		matches[param] = val && decodeURIComponent(val);
 		// normal/optional field:
-		if (flag >= '?') continue;
+		if (flag >= '?' || flag === '') continue;
 		// rest (+/*) match:
 		matches[param] = url.slice(i).map(decodeURIComponent).join('/');
 		break;
