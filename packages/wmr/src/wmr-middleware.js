@@ -316,105 +316,126 @@ export const TRANSFORMS = {
 
 	// Handle individual JavaScript modules
 	async js({ id, file, prefix, res, cwd, out, NonRollup }) {
-		res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
+		let code;
+		try {
+			res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
 
-		if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
+			if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
 
-		const resolved = await NonRollup.resolveId(id);
-		const resolvedId = typeof resolved == 'object' ? resolved && resolved.id : resolved;
-		let result = resolvedId && (await NonRollup.load(resolvedId));
+			const resolved = await NonRollup.resolveId(id);
+			const resolvedId = typeof resolved == 'object' ? resolved && resolved.id : resolved;
+			let result = resolvedId && (await NonRollup.load(resolvedId));
 
-		let code = typeof result == 'object' ? result && result.code : result;
+			code = typeof result == 'object' ? result && result.code : result;
 
-		if (code == null || code === false) {
-			if (prefix) file = file.replace(prefix, '');
-			code = await fs.readFile(resolve(cwd, file), 'utf-8');
-		}
+			if (code == null || code === false) {
+				if (prefix) file = file.replace(prefix, '');
+				code = await fs.readFile(resolve(cwd, file), 'utf-8');
+			}
 
-		code = await NonRollup.transform(code, id);
+			code = await NonRollup.transform(code, id);
 
-		code = await transformImports(code, id, {
-			resolveImportMeta(property) {
-				return NonRollup.resolveImportMeta(property);
-			},
-			async resolveId(spec, importer) {
-				if (spec === 'wmr') return '/_wmr.js';
-				if (/^(data:|https?:|\/\/)/.test(spec)) return spec;
+			code = await transformImports(code, id, {
+				resolveImportMeta(property) {
+					return NonRollup.resolveImportMeta(property);
+				},
+				async resolveId(spec, importer) {
+					if (spec === 'wmr') return '/_wmr.js';
+					if (/^(data:|https?:|\/\/)/.test(spec)) return spec;
 
-				if (!moduleGraph.has(importer)) {
-					moduleGraph.set(importer, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
-				}
-				const mod = moduleGraph.get(importer);
+					if (!moduleGraph.has(importer)) {
+						moduleGraph.set(importer, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
+					}
+					const mod = moduleGraph.get(importer);
 
-				// const resolved = await NonRollup.resolveId(spec, importer);
-				const resolved = await NonRollup.resolveId(spec, file);
-				if (resolved) {
-					spec = typeof resolved == 'object' ? resolved.id : resolved;
-					if (/^(\/|\\|[a-z]:\\)/i.test(spec)) {
-						spec = relative(dirname(file), spec).split(sep).join(posix.sep);
-						if (!/^\.?\.?\//.test(spec)) {
-							spec = './' + spec;
+					// const resolved = await NonRollup.resolveId(spec, importer);
+					const resolved = await NonRollup.resolveId(spec, file);
+					if (resolved) {
+						spec = typeof resolved == 'object' ? resolved.id : resolved;
+						if (/^(\/|\\|[a-z]:\\)/i.test(spec)) {
+							spec = relative(dirname(file), spec).split(sep).join(posix.sep);
+							if (!/^\.?\.?\//.test(spec)) {
+								spec = './' + spec;
+							}
+						}
+						if (typeof resolved == 'object' && resolved.external) {
+							// console.log('external: ', spec);
+							if (/^(data|https?):/.test(spec)) return spec;
+
+							spec = relative(cwd, spec).split(sep).join(posix.sep);
+							if (!/^(\/|[\w-]+:)/.test(spec)) spec = `/${spec}`;
+							return spec;
 						}
 					}
-					if (typeof resolved == 'object' && resolved.external) {
-						// console.log('external: ', spec);
-						if (/^(data|https?):/.test(spec)) return spec;
 
-						spec = relative(cwd, spec).split(sep).join(posix.sep);
-						if (!/^(\/|[\w-]+:)/.test(spec)) spec = `/${spec}`;
-						return spec;
+					// \0abc:foo --> /@abcF/foo
+					spec = spec.replace(/^\0?([a-z-]+):(.+)$/, (s, prefix, spec) => {
+						// \0abc:/abs/disk/path --> /@abc/cwd-relative-path
+						if (spec[0] === '/' || spec[0] === sep) {
+							spec = relative(cwd, spec).split(sep).join(posix.sep);
+						}
+						return '/@' + prefix + '/' + spec;
+					});
+
+					// foo.css --> foo.css.js (import of CSS Modules proxy module)
+					if (spec.match(/\.(css|s[ac]ss)$/)) spec += '.js';
+
+					// Bare specifiers are npm packages:
+					if (!/^\0?\.?\.?[/\\]/.test(spec)) {
+						const meta = normalizeSpecifier(spec);
+
+						// // Option 1: resolve all package verions (note: adds non-trivial delay to imports)
+						// await resolvePackageVersion(meta);
+						// // Option 2: omit package versions that resolve to the root
+						// // if ((await resolvePackageVersion({ module: meta.module, version: '' })).version === meta.version) {
+						// // 	meta.version = '';
+						// // }
+						// spec = `/@npm/${meta.module}${meta.version ? '@' + meta.version : ''}${meta.path ? '/' + meta.path : ''}`;
+
+						// Option 3: omit root package versions
+						spec = `/@npm/${meta.module}${meta.path ? '/' + meta.path : ''}`;
 					}
-				}
 
-				// \0abc:foo --> /@abcF/foo
-				spec = spec.replace(/^\0?([a-z-]+):(.+)$/, (s, prefix, spec) => {
-					// \0abc:/abs/disk/path --> /@abc/cwd-relative-path
-					if (spec[0] === '/' || spec[0] === sep) {
-						spec = relative(cwd, spec).split(sep).join(posix.sep);
+					const modSpec = spec.replace('../', '/').replace('./', '/');
+					mod.dependencies.add(modSpec);
+					if (!moduleGraph.has(modSpec)) {
+						moduleGraph.set(modSpec, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
 					}
-					return '/@' + prefix + '/' + spec;
-				});
 
-				// foo.css --> foo.css.js (import of CSS Modules proxy module)
-				if (spec.match(/\.(css|s[ac]ss)$/)) spec += '.js';
+					const specModule = moduleGraph.get(modSpec);
+					specModule.dependents.add(importer);
+					if (specModule.stale) {
+						return spec + `?t=${Date.now()}`;
+					}
 
-				// Bare specifiers are npm packages:
-				if (!/^\0?\.?\.?[/\\]/.test(spec)) {
-					const meta = normalizeSpecifier(spec);
-
-					// // Option 1: resolve all package verions (note: adds non-trivial delay to imports)
-					// await resolvePackageVersion(meta);
-					// // Option 2: omit package versions that resolve to the root
-					// // if ((await resolvePackageVersion({ module: meta.module, version: '' })).version === meta.version) {
-					// // 	meta.version = '';
-					// // }
-					// spec = `/@npm/${meta.module}${meta.version ? '@' + meta.version : ''}${meta.path ? '/' + meta.path : ''}`;
-
-					// Option 3: omit root package versions
-					spec = `/@npm/${meta.module}${meta.path ? '/' + meta.path : ''}`;
+					return spec;
 				}
+			});
 
-				const modSpec = spec.replace('../', '/').replace('./', '/');
-				mod.dependencies.add(modSpec);
-				if (!moduleGraph.has(modSpec)) {
-					moduleGraph.set(modSpec, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
-				}
+			writeCacheFile(out, id, code);
 
-				const specModule = moduleGraph.get(modSpec);
-				specModule.dependents.add(importer);
-				if (specModule.stale) {
-					return spec + `?t=${Date.now()}`;
-				}
+			return code;
+		} catch (e) {
+			const splittedCode = code.split('\n');
 
-				return spec;
-			}
-		});
+			e.codeFragment = `
+${splittedCode[e.loc.line - 3]}
+${splittedCode[e.loc.line - 2]}
+${splittedCode[e.loc.line - 1]}
+${new Array(e.loc.column).map(() => '').join(' ')}↑
+${splittedCode[e.loc.line]}
+${splittedCode[e.loc.line + 1]}
+			`.trim();
 
-		writeCacheFile(out, id, code);
+			console.error(`[Build error]
 
-		return code;
+${e.codeFragment}
+
+			`);
+
+			throw e;
+		}
 	},
-
 	// Handles "CSS Modules" proxy modules (style.module.css.js)
 	async cssModule({ id, file, cwd, out, res }) {
 		res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
