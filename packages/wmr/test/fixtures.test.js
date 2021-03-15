@@ -260,7 +260,7 @@ describe('fixtures', () => {
 			expect(homeText).toEqual('42');
 			expect(rootText).toEqual('42');
 
-			await updateFile(env.tmp.path, 'store.js', content => content.replace('42', '43'));
+			await updateFile(env.tmp.path, 'store/index.js', content => content.replace('42', '43'));
 
 			await timeout(2000);
 
@@ -271,7 +271,7 @@ describe('fixtures', () => {
 			expect(homeText).toEqual('43');
 			expect(rootText).toEqual('43');
 
-			await updateFile(env.tmp.path, 'store.js', content => content.replace('43', '44'));
+			await updateFile(env.tmp.path, 'store/index.js', content => content.replace('43', '44'));
 
 			await timeout(2000);
 
