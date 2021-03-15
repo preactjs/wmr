@@ -40,7 +40,8 @@ export default async function start(options = {}) {
 		if (app.ws.clients.size > 0) {
 			app.ws.broadcast({
 				type: 'error',
-				error: err.clientMessage || err.message
+				error: err.clientMessage || err.message,
+				codeFrame: err.codeFrame
 			});
 		} else if (((err.code / 200) | 0) === 2) {
 			// skip 400-599 errors, they're net errors logged to console
