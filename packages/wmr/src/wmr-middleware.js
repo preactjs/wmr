@@ -137,10 +137,9 @@ export default function wmrMiddleware({
 			pendingChanges.add(filename);
 			return true;
 		} else if (mod.dependents.size) {
-			return [...mod.dependents].every(function (value) {
-				mod.stale = true;
-				return bubbleUpdates(value, visited);
-			});
+			const accepts = [...mod.dependents].every(value => bubbleUpdates(value, visited));
+			if (accepts) mod.stale = true;
+			return accepts;
 		}
 		// We need a full-reload signal
 		return false;
