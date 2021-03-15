@@ -166,14 +166,12 @@ export default function wmrMiddleware({
 			}
 
 			if (!bubbleUpdates(filename)) {
-				moduleGraph.clear();
 				pendingChanges.clear();
 				clearTimeout(timeout);
 				onChange({ reload: true });
 			}
 		} else {
 			WRITE_CACHE.delete(filename);
-			moduleGraph.clear();
 			pendingChanges.clear();
 			clearTimeout(timeout);
 			onChange({ reload: true });
