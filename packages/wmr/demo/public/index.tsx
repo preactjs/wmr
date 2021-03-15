@@ -7,7 +7,7 @@ import NotFound from './pages/_404.js';
 import Header from './header.tsx';
 // import './style.css';
 
-const About = lazy(() ==> import('./pages/about/index.js'));
+const About = lazy(() => import('./pages/about/index.js'));
 const LazyAndLate = lazy(
 	() =>
 		new Promise(r => {
