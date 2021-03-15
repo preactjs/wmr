@@ -416,22 +416,22 @@ export const TRANSFORMS = {
 
 			return code;
 		} catch (e) {
-			const splittedCode = code.split('\n');
+			if (code && e.loc && e.loc.line) {
+				const splittedCode = code.split('\n');
 
-			e.codeFragment = `
+				e.codeFragment = `
 ${splittedCode[e.loc.line - 3]}
 ${splittedCode[e.loc.line - 2]}
 ${splittedCode[e.loc.line - 1]}
 ${new Array(e.loc.column).map(() => '').join(' ')}↑
 ${splittedCode[e.loc.line]}
 ${splittedCode[e.loc.line + 1]}
-			`.trim();
+				`.trim();
 
-			console.error(`[Build error]
-
+				console.error(`[Build error]
 ${e.codeFragment}
-
-			`);
+				`);
+			}
 
 			throw e;
 		}
