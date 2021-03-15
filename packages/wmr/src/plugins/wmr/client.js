@@ -63,7 +63,7 @@ function handleMessage(e) {
 				}
 				const errorId = errorCount;
 				if (!updating) {
-					dequeue(new Date().toISOString()).then(() => {
+					dequeue(Date.now()).then(() => {
 						if (errorId === errorCount) {
 							// try {
 							// 	console.clear();
