@@ -2,4 +2,4 @@
 'wmr': patch
 ---
 
-Newly created files shouldn't cause a peage-reload
+Newly created files shouldn't cause a page-reload
