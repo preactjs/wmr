@@ -1,4 +1,4 @@
-import { FOO } from './store.js';
+import { FOO } from './store/index.js';
 import useCounter from './useCounter.js';
 
 function Home() {

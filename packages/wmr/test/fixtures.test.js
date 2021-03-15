@@ -270,6 +270,17 @@ describe('fixtures', () => {
 			rootText = rootFoo ? await rootFoo.evaluate(el => el.textContent) : null;
 			expect(homeText).toEqual('43');
 			expect(rootText).toEqual('43');
+
+			await updateFile(env.tmp.path, 'store.js', content => content.replace('43', '44'));
+
+			await timeout(2000);
+
+			homeFoo = await env.page.$('#home-foo');
+			rootFoo = await env.page.$('#root-foo');
+			homeText = homeFoo ? await homeFoo.evaluate(el => el.textContent) : null;
+			rootText = rootFoo ? await rootFoo.evaluate(el => el.textContent) : null;
+			expect(homeText).toEqual('44');
+			expect(rootText).toEqual('44');
 		});
 
 		it('should hot reload for a newly created file', async () => {

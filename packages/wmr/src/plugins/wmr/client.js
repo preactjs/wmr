@@ -30,7 +30,6 @@ const URL_SUFFIX = /\/(index\.html)?$/;
 
 function handleMessage(e) {
 	const data = JSON.parse(e.data);
-
 	switch (data.type) {
 		case 'reload':
 			window.location.reload();
@@ -38,7 +37,6 @@ function handleMessage(e) {
 		case 'update':
 			data.changes.forEach(url => {
 				url = resolve(url);
-
 				if (!mods.get(url)) {
 					if (/\.(css|s[ac]ss)$/.test(url)) {
 						if (mods.has(url + '.js')) {
@@ -64,14 +62,15 @@ function handleMessage(e) {
 					updateQueue.push(url);
 				}
 				const errorId = errorCount;
-				if (!updating)
-					dequeue().then(() => {
+				if (!updating) {
+					dequeue(new Date().toISOString()).then(() => {
 						if (errorId === errorCount) {
 							// try {
 							// 	console.clear();
 							// } catch (e) {}
 						}
 					});
+				}
 			});
 			break;
 		case 'error':
@@ -93,15 +92,22 @@ function handleError(e) {
 // HMR updates are queued uniquely and run in sequence
 const updateQueue = [];
 let updating = false;
-function dequeue() {
+function dequeue(date) {
 	updating = updateQueue.length !== 0;
-	return updating && update(updateQueue.shift()).then(dequeue, dequeue);
+	return (
+		updating &&
+		update(updateQueue.shift(), date).then(
+			() => dequeue(date),
+			() => dequeue(date)
+		)
+	);
 }
-function update(url) {
+
+function update(url, date) {
 	const mod = getMod(url);
 	const dispose = Array.from(mod.dispose);
 	const accept = Array.from(mod.accept);
-	const newUrl = url + '?t=' + Date.now();
+	const newUrl = url + '?t=' + date;
 	const p = mod.import ? mod.import(newUrl) : import(newUrl);
 
 	return p

@@ -134,6 +134,7 @@ export default function wmrMiddleware({
 		if (!mod) return false;
 
 		if (mod.acceptingUpdates) {
+			mod.stale = true;
 			pendingChanges.add(filename);
 			return true;
 		} else if (mod.dependents.size) {
@@ -146,6 +147,7 @@ export default function wmrMiddleware({
 
 			return accepts;
 		}
+
 		// We need a full-reload signal
 		return false;
 	}
@@ -320,7 +322,7 @@ export const TRANSFORMS = {
 	},
 
 	// Handle individual JavaScript modules
-	async js({ id, file, prefix, res, cwd, out, NonRollup }) {
+	async js({ id, file, prefix, res, cwd, out, NonRollup, req }) {
 		res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
 
 		if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
@@ -363,7 +365,6 @@ export const TRANSFORMS = {
 						}
 					}
 					if (typeof resolved == 'object' && resolved.external) {
-						// console.log('external: ', spec);
 						if (/^(data|https?):/.test(spec)) return spec;
 
 						spec = relative(cwd, spec).split(sep).join(posix.sep);
@@ -409,7 +410,7 @@ export const TRANSFORMS = {
 				const specModule = moduleGraph.get(modSpec);
 				specModule.dependents.add(graphId);
 				if (specModule.stale) {
-					return spec + `?t=${Date.now()}`;
+					return spec + `?t=${req.query.t}`;
 				}
 
 				return spec;
