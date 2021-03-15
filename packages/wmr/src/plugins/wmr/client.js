@@ -77,7 +77,7 @@ function handleMessage(e) {
 		case 'error':
 			errorCount++;
 			console.error(data.error);
-			if (data.code) console.error(data.code);
+			if (data.codeFrame) console.error(data.codeFrame);
 			break;
 		default:
 			log('unknown message: ', data);

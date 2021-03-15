@@ -41,7 +41,7 @@ export default async function start(options = {}) {
 			app.ws.broadcast({
 				type: 'error',
 				error: err.clientMessage || err.message,
-				code: err.codeFragment
+				codeFrame: err.codeFrame
 			});
 		} else if (((err.code / 200) | 0) === 2) {
 			// skip 400-599 errors, they're net errors logged to console

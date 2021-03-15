@@ -419,9 +419,8 @@ export const TRANSFORMS = {
 			return code;
 		} catch (e) {
 			if (code && e.loc && e.loc.line) {
-				e.codeFragment = kl.stripColors(codeFrame(code, e.loc));
-				console.log(e.codeFragment);
-				console.error('[Build error]:\n' + e.codeFragment);
+				e.codeFrame = kl.stripColors(codeFrame(code, e.loc));
+				console.error('[Build error]:\n' + e.codeFrame);
 			}
 
 			throw e;
