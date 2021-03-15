@@ -132,20 +132,24 @@ export default function wmrMiddleware({
 		// Delete file from the in-memory cache:
 		WRITE_CACHE.delete(filename);
 
-		filename = '/' + filename;
 		const mod = moduleGraph.get(filename);
-
 		if (!mod) return false;
 
 		if (mod.acceptingUpdates) {
+			mod.stale = true;
 			pendingChanges.add(filename);
 			return true;
 		} else if (mod.dependents.size) {
-			return [...mod.dependents].every(function (value) {
-				mod.stale = true;
-				return bubbleUpdates(value, visited);
+			let accepts = true;
+			[...mod.dependents].forEach(value => {
+				if (!bubbleUpdates(value, visited)) accepts = false;
 			});
+
+			if (accepts) mod.stale = true;
+
+			return accepts;
 		}
+
 		// We need a full-reload signal
 		return false;
 	}
@@ -164,15 +168,18 @@ export default function wmrMiddleware({
 			WRITE_CACHE.delete(filename);
 			pendingChanges.add('/' + filename);
 		} else if (/\.(mjs|[tj]sx?)$/.test(filename)) {
+			if (!moduleGraph.has(filename)) {
+				clearTimeout(timeout);
+				return;
+			}
+
 			if (!bubbleUpdates(filename)) {
-				moduleGraph.clear();
 				pendingChanges.clear();
 				clearTimeout(timeout);
 				onChange({ reload: true });
 			}
 		} else {
 			WRITE_CACHE.delete(filename);
-			moduleGraph.clear();
 			pendingChanges.clear();
 			clearTimeout(timeout);
 			onChange({ reload: true });
@@ -317,7 +324,7 @@ export const TRANSFORMS = {
 	},
 
 	// Handle individual JavaScript modules
-	async js({ id, file, prefix, res, cwd, out, NonRollup }) {
+	async js({ id, file, prefix, res, cwd, out, NonRollup, req }) {
 		let code;
 		try {
 			res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
@@ -345,10 +352,11 @@ export const TRANSFORMS = {
 					if (spec === 'wmr') return '/_wmr.js';
 					if (/^(data:|https?:|\/\/)/.test(spec)) return spec;
 
-					if (!moduleGraph.has(importer)) {
-						moduleGraph.set(importer, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
+					let graphId = importer.startsWith('/') ? importer.slice(1) : importer;
+					if (!moduleGraph.has(graphId)) {
+						moduleGraph.set(graphId, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
 					}
-					const mod = moduleGraph.get(importer);
+					const mod = moduleGraph.get(graphId);
 
 					// const resolved = await NonRollup.resolveId(spec, importer);
 					const resolved = await NonRollup.resolveId(spec, file);
@@ -398,14 +406,14 @@ export const TRANSFORMS = {
 						spec = `/@npm/${meta.module}${meta.path ? '/' + meta.path : ''}`;
 					}
 
-					const modSpec = spec.replace('../', '/').replace('./', '/');
+					const modSpec = spec.startsWith('../') ? spec.replace(/..\/g/, '') : spec.replace('./', '');
 					mod.dependencies.add(modSpec);
 					if (!moduleGraph.has(modSpec)) {
 						moduleGraph.set(modSpec, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
 					}
 
 					const specModule = moduleGraph.get(modSpec);
-					specModule.dependents.add(importer);
+					specModule.dependents.add(graphId);
 					if (specModule.stale) {
 						return spec + `?t=${Date.now()}`;
 					}

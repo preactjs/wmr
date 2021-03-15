@@ -1,7 +1,7 @@
 import { render } from 'preact';
 import styles from './style.module.css';
 import Home from './home.js';
-import { FOO } from './store.js';
+import { FOO } from './store/index.js';
 
 export function App() {
 	return (
