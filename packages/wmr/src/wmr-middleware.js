@@ -1,4 +1,5 @@
 import { resolve, dirname, relative, sep, posix } from 'path';
+import * as kl from 'kolorist';
 import { promises as fs, createReadStream } from 'fs';
 import chokidar from 'chokidar';
 import htmPlugin from './plugins/htm-plugin.js';
@@ -19,6 +20,7 @@ import bundlePlugin from './plugins/bundle-plugin.js';
 import nodeBuiltinsPlugin from './plugins/node-builtins-plugin.js';
 import jsonPlugin from './plugins/json-plugin.js';
 import externalUrlsPlugin from './plugins/external-urls-plugin.js';
+import { codeFrame } from './lib/output-utils.js';
 // import { resolvePackageVersion } from './plugins/npm-plugin/registry.js';
 
 const NOOP = () => {};
@@ -417,20 +419,9 @@ export const TRANSFORMS = {
 			return code;
 		} catch (e) {
 			if (code && e.loc && e.loc.line) {
-				const splittedCode = code.split('\n');
-
-				e.codeFragment = `
-${splittedCode[e.loc.line - 3]}
-${splittedCode[e.loc.line - 2]}
-${splittedCode[e.loc.line - 1]}
-${new Array(e.loc.column).map(() => '').join(' ')}↑
-${splittedCode[e.loc.line]}
-${splittedCode[e.loc.line + 1]}
-				`.trim();
-
-				console.error(`[Build error]
-${e.codeFragment}
-				`);
+				e.codeFragment = kl.stripColors(codeFrame(code, e.loc));
+				console.log(e.codeFragment);
+				console.error('[Build error]:\n' + e.codeFragment);
 			}
 
 			throw e;
