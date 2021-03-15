@@ -352,11 +352,11 @@ export const TRANSFORMS = {
 					if (spec === 'wmr') return '/_wmr.js';
 					if (/^(data:|https?:|\/\/)/.test(spec)) return spec;
 
-          let graphId = importer.startsWith('/') ? importer.slice(1) : importer;
-          if (!moduleGraph.has(graphId)) {
-            moduleGraph.set(graphId, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
-          }
-          const mod = moduleGraph.get(graphId);
+					let graphId = importer.startsWith('/') ? importer.slice(1) : importer;
+					if (!moduleGraph.has(graphId)) {
+						moduleGraph.set(graphId, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
+					}
+					const mod = moduleGraph.get(graphId);
 
 					// const resolved = await NonRollup.resolveId(spec, importer);
 					const resolved = await NonRollup.resolveId(spec, file);
@@ -406,28 +406,19 @@ export const TRANSFORMS = {
 						spec = `/@npm/${meta.module}${meta.path ? '/' + meta.path : ''}`;
 					}
 
-					const modSpec = spec.replace('../', '/').replace('./', '/');
+					const modSpec = spec.startsWith('../') ? spec.replace(/..\/g/, '') : spec.replace('./', '');
 					mod.dependencies.add(modSpec);
 					if (!moduleGraph.has(modSpec)) {
 						moduleGraph.set(modSpec, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
 					}
 
 					const specModule = moduleGraph.get(modSpec);
-					specModule.dependents.add(importer);
+					specModule.dependents.add(graphId);
 					if (specModule.stale) {
 						return spec + `?t=${Date.now()}`;
 					}
 
-				const modSpec = spec.startsWith('../') ? spec.replace(/..\/g/, '') : spec.replace('./', '');
-				mod.dependencies.add(modSpec);
-				if (!moduleGraph.has(modSpec)) {
-					moduleGraph.set(modSpec, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
-        }
-
-				const specModule = moduleGraph.get(modSpec);
-				specModule.dependents.add(graphId);
-				if (specModule.stale) {
-					return spec + `?t=${req.query.t}`;
+					return spec;
 				}
 			});
 
