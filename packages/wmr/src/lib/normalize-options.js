@@ -78,8 +78,6 @@ export async function normalizeOptions(options, mode) {
 		try {
 			const resolved = resolve(options.root, initialConfigFile);
 			const fileUrl = url.pathToFileURL(resolved);
-			const result = await compileSingleModule(resolved, { cwd: options.cwd, out: options.out });
-			console.log(result);
 			// Note: the eval() below is to prevent Rollup from transforming import() and require().
 			// Using the native functions allows us to load ESM and CJS with Node's own semantics.
 			try {
