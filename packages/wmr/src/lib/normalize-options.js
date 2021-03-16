@@ -2,6 +2,7 @@ import { resolve, join } from 'path';
 import { promises as fs } from 'fs';
 import url from 'url';
 import { readEnvFiles } from './environment.js';
+import { compileSingleModule } from './compile-single-module.js';
 
 /**
  * @template {Options} T
@@ -61,14 +62,24 @@ export async function normalizeOptions(options, mode) {
 	const pkg = fs.readFile(pkgFile, 'utf-8').then(JSON.parse);
 	options.aliases = (await pkg.catch(() => ({}))).alias || {};
 
+	const hasTsConfig = await isFile(resolve(options.root, 'wmr.config.ts'));
 	const hasMjsConfig = await isFile(resolve(options.root, 'wmr.config.mjs'));
-	if (hasMjsConfig || (await isFile(resolve(options.root, 'wmr.config.js')))) {
-		let custom,
-			initialConfigFile = hasMjsConfig ? 'wmr.config.mjs' : 'wmr.config.js',
+
+	let custom;
+	if (hasTsConfig) {
+		const resolved = resolve(options.root, 'wmr.config.ts');
+		await compileSingleModule(resolved, { cwd: options.cwd, out: options.out });
+		const output = resolve(options.out, 'wmr.config.js');
+		const fileUrl = url.pathToFileURL(output);
+		custom = await eval('(x => import(x))')(fileUrl);
+	} else if (hasMjsConfig || (await isFile(resolve(options.root, 'wmr.config.js')))) {
+		let initialConfigFile = hasMjsConfig ? 'wmr.config.mjs' : 'wmr.config.js',
 			initialError;
 		try {
 			const resolved = resolve(options.root, initialConfigFile);
 			const fileUrl = url.pathToFileURL(resolved);
+			const result = await compileSingleModule(resolved, { cwd: options.cwd, out: options.out });
+			console.log(result);
 			// Note: the eval() below is to prevent Rollup from transforming import() and require().
 			// Using the native functions allows us to load ESM and CJS with Node's own semantics.
 			try {
@@ -83,11 +94,12 @@ export async function normalizeOptions(options, mode) {
 				throw Error(`Failed to load ${initialConfigFile}\n${initialError}\n${e}`);
 			}
 		}
-		Object.defineProperty(options, '_config', { value: custom });
-		if (custom) {
-			if (custom.default) await custom.default(options);
-			if (custom[mode]) await custom[mode](options);
-		}
+	}
+
+	Object.defineProperty(options, '_config', { value: custom });
+	if (custom) {
+		if (custom.default) await custom.default(options);
+		if (custom[mode]) await custom[mode](options);
 	}
 
 	// @ts-ignore-next
