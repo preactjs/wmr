@@ -253,6 +253,43 @@ describe('production', () => {
 			// HTML script: https://cdn.example.com/assets/index.0544f0a6.css
 			expect(html.includes(`src="https://cdn.example.com/${roots[2]}"`)).toBe(true);
 		});
+
+		it('should respect `config.publicPath` value (ts)', async () => {
+			await loadFixture('publicpath-typescript', env);
+			instance = await runWmr(env.tmp.path, 'build');
+			const code = await instance.done;
+			console.info(instance.output.join('\n'));
+			expect(code).toBe(0);
+
+			const readdir = async f => (await fs.readdir(path.join(env.tmp.path, f))).filter(f => f[0] !== '.');
+
+			const assets = await readdir('dist/assets');
+			const chunks = await readdir('dist/chunks');
+			const roots = await readdir('dist');
+
+			expect(assets).toEqual([expect.stringMatching(/^index\.\w+\.css$/), expect.stringMatching(/^math\.\w+\.css$/)]);
+
+			expect(chunks).toEqual([expect.stringMatching(/^constants\.\w+\.js$/), expect.stringMatching(/^math\.\w+\.js$/)]);
+
+			expect(roots).toEqual(['assets', 'chunks', expect.stringMatching(/^index\.\w+\.js$/), 'index.html']);
+
+			const html = await fs.readFile(path.join(env.tmp.path, 'dist', 'index.html'), 'utf8');
+			const math = await fs.readFile(path.join(env.tmp.path, 'dist', 'chunks', chunks[1]), 'utf8');
+			const main = await fs.readFile(path.join(env.tmp.path, 'dist', roots[2]), 'utf8');
+
+			// https://cdn.example.com/assets/math.d41e7373.css
+			expect(math.includes(`("https://cdn.example.com/assets/${assets[1]}")`)).toBe(true);
+			expect(math.includes(`import("./${chunks[0]}")`)).toBe(true);
+
+			// (preload) https://cdn.example.com/assets/math.d41e7373.css
+			expect(main.includes(`$w_s$("https://cdn.example.com/assets/${assets[1]}")`)).toBe(true);
+
+			// HTML stylesheet: https://cdn.example.com/assets/index.0544f0a6.css
+			expect(html.includes(`href="https://cdn.example.com/assets/${assets[0]}"`)).toBe(true);
+
+			// HTML script: https://cdn.example.com/assets/index.0544f0a6.css
+			expect(html.includes(`src="https://cdn.example.com/${roots[2]}"`)).toBe(true);
+		});
 	});
 
 	describe('prerender', () => {

@@ -20,7 +20,7 @@ const ROLLUP_FAST_OUTPUT = {
 // @TODO: this cache needs to be sharded by `input` in order to actually do anything when `preserveModules:true` is enabled
 let cache;
 
-export const compileSingleModule = withCache(async (input, { cwd, out }) => {
+export const compileSingleModule = withCache(async (input, { cwd, out, hmr = true }) => {
 	input = input.replace(/\.css\.js$/, '.css');
 	// console.log('compiling ' + input);
 	const bundle = await rollup.rollup({
@@ -54,9 +54,9 @@ export const compileSingleModule = withCache(async (input, { cwd, out }) => {
 			}),
 			// localNpmPlugin(),
 			// wmrStylesPlugin({ cwd }),
-			wmrPlugin(),
+			hmr && wmrPlugin(),
 			htmPlugin()
-		]
+		].filter(Boolean)
 	});
 	cache = bundle.cache;
 	const result = await bundle.write({
