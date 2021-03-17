@@ -72,7 +72,7 @@ export async function normalizeOptions(options, mode) {
 		const output = resolve('.', 'wmr.config.js');
 		const fileUrl = url.pathToFileURL(output);
 		custom = await eval('(x => import(x))')(fileUrl);
-		fs.unlink(resolve('.', 'wmr.config.js'));
+		fs.unlink(output);
 	} else if (hasMjsConfig || (await isFile(resolve(options.root, 'wmr.config.js')))) {
 		let initialConfigFile = hasMjsConfig ? 'wmr.config.mjs' : 'wmr.config.js',
 			initialError;
