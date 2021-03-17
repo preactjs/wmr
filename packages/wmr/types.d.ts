@@ -21,6 +21,7 @@ declare module 'wmr' {
 		 */
 		enforce?: 'pre' | 'post' | 'normal';
 		config?: (config: Options) => Partial<Options>;
+		configResolved?: (config: Options) => Partial<Options>;
 	}
 
 	export interface Options {
