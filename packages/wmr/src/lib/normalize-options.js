@@ -6,10 +6,9 @@ import { compileSingleModule } from './compile-single-module.js';
 import { debug } from './output-utils.js';
 
 /**
- * @template {Options} T
- * @param {Partial<T>} options
+ * @param {Partial<Options>} options
  * @param {Mode} mode
- * @returns {Promise<T>}
+ * @returns {Promise<Options>}
  */
 export async function normalizeOptions(options, mode) {
 	options.cwd = resolve(options.cwd || '');
@@ -98,14 +97,73 @@ export async function normalizeOptions(options, mode) {
 
 	Object.defineProperty(options, '_config', { value: custom });
 	if (custom) {
-		if (custom.default) await custom.default(options);
-		if (custom[mode]) await custom[mode](options);
+		const fn = custom.default || custom[mode];
+		if (fn) {
+			const res = await fn(options);
+			if (res) {
+				options.plugins.push(res);
+			}
+		}
+	}
+
+	// Sort plugins by "enforce" phase. Default is "normal".
+	// The execution order is: "pre" -> "normal" -> "post"
+	if (options.plugins) {
+		options.plugins = options.plugins.flat().sort((a, b) => {
+			if (a.enforce === b.enforce) return 0;
+			else if ((a.enforce === 'pre' && b.enforce !== 'pre') || b.enforce === 'post') {
+				return -1;
+			} else if (b.enforce === 'pre' || a.enforce === 'post') {
+				return 1;
+			}
+			return 0;
+		});
 	}
 
 	debug('wmr:config')(options);
 
+	options.plugins.forEach(plugin => {
+		if (plugin.config) {
+			const res = plugin.config(options);
+			if (res) {
+				if (res.plugins) {
+					throw new Error(`In plugin ${plugin.name}: Plugin method "config()" must not return a "plugins" property.`);
+				}
+				options = mergeConfig(options, res);
+			}
+		}
+	});
+
 	// @ts-ignore-next
 	return options;
+}
+
+/**
+ * Deeply merge two config objects
+ * @param {Partial<Options>} a
+ * @param {Partial<Options>} b
+ * @returns {Partial<Options>}
+ */
+function mergeConfig(a, b) {
+	const merged = { ...a };
+
+	for (const key in b) {
+		const value = b[key];
+		if (value == null) {
+			continue;
+		}
+
+		const existing = merged[key];
+		if (Array.isArray(existing) && Array.isArray(value)) {
+			merged[key] = [...existing, ...value];
+		} else if (existing !== null && typeof existing === 'object' && typeof value === 'object') {
+			merged[key] = mergeConfig(existing, value);
+		} else {
+			merged[key] = value;
+		}
+	}
+
+	return merged;
 }
 
 function isDirectory(path) {

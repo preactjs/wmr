@@ -42,7 +42,7 @@ export const moduleGraph = new Map();
  * @param {boolean} [options.sourcemap]
  * @param {Record<string, string>} [options.aliases]
  * @param {Record<string, string>} [options.env]
- * @param {import('rollup').Plugin[]} [options.plugins]
+ * @param {Options["plugins"]} [options.plugins]
  * @param {boolean} [options.profile] Enable bundler performance profiling
  * @param {(error: Error & { clientMessage?: string })=>void} [options.onError]
  * @param {(event: { changes: string[], duration: number })=>void} [options.onChange]
@@ -57,7 +57,7 @@ export default function wmrMiddleware({
 	aliases,
 	onError = NOOP,
 	onChange = NOOP,
-	plugins,
+	plugins = [],
 	features
 } = {}) {
 	cwd = resolve(process.cwd(), cwd || '.');
@@ -67,6 +67,7 @@ export default function wmrMiddleware({
 
 	const NonRollup = createPluginContainer(
 		[
+			...plugins.filter(p => p.enforce === 'pre'),
 			externalUrlsPlugin(),
 			nodeBuiltinsPlugin({}),
 			urlPlugin({ inline: true, cwd }),
@@ -89,8 +90,10 @@ export default function wmrMiddleware({
 			resolveExtensionsPlugin({
 				typescript: true,
 				index: true
-			})
-		].concat(plugins || []),
+			}),
+			...plugins.filter(p => p.enforce === 'normal' || !p.enforce),
+			...plugins.filter(p => p.enforce === 'post')
+		],
 		{
 			cwd,
 			writeFile: (filename, source) => writeCacheFile(out, filename, source),

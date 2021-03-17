@@ -14,6 +14,15 @@ declare module 'wmr' {
 		preact: boolean;
 	};
 
+	// Rollup+
+	export interface WMRPlugin extends Plugin {
+		/**
+		 * Specify when a plugin should be executed.
+		 */
+		enforce?: 'pre' | 'post' | 'normal';
+		config?: (config: Options) => Partial<Options>;
+	}
+
 	export interface Options {
 		prod: boolean;
 		minify: boolean;
@@ -28,7 +37,7 @@ declare module 'wmr' {
 		aliases: Record<string, string>;
 		env: Record<string, string>;
 		middleware: Middleware[];
-		plugins: Plugin[];
+		plugins: WMRPlugin[];
 		output: OutputOption[];
 		features: Features;
 	}

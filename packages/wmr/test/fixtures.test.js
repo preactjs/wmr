@@ -592,6 +592,16 @@ describe('fixtures', () => {
 		});
 	});
 
+	describe('plugins', () => {
+		it('should order by plugin.enforce value', async () => {
+			await loadFixture('plugin-enforce', env);
+			instance = await runWmrFast(env.tmp.path);
+			await env.page.goto(await instance.address);
+			const text = await env.page.evaluate(`document.getElementById('app').textContent`);
+			expect(text).toEqual('file pre1 pre2 normal1 normal2 post1 post2');
+		});
+	});
+
 	describe('node built-ins', () => {
 		it('should return an error if a node built-in is used in production', async () => {
 			const error =
