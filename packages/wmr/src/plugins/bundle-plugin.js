@@ -1,4 +1,6 @@
 import { relative } from 'path';
+import * as kl from 'kolorist';
+import { debug } from '../lib/output-utils.js';
 
 /**
  * @param {object} [options]
@@ -7,6 +9,7 @@ import { relative } from 'path';
  * @returns {import('rollup').Plugin}
  */
 export default function bundlePlugin({ cwd = '.', inline } = {}) {
+	const log = debug('bundle');
 	return {
 		name: 'bundle-plugin',
 		async resolveId(id, importer) {
@@ -15,6 +18,7 @@ export default function bundlePlugin({ cwd = '.', inline } = {}) {
 			if (resolved) {
 				if (inline) {
 					const url = '/' + relative(cwd, resolved.id).replace(/^\./, '');
+					log(`[inline] ${kl.dim(url)}`);
 					return {
 						id: `data:text/javascript,export default${encodeURIComponent(JSON.stringify(url))}`,
 						external: true
