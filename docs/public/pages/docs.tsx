@@ -5,7 +5,7 @@ import pages from 'dir:./docs';
 import SideBar from './sideBar';
 
 const routes = pages.map(name => ({
-  Route: lazy(() => import(`./docs/${name}`)),
+  Route: lazy(() => import(`./docs/${name.replace(/\.tsx/g,'')}.tsx`)),
   url: '/docs' + name.replace(/(index)?\.\w+$/, '')
 }));
 
