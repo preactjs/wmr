@@ -8,7 +8,8 @@
 		]
 	},
 	"scripts": {
-		"ci": "yarn workspace wmr ci"
+		"demo": "yarn workspace @examples/demo run",
+		"ci": "yarn demo build:prod"
 	},
 	"eslintConfig": {
 		"extends": [

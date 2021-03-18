@@ -3,11 +3,21 @@
 	"version": "0.0.0",
 	"private": true,
 	"type": "module",
+	"scripts": {
+		"start": "cross-env DEBUG=true node ../../packages/wmr/src/cli.js",
+		"build": "yarn start build --prerender",
+		"serve": "yarn start serve",
+		"start:prod": "cross-env DEBUG=true wmr",
+		"build:prod": "wmr build --prerender",
+		"serve:prod": "wmr build --prerender",
+		"dev": "cross-env PROFILE=true nodemon -w src --exec \"yarn start\""
+	},
 	"alias": {
 		"react": "preact/compat"
 	},
 	"devDependencies": {
-		"wmr": "*"
+		"wmr": "*",
+		"nodemon": "^2.0.7"
 	},
 	"dependencies": {
 		"preact": "^10.5.13",
