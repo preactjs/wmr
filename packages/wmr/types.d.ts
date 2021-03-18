@@ -86,13 +86,13 @@ declare module '*.styl' {
 }
 
 // Import Prefixes
-declare module 'json:';
-declare module 'css:';
-declare module 'url:' {
+declare module 'json:*';
+declare module 'css:*';
+declare module 'url:*' {
 	const url: string;
 	export default url;
 }
-declare module 'bundle:' {
+declare module 'bundle:*' {
 	const url: string;
 	export default url;
 }
