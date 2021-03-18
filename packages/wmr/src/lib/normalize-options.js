@@ -96,14 +96,52 @@ export async function normalizeOptions(options, mode) {
 	}
 
 	Object.defineProperty(options, '_config', { value: custom });
+
+	/**
+	 * @param {keyof import('wmr').Plugin} name
+	 * @param {import('wmr').Plugin[]} plugins
+	 */
+	const runConfigHook = async (name, plugins) => {
+		for (const plugin of plugins) {
+			if (!plugin[name]) return;
+
+			const res = await plugin[name](options);
+			if (res) {
+				if (res.plugins) {
+					throw new Error(`In plugin ${plugin.name}: Plugin method "${name}()" must not return a "plugins" property.`);
+				}
+				options = mergeConfig(options, res);
+			}
+		}
+	};
+
+	/**
+	 * @param {any} x
+	 * @returns {x is import('wmr').Plugin}
+	 */
+	const isPlugin = x => Object.keys(x).some(key => typeof x[key] === 'function');
+
+	/**
+	 * @param {Options | import('wmr').Plugin | import('wmr').Plugin []} res
+	 */
+	const applyConfigResult = res => {
+		if (res) {
+			if (Array.isArray(res) || isPlugin(res)) {
+				options.plugins = options.plugins.concat(res);
+			} else {
+				options = mergeConfig(options, res);
+			}
+		}
+	};
+
 	if (custom) {
 		if (custom.default) {
 			const res = await custom.default(options);
-			if (res) options = mergeConfig(options, res);
+			applyConfigResult(res);
 		}
 		if (custom[mode]) {
 			const res = await custom[mode](options);
-			if (res) options = mergeConfig(options, res);
+			applyConfigResult(res);
 		}
 	}
 
@@ -117,27 +155,11 @@ export async function normalizeOptions(options, mode) {
 		});
 	}
 
+	console.log(options);
 	debug('wmr:config')(options);
 
-	/**
-	 * @param {keyof import('wmr').Plugin} name
-	 */
-	const runConfigHook = async name => {
-		for (const plugin of options.plugins) {
-			if (!plugin[name]) return;
-
-			const res = await plugin[name](options);
-			if (res) {
-				if (res.plugins) {
-					throw new Error(`In plugin ${plugin.name}: Plugin method "${name}()" must not return a "plugins" property.`);
-				}
-				options = mergeConfig(options, res);
-			}
-		}
-	};
-
-	await runConfigHook('config');
-	await runConfigHook('configResolved');
+	await runConfigHook('config', options.plugins);
+	await runConfigHook('configResolved', options.plugins);
 
 	// @ts-ignore-next
 	return options;

@@ -600,6 +600,14 @@ describe('fixtures', () => {
 			const text = await env.page.evaluate(`document.getElementById('app').textContent`);
 			expect(text).toEqual('file pre1 pre2 normal1 normal2 post1 post2');
 		});
+
+		it('should add middlewares via config', async () => {
+			await loadFixture('plugin-middlewares', env);
+			instance = await runWmrFast(env.tmp.path);
+			await env.page.goto(await instance.address);
+			const text = await env.page.evaluate(`fetch('/test').then(r => r.text())`);
+			expect(text).toEqual('it works');
+		});
 	});
 
 	describe('node built-ins', () => {
