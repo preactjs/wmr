@@ -62,7 +62,7 @@ yarn
 yarn demo serve
 
 # build and serve the demo for prod
-yarn demo build:prod && yarn demo serve
+yarn demo build:prod && yarn demo serve:prod
 
 # build the single-file CLI:
 yarn workspace wmr build

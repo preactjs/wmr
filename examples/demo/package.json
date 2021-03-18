@@ -9,7 +9,7 @@
 		"serve": "yarn start serve",
 		"start:prod": "cross-env DEBUG=true wmr",
 		"build:prod": "wmr build --prerender",
-		"serve:prod": "wmr build --prerender",
+		"serve:prod": "wmr serve",
 		"dev": "cross-env PROFILE=true nodemon -w src --exec \"yarn start\""
 	},
 	"alias": {
