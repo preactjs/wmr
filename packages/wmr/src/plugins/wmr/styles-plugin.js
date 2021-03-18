@@ -197,8 +197,9 @@ function forEachInput(input, callback) {
 			for (let i = 0; i < input.length; i++) {
 				forEachInput(input[i], callback);
 			}
+		} else {
+			for (let i in input) forEachInput(input[i], callback);
 		}
-		for (let i in input) forEachInput(input[i], callback);
 	} else if (typeof input === 'string') callback(input);
 }
 
