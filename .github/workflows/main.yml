@@ -22,6 +22,7 @@ jobs:
           filters: |
             wmr:
               - 'packages/wmr/**'
+              - 'examples/demo/**'
             preact-iso:
               - 'packages/preact-iso/**'
 
