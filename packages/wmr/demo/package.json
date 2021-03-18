@@ -1,6 +1,0 @@
-{
-	"type": "module",
-	"alias": {
-		"react": "preact/compat"
-	}
-}

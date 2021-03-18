@@ -59,10 +59,10 @@ cd wmr
 yarn
 
 # run the demo (no compile)
-yarn workspace wmr demo
+yarn demo serve
 
 # build and serve the demo for prod
-yarn workspace wmr demo:prod && yarn workspace wmr demo:serve
+yarn demo build:prod && yarn demo serve:prod
 
 # build the single-file CLI:
 yarn workspace wmr build

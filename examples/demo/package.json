@@ -1,0 +1,27 @@
+{
+	"name": "@examples/demo",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"start": "cross-env DEBUG=true node ../../packages/wmr/src/cli.js",
+		"build": "yarn start build --prerender",
+		"serve": "yarn start serve",
+		"start:prod": "cross-env DEBUG=true wmr",
+		"build:prod": "wmr build --prerender",
+		"serve:prod": "wmr serve",
+		"dev": "cross-env PROFILE=true nodemon -w src --exec \"yarn start\""
+	},
+	"alias": {
+		"react": "preact/compat"
+	},
+	"devDependencies": {
+		"wmr": "*",
+		"nodemon": "^2.0.7",
+		"cross-env": "^7.0.3"
+	},
+	"dependencies": {
+		"preact": "^10.5.13",
+		"preact-iso": "*"
+	}
+}

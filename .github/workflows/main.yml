@@ -22,6 +22,7 @@ jobs:
           filters: |
             wmr:
               - 'packages/wmr/**'
+              - 'examples/demo/**'
             preact-iso:
               - 'packages/preact-iso/**'
 
@@ -68,6 +69,6 @@ jobs:
       - name: Install
         run: yarn --frozen-lockfile
       - name: Build
-        run: yarn workspace wmr ci
+        run: yarn ci
       - name: LHCI
-        run: cd packages/wmr && lhci autorun --upload.target=temporary-public-storage --collect.url="http://localhost:8080" --collect.startServerCommand="npm run demo:serve" --upload.githubAppToken=${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+        run: lhci autorun --upload.target=temporary-public-storage --collect.url="http://localhost:8080" --collect.startServerCommand="yarn workspace @examples/demo serve" --upload.githubAppToken=${{ secrets.LHCI_GITHUB_APP_TOKEN }}
