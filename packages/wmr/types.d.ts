@@ -1,7 +1,7 @@
 // Declarations used by plugins and WMR itself
 
 declare module 'wmr' {
-	import { Plugin, OutputOptions } from 'rollup';
+	import { Plugin as RollupPlugin, OutputOptions } from 'rollup';
 	import { Middleware } from 'polka';
 
 	export type Mode = 'start' | 'serve' | 'build';
@@ -15,7 +15,7 @@ declare module 'wmr' {
 	};
 
 	// Rollup+
-	export interface WMRPlugin extends Plugin {
+	export interface Plugin extends RollupPlugin {
 		/**
 		 * Specify when a plugin should be executed.
 		 */
@@ -38,7 +38,7 @@ declare module 'wmr' {
 		aliases: Record<string, string>;
 		env: Record<string, string>;
 		middleware: Middleware[];
-		plugins: WMRPlugin[];
+		plugins: Plugin[];
 		output: OutputOption[];
 		features: Features;
 	}

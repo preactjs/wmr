@@ -120,7 +120,7 @@ export async function normalizeOptions(options, mode) {
 	debug('wmr:config')(options);
 
 	/**
-	 * @param {keyof WMRPlugin} name
+	 * @param {keyof import('wmr').Plugin} name
 	 */
 	const runConfigHook = async name => {
 		for (const plugin of options.plugins) {
