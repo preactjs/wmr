@@ -1,0 +1,16 @@
+{
+	"name": "@examples/demo",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"alias": {
+		"react": "preact/compat"
+	},
+	"devDependencies": {
+		"wmr": "*"
+	},
+	"dependencies": {
+		"preact": "^10.5.13",
+		"preact-iso": "*"
+	}
+}

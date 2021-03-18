@@ -26,7 +26,7 @@ describe('production', () => {
 
 	describe('demo app', () => {
 		it('should serve the demo app', async () => {
-			await loadFixture('../../demo', env);
+			await loadFixture('../../../../examples/demo', env);
 			for (const d of ['dist', 'node_modules', '.cache']) {
 				await fs.rmdir(path.join(env.tmp.path, d), { recursive: true });
 			}
