@@ -122,22 +122,22 @@ export async function normalizeOptions(options, mode) {
 	/**
 	 * @param {keyof WMRPlugin} name
 	 */
-	const runConfigHook = name => {
-		options.plugins.forEach(plugin => {
+	const runConfigHook = async name => {
+		for (const plugin of options.plugins) {
 			if (!plugin[name]) return;
 
-			const res = plugin[name](options);
+			const res = await plugin[name](options);
 			if (res) {
 				if (res.plugins) {
 					throw new Error(`In plugin ${plugin.name}: Plugin method "${name}()" must not return a "plugins" property.`);
 				}
 				options = mergeConfig(options, res);
 			}
-		});
+		}
 	};
 
-	runConfigHook('config');
-	runConfigHook('configResolved');
+	await runConfigHook('config');
+	await runConfigHook('configResolved');
 
 	// @ts-ignore-next
 	return options;
