@@ -111,13 +111,9 @@ export async function normalizeOptions(options, mode) {
 	// The execution order is: "pre" -> "normal" -> "post"
 	if (options.plugins) {
 		options.plugins = options.plugins.flat().sort((a, b) => {
-			if (a.enforce === b.enforce) return 0;
-			else if ((a.enforce === 'pre' && b.enforce !== 'pre') || b.enforce === 'post') {
-				return -1;
-			} else if (b.enforce === 'pre' || a.enforce === 'post') {
-				return 1;
-			}
-			return 0;
+			const aScore = a.enforce === 'post' ? 1 : a.enforce === 'pre' ? -1 : 0;
+			const bScore = b.enforce === 'post' ? 1 : b.enforce === 'pre' ? -1 : 0;
+			return aScore - bScore;
 		});
 	}
 
