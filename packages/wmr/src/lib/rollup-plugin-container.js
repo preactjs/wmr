@@ -2,8 +2,9 @@ import { resolve, relative, dirname, sep, posix } from 'path';
 import { createHash } from 'crypto';
 import { promises as fs } from 'fs';
 import * as acorn from 'acorn';
-import acornClassFields from 'acorn-class-fields';
 import * as kl from 'kolorist';
+import acornClassFields from 'acorn-class-fields';
+import { debug, formatResolved, formatPath } from './output-utils.js';
 
 // Rollup respects "module", Node 14 doesn't.
 const cjsDefault = m => ('default' in m ? m.default : m);
@@ -156,6 +157,10 @@ export function createPluginContainer(plugins, opts = {}) {
 		}
 	};
 
+	const logResolve = debug('wmr:resolve');
+	const logTransform = debug('wmr:transform');
+	const logLoad = debug('wmr:load');
+
 	const container = {
 		ctx,
 
@@ -221,6 +226,7 @@ export function createPluginContainer(plugins, opts = {}) {
 		 * @returns {Promise<import('rollup').ResolveIdResult>}
 		 */
 		async resolveId(id, importer, _skip) {
+			let originalId = id;
 			const key = identifierPair(id, importer);
 
 			const opts = {};
@@ -250,9 +256,7 @@ export function createPluginContainer(plugins, opts = {}) {
 					Object.assign(opts, result);
 				}
 
-				if (process.env.DEBUG) {
-					console.log(`  ${kl.dim('plugin:') + kl.bold(kl.yellow(p.name))}  ${JSON.stringify(id)}`);
-				}
+				logResolve(`${formatResolved(originalId, id)} [${p.name}]`);
 				// resolveId() is hookFirst - first non-null result is returned.
 				break;
 			}
@@ -270,6 +274,8 @@ export function createPluginContainer(plugins, opts = {}) {
 				if (!plugin.transform) continue;
 				const result = await plugin.transform.call(ctx, code, id);
 				if (!result) continue;
+
+				logTransform(`${kl.dim(formatPath(id))} [${plugin.name}]`);
 				if (typeof result === 'object') {
 					code = result.code;
 				} else {
@@ -288,6 +294,7 @@ export function createPluginContainer(plugins, opts = {}) {
 				if (!plugin.load) continue;
 				const result = await plugin.load.call(ctx, id);
 				if (result) {
+					logLoad(`${formatPath(id)} [${plugin.name}]`);
 					return result;
 				}
 			}

@@ -1,6 +1,15 @@
 import path from 'path';
 import { promises as fs } from 'fs';
-import { setupTest, teardown, loadFixture, runWmrFast, getOutput, get } from './test-helpers.js';
+import {
+	setupTest,
+	teardown,
+	loadFixture,
+	runWmrFast,
+	getOutput,
+	get,
+	waitForMessage,
+	waitForNotMessage
+} from './test-helpers.js';
 import { rollup } from 'rollup';
 import nodeBuiltinsPlugin from '../src/plugins/node-builtins-plugin.js';
 
@@ -64,28 +73,28 @@ describe('fixtures', () => {
 		it('should print warning for missing index.html file in public dir', async () => {
 			await loadFixture('empty', env);
 			instance = await runWmrFast(env.tmp.path);
-			expect(instance.output.join('\n')).toMatch(`missing "index.html" file`);
+			await waitForMessage(instance.output, 'missing "index.html" file');
 			expect(await getOutput(env, instance)).toMatch(`Not Found`);
 		});
 
 		it('should print warning for missing index.html file (no public dir)', async () => {
 			await loadFixture('empty-nopublic', env);
 			instance = await runWmrFast(env.tmp.path);
-			expect(instance.output.join('\n')).toMatch(`missing "index.html" file`);
+			await waitForMessage(instance.output, 'missing "index.html" file');
 			expect(await getOutput(env, instance)).toMatch(`Not Found`);
 		});
 
 		it('should start successfully with only an HTML file in public dir', async () => {
 			await loadFixture('htmlonly', env);
 			instance = await runWmrFast(env.tmp.path);
-			expect(instance.output.join('\n')).not.toMatch(`missing an "index.html"`);
+			await waitForNotMessage(instance.output, `missing an "index.html"`);
 			expect(await getOutput(env, instance)).toMatch(`<h1>Hello wmr</h1>`);
 		});
 
 		it('should start successfully with only an HTML file (no public dir)', async () => {
 			await loadFixture('htmlonly-nopublic', env);
 			instance = await runWmrFast(env.tmp.path);
-			expect(instance.output.join('\n')).not.toMatch(`missing an "index.html"`);
+			await waitForNotMessage(instance.output, `missing an "index.html"`);
 			expect(await getOutput(env, instance)).toMatch(`<h1>Hello wmr</h1>`);
 		});
 	});

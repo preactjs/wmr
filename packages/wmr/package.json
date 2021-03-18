@@ -125,7 +125,7 @@
 		"husky": "^4.2.5",
 		"jest": "^26.1.0",
 		"jest-puppeteer": "^4.4.0",
-		"kolorist": "^1.2.7",
+		"kolorist": "^1.3.2",
 		"lint-staged": "^10.2.11",
 		"magic-string": "^0.25.7",
 		"ncp": "^2.0.0",

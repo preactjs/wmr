@@ -1,4 +1,6 @@
 import * as kl from 'kolorist';
+import * as util from 'util';
+import { relative } from 'path';
 
 /** @param {import('rollup').RollupOutput} bundle */
 export function bundleStats(bundle) {
@@ -84,4 +86,81 @@ export function codeFrame(code, loc) {
 		frame += `\n${kl.dim(pad(line) + ' |')} ${normalize(lines[line])}`;
 	}
 	return frame;
+}
+
+// Taken from https://github.com/visionmedia/debug/blob/e47f96de3de5921584364b4ac91e2769d22a3b1f/src/node.js#L35
+// prettier-ignore
+const colors = [
+	20, 21, 26, 27, 32, 33, 38, 39, 40, 41, 42, 43, 44, 45, 56, 57, 62, 63, 68,
+	69, 74, 75, 76, 77, 78, 79, 80, 81, 92, 93, 98, 99, 112, 113, 128, 129, 134,
+	135, 148, 149, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171,
+	172, 173, 178, 179, 184, 185, 196, 197, 198, 199, 200, 201, 202, 203, 204,
+	205, 206, 207, 208, 209, 214, 215, 220, 221
+];
+
+// Taken from: https://github.com/visionmedia/debug/blob/e47f96de3de5921584364b4ac91e2769d22a3b1f/src/common.js#L41-L50
+function selectColor(namespace) {
+	let hash = 0;
+
+	for (let i = 0; i < namespace.length; i++) {
+		hash = (hash << 5) - hash + namespace.charCodeAt(i);
+		hash |= 0; // Convert to 32bit integer
+	}
+
+	return colors[Math.abs(hash) % colors.length];
+}
+
+/**
+ * Print namespaced log messages when the DEBUG environment
+ * variable is set.
+ * @param {string} namespace
+ * @param {number} [color]
+ * @returns {(...args: any[]) => void}
+ */
+export function debug(namespace, color = selectColor(namespace)) {
+	const ns = kl.ansi256(color)(`  ${namespace}  `);
+	return (...args) => {
+		if (process.env.DEBUG) {
+			const str = args.map(arg => {
+				const value = arg === null || typeof arg !== 'object' ? arg : util.inspect(arg, false, null, true);
+
+				return value
+					.split('\n')
+					.map(line => ns + line)
+					.join('\n');
+			});
+			console.log.apply(console, str);
+		}
+	};
+}
+
+/**
+ * Serialize path to display special characters such as
+ * the null byte of necessary.
+ * @param {string} path
+ * @returns {string}
+ */
+export function formatPath(path) {
+	path = path || 'null';
+	if (typeof path === 'object') {
+		path = path.id;
+	}
+	if (path.startsWith('\b') || path.startsWith('\0')) {
+		path = JSON.stringify(path);
+	}
+	if (path.startsWith(process.cwd())) {
+		path = relative(process.cwd(), path);
+	}
+
+	return path;
+}
+
+/**
+ * @param {string} from
+ * @param {import('rollup').ResolvedId | string | null} to
+ */
+export function formatResolved(from, to) {
+	from = formatPath(from);
+	to = formatPath(to);
+	return `${kl.cyan(from)} -> ${kl.dim(to)}`;
 }

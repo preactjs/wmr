@@ -1,5 +1,6 @@
 import { dirname, resolve } from 'path';
 import { promises as fs } from 'fs';
+import { debug, formatResolved } from '../lib/output-utils.js';
 
 /**
  * Package.json "aliases" field: {"a":"b"}
@@ -9,6 +10,7 @@ import { promises as fs } from 'fs';
  * @returns {import('rollup').Plugin}
  */
 export default function aliasesPlugin({ aliases = {}, cwd } = {}) {
+	const log = debug('aliases');
 	let pkgFilename;
 	let aliasesLoaded;
 	async function fromPackageJson() {
@@ -67,7 +69,9 @@ export default function aliasesPlugin({ aliases = {}, cwd } = {}) {
 			if (aliased === id) return;
 			// now allow other resolvers to handle the aliased version
 			// (this is important since they may mark as external!)
-			return await this.resolve(aliased, importer, { skipSelf: true });
+			const resolved = await this.resolve(aliased, importer, { skipSelf: true });
+			log(formatResolved(id, resolved));
+			return resolved;
 		}
 	};
 }

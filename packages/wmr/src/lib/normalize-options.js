@@ -3,6 +3,7 @@ import { promises as fs } from 'fs';
 import url from 'url';
 import { readEnvFiles } from './environment.js';
 import { compileSingleModule } from './compile-single-module.js';
+import { debug } from './output-utils.js';
 
 /**
  * @template {Options} T
@@ -100,6 +101,8 @@ export async function normalizeOptions(options, mode) {
 		if (custom.default) await custom.default(options);
 		if (custom[mode]) await custom[mode](options);
 	}
+
+	debug('wmr:config')(options);
 
 	// @ts-ignore-next
 	return options;
