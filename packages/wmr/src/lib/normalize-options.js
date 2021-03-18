@@ -97,12 +97,13 @@ export async function normalizeOptions(options, mode) {
 
 	Object.defineProperty(options, '_config', { value: custom });
 	if (custom) {
-		const fn = custom.default || custom[mode];
-		if (fn) {
-			const res = await fn(options);
-			if (res) {
-				options.plugins.push(res);
-			}
+		if (custom.default) {
+			const res = await custom.default(options);
+			if (res) options = mergeConfig(options, res);
+		}
+		if (custom[mode]) {
+			const res = await custom[mode](options);
+			if (res) options = mergeConfig(options, res);
 		}
 	}
 
