@@ -154,13 +154,13 @@ export async function waitFor(fn, timeout = 2000) {
 /**
  * @param {string[]} haystack
  * @param {string | RegExp} message
- * @param {number} timeout
+ * @param {number} [timeout]
  * @returns {Promise<void>}
  */
 export async function waitForMessage(haystack, message, timeout = 5000) {
 	const found = await waitFor(() => {
 		if (typeof message === 'string') {
-			if (haystack.includes(message)) {
+			if (haystack.some(line => line.includes(message))) {
 				return true;
 			}
 		} else {
@@ -175,8 +175,21 @@ export async function waitForMessage(haystack, message, timeout = 5000) {
 	});
 
 	if (!found) {
-		throw new Error(`Message ${message} didn't appear in ${timeout}ms`);
+		throw new Error(`Message ${message} didn't appear in ${timeout}ms\n\nActual output:\n\n${haystack.join('\n')}`);
 	}
+}
+
+/**
+ * @param {string[]} haystack
+ * @param {string | RegExp} message
+ * @param {number} [timeout]
+ * @returns {Promise<void>}
+ */
+export async function waitForNotMessage(haystack, message, timeout = 1000) {
+	try {
+		await waitForMessage(haystack, message, timeout);
+		throw new Error(`Expected message to not be present: ${message}`);
+	} catch (err) {}
 }
 
 /**
