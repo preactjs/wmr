@@ -155,7 +155,6 @@ export async function normalizeOptions(options, mode) {
 		});
 	}
 
-	console.log(options);
 	debug('wmr:config')(options);
 
 	await runConfigHook('config', options.plugins);
