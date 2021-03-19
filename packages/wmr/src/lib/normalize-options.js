@@ -166,11 +166,14 @@ export async function normalizeOptions(options, mode) {
 
 /**
  * Deeply merge two config objects
- * @param {Partial<Options>} a
- * @param {Partial<Options>} b
- * @returns {Partial<Options>}
+ * @template {Record<string, any>} T
+ * @template {Record<string, any>} U
+ * @param {T} a
+ * @param {U} b
+ * @returns {T & U}
  */
 function mergeConfig(a, b) {
+	/** @type {any} */
 	const merged = { ...a };
 
 	for (const key in b) {
