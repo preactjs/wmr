@@ -7,7 +7,7 @@ import { extractCss, setup, styled } from 'goober';
 import { prefix } from 'goober/prefixer';
 
 import Home from './pages/home.tsx';
-import Docs from './pages/docs.tsx';
+// import Docs from './pages/docs.tsx';
 import Header from './header.tsx';
 import { GlobalStyles } from './GlobalStyles';
 
@@ -26,8 +26,8 @@ export function App() {
 				<Main>
 					<Router>
 						<Home path="/" />
-						<Docs path="/docs" />
-						<Docs path="/docs/:name" />
+						{/* <Docs path="/docs" />
+						<Docs path="/docs/:name" /> */}
 					</Router>
 				</Main>
 			</ErrorBoundary>
