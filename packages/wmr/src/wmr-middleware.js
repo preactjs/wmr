@@ -65,9 +65,10 @@ export default function wmrMiddleware({
 
 	root = root || cwd;
 
+	const split = plugins.findIndex(p => p.enforce !== 'pre');
 	const NonRollup = createPluginContainer(
 		[
-			...plugins.filter(p => p.enforce === 'pre'),
+			...plugins.slice(0, split),
 			externalUrlsPlugin(),
 			nodeBuiltinsPlugin({}),
 			urlPlugin({ inline: true, cwd }),
@@ -91,8 +92,7 @@ export default function wmrMiddleware({
 				typescript: true,
 				index: true
 			}),
-			...plugins.filter(p => p.enforce === 'normal' || !p.enforce),
-			...plugins.filter(p => p.enforce === 'post')
+			...plugins.slice(split)
 		],
 		{
 			cwd,
