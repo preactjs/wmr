@@ -88,7 +88,7 @@ export async function runWmr(cwd, ...args) {
 		if (/\b([A-Z][a-z]+)?Error\b/m.test(raw) && !/^404 /.test(raw)) {
 			console.error(`Error running "wmr ${args.join(' ')}":\n${raw}`);
 		}
-		if (/^Listening/m.test(raw)) {
+		if (/server running at/m.test(raw)) {
 			let m = raw.match(/https?:\/\/localhost:\d+/g);
 			if (m) setAddress(m[0]);
 		}
@@ -114,7 +114,7 @@ const addrs = new WeakMap();
 export async function getOutput(env, instance) {
 	let address = addrs.get(instance);
 	if (!address) {
-		await waitForMessage(instance.output, /^Listening/);
+		await waitForMessage(instance.output, /server running at/);
 		address = instance.output.join('\n').match(/https?:\/\/localhost:\d+/g)[0];
 		addrs.set(instance, address);
 	}
