@@ -164,3 +164,31 @@ export function formatResolved(from, to) {
 	to = formatPath(to);
 	return `${kl.cyan(from)} -> ${kl.dim(to)}`;
 }
+
+/**
+ * @param {string} addr
+ */
+function formatAddr(addr) {
+	return kl.cyan(addr.replace(/:(\d+)$/, m => ':' + kl.bold(m.slice(1))));
+}
+
+/**
+ * @param {string} message
+ * @param {string[]} addresses
+ * @returns {string}
+ */
+export function formatBootMessage(message, addresses) {
+	const intro = `\n  👩‍🚀 WMR ${message}\n\n`;
+	const local = `  Local:   ${formatAddr(addresses[0])}\n`;
+
+	let network = '';
+	if (addresses.length > 1) {
+		network =
+			addresses
+				.slice(1)
+				.map(addr => `  Network: ${formatAddr(addr)}`)
+				.join('\n') + '\n';
+	}
+
+	return `${intro}${local}${network}\n`;
+}

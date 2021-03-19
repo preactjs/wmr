@@ -39,10 +39,11 @@ export async function getFreePort(port) {
 /**
  * Display local and network origins for a server's address.
  * @param {net.AddressInfo|string} addr
+ * @returns {string[]}
  */
 export function getServerAddresses(addr, { https = false } = {}) {
 	if (typeof addr === 'string') {
-		return addr;
+		return [addr];
 	}
 
 	const protocol = https ? 'https:' : 'http:';
@@ -51,7 +52,7 @@ export function getServerAddresses(addr, { https = false } = {}) {
 
 	// Get network address
 	const ifaces = os.networkInterfaces();
-	const addresses = [];
+	const addresses = [`${protocol}//${host}:${port}`];
 	for (const name in ifaces) {
 		for (const iface of ifaces[name]) {
 			const { family, address, internal } = iface;
@@ -61,10 +62,5 @@ export function getServerAddresses(addr, { https = false } = {}) {
 		}
 	}
 
-	let out = `${protocol}//${host}:${port}`;
-	if (addresses.length) {
-		out += `\n  ⌙ ${addresses.join(', ')}`;
-	}
-
-	return out;
+	return addresses;
 }
