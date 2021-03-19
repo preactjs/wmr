@@ -178,15 +178,15 @@ function formatAddr(addr) {
  * @returns {string}
  */
 export function formatBootMessage(message, addresses) {
-	const intro = `\n  👩‍🚀 WMR ${message}\n\n`;
-	const local = `  Local:   ${formatAddr(addresses[0])}\n`;
+	const intro = `\n👩‍🚀 ${kl.lightYellow('WMR')} ${message}\n`;
+	const local = `  ${kl.dim('Local:')}   ${formatAddr(addresses[0])}\n`;
 
 	let network = '';
 	if (addresses.length > 1) {
 		network =
 			addresses
 				.slice(1)
-				.map(addr => `  Network: ${formatAddr(addr)}`)
+				.map(addr => `  ${kl.dim('Network:')} ${formatAddr(addr)}`)
 				.join('\n') + '\n';
 	}
 
