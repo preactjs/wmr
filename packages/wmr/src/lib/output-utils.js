@@ -178,7 +178,7 @@ function formatAddr(addr) {
  * @returns {string}
  */
 export function formatBootMessage(message, addresses) {
-	const intro = `\n👩‍🚀 ${kl.lightYellow('WMR')} ${message}\n`;
+	const intro = `\n  👩‍🚀 ${kl.lightYellow('WMR')} ${message}\n\n`;
 	const local = `  ${kl.dim('Local:')}   ${formatAddr(addresses[0])}\n`;
 
 	let network = '';
