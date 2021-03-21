@@ -3,9 +3,11 @@ import { Router } from 'preact-iso/router';
 import { styled } from 'goober';
 // import pages from 'dir:./docs';
 import SideBar from './sideBar';
+import GettingStarted from './docs/index.js';
+import Plugins from './docs/plugins.js';
 
-const GettingStarted = lazy(() => import(`./docs/index.js`))
-const Plugins = lazy(() => import(`./docs/plugins.js`))
+// const GettingStarted = lazy(() => import(`./docs/index.js`))
+// const Plugins = lazy(() => import(`./docs/plugins.js`))
 // const routes = pages.map(name => ({
 //   Route: lazy(() => import(`./docs/${name.replace(/\.js/g,'')}.js`)),
 //   url: '/docs/' + name.replace(/(index)?\.\w+$/, '')
