@@ -4,6 +4,7 @@ const Section = styled('section')`
 	align-items: center;
 	display: flex;
 	flex-direction: column;
+	padding: 32px 0;
 `;
 
 const H2 = styled('h2')`
@@ -26,7 +27,7 @@ const Code = styled('code')`
 export default function Home() {
 	return (
 		<Section>
-			<img src="/assets/wmr.png" alt="wmr logo" height="300" />
+			<img src="/assets/wmr.svg" alt="wmr logo" width="300" />
 			<H2>The tiny all-in-one development tool for modern web apps, in a single 2mb file with no dependencies.</H2>
 			<div>
 				<H3>Getting started</H3>
