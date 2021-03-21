@@ -2,7 +2,7 @@
 	"name": "@wmr/docs",
 	"scripts": {
 		"dev": "wmr",
-		"build": "wmr build"
+		"build": "wmr build --prerender"
 	},
 	"devDependencies": {
 		"@wmr-plugins/directory-import": "0.1.1",
