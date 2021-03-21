@@ -6,10 +6,9 @@ import { compileSingleModule } from './compile-single-module.js';
 import { debug } from './output-utils.js';
 
 /**
- * @template {Options} T
- * @param {Partial<T>} options
+ * @param {Partial<Options>} options
  * @param {Mode} mode
- * @returns {Promise<T>}
+ * @returns {Promise<Options>}
  */
 export async function normalizeOptions(options, mode) {
 	options.cwd = resolve(options.cwd || '');
@@ -97,15 +96,103 @@ export async function normalizeOptions(options, mode) {
 	}
 
 	Object.defineProperty(options, '_config', { value: custom });
+
+	/**
+	 * @param {keyof import('wmr').Plugin} name
+	 * @param {import('wmr').Plugin[]} plugins
+	 */
+	const runConfigHook = async (name, plugins) => {
+		for (const plugin of plugins) {
+			if (!plugin[name]) return;
+
+			const res = await plugin[name](options);
+			if (res) {
+				if (res.plugins) {
+					throw new Error(`In plugin ${plugin.name}: Plugin method "${name}()" must not return a "plugins" property.`);
+				}
+				options = mergeConfig(options, res);
+			}
+		}
+	};
+
+	/**
+	 * @param {any} x
+	 * @returns {x is import('wmr').Plugin}
+	 */
+	const isPlugin = x => Object.keys(x).some(key => typeof x[key] === 'function');
+
+	/**
+	 * @param {Options | import('wmr').Plugin | import('wmr').Plugin []} res
+	 */
+	const applyConfigResult = res => {
+		if (res) {
+			if (Array.isArray(res) || isPlugin(res)) {
+				options.plugins = options.plugins.concat(res);
+			} else {
+				options = mergeConfig(options, res);
+			}
+		}
+	};
+
 	if (custom) {
-		if (custom.default) await custom.default(options);
-		if (custom[mode]) await custom[mode](options);
+		if (custom.default) {
+			const res = await custom.default(options);
+			applyConfigResult(res);
+		}
+		if (custom[mode]) {
+			const res = await custom[mode](options);
+			applyConfigResult(res);
+		}
+	}
+
+	// Sort plugins by "enforce" phase. Default is "normal".
+	// The execution order is: "pre" -> "normal" -> "post"
+	if (options.plugins) {
+		options.plugins = options.plugins.flat().sort((a, b) => {
+			const aScore = a.enforce === 'post' ? 1 : a.enforce === 'pre' ? -1 : 0;
+			const bScore = b.enforce === 'post' ? 1 : b.enforce === 'pre' ? -1 : 0;
+			return aScore - bScore;
+		});
 	}
 
 	debug('wmr:config')(options);
 
+	await runConfigHook('config', options.plugins);
+	await runConfigHook('configResolved', options.plugins);
+
 	// @ts-ignore-next
 	return options;
+}
+
+/**
+ * Deeply merge two config objects
+ * @template {Record<string, any>} T
+ * @template {Record<string, any>} U
+ * @param {T} a
+ * @param {U} b
+ * @returns {T & U}
+ */
+function mergeConfig(a, b) {
+	/** @type {any} */
+	const merged = { ...a };
+
+	for (const key in b) {
+		const value = b[key];
+		if (value == null) {
+			continue;
+		}
+
+		const existing = merged[key];
+		if (Array.isArray(existing) && Array.isArray(value)) {
+			merged[key] = [...existing, ...value];
+		} else if (existing !== null && typeof existing === 'object' && typeof value === 'object') {
+			merged[key] = mergeConfig(existing, value);
+		} else {
+			merged[key] = value;
+		}
+	}
+
+	return merged;
 }
 
 function isDirectory(path) {

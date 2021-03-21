@@ -58,7 +58,7 @@ const pathToPosix = p => p.split(sep).join(posix.sep);
  * @type {rollup.RollupError & { clientMessage?: string }}
  */
 
-/** @param {BuildOptions & { npmChunks?: boolean }} options */
+/** @param {BuildOptions & { npmChunks?: boolean, plugins: Options["plugins"] }} options */
 export async function bundleProd({
 	cwd,
 	root,
@@ -92,7 +92,9 @@ export async function bundleProd({
 		perf: !!profile,
 		preserveEntrySignatures: 'allow-extension',
 		manualChunks: npmChunks ? extractNpmChunks : undefined,
-		plugins: plugins.concat([
+		plugins: [
+			...plugins.filter(p => p.enforce === 'pre'),
+			...plugins.filter(p => p.enforce === 'normal' || !p.enforce),
 			nodeBuiltinsPlugin({ production: true }),
 			externalUrlsPlugin(),
 			sucrasePlugin({
@@ -126,11 +128,12 @@ export async function bundleProd({
 			npmPlugin({ external: false }),
 			urlPlugin({}),
 			jsonPlugin(),
+			...plugins.filter(p => p.enforce === 'post'),
 			bundlePlugin({ cwd }),
 			optimizeGraphPlugin({ publicPath }),
 			minify && minifyCssPlugin({ sourcemap }),
 			copyAssetsPlugin({ cwd })
-		])
+		]
 	});
 
 	/** @type {import('rollup').OutputOptions} */
