@@ -23,7 +23,7 @@ export default function Header() {
 		<HeaderArea>
 			<nav>
 				<Link href="/">Home</Link>
-				{/* <Link href="/docs">Docs</Link> */}
+				<Link href="/docs">Docs</Link>
 			</nav>
 			<div>
 				<Link href="https://github.com/preactjs/wmr">
