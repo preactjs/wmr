@@ -1,5 +1,7 @@
 # WMR
 
+<img src="./docs/public/assets/wmr.svg" alt="wmr logo" width="400">
+
 [![npm](https://img.shields.io/npm/v/wmr.svg)](http://npm.im/wmr)
 [![install size](https://packagephobia.com/badge?p=wmr)](https://packagephobia.com/result?p=wmr)
 [![OpenCollective Backers](https://opencollective.com/preact/backers/badge.svg)](#backers)
@@ -33,7 +35,7 @@ or
 <strong><code>yarn create wmr your-project-name</code></strong>
 
 <p>
-<img width="400" src="https://user-images.githubusercontent.com/105127/100917537-4661e100-34a5-11eb-89bd-565b7bc31919.gif">
+<img width="400" src="https://user-images.githubusercontent.com/105127/100917537-4661e100-34a5-11eb-89bd-565b7bc31919.gif" alt="illustartion of installation to build for wmr">
 </p>
 
 > 💁 If you'd like ESLint to be set up for you, add `--eslint` to the command. _Note: this will use 150mb of disk space._
