@@ -13,9 +13,15 @@ export default function jsonPlugin({} = {}) {
 	const IMPORT_PREFIX = 'json:';
 	const INTERNAL_PREFIX = '\0json:';
 
+	const seen = new Set();
+
 	return {
 		name: 'json-plugin',
 		async resolveId(id, importer) {
+			if (seen.has(id + importer)) return;
+
+			seen.add(id + importer);
+
 			if (id.startsWith(IMPORT_PREFIX)) {
 				// always process prefixed imports
 				id = id.slice(IMPORT_PREFIX.length);
@@ -28,7 +34,6 @@ export default function jsonPlugin({} = {}) {
 		},
 		transform(code, id) {
 			if (!id.startsWith(INTERNAL_PREFIX)) return;
-
 			return {
 				code: `export default ${code}`,
 				map: null
