@@ -1,5 +1,5 @@
 import { h, createContext, cloneElement } from 'preact';
-import { useContext, useMemo, useReducer, useEffect, useLayoutEffect, useRef } from 'preact/hooks';
+import { useContext, useMemo, useCallback, useReducer, useEffect, useLayoutEffect, useRef } from 'preact/hooks';
 
 /**
  * @param {string} state
@@ -59,7 +59,8 @@ export const exec = (url, route, matches) => {
 };
 
 export function LocationProvider(props) {
-	const [url, route] = useReducer(UPDATE, location.pathname + location.search);
+	const [url, doRoute] = useReducer(UPDATE, location.pathname + location.search);
+	const route = useCallback((url, replace) => doRoute({ url, replace }), []);
 
 	const value = useMemo(() => {
 		const u = new URL(url, location.origin);
