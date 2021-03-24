@@ -19,7 +19,7 @@ export default function swPlugin(options) {
 
 	const wmrProxyPlugin = {
 		resolveId(id) {
-			const normalizedId = (id[1] + id[2] === ':\\') ? pathToPosix(id.slice(2)) : id;
+			const normalizedId = id[1] + id[2] === ':\\' ? pathToPosix(id.slice(2)) : id;
 			if (id.startsWith('/@npm/')) return id;
 			if (!/^\.*\//.test(normalizedId)) return '/@npm/' + id;
 		},
@@ -69,10 +69,11 @@ export default function swPlugin(options) {
 			id = path.resolve(options.cwd, id.slice(4));
 
 			try {
-				var { rollup } = await import('rollup');
-			} catch (e) {
-				console.error((e = 'Error: Service Worker compilation requires that you install Rollup:\n  npm i --save-dev rollup'));
-				return `export default null; throw ${JSON.stringify(e)};`;
+				var { rollup } = await import('rollup'); // eslint-disable-line no-var
+			} catch {
+				const error = 'Error: Service Worker compilation requires that you install Rollup:\n  npm i --save-dev rollup';
+				console.error(error);
+				return `export default null; throw ${JSON.stringify(error)};`;
 			}
 
 			const bundle = await rollup({
