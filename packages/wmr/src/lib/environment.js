@@ -46,7 +46,7 @@ export function parseEnvFile(str) {
  * Load additional environment variables from .env files.
  * @param {string} cwd
  * @param {string[]} envFiles
- * @returns {Promise<Record<string, string>}>}
+ * @returns {Promise<Record<string, string>>}
  */
 export async function readEnvFiles(cwd, envFiles) {
 	const envs = await Promise.all(
