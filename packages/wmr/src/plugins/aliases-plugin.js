@@ -1,53 +1,19 @@
 import { dirname, resolve } from 'path';
-import { promises as fs } from 'fs';
 import { debug, formatResolved } from '../lib/output-utils.js';
 
 /**
  * Package.json "aliases" field: {"a":"b"}
- * @param {object} [options]
- * @param {Record<string,string>} [options.aliases] If omitted, obtained (and watched) from package.json
- * @param {string} [options.cwd]
+ * @param {object} options
+ * @param {Record<string,string>} options.aliases
  * @returns {import('rollup').Plugin}
  */
-export default function aliasesPlugin({ aliases = {}, cwd } = {}) {
+export default function aliasesPlugin({ aliases }) {
 	const log = debug('aliases');
 	let pkgFilename;
-	let aliasesLoaded;
-	async function fromPackageJson() {
-		let json;
-		try {
-			const pkg = await fs.readFile(pkgFilename, 'utf-8');
-			json = JSON.parse(pkg);
-		} catch (e) {
-			console.error('[aliases] Failed to load package.json from ' + pkgFilename);
-		}
-		if (json) {
-			for (let i in aliases) if (!json.alias || !(i in json.alias)) delete aliases[i];
-			if (json.alias) for (let i in json.alias) aliases[i] = json.alias[i];
-		}
-		aliasesLoaded = null;
-	}
+
 	return {
 		name: 'aliases',
-		async buildStart() {
-			if (cwd) {
-				pkgFilename = resolve(cwd, 'package.json');
-				this.addWatchFile(pkgFilename);
-			} else {
-				const resolved = await this.resolve('./package.json');
-				if (resolved) {
-					pkgFilename = resolved.id;
-					this.addWatchFile(pkgFilename);
-				}
-			}
-		},
-		watchChange(id) {
-			if (id === pkgFilename) {
-				aliasesLoaded = fromPackageJson();
-			}
-		},
 		async resolveId(id, importer) {
-			if (aliasesLoaded) await aliasesLoaded;
 			if (typeof id !== 'string' || id.match(/^(\0|\.\.?\/)/)) return;
 			let aliased;
 			for (let i in aliases) {
