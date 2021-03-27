@@ -37,10 +37,10 @@ export async function getFreePort(port) {
 
 	// Limit to 20 attempts for now
 	while (!found && attempts <= 20) {
-		if (!isPortFree(port)) {
-			port++;
-			attempts++;
-		}
+		if (isPortFree(port)) break;
+
+		port++;
+		attempts++;
 	}
 
 	return port;
