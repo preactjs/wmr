@@ -47,6 +47,25 @@ export async function getFreePort(port) {
 }
 
 /**
+ * Check if the user specified port is available and
+ * throw if it is taken. If the user didn't specify
+ * a port we'll try to find a free one
+ * @param {{port?: number | string}} options
+ */
+export async function getPort(options) {
+	const userPort = options.port || process.env.PORT;
+	if (userPort !== undefined) {
+		if (await isPortFree(+userPort)) {
+			return +userPort;
+		}
+
+		throw new Error(`Another process is already running on port ${userPort}. Please choose a different port.`);
+	}
+
+	return await getFreePort(8080);
+}
+
+/**
  * Display local and network origins for a server's address.
  * @param {net.AddressInfo|string} addr
  * @returns {string[]}

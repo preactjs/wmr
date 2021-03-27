@@ -4,6 +4,7 @@ import url from 'url';
 import { readEnvFiles } from './environment.js';
 import { compileSingleModule } from './compile-single-module.js';
 import { debug } from './output-utils.js';
+import { getPort } from './net-utils.js';
 
 /**
  * @param {Partial<Options>} options
@@ -49,6 +50,8 @@ export async function normalizeOptions(options, mode) {
 	if (!options.publicPath.endsWith('/')) {
 		options.publicPath += '/';
 	}
+
+	options.port = await getPort(options);
 
 	// If the CWD has a public/ directory, all files are assumed to be within it.
 	// From here, everything except node_modules and `out` are relative to public:
