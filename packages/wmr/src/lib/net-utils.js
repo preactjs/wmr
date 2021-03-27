@@ -37,13 +37,32 @@ export async function getFreePort(port) {
 
 	// Limit to 20 attempts for now
 	while (!found && attempts <= 20) {
-		if (!isPortFree(port)) {
-			port++;
-			attempts++;
-		}
+		if (isPortFree(port)) break;
+
+		port++;
+		attempts++;
 	}
 
 	return port;
+}
+
+/**
+ * Check if the user specified port is available and
+ * throw if it is taken. If the user didn't specify
+ * a port we'll try to find a free one
+ * @param {{port?: number | string}} options
+ */
+export async function getPort(options) {
+	const userPort = options.port || process.env.PORT;
+	if (userPort !== undefined) {
+		if (await isPortFree(+userPort)) {
+			return +userPort;
+		}
+
+		throw new Error(`Another process is already running on port ${userPort}. Please choose a different port.`);
+	}
+
+	return await getFreePort(8080);
 }
 
 /**
