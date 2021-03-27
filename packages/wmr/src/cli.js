@@ -4,6 +4,7 @@ import sade from 'sade';
 import build from './build.js';
 import start from './start.js';
 import serve from './serve.js';
+import * as errorstacks from 'errorstacks';
 import * as kl from 'kolorist';
 
 const prog = sade('wmr');
@@ -51,8 +52,13 @@ prog.parse(process.argv);
 
 function run(p) {
 	p.catch(err => {
-		const text = (process.env.DEBUG ? err.stack : err.message) || err + '';
-		process.stderr.write(`${kl.red(text)}\n`);
+		const text = err.message || err + '';
+		const stack =
+			errorstacks
+				.parseStackTrace(err.stack)
+				.map(frame => frame.raw)
+				.join('\n') + '\n';
+		process.stderr.write(`\n${kl.red(text)}\n${kl.dim(stack)}\n`);
 		process.exit(p.code || 1);
 	});
 }
