@@ -65,35 +65,39 @@ export async function normalizeOptions(options, mode) {
 	const pkg = fs.readFile(pkgFile, 'utf-8').then(JSON.parse);
 	options.aliases = (await pkg.catch(() => ({}))).alias || {};
 
-	const hasTsConfig = await isFile(resolve(options.root, 'wmr.config.ts'));
-	const hasMjsConfig = await isFile(resolve(options.root, 'wmr.config.mjs'));
+	const EXTENSIONS = ['.js', '.ts', '.mjs'];
 
 	let custom;
-	if (hasTsConfig) {
-		const resolved = resolve(options.root, 'wmr.config.ts');
-		await compileSingleModule(resolved, { cwd: options.cwd, out: resolve('.'), hmr: false });
-		const output = resolve('.', 'wmr.config.js');
-		const fileUrl = url.pathToFileURL(output);
-		custom = await eval('(x => import(x))')(fileUrl);
-		fs.unlink(output);
-	} else if (hasMjsConfig || (await isFile(resolve(options.root, 'wmr.config.js')))) {
-		let initialConfigFile = hasMjsConfig ? 'wmr.config.mjs' : 'wmr.config.js',
-			initialError;
-		try {
-			const resolved = resolve(options.root, initialConfigFile);
-			const fileUrl = url.pathToFileURL(resolved);
-			// Note: the eval() below is to prevent Rollup from transforming import() and require().
-			// Using the native functions allows us to load ESM and CJS with Node's own semantics.
+	let initialError;
+	for (const ext of EXTENSIONS) {
+		const file = resolve(options.root, `wmr.config${ext}`);
+		if (await isFile(file)) {
+			let configFile = file;
+			if (ext === '.ts') {
+				// Create a temporary file to write compiled output into
+				// TODO: Do this in memory
+				configFile = resolve(options.root, 'wmr.config.js');
+				await compileSingleModule(file, { cwd: options.cwd, out: resolve('.'), hmr: false });
+			}
+
+			const fileUrl = url.pathToFileURL(configFile);
 			try {
 				custom = await eval('(x => import(x))')(fileUrl);
 			} catch (err) {
 				console.log(err);
 				initialError = err;
-				custom = eval('(x => require(x))')(fileUrl);
+				try {
+					custom = eval('(x => require(x))')(fileUrl);
+				} catch (err2) {
+					if (ext === '.mjs' || !/import statement/.test(err2)) {
+						throw Error(`Failed to load wmr.config${ext}\n${initialError}\n${err2}`);
+					}
+				}
 			}
-		} catch (e) {
-			if (hasMjsConfig || !/import statement/.test(e)) {
-				throw Error(`Failed to load ${initialConfigFile}\n${initialError}\n${e}`);
+
+			// Remove temporary file
+			if (ext === '.ts') {
+				fs.unlink(configFile);
 			}
 		}
 	}
