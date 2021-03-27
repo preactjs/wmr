@@ -87,14 +87,16 @@ export async function bundleProd({
 		input.push('./' + pathToPosix(relative(root, abs)));
 	});
 
+	// Plugins are pre-sorted
+	const split = plugins.findIndex(p => p.enforce !== 'post');
+
 	const bundle = await rollup.rollup({
 		input,
 		perf: !!profile,
 		preserveEntrySignatures: 'allow-extension',
 		manualChunks: npmChunks ? extractNpmChunks : undefined,
 		plugins: [
-			...plugins.filter(p => p.enforce === 'pre'),
-			...plugins.filter(p => p.enforce === 'normal' || !p.enforce),
+			...plugins.slice(0, split),
 			nodeBuiltinsPlugin({ production: true }),
 			externalUrlsPlugin(),
 			sucrasePlugin({
@@ -128,7 +130,7 @@ export async function bundleProd({
 			npmPlugin({ external: false }),
 			urlPlugin({}),
 			jsonPlugin(),
-			...plugins.filter(p => p.enforce === 'post'),
+			...plugins.slice(split),
 			bundlePlugin({ cwd }),
 			optimizeGraphPlugin({ publicPath }),
 			minify && minifyCssPlugin({ sourcemap }),
