@@ -160,6 +160,19 @@ describe('fixtures', () => {
 			expect(await env.page.evaluate(`window.React === window.preactCompat`)).toBe(true);
 			expect(await env.page.evaluate(`window.ReactDOM === window.preactCompat`)).toBe(true);
 		});
+
+		it('should alias directories', async () => {
+			await loadFixture('alias-dir', env);
+			instance = await runWmrFast(env.tmp.path);
+			await page.goto(await instance.address);
+			try {
+				const foo = await env.page.evaluate(`import('./index.js').then(r => r.foo)`);
+				expect(foo).toEqual(42);
+			} catch (err) {
+				console.log(instance.output);
+				throw err;
+			}
+		});
 	});
 
 	describe('rmwc', () => {
