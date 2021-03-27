@@ -1,6 +1,6 @@
 import server from './server.js';
 import wmrMiddleware from './wmr-middleware.js';
-import { getFreePort, getServerAddresses } from './lib/net-utils.js';
+import { getFreePort, getServerAddresses, isPortFree } from './lib/net-utils.js';
 import { normalizeOptions } from './lib/normalize-options.js';
 import { setCwd } from './plugins/npm-plugin/registry.js';
 import { formatBootMessage } from './lib/output-utils.js';
@@ -21,7 +21,19 @@ export default async function start(options = {}) {
 
 	options = await normalizeOptions(options, 'start');
 
-	options.port = await getFreePort(options.port || process.env.PORT || 8080);
+	// Don't use another free port if the user explicitely
+	// requested a specific one.
+	const userPort = options.port || process.env.PORT;
+	if (userPort !== undefined) {
+		if (await isPortFree(+userPort)) {
+			options.port = +userPort;
+		} else {
+			throw new Error(`Another process is already running on port ${userPort}. Please choose a different port.`);
+		}
+	} else {
+		options.port = await getFreePort(8080);
+	}
+
 	options.host = options.host || process.env.HOST;
 
 	options.middleware = [].concat(
