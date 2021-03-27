@@ -2,6 +2,28 @@ import net from 'net';
 import os from 'os';
 
 /**
+ * Check if a port is free
+ * @param {number} port
+ * @returns {Promise<boolean>}
+ */
+export async function isPortFree(port) {
+	try {
+		await new Promise((resolve, reject) => {
+			const server = net.createServer();
+			server.unref();
+			server.on('error', reject);
+			server.listen({ port }, () => {
+				server.close(resolve);
+			});
+		});
+		return true;
+	} catch (err) {
+		if (err.code !== 'EADDRINUSE') throw err;
+		return false;
+	}
+}
+
+/**
  * Check if the requested port is free and increase port number
  * sequentially until we find a free port.
  * @param {number|string} port The suggested port to listen on
@@ -15,19 +37,7 @@ export async function getFreePort(port) {
 
 	// Limit to 20 attempts for now
 	while (!found && attempts <= 20) {
-		try {
-			await new Promise((resolve, reject) => {
-				const server = net.createServer();
-				server.unref();
-				server.on('error', reject);
-				server.listen({ port }, () => {
-					port = server.address().port;
-					found = true;
-					server.close(resolve);
-				});
-			});
-		} catch (err) {
-			if (err.code !== 'EADDRINUSE') throw err;
+		if (!isPortFree(port)) {
 			port++;
 			attempts++;
 		}
