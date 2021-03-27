@@ -20,8 +20,8 @@ declare module 'wmr' {
 		 * Specify when a plugin should be executed.
 		 */
 		enforce?: 'pre' | 'post' | 'normal';
-		config?: (config: Options) => Partial<Options>;
-		configResolved?: (config: Options) => Partial<Options>;
+		config?: (config: Options) => Partial<Options> | void;
+		configResolved?: (config: Options) => Partial<Options> | void;
 	}
 
 	export interface Options {

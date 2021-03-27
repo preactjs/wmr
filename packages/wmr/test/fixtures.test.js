@@ -601,6 +601,14 @@ describe('fixtures', () => {
 			expect(text).toEqual('file pre1 pre2 normal1 normal2 post1 post2');
 		});
 
+		it('should support config() and configResolved() hooks', async () => {
+			await loadFixture('plugin-config', env);
+			instance = await runWmrFast(env.tmp.path);
+			await env.page.goto(await instance.address);
+			expect(await env.page.evaluate(`fetch('/test').then(r => r.text())`)).toEqual('it works');
+			expect(await env.page.evaluate(`fetch('/test-resolved').then(r => r.text())`)).toEqual('it works');
+		});
+
 		it('should add middlewares via config', async () => {
 			await loadFixture('plugin-middlewares', env);
 			instance = await runWmrFast(env.tmp.path);
