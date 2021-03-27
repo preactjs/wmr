@@ -17,6 +17,7 @@ import jsonPlugin from '../plugins/json-plugin.js';
 import optimizeGraphPlugin from '../plugins/optimize-graph-plugin.js';
 import externalUrlsPlugin from '../plugins/external-urls-plugin.js';
 import copyAssetsPlugin from '../plugins/copy-assets-plugin.js';
+import fsPlugin from '../plugins/fs-plugin.js';
 import nodeBuiltinsPlugin from '../plugins/node-builtins-plugin.js';
 import dynamicImportVars from '@rollup/plugin-dynamic-import-vars';
 
@@ -34,6 +35,7 @@ export function getPlugins(options) {
 
 	return [
 		...plugins.slice(0, split),
+		fsPlugin({ root, cwd }),
 		production && htmlEntriesPlugin({ cwd, publicPath }),
 		externalUrlsPlugin(),
 		nodeBuiltinsPlugin({ production }),

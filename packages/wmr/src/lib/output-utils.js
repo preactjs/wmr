@@ -153,8 +153,9 @@ export function formatPath(path, root) {
 	if (path.startsWith('\b') || path.startsWith('\0')) {
 		path = JSON.stringify(path);
 	}
-	if (path.startsWith(process.cwd())) {
-		path = relative(process.cwd(), path);
+
+	if (!path.startsWith('/@') && (path.startsWith(root) || path.startsWith('/'))) {
+		path = relative(root, path);
 	}
 
 	return path;

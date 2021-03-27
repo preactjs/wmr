@@ -10,7 +10,6 @@ import { debug, formatResolved } from '../lib/output-utils.js';
 export default function aliasesPlugin({ aliases }) {
 	const log = debug('aliases');
 	let pkgFilename;
-
 	return {
 		name: 'aliases',
 		async resolveId(id, importer) {
@@ -29,14 +28,20 @@ export default function aliasesPlugin({ aliases }) {
 				}
 			}
 			if (aliased == null) return;
-			if (aliased.startsWith('./')) {
+			if (aliased.startsWith('./') || aliased.startsWith('../')) {
 				aliased = resolve(dirname(pkgFilename), aliased);
+			} else {
+				aliased = resolve(aliased);
 			}
 			if (aliased === id) return;
+
+			if (!aliased.startsWith(root)) {
+				aliased = posix.join(`/@fs`, aliased);
+			}
 			// now allow other resolvers to handle the aliased version
 			// (this is important since they may mark as external!)
 			const resolved = await this.resolve(aliased, importer, { skipSelf: true });
-			log(formatResolved(id, resolved));
+			log(formatResolved(id, resolved, root));
 			return resolved;
 		}
 	};
