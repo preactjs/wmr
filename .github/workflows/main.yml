@@ -71,4 +71,4 @@ jobs:
       - name: Build
         run: yarn ci
       - name: LHCI
-        run: lhci autorun --upload.target=temporary-public-storage --collect.url="http://localhost:8080" --collect.startServerCommand="yarn workspace @examples/demo serve" --upload.githubAppToken=${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+        run: lhci autorun --upload.target=temporary-public-storage --collect.url="http://localhost:8080" --collect.startServerCommand="yarn workspace @examples/demo serve" --collect.startServerReadyPattern="server running at" --upload.githubAppToken=${{ secrets.LHCI_GITHUB_APP_TOKEN }}
