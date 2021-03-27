@@ -8,10 +8,10 @@ const escapeUrl = url => url.replace(/#/g, '%23').replace(/'/g, "\\'").replace(/
 /**
  * @param {object} [options]
  * @param {object} [options.inline = false] Emit a Data URL module exporting the URL string.
- * @param {object} [options.cwd] Used to resolve the URL when `inline` is `true`.
+ * @param {object} [options.root] Used to resolve the URL when `inline` is `true`.
  * @returns {import('rollup').Plugin}
  */
-export default function urlPlugin({ inline, cwd } = {}) {
+export default function urlPlugin({ inline, root } = {}) {
 	return {
 		name: 'url-plugin',
 		async resolveId(id, importer) {
@@ -35,7 +35,7 @@ export default function urlPlugin({ inline, cwd } = {}) {
 
 			// In dev mode, we turn the import into an inline module that avoids a network request:
 			if (inline) {
-				const url = '/' + relative(cwd, resolved.id).replace(/^\./, '').split(sep).join(posix.sep) + '?asset';
+				const url = '/' + relative(root, resolved.id).replace(/^\./, '').split(sep).join(posix.sep) + '?asset';
 				return {
 					id: escapeUrl(`data:text/javascript,export default${JSON.stringify(url)}`),
 					external: true

@@ -40,7 +40,7 @@ export function getPlugins(options) {
 		urlPlugin({ inline: !production, cwd }),
 		jsonPlugin({ cwd }),
 		bundlePlugin({ inline: !production, cwd }),
-		aliasesPlugin({ aliases, cwd: root }),
+		aliasesPlugin({ aliases }),
 		sucrasePlugin({
 			typescript: true,
 			sourcemap,

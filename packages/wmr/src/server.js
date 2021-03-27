@@ -17,8 +17,8 @@ import { hasDebugFlag } from './lib/output-utils.js';
 
 /**
  * @param {object} options
- * @param {string} [options.cwd = ''] Directory to serve
- * @param {string} [options.root] Virtual process.cwd
+ * @param {string} options.root Directory to serve
+ * @param {string} options.cwd Virtual process.cwd
  * @param {string} [options.publicDir] A directory containing public files, relative to cwd
  * @param {string} [options.overlayDir] A directory of generated files to serve if present, relative to cwd
  * @param {polka.Middleware[]} [options.middleware] Additional Polka middlewares to inject
@@ -29,9 +29,9 @@ import { hasDebugFlag } from './lib/output-utils.js';
  */
 export default async function server({ cwd, root, overlayDir, middleware, http2, compress = true, optimize, aliases }) {
 	try {
-		await fs.access(resolve(cwd, 'index.html'));
+		await fs.access(resolve(root, 'index.html'));
 	} catch (e) {
-		process.stderr.write(kl.yellow(`Warning: missing "index.html" file ${kl.dim(`(in ${cwd})`)}`) + '\n');
+		process.stderr.write(kl.yellow(`Warning: missing "index.html" file ${kl.dim(`(in ${root})`)}`) + '\n');
 	}
 
 	/** @type {CustomServer} */
@@ -65,7 +65,7 @@ export default async function server({ cwd, root, overlayDir, middleware, http2,
 			res.end(msg);
 			const displayPath = fullPath.startsWith('/@')
 				? fullPath
-				: './' + join(relative(root, cwd), fullPath.replace(/^\//, ''));
+				: './' + join(relative(cwd, root), fullPath.replace(/^\//, ''));
 			console.error(`${kl.yellow(code)} ${kl.bold(displayPath)} ${msg ? ` - ${msg}` : ''}`);
 		}
 	});
@@ -92,19 +92,19 @@ export default async function server({ cwd, root, overlayDir, middleware, http2,
 		app.use(compression({ threshold, level: 4 }));
 	}
 
-	app.use('/@npm', npmMiddleware({ aliases, optimize, cwd: root }));
+	app.use('/@npm', npmMiddleware({ aliases, optimize, cwd, root }));
 
 	if (middleware) {
 		app.use(...middleware);
 	}
 
 	if (overlayDir) {
-		app.use(sirv(resolve(cwd || '', overlayDir), { dev: true }));
+		app.use(sirv(resolve(root || '', overlayDir), { dev: true }));
 	}
 
 	// SPA nav fallback
 	app.use(
-		sirv(cwd || '', {
+		sirv(root || '', {
 			ignores: ['@npm'],
 			single: true,
 			etag: true,

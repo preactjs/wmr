@@ -4,11 +4,11 @@ import { debug } from '../lib/output-utils.js';
 
 /**
  * @param {object} [options]
- * @param {string} [options.cwd] for creating relative bundle paths
+ * @param {string} [options.root] for creating relative bundle paths
  * @param {boolean} [options.inline] Resolve bundle: imports to an inline module as a data URL.
  * @returns {import('rollup').Plugin}
  */
-export default function bundlePlugin({ cwd = '.', inline } = {}) {
+export default function bundlePlugin({ root = '.', inline } = {}) {
 	const log = debug('bundle');
 	return {
 		name: 'bundle-plugin',
@@ -17,7 +17,7 @@ export default function bundlePlugin({ cwd = '.', inline } = {}) {
 			const resolved = await this.resolve(id.slice(7), importer, { skipSelf: true });
 			if (resolved) {
 				if (inline) {
-					const url = '/' + relative(cwd, resolved.id).replace(/^\./, '');
+					const url = '/' + relative(root, resolved.id).replace(/^\./, '');
 					log(`[inline] ${kl.dim(url)}`);
 					return {
 						id: `data:text/javascript,export default${encodeURIComponent(JSON.stringify(url))}`,
@@ -36,7 +36,7 @@ export default function bundlePlugin({ cwd = '.', inline } = {}) {
 			const fileId = this.emitFile({
 				type: 'chunk',
 				id
-				// fileName: relative(cwd, id)
+				// fileName: relative(root, id)
 			});
 			this.addWatchFile(id);
 			return `export default import.meta.ROLLUP_FILE_URL_${fileId}`;

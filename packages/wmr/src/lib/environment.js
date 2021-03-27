@@ -44,15 +44,15 @@ export function parseEnvFile(str) {
 
 /**
  * Load additional environment variables from .env files.
- * @param {string} cwd
+ * @param {string} dir
  * @param {string[]} envFiles
  * @param {string[]} [configWatchFiles]
  * @returns {Promise<Record<string, string>>}
  */
-export async function readEnvFiles(cwd, envFiles, configWatchFiles) {
+export async function readEnvFiles(dir, envFiles, configWatchFiles) {
 	const envs = await Promise.all(
 		envFiles.map(async file => {
-			const fileName = join(cwd, file);
+			const fileName = join(dir, file);
 			try {
 				const content = await fs.readFile(fileName, 'utf-8');
 				if (configWatchFiles) configWatchFiles.push(fileName);

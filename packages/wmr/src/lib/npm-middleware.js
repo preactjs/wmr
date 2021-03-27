@@ -34,14 +34,15 @@ async function handleAsset(meta, res) {
 }
 
 /**
- * @param {object} [options]
+ * @param {object} options
  * @param {'npm'|'unpkg'} [options.source = 'npm'] How to fetch package files
  * @param {Record<string,string>} [options.aliases]
  * @param {boolean} [options.optimize = true] Progressively minify and compress dependency bundles?
- * @param {string} [options.cwd] Virtual cwd
+ * @param {string} options.cwd
+ * @param {string} options.root
  * @returns {import('polka').Middleware}
  */
-export default function npmMiddleware({ source = 'npm', aliases, optimize, cwd } = {}) {
+export default function npmMiddleware({ source = 'npm', aliases, optimize, cwd, root }) {
 	return async (req, res, next) => {
 		// @ts-ignore
 		const mod = req.path.replace(/^\//, '');
@@ -77,7 +78,7 @@ export default function npmMiddleware({ source = 'npm', aliases, optimize, cwd }
 			if (cached) return sendCachedBundle(req, res, cached);
 
 			// const start = Date.now();
-			const code = await bundleNpmModule(mod, { source, aliases, cwd });
+			const code = await bundleNpmModule(mod, { source, aliases, cwd, root });
 			// console.log(`Bundle dep: ${mod}: ${Date.now() - start}ms`);
 
 			// send it!
@@ -105,9 +106,10 @@ let npmCache;
  * @param {object} options
  * @param {'npm'|'unpkg'} [options.source]
  * @param {Record<string,string>} [options.aliases]
- * @param {string} [options.cwd]
+ * @param {string} options.cwd
+ * @param {string} options.root
  */
-async function bundleNpmModule(mod, { source, aliases, cwd }) {
+async function bundleNpmModule(mod, { source, aliases, cwd, root }) {
 	let npmProviderPlugin;
 
 	if (source === 'unpkg') {
@@ -133,7 +135,7 @@ async function bundleNpmModule(mod, { source, aliases, cwd }) {
 		preserveEntrySignatures: 'allow-extension',
 		plugins: [
 			nodeBuiltinsPlugin({}),
-			aliasesPlugin({ aliases, cwd }),
+			aliasesPlugin({ aliases, cwd, root }),
 			npmProviderPlugin,
 			processGlobalPlugin({
 				NODE_ENV: 'development'

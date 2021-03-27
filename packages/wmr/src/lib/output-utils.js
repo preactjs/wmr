@@ -141,10 +141,11 @@ export function debug(namespace, color = selectColor(namespace)) {
 /**
  * Serialize path to display special characters such as
  * the null byte of necessary.
- * @param {string} path
+ * @param {string | null | import('rollup').ResolvedId} path
+ * @param {string} root
  * @returns {string}
  */
-export function formatPath(path) {
+export function formatPath(path, root) {
 	path = path || 'null';
 	if (typeof path === 'object') {
 		path = path.id;
@@ -162,10 +163,11 @@ export function formatPath(path) {
 /**
  * @param {string} from
  * @param {import('rollup').ResolvedId | string | null} to
+ * @param {string} root
  */
-export function formatResolved(from, to) {
-	from = formatPath(from);
-	to = formatPath(to);
+export function formatResolved(from, to, root) {
+	from = formatPath(from, root);
+	to = formatPath(to, root);
 	return `${kl.cyan(from)} -> ${kl.dim(to)}`;
 }
 

@@ -145,10 +145,10 @@ export default function wmrMiddleware(options) {
 		// convert to OS path:
 		const osPath = path.slice(1).split(posix.sep).join(sep);
 
-		let file = resolve(cwd, osPath);
+		let file = resolve(root, osPath);
 
 		// Rollup-style CWD-relative Unix-normalized path "id":
-		let id = relative(cwd, file)
+		let id = relative(root, file)
 			.replace(/^\.\//, '')
 			.replace(/^[\0\b]/, '')
 			.split(sep)
@@ -163,7 +163,7 @@ export default function wmrMiddleware(options) {
 			res.setHeader('Content-Type', type);
 		}
 
-		const ctx = { req, res, id, file, path, prefix, cwd, out, NonRollup, next };
+		const ctx = { req, res, id, file, path, prefix, cwd, root, out, NonRollup, next };
 
 		let transform;
 		if (path === '/_wmr.js') {
@@ -263,7 +263,7 @@ export const TRANSFORMS = {
 	},
 
 	// Handle individual JavaScript modules
-	async js({ id, file, prefix, res, cwd, out, NonRollup, req }) {
+	async js({ id, file, prefix, res, cwd, root, out, NonRollup, req }) {
 		let code;
 		try {
 			res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
@@ -311,7 +311,7 @@ export const TRANSFORMS = {
 							// console.log('external: ', spec);
 							if (/^(data|https?):/.test(spec)) return spec;
 
-							spec = relative(cwd, spec).split(sep).join(posix.sep);
+							spec = relative(root, spec).split(sep).join(posix.sep);
 							if (!/^(\/|[\w-]+:)/.test(spec)) spec = `/${spec}`;
 							return spec;
 						}
@@ -321,7 +321,7 @@ export const TRANSFORMS = {
 					spec = spec.replace(/^\0?([a-z-]+):(.+)$/, (s, prefix, spec) => {
 						// \0abc:/abs/disk/path --> /@abc/cwd-relative-path
 						if (spec[0] === '/' || spec[0] === sep) {
-							spec = relative(cwd, spec).split(sep).join(posix.sep);
+							spec = relative(root, spec).split(sep).join(posix.sep);
 						}
 						return '/@' + prefix + '/' + spec;
 					});
@@ -374,7 +374,7 @@ export const TRANSFORMS = {
 		}
 	},
 	// Handles "CSS Modules" proxy modules (style.module.css.js)
-	async cssModule({ id, file, cwd, out, res }) {
+	async cssModule({ id, file, cwd, root, out, res }) {
 		res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
 
 		// Cache the generated mapping/proxy module with a .js extension (the CSS itself is also cached)
@@ -386,6 +386,7 @@ export const TRANSFORMS = {
 		const container = createPluginContainer(
 			[wmrPlugin({ hot: true }), sassPlugin(), wmrStylesPlugin({ cwd, hot: true, fullPath: true })],
 			{
+				root,
 				cwd,
 				output: {
 					dir: out,

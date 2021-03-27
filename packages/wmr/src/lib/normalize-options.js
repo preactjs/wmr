@@ -33,7 +33,7 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 
 	const NODE_ENV = process.env.NODE_ENV || (prod ? 'production' : 'development');
 	options.env = await readEnvFiles(
-		options.root,
+		options.cwd,
 		['.env', '.env.local', `.env.${NODE_ENV}`, `.env.${NODE_ENV}.local`],
 		configWatchFiles
 	);
@@ -63,12 +63,12 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 	// If the CWD has a public/ directory, all files are assumed to be within it.
 	// From here, everything except node_modules and `out` are relative to public:
 	if (options.public !== '.' && (await isDirectory(join(options.cwd, options.public)))) {
-		options.cwd = join(options.cwd, options.public);
+		options.root = join(options.cwd, options.public);
 	}
 
 	await ensureOutDirPromise;
 
-	const pkgFile = resolve(options.root, 'package.json');
+	const pkgFile = resolve(options.cwd, 'package.json');
 	try {
 		const pkg = JSON.parse(await fs.readFile(pkgFile, 'utf-8'));
 		options.aliases = pkg.alias || {};
@@ -82,7 +82,7 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 	let custom;
 	let initialError;
 	for (const ext of EXTENSIONS) {
-		const file = resolve(options.root, `wmr.config${ext}`);
+		const file = resolve(options.cwd, `wmr.config${ext}`);
 		if (await isFile(file)) {
 			let configFile = file;
 			configWatchFiles.push(configFile);

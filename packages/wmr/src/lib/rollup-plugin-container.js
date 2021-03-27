@@ -34,7 +34,8 @@ function identifierPair(id, importer) {
 /**
  * @typedef PluginContainerOptions
  * @property {import('rollup').OutputOptions} [output]
- * @property {string} [cwd]
+ * @property {string} cwd
+ * @property {string} root
  * @property {Map<string, { info: import('rollup').ModuleInfo }>} [modules]
  * @property {(name: string, source: string | Uint8Array) => void} [writeFile]
  */
@@ -46,9 +47,9 @@ function identifierPair(id, importer) {
 
 /**
  * @param {Plugin[]} plugins
- * @param {import('rollup').InputOptions & PluginContainerOptions} [opts]
+ * @param {import('rollup').InputOptions & PluginContainerOptions} opts
  */
-export function createPluginContainer(plugins, opts = {}) {
+export function createPluginContainer(plugins, opts) {
 	if (!Array.isArray(plugins)) plugins = [plugins];
 
 	const MODULES = opts.modules || new Map();
@@ -63,7 +64,7 @@ export function createPluginContainer(plugins, opts = {}) {
 			fileName = fileName.replace('[ext]', posix.extname(posixName).substring(1));
 			fileName = fileName.replace('[name]', posix.basename(posixName).replace(/\.[a-z0-9]+$/g, ''));
 		}
-		const result = resolve(opts.cwd || '.', ctx.outputOptions.dir || '.', fileName);
+		const result = resolve(opts.root, ctx.outputOptions.dir || '.', fileName);
 		// console.log('filename for ' + name + ': ', result);
 		return result;
 	}
@@ -107,7 +108,7 @@ export function createPluginContainer(plugins, opts = {}) {
 			if (typeof out === 'string') out = { id: out };
 			if (!out || !out.id) out = { id };
 			if (out.id.match(/^\.\.?[/\\]/)) {
-				out.id = resolve(opts.cwd || '.', importer ? dirname(importer) : '.', out.id);
+				out.id = resolve(opts.root, importer ? dirname(importer) : '.', out.id);
 			}
 			return out || false;
 		},
@@ -229,7 +230,7 @@ export function createPluginContainer(plugins, opts = {}) {
 			let originalId = id;
 			const key = identifierPair(id, importer);
 
-			const opts = {};
+			const pluginOpts = {};
 			for (const p of plugins) {
 				if (!p.resolveId) continue;
 
@@ -253,16 +254,16 @@ export function createPluginContainer(plugins, opts = {}) {
 					id = result;
 				} else {
 					id = result.id;
-					Object.assign(opts, result);
+					Object.assign(pluginOpts, result);
 				}
 
-				logResolve(`${formatResolved(originalId, id)} [${p.name}]`);
+				logResolve(`${formatResolved(originalId, id, opts.root)} [${p.name}]`);
 				// resolveId() is hookFirst - first non-null result is returned.
 				break;
 			}
 
-			opts.id = id;
-			return Object.keys(opts).length > 1 ? opts : id;
+			pluginOpts.id = id;
+			return Object.keys(pluginOpts).length > 1 ? pluginOpts : id;
 		},
 
 		/**
@@ -275,7 +276,7 @@ export function createPluginContainer(plugins, opts = {}) {
 				const result = await plugin.transform.call(ctx, code, id);
 				if (!result) continue;
 
-				logTransform(`${kl.dim(formatPath(id))} [${plugin.name}]`);
+				logTransform(`${kl.dim(formatPath(id, opts.root))} [${plugin.name}]`);
 				if (typeof result === 'object') {
 					code = result.code;
 				} else {
@@ -294,7 +295,7 @@ export function createPluginContainer(plugins, opts = {}) {
 				if (!plugin.load) continue;
 				const result = await plugin.load.call(ctx, id);
 				if (result) {
-					logLoad(`${formatPath(id)} [${plugin.name}]`);
+					logLoad(`${formatPath(id, opts.root)} [${plugin.name}]`);
 					return result;
 				}
 			}
@@ -305,7 +306,7 @@ export function createPluginContainer(plugins, opts = {}) {
 			referenceId = String(referenceId);
 			const file = files.get(referenceId);
 			if (file == null) return null;
-			const out = resolve(opts.cwd || '.', ctx.outputOptions.dir || '.');
+			const out = resolve(opts.root, ctx.outputOptions.dir || '.');
 			const fileName = relative(out, file.filename);
 			const assetInfo = {
 				referenceId,

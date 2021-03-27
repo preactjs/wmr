@@ -23,12 +23,11 @@ let cache;
 /**
  * @param {string} input
  * @param {object} options
- * @param {string} options.cwd
  * @param {string} options.out
  * @param {boolean} [options.hmr]
  * @param {boolean} [options.rewriteNodeImports]
  */
-export const compileSingleModule = withCache(async (input, { cwd, out, hmr = true, rewriteNodeImports = true }) => {
+export const compileSingleModule = withCache(async (input, { out, hmr = true, rewriteNodeImports = true }) => {
 	input = input.replace(/\.css\.js$/, '.css');
 	// console.log('compiling ' + input);
 	const bundle = await rollup.rollup({
