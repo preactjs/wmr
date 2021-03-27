@@ -15,6 +15,7 @@
 		"allowSyntheticDefaultImports": true,
 		"downlevelIteration": true
 	},
+	"include": ["node_modules/wmr/index.d.ts"],
 	"typeAcquisition": {
 		"enable": true
 	}
