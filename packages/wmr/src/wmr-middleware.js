@@ -66,7 +66,7 @@ export default function wmrMiddleware({
 	root = root || cwd;
 
 	// Plugins are pre-sorted
-	const split = plugins.findIndex(p => p.enforce !== 'post');
+	const split = plugins.findIndex(p => p.enforce === 'post');
 	const NonRollup = createPluginContainer(
 		[
 			...plugins.slice(0, split),

@@ -88,7 +88,7 @@ export async function bundleProd({
 	});
 
 	// Plugins are pre-sorted
-	const split = plugins.findIndex(p => p.enforce !== 'post');
+	const split = plugins.findIndex(p => p.enforce === 'post');
 
 	const bundle = await rollup.rollup({
 		input,
