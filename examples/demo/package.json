@@ -14,7 +14,8 @@
 		"check:lhci": "yarn build && lhci autorun --collect.url='http://localhost:8080' --collect.startServerCommand='yarn serve --port 8080' --collect.startServerReadyPattern='server running at'"
 	},
 	"alias": {
-		"react": "preact/compat"
+		"react": "preact/compat",
+		"~": "./foo"
 	},
 	"devDependencies": {
 		"wmr": "*",

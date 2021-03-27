@@ -13,6 +13,7 @@ export default function Header() {
 				<a href="/files">Files</a>
 				<a href="/env">Env</a>
 				<a href="/json">JSON</a>
+				<a href="/alias">Alias</a>
 				<a href="/error">Error</a>
 			</nav>
 			<label>

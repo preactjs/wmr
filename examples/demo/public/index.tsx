@@ -21,6 +21,7 @@ const ClassFields = lazy(() => import('./pages/class-fields.js'));
 const Files = lazy(() => import('./pages/files/index.js'));
 const Environment = lazy(async () => (await import('./pages/environment/index.js')).Environment);
 const JSONView = lazy(async () => (await import('./pages/json.js')).JSONView);
+const Alias = lazy(async () => await import('./pages/alias.js'));
 
 export function App() {
 	return (
@@ -37,6 +38,7 @@ export function App() {
 						<Files path="/files" />
 						<Environment path="/env" />
 						<JSONView path="/json" />
+						<Alias path="/alias" />
 						<NotFound default />
 					</Router>
 				</ErrorBoundary>
