@@ -241,17 +241,17 @@ describe('production', () => {
 			const main = await fs.readFile(path.join(env.tmp.path, 'dist', roots[2]), 'utf8');
 
 			// https://cdn.example.com/assets/math.d41e7373.css
-			expect(math.includes(`("https://cdn.example.com/assets/${assets[1]}")`)).toBe(true);
-			expect(math.includes(`import("./${chunks[0]}")`)).toBe(true);
+			expect(math).toMatch(`("https://cdn.example.com/assets/${assets[1]}")`);
+			expect(math).toMatch(`import("./${chunks[0]}")`);
 
 			// (preload) https://cdn.example.com/assets/math.d41e7373.css
-			expect(main.includes(`$w_s$("https://cdn.example.com/assets/${assets[1]}")`)).toBe(true);
+			expect(main).toMatch(`$w_s$("https://cdn.example.com/assets/${assets[1]}")`);
 
 			// HTML stylesheet: https://cdn.example.com/assets/index.0544f0a6.css
-			expect(html.includes(`href="https://cdn.example.com/assets/${assets[0]}"`)).toBe(true);
+			expect(html).toMatch(`href="https://cdn.example.com/assets/${assets[0]}"`);
 
 			// HTML script: https://cdn.example.com/assets/index.0544f0a6.css
-			expect(html.includes(`src="https://cdn.example.com/${roots[2]}"`)).toBe(true);
+			expect(html).toMatch(`src="https://cdn.example.com/${roots[2]}"`);
 		});
 
 		it('should respect `config.publicPath` value (ts)', async () => {
@@ -278,17 +278,17 @@ describe('production', () => {
 			const main = await fs.readFile(path.join(env.tmp.path, 'dist', roots[2]), 'utf8');
 
 			// https://cdn.example.com/assets/math.d41e7373.css
-			expect(math.includes(`("https://cdn.example.com/assets/${assets[1]}")`)).toBe(true);
-			expect(math.includes(`import("./${chunks[0]}")`)).toBe(true);
+			expect(math).toMatch(`("https://cdn.example.com/assets/${assets[1]}")`);
+			expect(math).toMatch(`import("./${chunks[0]}")`);
 
 			// (preload) https://cdn.example.com/assets/math.d41e7373.css
-			expect(main.includes(`$w_s$("https://cdn.example.com/assets/${assets[1]}")`)).toBe(true);
+			expect(main).toMatch(`$w_s$("https://cdn.example.com/assets/${assets[1]}")`);
 
 			// HTML stylesheet: https://cdn.example.com/assets/index.0544f0a6.css
-			expect(html.includes(`href="https://cdn.example.com/assets/${assets[0]}"`)).toBe(true);
+			expect(html).toMatch(`href="https://cdn.example.com/assets/${assets[0]}"`);
 
 			// HTML script: https://cdn.example.com/assets/index.0544f0a6.css
-			expect(html.includes(`src="https://cdn.example.com/${roots[2]}"`)).toBe(true);
+			expect(html).toMatch(`src="https://cdn.example.com/${roots[2]}"`);
 		});
 	});
 
