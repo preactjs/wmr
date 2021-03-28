@@ -1,81 +1,15 @@
 import { relative, sep, posix, resolve, dirname } from 'path';
 import * as rollup from 'rollup';
-import htmPlugin from './plugins/htm-plugin.js';
-import sucrasePlugin from './plugins/sucrase-plugin.js';
-import wmrPlugin from './plugins/wmr/plugin.js';
-import wmrStylesPlugin from './plugins/wmr/styles-plugin.js';
-import sassPlugin from './plugins/sass-plugin.js';
 import terser from './plugins/fast-minify.js';
-import npmPlugin from './plugins/npm-plugin/index.js';
-import publicPathPlugin from './plugins/public-path-plugin.js';
-import minifyCssPlugin from './plugins/minify-css-plugin.js';
-import htmlEntriesPlugin from './plugins/html-entries-plugin.js';
 import totalist from 'totalist';
-import aliasesPlugin from './plugins/aliases-plugin.js';
-import processGlobalPlugin from './plugins/process-global-plugin.js';
-import urlPlugin from './plugins/url-plugin.js';
-import resolveExtensionsPlugin from './plugins/resolve-extensions-plugin.js';
-import fastCjsPlugin from './plugins/fast-cjs-plugin.js';
-import bundlePlugin from './plugins/bundle-plugin.js';
-import jsonPlugin from './plugins/json-plugin.js';
-import optimizeGraphPlugin from './plugins/optimize-graph-plugin.js';
-import externalUrlsPlugin from './plugins/external-urls-plugin.js';
-import copyAssetsPlugin from './plugins/copy-assets-plugin.js';
-import nodeBuiltinsPlugin from './plugins/node-builtins-plugin.js';
-import dynamicImportVars from '@rollup/plugin-dynamic-import-vars';
+import { getPlugins } from './lib/plugins.js';
 
 /** @param {string} p */
 const pathToPosix = p => p.split(sep).join(posix.sep);
 
-/** @typedef {import('rollup').OutputOptions} OutputOptions */
-/** @typedef {OutputOptions | ((opts: OutputOptions) => OutputOptions)} Output */
-
-/**
- * @typedef {Object} BuildOptions
- * @property {string} [cwd = '']
- * @property {string} [root = ''] cwd without implicit ./public dir
- * @property {string} [publicDir = '']
- * @property {string} [publicPath = '/']
- * @property {string} [out = '.cache']
- * @property {boolean} [sourcemap]
- * @property {boolean} [minify = true]
- * @property {Record<string, string>} [aliases] module aliases
- * @property {boolean} [profile] Enable bundler performance profiling
- * @property {Record<string, string>} [env]
- * @property {import('rollup').Plugin[]} plugins
- * @property {Output | Output[]} [output]
- * @property {(error: BuildError)=>void} [onError]
- * @property {(error: BuildEvent)=>void} [onBuild]
- */
-
-/**
- * @typedef BuildEvent
- * @type {{ changes: string[] } & Extract<rollup.RollupWatcherEvent, { code: 'BUNDLE_END' }> }}
- */
-
-/**
- * @typedef BuildError
- * @type {rollup.RollupError & { clientMessage?: string }}
- */
-
-/** @param {BuildOptions & { npmChunks?: boolean, plugins: Options["plugins"] }} options */
-export async function bundleProd({
-	cwd,
-	root,
-	publicDir,
-	publicPath = '/',
-	out,
-	sourcemap,
-	aliases,
-	profile,
-	env = {},
-	plugins,
-	output,
-	minify = true,
-	npmChunks = false
-}) {
-	cwd = cwd || '';
-	root = root || cwd;
+/** @param {import('wmr').BuildOptions} options */
+export async function bundleProd(options) {
+	let { cwd, root, out, sourcemap, profile, minify, npmChunks = false, output } = options;
 
 	// note: we intentionally pass these to Rollup as posix paths
 	const ignore = /^\.\/(node_modules|dist|build)\//;
@@ -87,55 +21,12 @@ export async function bundleProd({
 		input.push('./' + pathToPosix(relative(root, abs)));
 	});
 
-	// Plugins are pre-sorted
-	const split = plugins.findIndex(p => p.enforce === 'post');
-
 	const bundle = await rollup.rollup({
 		input,
 		perf: !!profile,
 		preserveEntrySignatures: 'allow-extension',
 		manualChunks: npmChunks ? extractNpmChunks : undefined,
-		plugins: [
-			...plugins.slice(0, split),
-			nodeBuiltinsPlugin({ production: true }),
-			externalUrlsPlugin(),
-			sucrasePlugin({
-				typescript: true,
-				sourcemap,
-				production: true
-			}),
-			htmlEntriesPlugin({ cwd, publicDir, publicPath }),
-			(dynamicImportVars.default || dynamicImportVars)({
-				include: /\.(m?jsx?|tsx?)$/,
-				exclude: /\/node_modules\//
-			}),
-			publicPathPlugin({ publicPath }),
-			aliasesPlugin({ aliases, cwd: root }),
-			htmPlugin({ production: true }),
-			sassPlugin({ production: true }),
-			wmrStylesPlugin({ hot: false, cwd }),
-			wmrPlugin({ hot: false }),
-			processGlobalPlugin({
-				env,
-				NODE_ENV: 'production'
-			}),
-			resolveExtensionsPlugin({
-				typescript: true,
-				index: true
-			}),
-			fastCjsPlugin({
-				// Only transpile CommonJS in node_modules and explicit .cjs files:
-				include: /(?:^[\b]npm\/|[/\\]node_modules[/\\]|\.cjs$)/
-			}),
-			npmPlugin({ external: false }),
-			urlPlugin({}),
-			jsonPlugin({ cwd }),
-			...plugins.slice(split),
-			bundlePlugin({ cwd }),
-			optimizeGraphPlugin({ publicPath }),
-			minify && minifyCssPlugin({ sourcemap }),
-			copyAssetsPlugin({ cwd })
-		]
+		plugins: getPlugins(options)
 	});
 
 	/** @type {import('rollup').OutputOptions} */

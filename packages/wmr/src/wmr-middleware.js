@@ -2,26 +2,15 @@ import { resolve, dirname, relative, sep, posix } from 'path';
 import * as kl from 'kolorist';
 import { promises as fs, createReadStream } from 'fs';
 import chokidar from 'chokidar';
-import htmPlugin from './plugins/htm-plugin.js';
-import sucrasePlugin from './plugins/sucrase-plugin.js';
 import wmrPlugin, { getWmrClient } from './plugins/wmr/plugin.js';
 import wmrStylesPlugin, { modularizeCss, processSass } from './plugins/wmr/styles-plugin.js';
 import { createPluginContainer } from './lib/rollup-plugin-container.js';
 import { transformImports } from './lib/transform-imports.js';
-import aliasesPlugin from './plugins/aliases-plugin.js';
-import urlPlugin from './plugins/url-plugin.js';
 import { normalizeSpecifier } from './plugins/npm-plugin/index.js';
 import sassPlugin from './plugins/sass-plugin.js';
-import processGlobalPlugin from './plugins/process-global-plugin.js';
 import { getMimeType } from './lib/mimetypes.js';
-import fastCjsPlugin from './plugins/fast-cjs-plugin.js';
-import resolveExtensionsPlugin from './plugins/resolve-extensions-plugin.js';
-import bundlePlugin from './plugins/bundle-plugin.js';
-import nodeBuiltinsPlugin from './plugins/node-builtins-plugin.js';
-import jsonPlugin from './plugins/json-plugin.js';
-import externalUrlsPlugin from './plugins/external-urls-plugin.js';
 import { codeFrame } from './lib/output-utils.js';
-// import { resolvePackageVersion } from './plugins/npm-plugin/registry.js';
+import { getPlugins } from './lib/plugins.js';
 
 const NOOP = () => {};
 
@@ -34,78 +23,24 @@ const WRITE_CACHE = new Map();
 export const moduleGraph = new Map();
 
 /**
- * @param {object} [options]
- * @param {string} [options.cwd = '.']
- * @param {string} [options.root] cwd without ./public suffix
- * @param {string} [options.out = '.cache']
- * @param {string} [options.distDir] if set, ignores watch events within this directory
- * @param {boolean} [options.sourcemap]
- * @param {Record<string, string>} [options.aliases]
- * @param {Record<string, string>} [options.env]
- * @param {Options["plugins"]} [options.plugins]
- * @param {boolean} [options.profile] Enable bundler performance profiling
- * @param {(error: Error & { clientMessage?: string })=>void} [options.onError]
- * @param {(event: { changes: string[], duration: number })=>void} [options.onChange]
+ * @param {import('wmr').BuildOptions & { distDir: string }} options
  * @returns {import('polka').Middleware}
  */
-export default function wmrMiddleware({
-	cwd = '.',
-	root,
-	out = '.cache',
-	distDir = 'dist',
-	env = {},
-	aliases,
-	onError = NOOP,
-	onChange = NOOP,
-	plugins = [],
-	features
-} = {}) {
-	cwd = resolve(process.cwd(), cwd || '.');
+export default function wmrMiddleware(options) {
+	let { cwd, root, out, distDir = 'dist', onError, onChange = NOOP } = options;
+
 	distDir = resolve(dirname(out), distDir);
 
-	root = root || cwd;
-
-	// Plugins are pre-sorted
-	const split = plugins.findIndex(p => p.enforce === 'post');
-	const NonRollup = createPluginContainer(
-		[
-			...plugins.slice(0, split),
-			externalUrlsPlugin(),
-			nodeBuiltinsPlugin({}),
-			urlPlugin({ inline: true, cwd }),
-			jsonPlugin({ cwd }),
-			bundlePlugin({ inline: true, cwd }),
-			aliasesPlugin({ aliases, cwd: root }),
-			sucrasePlugin({
-				typescript: true,
-				sourcemap: false,
-				production: false
-			}),
-			processGlobalPlugin({ NODE_ENV: 'development', env }),
-			sassPlugin(),
-			htmPlugin({ production: false }),
-			wmrPlugin({ hot: true, preact: features.preact }),
-			fastCjsPlugin({
-				// Only transpile CommonJS in node_modules and explicit .cjs files:
-				include: /(?:[/\\]node_modules[/\\]|\.cjs$)/
-			}),
-			resolveExtensionsPlugin({
-				typescript: true,
-				index: true
-			}),
-			...plugins.slice(split)
-		],
-		{
-			cwd,
-			writeFile: (filename, source) => writeCacheFile(out, filename, source),
-			output: {
-				// assetFileNames: '@asset/[name][extname]',
-				// chunkFileNames: '[name][extname]',
-				assetFileNames: '[name][extname]?asset',
-				dir: out
-			}
+	const NonRollup = createPluginContainer(getPlugins(options), {
+		cwd,
+		writeFile: (filename, source) => writeCacheFile(out, filename, source),
+		output: {
+			// assetFileNames: '@asset/[name][extname]',
+			// chunkFileNames: '[name][extname]',
+			assetFileNames: '[name][extname]?asset',
+			dir: out
 		}
-	);
+	});
 
 	NonRollup.buildStart();
 
