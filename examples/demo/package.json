@@ -10,7 +10,8 @@
 		"start:prod": "cross-env DEBUG=true wmr",
 		"build:prod": "wmr build --prerender",
 		"serve:prod": "wmr serve",
-		"dev": "cross-env PROFILE=true nodemon -w src --exec \"yarn start\""
+		"dev": "cross-env PROFILE=true nodemon -w src --exec \"yarn start\"",
+		"check:lhci": "yarn build && lhci autorun --collect.url='http://localhost:8080' --collect.startServerCommand='yarn serve --port 8080' --collect.startServerReadyPattern='server running at'"
 	},
 	"alias": {
 		"react": "preact/compat"
@@ -18,7 +19,8 @@
 	"devDependencies": {
 		"wmr": "*",
 		"nodemon": "^2.0.7",
-		"cross-env": "^7.0.3"
+		"cross-env": "^7.0.3",
+		"@lhci/cli": "^0.7.0"
 	},
 	"dependencies": {
 		"preact": "^10.5.13",
