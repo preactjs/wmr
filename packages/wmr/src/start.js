@@ -5,7 +5,7 @@ import wmrMiddleware from './wmr-middleware.js';
 import { getServerAddresses, supportsSearchParams } from './lib/net-utils.js';
 import { normalizeOptions } from './lib/normalize-options.js';
 import { setCwd } from './plugins/npm-plugin/registry.js';
-import { formatBootMessage } from './lib/output-utils.js';
+import { formatBootMessage, debug } from './lib/output-utils.js';
 
 /**
  * @typedef OtherOptions
@@ -42,10 +42,12 @@ export default async function start(options = {}) {
 	if (!supportsSearchParams) {
 		console.log(kl.yellow(`WMR: Automatic config reloading is not supported on Node <= 12.18.4`));
 	} else {
+		const logWatcher = debug('wmr:watcher');
 		const watcher = chokidar.watch(configWatchFiles, {
 			cwd: cloned.root,
 			disableGlobbing: true
 		});
+		watcher.on('ready', () => logWatcher(' watching for config changes'));
 		watcher.on('change', async () => {
 			await instance.close();
 
@@ -56,6 +58,7 @@ export default async function start(options = {}) {
 			const configWatchFiles = [];
 			instance = await bootServer(cloned, configWatchFiles);
 			watcher.add(configWatchFiles);
+			logWatcher('Server restarted');
 		});
 	}
 }

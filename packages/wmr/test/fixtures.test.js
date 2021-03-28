@@ -609,6 +609,7 @@ describe('fixtures', () => {
 			await loadFixture('config-reload', env);
 			instance = await runWmrFast(env.tmp.path);
 			await instance.address;
+			await waitForMessage(instance.output, 'watching for config changes');
 
 			// Trigger file change
 			await updateFile(env.tmp.path, 'wmr.config.mjs', content => content.replace(/foo/g, 'bar'));
@@ -624,6 +625,7 @@ describe('fixtures', () => {
 			await loadFixture('config-reload-env', env);
 			instance = await runWmrFast(env.tmp.path);
 			await instance.address;
+			await waitForMessage(instance.output, 'watching for config changes');
 
 			// Trigger file change
 			await updateFile(env.tmp.path, '.env', content => content.replace(/foo/g, 'bar'));
@@ -639,6 +641,7 @@ describe('fixtures', () => {
 			await loadFixture('config-reload-package-json', env);
 			instance = await runWmrFast(env.tmp.path);
 			await instance.address;
+			await waitForMessage(instance.output, 'watching for config changes');
 
 			// Trigger file change
 			await updateFile(env.tmp.path, 'package.json', content => {
@@ -658,6 +661,7 @@ describe('fixtures', () => {
 			await loadFixture('config-reload-client', env);
 			instance = await runWmrFast(env.tmp.path);
 			await env.page.goto(await instance.address);
+			await waitForMessage(instance.output, 'watching for config changes');
 
 			const logs = [];
 			env.page.on('console', m => logs.push(m.text()));
