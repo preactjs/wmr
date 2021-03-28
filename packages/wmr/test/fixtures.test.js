@@ -592,6 +592,17 @@ describe('fixtures', () => {
 		});
 	});
 
+	describe('config', () => {
+		it('should support loading node built-ins', async () => {
+			await loadFixture('config-node-builtins', env);
+			instance = await runWmrFast(env.tmp.path);
+
+			await waitForMessage(instance.output, /foo\/bar/);
+			await waitForMessage(instance.output, /plugin-A/);
+			expect(true).toEqual(true); // Silence linter
+		});
+	});
+
 	describe('plugins', () => {
 		it('should order by plugin.enforce value', async () => {
 			await loadFixture('plugin-enforce', env);

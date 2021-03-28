@@ -20,7 +20,15 @@ const ROLLUP_FAST_OUTPUT = {
 // @TODO: this cache needs to be sharded by `input` in order to actually do anything when `preserveModules:true` is enabled
 let cache;
 
-export const compileSingleModule = withCache(async (input, { cwd, out, hmr = true }) => {
+/**
+ * @param {string} input
+ * @param {object} options
+ * @param {string} options.cwd
+ * @param {string} options.out
+ * @param {boolean} [options.hmr]
+ * @param {boolean} [options.rewriteNodeImports]
+ */
+export const compileSingleModule = withCache(async (input, { cwd, out, hmr = true, rewriteNodeImports = true }) => {
 	input = input.replace(/\.css\.js$/, '.css');
 	// console.log('compiling ' + input);
 	const bundle = await rollup.rollup({
@@ -41,7 +49,7 @@ export const compileSingleModule = withCache(async (input, { cwd, out, hmr = tru
 					// hmr client
 					if (id === 'wmr') id = '/_wmr.js';
 					// bare specifier = npm dep
-					else if (!/^\.?\.?(\/|$)/.test(id)) id = `/@npm/${id}`;
+					else if (rewriteNodeImports && !/^\.?\.?(\/|$)/.test(id)) id = `/@npm/${id}`;
 					// relative imports (css)
 					else if (/\.css$/.test(id)) id += '.js';
 					return { id, external: true, moduleSideEffects: true };
