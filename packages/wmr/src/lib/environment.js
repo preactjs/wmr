@@ -46,16 +46,16 @@ export function parseEnvFile(str) {
  * Load additional environment variables from .env files.
  * @param {string} cwd
  * @param {string[]} envFiles
- * @param {string[]} [configWachFiles]
+ * @param {string[]} [configWatchFiles]
  * @returns {Promise<Record<string, string>>}
  */
-export async function readEnvFiles(cwd, envFiles, configWachFiles) {
+export async function readEnvFiles(cwd, envFiles, configWatchFiles) {
 	const envs = await Promise.all(
 		envFiles.map(async file => {
 			const fileName = join(cwd, file);
 			try {
 				const content = await fs.readFile(fileName, 'utf-8');
-				if (configWachFiles) configWachFiles.push(fileName);
+				if (configWatchFiles) configWatchFiles.push(fileName);
 				return parseEnvFile(content);
 			} catch (e) {
 				// Ignore, env file most likely doesn't exist
