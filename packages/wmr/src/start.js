@@ -104,6 +104,8 @@ async function bootServer(options, configWatchFiles) {
 	}
 
 	const app = await server(options);
+
+	const closeServer = makeCloseable(app.server);
 	app.listen(options.port, options.host, () => {
 		const addresses = getServerAddresses(app.server.address(), { https: app.http2 });
 		const message = `server running at:`;
@@ -111,13 +113,41 @@ async function bootServer(options, configWatchFiles) {
 	});
 
 	return {
-		close: () =>
-			new Promise((resolve, reject) => {
-				if (app.server) {
-					app.server.close(err => (err ? reject(err) : resolve()));
-				} else {
-					resolve();
-				}
-			})
+		async close() {
+			app.ws.broadcast({
+				type: 'info',
+				message: 'Server restarting...',
+				kind: 'restart'
+			});
+			app.ws.close();
+			await closeServer();
+		}
+	};
+}
+
+/**
+ * Close all open connections to a server. Adapted from
+ * https://github.com/vitejs/vite/blob/352cd397d8c9d2849690e3af0e84b00c6016b987/packages/vite/src/node/server/index.ts#L628
+ * @param {import("http").Server | import("http2").Http2SecureServer} server
+ * @returns
+ */
+function makeCloseable(server) {
+	/** @type {Set<import('net').Socket>} */
+	const sockets = new Set();
+	let listened = false;
+
+	server.on('connection', s => {
+		sockets.add(s);
+		s.on('close', () => sockets.delete(s));
+	});
+
+	server.once('listening', () => (listened = true));
+
+	return async () => {
+		sockets.forEach(s => s.destroy());
+		if (!listened) return;
+		await new Promise((resolve, reject) => {
+			server.close(err => (err ? reject(err) : resolve()));
+		});
 	};
 }

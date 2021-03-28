@@ -606,9 +606,8 @@ describe('fixtures', () => {
 		it('should restart server if config file changes', async () => {
 			await loadFixture('config-reload', env);
 			instance = await runWmrFast(env.tmp.path);
+			await instance.address;
 
-			// TODO: Investigate why we need to wait here
-			await wait(2000);
 			// Trigger file change
 			await updateFile(env.tmp.path, 'wmr.config.mjs', content => content.replace(/foo/g, 'bar'));
 
@@ -620,9 +619,8 @@ describe('fixtures', () => {
 		it('should restart server if .env file changes', async () => {
 			await loadFixture('config-reload-env', env);
 			instance = await runWmrFast(env.tmp.path);
+			await instance.address;
 
-			// TODO: Investigate why we need to wait here
-			await wait(2000);
 			// Trigger file change
 			await updateFile(env.tmp.path, '.env', content => content.replace(/foo/g, 'bar'));
 
@@ -634,9 +632,8 @@ describe('fixtures', () => {
 		it('should restart server if package.json file changes', async () => {
 			await loadFixture('config-reload-package-json', env);
 			instance = await runWmrFast(env.tmp.path);
+			await instance.address;
 
-			// TODO: Investigate why we need to wait here
-			await wait(2000);
 			// Trigger file change
 			await updateFile(env.tmp.path, 'package.json', content => {
 				const json = JSON.parse(content);
