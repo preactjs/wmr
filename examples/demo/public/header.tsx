@@ -12,6 +12,7 @@ export default function Header() {
 				<a href="/class-fields">Class-Fields</a>
 				<a href="/files">Files</a>
 				<a href="/env">Env</a>
+				<a href="/json">JSON</a>
 				<a href="/error">Error</a>
 			</nav>
 			<label>

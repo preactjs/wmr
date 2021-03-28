@@ -20,6 +20,7 @@ const CompatPage = lazy(() => import('./pages/compat.js'));
 const ClassFields = lazy(() => import('./pages/class-fields.js'));
 const Files = lazy(() => import('./pages/files/index.js'));
 const Environment = lazy(async () => (await import('./pages/environment/index.js')).Environment);
+const JSONView = lazy(async () => (await import('./pages/json.js')).JSONView);
 
 export function App() {
 	return (
@@ -35,6 +36,7 @@ export function App() {
 						<ClassFields path="/class-fields" />
 						<Files path="/files" />
 						<Environment path="/env" />
+						<JSONView path="/json" />
 						<NotFound default />
 					</Router>
 				</ErrorBoundary>
@@ -54,4 +56,3 @@ export async function prerender(data) {
 
 // @ts-ignore
 if (module.hot) module.hot.accept(u => hydrate(<u.module.App />, document.body));
-

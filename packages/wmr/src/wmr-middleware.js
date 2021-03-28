@@ -73,7 +73,7 @@ export default function wmrMiddleware({
 			externalUrlsPlugin(),
 			nodeBuiltinsPlugin({}),
 			urlPlugin({ inline: true, cwd }),
-			jsonPlugin(),
+			jsonPlugin({ cwd }),
 			bundlePlugin({ inline: true, cwd }),
 			aliasesPlugin({ aliases, cwd: root }),
 			sucrasePlugin({
