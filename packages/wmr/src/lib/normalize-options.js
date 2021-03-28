@@ -77,7 +77,7 @@ export async function normalizeOptions(options, mode) {
 				// Create a temporary file to write compiled output into
 				// TODO: Do this in memory
 				configFile = resolve(options.root, 'wmr.config.js');
-				await compileSingleModule(file, { cwd: options.cwd, out: resolve('.'), hmr: false });
+				await compileSingleModule(file, { cwd: options.cwd, out: resolve('.'), hmr: false, rewriteNodeImports: false });
 			}
 
 			const fileUrl = url.pathToFileURL(configFile);
