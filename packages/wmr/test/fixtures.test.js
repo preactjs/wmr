@@ -8,8 +8,7 @@ import {
 	getOutput,
 	get,
 	waitForMessage,
-	waitForNotMessage,
-	wait
+	waitForNotMessage
 } from './test-helpers.js';
 import { rollup } from 'rollup';
 import nodeBuiltinsPlugin from '../src/plugins/node-builtins-plugin.js';
@@ -644,6 +643,27 @@ describe('fixtures', () => {
 			await waitForMessage(instance.output, /restarting server/);
 			await waitForMessage(instance.output, /{ foo: 'bar' }/);
 			expect(true).toEqual(true); // Silence linter
+		});
+
+		it('should reconnect client on server restart', async () => {
+			await loadFixture('config-reload-client', env);
+			instance = await runWmrFast(env.tmp.path);
+			await env.page.goto(await instance.address);
+
+			const logs = [];
+			env.page.on('console', m => logs.push(m.text()));
+
+			// Trigger file change
+			await updateFile(env.tmp.path, 'wmr.config.mjs', content => content.replace(/foo/, 'bar'));
+			await waitForMessage(instance.output, /restarting server/);
+
+			await waitForMessage(logs, /Connected to server/i);
+
+			await updateFile(env.tmp.path, 'index.js', content => content.replace('Hello world', 'foo'));
+
+			await env.page.waitForFunction(() => document.querySelector('h1').textContent.includes('foo'));
+
+			expect(await env.page.content()).toMatch('foo 42');
 		});
 	});
 

@@ -53,7 +53,8 @@ export async function getFreePort(port) {
  * @param {{port?: number | string}} options
  */
 export async function getPort(options) {
-	const userPort = options.port || process.env.PORT;
+	// Account for `port = 0`
+	const userPort = typeof options.port === 'number' ? options.port : process.env.PORT;
 	if (userPort !== undefined) {
 		if (await isPortFree(+userPort)) {
 			return +userPort;
