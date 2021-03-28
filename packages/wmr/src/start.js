@@ -2,7 +2,7 @@ import chokidar from 'chokidar';
 import * as kl from 'kolorist';
 import server from './server.js';
 import wmrMiddleware from './wmr-middleware.js';
-import { getServerAddresses } from './lib/net-utils.js';
+import { getServerAddresses, supportsSearchParams } from './lib/net-utils.js';
 import { normalizeOptions } from './lib/normalize-options.js';
 import { setCwd } from './plugins/npm-plugin/registry.js';
 import { formatBootMessage } from './lib/output-utils.js';
@@ -39,21 +39,25 @@ export default async function start(options = {}) {
 	// to prevent us from picking another port on restart.
 	options.port = await instance.resolvePort;
 
-	const watcher = chokidar.watch(configWatchFiles, {
-		cwd: cloned.root,
-		disableGlobbing: true
-	});
-	watcher.on('change', async () => {
-		await instance.close();
+	if (!supportsSearchParams) {
+		console.log(kl.yellow(`WMR: Automatic config reloading is not supported on Node <= 12.18.4`));
+	} else {
+		const watcher = chokidar.watch(configWatchFiles, {
+			cwd: cloned.root,
+			disableGlobbing: true
+		});
+		watcher.on('change', async () => {
+			await instance.close();
 
-		console.log(kl.yellow(`WMR: `) + kl.green(`config or .env file changed, restarting server...\n`));
+			console.log(kl.yellow(`WMR: `) + kl.green(`config or .env file changed, restarting server...\n`));
 
-		// Fire up new instance
-		const cloned = deepCloneJSON(options);
-		const configWatchFiles = [];
-		instance = await bootServer(cloned, configWatchFiles);
-		watcher.add(configWatchFiles);
-	});
+			// Fire up new instance
+			const cloned = deepCloneJSON(options);
+			const configWatchFiles = [];
+			instance = await bootServer(cloned, configWatchFiles);
+			watcher.add(configWatchFiles);
+		});
+	}
 }
 
 /**

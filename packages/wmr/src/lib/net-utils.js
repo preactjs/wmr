@@ -94,3 +94,11 @@ export function getServerAddresses(addr, { https = false } = {}) {
 
 	return addresses;
 }
+
+/**
+ * Check if the current running node version supports adding search
+ * parameters to dynamic import specifiers. The minimum required
+ * version for this is 12.19.0
+ */
+const nodeSemver = process.versions.node.split('.');
+export const supportsSearchParams = +nodeSemver[0] > 12 || (+nodeSemver[0] === 12 && +nodeSemver[1] >= 19);

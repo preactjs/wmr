@@ -4,7 +4,7 @@ import url from 'url';
 import { readEnvFiles } from './environment.js';
 import { compileSingleModule } from './compile-single-module.js';
 import { debug } from './output-utils.js';
-import { getPort } from './net-utils.js';
+import { getPort, supportsSearchParams } from './net-utils.js';
 
 /**
  * @param {Partial<Options>} options
@@ -94,7 +94,10 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 
 			const fileUrl = url.pathToFileURL(configFile);
 			try {
-				custom = await eval(`(x => import(x + '?t=${Date.now()}'))`)(fileUrl);
+				// Node <= 12.18.4 returns an empty module if we append search params to
+				// the URL.
+				const importSource = supportsSearchParams ? `(x => import(x + '?t=${Date.now()}'))` : `(x => import(x))`;
+				custom = await eval(importSource)(fileUrl.toString());
 			} catch (err) {
 				console.log(err);
 				initialError = err;
