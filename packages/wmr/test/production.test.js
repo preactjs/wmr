@@ -293,6 +293,13 @@ describe('production', () => {
 	});
 
 	describe('prerender', () => {
+		/**
+		 * @param {TestEnv} env
+		 * @param {string} f
+		 * @returns {Promise<string[]>}
+		 */
+		const readdir = async (env, f) => (await fs.readdir(path.join(env.tmp.path, f))).filter(f => f[0] !== '.');
+
 		it('should support prerendered HTML, title & meta tags', async () => {
 			await loadFixture('prod-head', env);
 			instance = await runWmr(env.tmp.path, 'build', '--prerender');
@@ -300,9 +307,7 @@ describe('production', () => {
 			console.info(instance.output.join('\n'));
 			expect(code).toBe(0);
 
-			const readdir = async f => (await fs.readdir(path.join(env.tmp.path, f))).filter(f => f[0] !== '.');
-
-			const pages = await readdir('dist');
+			const pages = await readdir(env, 'dist');
 
 			expect(pages).toContain('index.html');
 			expect(pages).toContain('other.html');
@@ -318,6 +323,18 @@ describe('production', () => {
 			expect(other).toMatch('<link rel="icon" href="data:,favicon-for-/other.html">');
 			expect(other).toMatch('<h1>page = /other.html</h1>');
 			expect(other).toMatch(`<meta property="og:title" content="Become an SEO Expert">`);
+		});
+
+		it('should support prerendering json', async () => {
+			await loadFixture('prod-prerender-json', env);
+			instance = await runWmr(env.tmp.path, 'build', '--prerender');
+			const code = await instance.done;
+			console.info(instance.output.join('\n'));
+			expect(code).toBe(0);
+
+			const indexHtml = path.join(env.tmp.path, 'dist', 'index.html');
+			const index = await fs.readFile(indexHtml, 'utf8');
+			expect(index).toMatch(/{"foo":42,"bar":"bar"}/);
 		});
 	});
 
