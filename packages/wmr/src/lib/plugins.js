@@ -39,7 +39,7 @@ export function getPlugins(options) {
 		nodeBuiltinsPlugin({ production }),
 		urlPlugin({ inline: !production, cwd }),
 		jsonPlugin({ cwd }),
-		bundlePlugin({ cwd }),
+		bundlePlugin({ inline: !production, cwd }),
 		aliasesPlugin({ aliases, cwd: root }),
 		sucrasePlugin({
 			typescript: true,
