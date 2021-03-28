@@ -129,7 +129,7 @@ export async function bundleProd({
 			}),
 			npmPlugin({ external: false }),
 			urlPlugin({}),
-			jsonPlugin(),
+			jsonPlugin({ cwd }),
 			...plugins.slice(split),
 			bundlePlugin({ cwd }),
 			optimizeGraphPlugin({ publicPath }),
