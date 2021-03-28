@@ -9,3 +9,4 @@ package-lock.json
 !packages/wmr/test/fixtures/exports/node_modules
 .DS_Store
 .vscode
+.lighthouseci
