@@ -252,7 +252,7 @@ function hoistEntryCss(graph) {
 	for (const fileName in graph.bundle) {
 		/** @type {ExtendedAsset | Chunk} */
 		const asset = graph.bundle[fileName];
-		if (asset.type !== 'asset' || !/\.html$/.test(fileName)) continue;
+		if (asset.type !== 'asset' || !/\.html?$/.test(fileName)) continue;
 
 		const cssImport = asset.referencedFiles && asset.referencedFiles.find(f => f.endsWith('.css'));
 		if (!cssImport || !asset.importedIds) continue;

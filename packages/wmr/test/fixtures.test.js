@@ -69,6 +69,13 @@ describe('fixtures', () => {
 		});
 	});
 
+	it('should work with .htm extension', async () => {
+		await loadFixture('htm-index', env);
+		instance = await runWmrFast(env.tmp.path);
+		await waitForNotMessage(instance.output, `missing an "index.html"`);
+		expect(await getOutput(env, instance)).toMatch(`<h1>foo</h1>`);
+	});
+
 	describe('empty', () => {
 		it('should print warning for missing index.html file in public dir', async () => {
 			await loadFixture('empty', env);

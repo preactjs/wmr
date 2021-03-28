@@ -34,7 +34,7 @@ export default function htmlEntriesPlugin({ cwd, publicDir, publicPath } = {}) {
 
 	/** @this {import('rollup').PluginContext} */
 	async function handleHtmlEntry(id) {
-		if (!/\.html$/.test(id)) return id;
+		if (!/\.html?$/.test(id)) return id;
 
 		this.addWatchFile(id);
 		const resolved = await this.resolve(id, undefined, { skipSelf: true });
@@ -131,7 +131,7 @@ export default function htmlEntriesPlugin({ cwd, publicDir, publicPath } = {}) {
 			const scripts = await Promise.all(entries.map(handleHtmlEntry.bind(this)));
 			opts.input = scripts.flat();
 			if (opts.input.length === 0) {
-				const htmlEntries = entries.filter(id => /\.html$/.test(id));
+				const htmlEntries = entries.filter(id => /\.html?$/.test(id));
 
 				let desc = htmlEntries.slice(0, 3).join(', ');
 				if (htmlEntries.length > 3) desc += ` (+${htmlEntries.length - 3} more)`;
@@ -146,7 +146,7 @@ export default function htmlEntriesPlugin({ cwd, publicDir, publicPath } = {}) {
 		async generateBundle(_, bundle) {
 			for (const id in bundle) {
 				const thisAsset = bundle[id];
-				if (thisAsset.type !== 'asset' || !/\.html$/.test(thisAsset.fileName)) continue;
+				if (thisAsset.type !== 'asset' || !/\.html?$/.test(thisAsset.fileName)) continue;
 
 				/** @type {ExtendedAsset} */
 				const htmlAsset = Object.assign(thisAsset, {
