@@ -1,8 +1,18 @@
 console.log('hello from index.js');
-const pages = ['one', 'two'];
-const mods = Promise.all(pages.map(page => import(`./pages/${page}.js`))).then(m => {
+
+// eslint-disable-next-line no-async-promise-executor
+const mods = new Promise(async resolve => {
+	let out = [];
+
+	// Use a for loop to ensure a consistent loading order
+	for (const page of ['one', 'two']) {
+		const m = await import(`./pages/${page}.js`);
+		out.push(m);
+	}
+
 	console.log('loaded pages');
-	console.log(m.map(m => m.default).join());
+	console.log(out.map(m => m.default).join());
+	resolve(out);
 });
 
 export async function prerender() {
