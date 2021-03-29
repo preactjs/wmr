@@ -674,7 +674,11 @@ describe('fixtures', () => {
 
 			await updateFile(env.tmp.path, 'index.js', content => content.replace('Hello world', 'foo'));
 
-			await env.page.waitForFunction(() => document.querySelector('h1').textContent.includes('foo'));
+			await env.page.waitForFunction(() => {
+				const h1 = document.querySelector('h1');
+				if (!h1 || !h1.textContent) return false;
+				return h1.textContent.includes('foo');
+			});
 
 			expect(await env.page.content()).toMatch('foo 42');
 		});
