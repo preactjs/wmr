@@ -1,5 +1,11 @@
 # wmr
 
+## 1.4.1
+
+### Patch Changes
+
+- [`22d0915`](https://github.com/preactjs/wmr/commit/22d0915029ccc5a0b0cdf4b7338e8d511d600a8b) [#479](https://github.com/preactjs/wmr/pull/479) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Use the same ordering of internal plugins in dev and prod
+
 ## 1.4.0
 
 ### Minor Changes
