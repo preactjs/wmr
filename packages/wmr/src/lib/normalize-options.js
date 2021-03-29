@@ -4,14 +4,15 @@ import url from 'url';
 import { readEnvFiles } from './environment.js';
 import { compileSingleModule } from './compile-single-module.js';
 import { debug } from './output-utils.js';
-import { getPort } from './net-utils.js';
+import { getPort, supportsSearchParams } from './net-utils.js';
 
 /**
  * @param {Partial<Options>} options
  * @param {Mode} mode
+ * @param {string[]} [configWatchFiles]
  * @returns {Promise<Options>}
  */
-export async function normalizeOptions(options, mode) {
+export async function normalizeOptions(options, mode, configWatchFiles = []) {
 	options.cwd = resolve(options.cwd || '');
 	process.chdir(options.cwd);
 
@@ -29,7 +30,11 @@ export async function normalizeOptions(options, mode) {
 	options.mode = mode;
 
 	const NODE_ENV = process.env.NODE_ENV || (prod ? 'production' : 'development');
-	options.env = await readEnvFiles(options.root, ['.env', '.env.local', `.env.${NODE_ENV}`, `.env.${NODE_ENV}.local`]);
+	options.env = await readEnvFiles(
+		options.root,
+		['.env', '.env.local', `.env.${NODE_ENV}`, `.env.${NODE_ENV}.local`],
+		configWatchFiles
+	);
 
 	// Output directory is relative to CWD *before* ./public is detected + appended:
 	options.out = resolve(options.cwd, options.out || '.cache');
@@ -62,8 +67,13 @@ export async function normalizeOptions(options, mode) {
 	await ensureOutDirPromise;
 
 	const pkgFile = resolve(options.root, 'package.json');
-	const pkg = fs.readFile(pkgFile, 'utf-8').then(JSON.parse);
-	options.aliases = (await pkg.catch(() => ({}))).alias || {};
+	try {
+		const pkg = JSON.parse(await fs.readFile(pkgFile, 'utf-8'));
+		options.aliases = pkg.alias || {};
+		configWatchFiles.push(pkgFile);
+	} catch (e) {
+		// ignore error, reading aliases from package.json is an optional feature
+	}
 
 	const EXTENSIONS = ['.js', '.ts', '.mjs'];
 
@@ -73,6 +83,8 @@ export async function normalizeOptions(options, mode) {
 		const file = resolve(options.root, `wmr.config${ext}`);
 		if (await isFile(file)) {
 			let configFile = file;
+			configWatchFiles.push(configFile);
+
 			if (ext === '.ts') {
 				// Create a temporary file to write compiled output into
 				// TODO: Do this in memory
@@ -82,7 +94,10 @@ export async function normalizeOptions(options, mode) {
 
 			const fileUrl = url.pathToFileURL(configFile);
 			try {
-				custom = await eval('(x => import(x))')(fileUrl);
+				// Node <= 12.18.4 returns an empty module if we append search params to
+				// the URL.
+				const importSource = supportsSearchParams ? `(x => import(x + '?t=${Date.now()}'))` : `(x => import(x))`;
+				custom = await eval(importSource)(fileUrl.toString());
 			} catch (err) {
 				console.log(err);
 				initialError = err;
@@ -101,8 +116,6 @@ export async function normalizeOptions(options, mode) {
 			}
 		}
 	}
-
-	Object.defineProperty(options, '_config', { value: custom });
 
 	/**
 	 * @param {keyof import('wmr').Plugin} name

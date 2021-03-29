@@ -53,7 +53,8 @@ export async function getFreePort(port) {
  * @param {{port?: number | string}} options
  */
 export async function getPort(options) {
-	const userPort = options.port || process.env.PORT;
+	// Account for `port = 0`
+	const userPort = typeof options.port === 'number' ? options.port : process.env.PORT;
 	if (userPort !== undefined) {
 		if (await isPortFree(+userPort)) {
 			return +userPort;
@@ -93,3 +94,11 @@ export function getServerAddresses(addr, { https = false } = {}) {
 
 	return addresses;
 }
+
+/**
+ * Check if the current running node version supports adding search
+ * parameters to dynamic import specifiers. The minimum required
+ * version for this is 12.19.0
+ */
+const nodeSemver = process.versions.node.split('.');
+export const supportsSearchParams = +nodeSemver[0] > 12 || (+nodeSemver[0] === 12 && +nodeSemver[1] >= 19);

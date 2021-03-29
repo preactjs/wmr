@@ -12,8 +12,15 @@ import {
 } from './test-helpers.js';
 import { rollup } from 'rollup';
 import nodeBuiltinsPlugin from '../src/plugins/node-builtins-plugin.js';
+import { supportsSearchParams } from '../src/lib/net-utils.js';
 
 jest.setTimeout(30000);
+
+async function updateFile(tempDir, file, replacer) {
+	const compPath = path.join(tempDir, file);
+	const content = await fs.readFile(compPath, 'utf-8');
+	await fs.writeFile(compPath, replacer(content));
+}
 
 describe('fixtures', () => {
 	/** @type {TestEnv} */
@@ -346,12 +353,6 @@ describe('fixtures', () => {
 	});
 
 	describe('hmr-scss', () => {
-		async function updateFile(tempDir, file, replacer) {
-			const compPath = path.join(tempDir, file);
-			const content = await fs.readFile(compPath, 'utf-8');
-			await fs.writeFile(compPath, replacer(content));
-		}
-
 		const timeout = n => new Promise(r => setTimeout(r, n));
 
 		it('should hot reload an scss-file imported from index.html', async () => {
@@ -600,6 +601,82 @@ describe('fixtures', () => {
 			await waitForMessage(instance.output, /foo\/bar/);
 			await waitForMessage(instance.output, /plugin-A/);
 			expect(true).toEqual(true); // Silence linter
+		});
+
+		it('should restart server if config file changes', async () => {
+			if (!supportsSearchParams) return;
+
+			await loadFixture('config-reload', env);
+			instance = await runWmrFast(env.tmp.path);
+			await instance.address;
+			await waitForMessage(instance.output, 'watching for config changes');
+
+			// Trigger file change
+			await updateFile(env.tmp.path, 'wmr.config.mjs', content => content.replace(/foo/g, 'bar'));
+
+			await waitForMessage(instance.output, /restarting server/);
+			await waitForMessage(instance.output, /{ name: 'bar' }/);
+			expect(true).toEqual(true); // Silence linter
+		});
+
+		it('should restart server if .env file changes', async () => {
+			if (!supportsSearchParams) return;
+
+			await loadFixture('config-reload-env', env);
+			instance = await runWmrFast(env.tmp.path);
+			await instance.address;
+			await waitForMessage(instance.output, 'watching for config changes');
+
+			// Trigger file change
+			await updateFile(env.tmp.path, '.env', content => content.replace(/foo/g, 'bar'));
+
+			await waitForMessage(instance.output, /restarting server/);
+			await waitForMessage(instance.output, /{ FOO: 'bar' }/);
+			expect(true).toEqual(true); // Silence linter
+		});
+
+		it('should restart server if package.json file changes', async () => {
+			if (!supportsSearchParams) return;
+
+			await loadFixture('config-reload-package-json', env);
+			instance = await runWmrFast(env.tmp.path);
+			await instance.address;
+			await waitForMessage(instance.output, 'watching for config changes');
+
+			// Trigger file change
+			await updateFile(env.tmp.path, 'package.json', content => {
+				const json = JSON.parse(content);
+				json.alias = { foo: 'bar' };
+				return JSON.stringify(json);
+			});
+
+			await waitForMessage(instance.output, /restarting server/);
+			await waitForMessage(instance.output, /{ foo: 'bar' }/);
+			expect(true).toEqual(true); // Silence linter
+		});
+
+		it('should reconnect client on server restart', async () => {
+			if (!supportsSearchParams) return;
+
+			await loadFixture('config-reload-client', env);
+			instance = await runWmrFast(env.tmp.path);
+			await env.page.goto(await instance.address);
+			await waitForMessage(instance.output, 'watching for config changes');
+
+			const logs = [];
+			env.page.on('console', m => logs.push(m.text()));
+
+			// Trigger file change
+			await updateFile(env.tmp.path, 'wmr.config.mjs', content => content.replace(/foo/, 'bar'));
+			await waitForMessage(instance.output, /restarting server/);
+
+			await waitForMessage(logs, /Connected to server/i);
+
+			await updateFile(env.tmp.path, 'index.js', content => content.replace('Hello world', 'foo'));
+
+			await env.page.waitForFunction(() => document.querySelector('h1').textContent.includes('foo'));
+
+			expect(await env.page.content()).toMatch('foo 42');
 		});
 	});
 

@@ -73,6 +73,19 @@ function handleMessage(e) {
 				}
 			});
 			break;
+		case 'info':
+			log(data.message);
+
+			if (data.kind === 'restart') {
+				let timeout = setTimeout(() => {
+					try {
+						connect();
+						log(`Connected to server.`);
+						clearTimeout(timeout);
+					} catch (err) {}
+				}, 1000);
+			}
+			break;
 		case 'error':
 			errorCount++;
 			console.error(data.error);
