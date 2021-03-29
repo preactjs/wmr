@@ -8,6 +8,7 @@ import compression from './lib/polkompress.js';
 import npmMiddleware from './lib/npm-middleware.js';
 import WebSocketServer from './lib/websocket-server.js';
 import * as kl from 'kolorist';
+import { hasDebugFlag } from './lib/output-utils.js';
 
 /**
  * @typedef CustomServer
@@ -49,7 +50,7 @@ export default async function server({ cwd, root, overlayDir, middleware, http2,
 
 			let msg = '';
 			if (err) {
-				if (process.env.DEBUG && err.stack) {
+				if (hasDebugFlag() && err.stack) {
 					msg = err.stack;
 				} else if (err.message) {
 					msg = err.message;

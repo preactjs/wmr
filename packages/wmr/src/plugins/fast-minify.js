@@ -1,4 +1,5 @@
 import terser from 'terser';
+import { hasDebugFlag } from '../lib/output-utils.js';
 
 /** @returns {import('rollup').Plugin} */
 export default function fastMinifyPlugin({ sourcemap = false, warnThreshold = 50, compress = false } = {}) {
@@ -24,7 +25,7 @@ export default function fastMinifyPlugin({ sourcemap = false, warnThreshold = 50
 			const duration = Date.now() - start;
 			if (out.error) this.error(out.error);
 			if (out.warnings) for (const warn of out.warnings) this.warn(warn);
-			if (duration > warnThreshold && process.env.DEBUG) {
+			if (duration > warnThreshold && hasDebugFlag()) {
 				this.warn(`minify(${chunk.fileName}) took ${duration}ms`);
 			}
 			const map = typeof out.map === 'string' ? JSON.parse(out.map) : out.map || null;
