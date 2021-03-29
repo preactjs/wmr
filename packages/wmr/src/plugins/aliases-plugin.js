@@ -1,13 +1,14 @@
-import { dirname, resolve } from 'path';
+import { dirname, resolve, posix } from 'path';
 import { debug, formatResolved } from '../lib/output-utils.js';
 
 /**
  * Package.json "aliases" field: {"a":"b"}
  * @param {object} options
  * @param {Record<string,string>} options.aliases
+ * @param {string} options.root
  * @returns {import('rollup').Plugin}
  */
-export default function aliasesPlugin({ aliases }) {
+export default function aliasesPlugin({ aliases, root }) {
 	const log = debug('aliases');
 	let pkgFilename;
 	return {

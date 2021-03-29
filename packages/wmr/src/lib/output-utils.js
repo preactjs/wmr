@@ -146,7 +146,8 @@ export function debug(namespace, color = selectColor(namespace)) {
  * @returns {string}
  */
 export function formatPath(path, root) {
-	path = path || 'null';
+	if (!path) return String(path);
+
 	if (typeof path === 'object') {
 		path = path.id;
 	}

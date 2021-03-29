@@ -279,7 +279,7 @@ export const TRANSFORMS = {
 
 			if (code == null || code === false) {
 				if (prefix) file = file.replace(prefix, '');
-				code = await fs.readFile(resolve(cwd, file), 'utf-8');
+				code = await fs.readFile(resolve(root, file), 'utf-8');
 			}
 
 			code = await NonRollup.transform(code, id);
@@ -385,7 +385,7 @@ export const TRANSFORMS = {
 
 		// We create a plugin container for each request to prevent asset referenceId clashes
 		const container = createPluginContainer(
-			[wmrPlugin({ hot: true }), sassPlugin(), wmrStylesPlugin({ cwd, hot: true, fullPath: true })],
+			[wmrPlugin({ hot: true }), sassPlugin(), wmrStylesPlugin({ cwd: root, hot: true, fullPath: true })],
 			{
 				root,
 				cwd,
