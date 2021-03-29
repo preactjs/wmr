@@ -33,6 +33,7 @@ export default function wmrMiddleware(options) {
 
 	const NonRollup = createPluginContainer(getPlugins(options), {
 		cwd,
+		root,
 		writeFile: (filename, source) => writeCacheFile(out, filename, source),
 		output: {
 			// assetFileNames: '@asset/[name][extname]',
