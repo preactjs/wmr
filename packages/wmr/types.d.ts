@@ -1,7 +1,7 @@
 // Declarations used by plugins and WMR itself
 
 declare module 'wmr' {
-	import { Plugin as RollupPlugin, OutputOptions } from 'rollup';
+	import { Plugin as RollupPlugin, OutputOptions, RollupError, RollupWatcherEvent } from 'rollup';
 	import { Middleware } from 'polka';
 
 	export type Mode = 'start' | 'serve' | 'build';
@@ -36,12 +36,30 @@ declare module 'wmr' {
 		root: string;
 		out: string;
 		overlayDir: string;
+		sourcemap: boolean;
 		aliases: Record<string, string>;
 		env: Record<string, string>;
 		middleware: Middleware[];
 		plugins: Plugin[];
 		output: OutputOption[];
 		features: Features;
+	}
+
+	export type BuildError = RollupError & { clientMessage?: string };
+	export type BuildEvent = { changes: string[] } & Extract<RollupWatcherEvent, { code: 'BUNDLE_END' }>;
+	export type ChangeEvent = { changes: string[]; duration: number; reload?: boolean };
+
+	export interface BuildOptions extends Options {
+		/** @experimental */
+		profile?: boolean;
+		/** @hidden Internal use only, don't use this */
+		npmChunks?: boolean;
+		/** @hidden Internal use only, don't use this */
+		onError?: (error: BuildError) => void;
+		/** @hidden Internal use only, don't use this */
+		onBuild?: (event: BuildEvent) => void;
+		/** @hidden Internal use only, don't use this */
+		onChange?: (event: ChangeEvent) => void;
 	}
 }
 
