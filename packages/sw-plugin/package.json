@@ -1,5 +1,5 @@
 {
-	"name": "@wmr-plugins/service-worker",
+	"name": "@wmrjs/service-worker",
 	"version": "0.2.0",
 	"type": "module",
 	"main": "./sw-plugin.cjs",
