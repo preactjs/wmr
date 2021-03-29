@@ -28,7 +28,8 @@ export function getPlugins(options) {
 	const { plugins, cwd, publicPath, aliases, root, env, minify, mode, sourcemap, features } = options;
 
 	// Plugins are pre-sorted
-	const split = plugins.findIndex(p => p.enforce === 'post');
+	let split = plugins.findIndex(p => p.enforce === 'post');
+	if (split === -1) split = plugins.length;
 
 	const production = mode === 'build';
 
