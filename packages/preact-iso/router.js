@@ -5,7 +5,7 @@ const UPDATE = (state, url) => {
 	let push = true;
 	if (url && url.type === 'click') {
 		const link = url.target.closest('a[href]');
-		if (!link || link.origin != location.origin) return state;
+		if (!link || link.origin != location.origin || !/^(_?self)?$/i.test(link.target)) return state;
 
 		url.preventDefault();
 		url = link.href.replace(location.origin, '');
