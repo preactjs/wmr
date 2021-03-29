@@ -1,11 +1,12 @@
 import { posix } from 'path';
+import { hasDebugFlag } from '../lib/output-utils.js';
 
 /** @typedef {import('rollup').OutputBundle} Bundle */
 /** @typedef {import('rollup').OutputChunk} Chunk */
 /** @typedef {import('rollup').OutputAsset} Asset */
 /** @typedef {Asset & { referencedFiles?: string[], importedIds?: string[] }} ExtendedAsset */
 
-const DEBUG = !!process.env.DEBUG;
+const DEBUG = hasDebugFlag();
 
 const DEFAULT_STYLE_LOAD_FN = '$w_s$';
 const DEFAULT_STYLE_LOAD_IMPL = `function $w_s$(e,t){document.querySelector('link[rel=stylesheet][href="'+e+'"]')||((t=document.createElement("link")).rel="stylesheet",t.href=e,document.head.appendChild(t))}`;

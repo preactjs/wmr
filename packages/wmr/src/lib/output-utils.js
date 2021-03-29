@@ -110,6 +110,10 @@ function selectColor(namespace) {
 	return colors[Math.abs(hash) % colors.length];
 }
 
+export function hasDebugFlag() {
+	return process.env.DEBUG === 'true' || process.env.DEBUG === '1';
+}
+
 /**
  * Print namespaced log messages when the DEBUG environment
  * variable is set.
@@ -120,7 +124,7 @@ function selectColor(namespace) {
 export function debug(namespace, color = selectColor(namespace)) {
 	const ns = kl.ansi256(color)(`  ${namespace}  `);
 	return (...args) => {
-		if (process.env.DEBUG) {
+		if (hasDebugFlag()) {
 			const str = args.map(arg => {
 				const value = arg === null || typeof arg !== 'object' ? arg : util.inspect(arg, false, null, true);
 
