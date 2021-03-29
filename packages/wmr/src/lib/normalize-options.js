@@ -90,7 +90,7 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 			if (ext === '.ts') {
 				// Create a temporary file to write compiled output into
 				// TODO: Do this in memory
-				configFile = resolve(options.root, 'wmr.config.js');
+				configFile = resolve(options.cwd, 'wmr.config.js');
 				await compileSingleModule(file, { cwd: options.cwd, out: resolve('.'), hmr: false, rewriteNodeImports: false });
 			}
 
