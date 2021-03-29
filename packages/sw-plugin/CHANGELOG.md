@@ -1,5 +1,15 @@
 # @wmr-plugins/service-worker
 
+## 0.2.0
+
+### Minor Changes
+
+- [`44d5a83`](https://github.com/preactjs/wmr/commit/44d5a835aa08fc4e4497706045ce26ba13108b0a) [#461](https://github.com/preactjs/wmr/pull/461) Thanks [@piotr-cz](https://github.com/piotr-cz)! - Fix Eslint and Prettier suggestions
+
+### Patch Changes
+
+- [`5ae4e4d`](https://github.com/preactjs/wmr/commit/5ae4e4dc1c7553ed64d7dbbe7a05281e215d64b2) [#455](https://github.com/preactjs/wmr/pull/455) Thanks [@JoviDeCroock](https://github.com/JoviDeCroock)! - Add missing import prefix types
+
 ## 0.1.1
 
 ### Patch Changes

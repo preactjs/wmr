@@ -1,5 +1,25 @@
 # preact-iso
 
+## 1.1.0
+
+### Minor Changes
+
+- [`44d5a83`](https://github.com/preactjs/wmr/commit/44d5a835aa08fc4e4497706045ce26ba13108b0a) [#461](https://github.com/preactjs/wmr/pull/461) Thanks [@piotr-cz](https://github.com/piotr-cz)! - Fix Eslint and Prettier suggestions
+
+* [`f7b5bd7`](https://github.com/preactjs/wmr/commit/f7b5bd77c3d0e599cff43226f903483cefad9539) [#422](https://github.com/preactjs/wmr/pull/422) Thanks [@rschristian](https://github.com/rschristian)! - Adds a new Route component export
+
+### Patch Changes
+
+- [`5ff2c55`](https://github.com/preactjs/wmr/commit/5ff2c559feb83ffed514ed67b5d7f3e2389ef5cc) [#459](https://github.com/preactjs/wmr/pull/459) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Add missing Route export
+
+* [`0833c4a`](https://github.com/preactjs/wmr/commit/0833c4ad25ceffae461d4d8f8643744cc0b7e080) [#408](https://github.com/preactjs/wmr/pull/408) Thanks [@piotr-cz](https://github.com/piotr-cz)! - Add type definitions to router onLoadEnd and onLoadStart
+
+- [`f320e3e`](https://github.com/preactjs/wmr/commit/f320e3e46cbd66c4d0580c6ec567e335b646ac5c) [#416](https://github.com/preactjs/wmr/pull/416) Thanks [@JoviDeCroock](https://github.com/JoviDeCroock)! - Fix routes with leading/trailing slashes
+
+* [`3db3696`](https://github.com/preactjs/wmr/commit/3db36964afc1f3158d3b5d377d06ccf32b6efadd) [#421](https://github.com/preactjs/wmr/pull/421) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Add missing types for `onError` prop of `ErrorBoundary` component
+
+- [`0bbb8cc`](https://github.com/preactjs/wmr/commit/0bbb8ccaafb1182b5a0f42ef6208a40d774c73f1) [#424](https://github.com/preactjs/wmr/pull/424) Thanks [@piotr-cz](https://github.com/piotr-cz)! - Set default value for push to true
+
 ## 1.0.1
 
 ### Patch Changes
