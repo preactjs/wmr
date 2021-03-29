@@ -1,5 +1,11 @@
 # wmr
 
+## 1.4.2
+
+### Patch Changes
+
+- [`0c71e36`](https://github.com/preactjs/wmr/commit/0c71e36c23596fdd789be41fd5e8720d90e7ed4c) [#491](https://github.com/preactjs/wmr/pull/491) Thanks [@developit](https://github.com/developit)! - Bugfix: correctly invoke registered plugins when there are no plugins with `{enforce:"post"}` present.
+
 ## 1.4.1
 
 ### Patch Changes
