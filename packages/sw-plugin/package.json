@@ -1,6 +1,6 @@
 {
 	"name": "@wmr-plugins/service-worker",
-	"version": "0.1.1",
+	"version": "0.2.0",
 	"type": "module",
 	"main": "./sw-plugin.cjs",
 	"module": "./src/index.js",
@@ -29,7 +29,7 @@
 		"@rollup/plugin-commonjs": "^14.0.0",
 		"@rollup/plugin-node-resolve": "^11.2.0",
 		"rollup": "^2.41.0",
-		"wmr": "^1.3.2"
+		"wmr": "^1.4.0"
 	},
 	"dependencies": {
 		"rollup": "^2.0.0"

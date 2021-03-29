@@ -1,5 +1,11 @@
 # @wmr-plugins/directory-import
 
+## 0.1.2
+
+### Patch Changes
+
+- [`5ae4e4d`](https://github.com/preactjs/wmr/commit/5ae4e4dc1c7553ed64d7dbbe7a05281e215d64b2) [#455](https://github.com/preactjs/wmr/pull/455) Thanks [@JoviDeCroock](https://github.com/JoviDeCroock)! - Add missing import prefix types
+
 ## 0.1.1
 
 ### Patch Changes
