@@ -17,6 +17,8 @@
 	--color-bg: #fff;
 	--color-border: #f0f0f0;
 	--color-header-shadow: #f0f0f0;
+	--color-bg-code-inline: #66676f;
+	--color-bg-code: #1f2427;
 
 	--header-height: 3.5rem;
 	--header-accent-height: 0.125rem;
@@ -37,6 +39,8 @@
 		--color-bg: rgba(37, 41, 49, 0.95);
 		--color-border: #525252;
 		--color-header-shadow: #220f2d;
+		--color-bg-code-inline: #66676f;
+		--color-bg-code: #1f2427;
 
 		--header-accent-height: 0.1875rem;
 	}
@@ -98,6 +102,19 @@ svg[outline] {
 /**
  * Global styles
  */
+/* inline code blocks */
+code:not([class]) {
+	padding: 0.25rem 0.5rem;
+	border-radius: 0.25rem;
+	background: var(--color-bg-code-inline);
+}
+
+/* code blocks with language */
+pre {
+	padding: 0.75rem 1.25rem;
+	background: var(--color-bg-code);
+}
+
 h1 {
 	font-size: 3rem;
 	margin-top: 0;
