@@ -7,7 +7,9 @@
 		"build": "rollup -c",
 		"prepublishOnly": "yarn build",
 		"prepack": "node --experimental-modules ./src/lib/~publish.js",
+		"postpack": "mv -f .package.json package.json",
 		"test-e2e": "cross-env JEST_PUPPETEER_CONFIG=jest-puppeteer.config.cjs jest",
+		"test-prod": "cross-env PRODUCTION_BUILD=true JEST_PUPPETEER_CONFIG=jest-puppeteer.config.cjs jest",
 		"test": "eslint src test && npm run test-e2e"
 	},
 	"author": "The Preact Authors (https://preactjs.com)",
