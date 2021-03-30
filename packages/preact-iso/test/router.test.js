@@ -207,13 +207,13 @@ describe('Router', () => {
 		expect(A).toHaveBeenCalledWith({ path: '/', query: {} }, expect.anything());
 	});
 
-	it('should ignore clicks on externally-targeted links', async () => {
-		const pushState = jest.spyOn(history, 'pushState');
-
+	describe('intercepted VS external links', () => {
 		const shouldIntercept = [null, '', '_self', 'self', '_SELF'];
 		const shouldNavigate = ['_top', '_parent', '_blank', 'custom', '_BLANK'];
 
-		let loc;
+		// prevent actual navigations (not implemented in JSDOM)
+		const clickHandler = jest.fn(e => e.preventDefault());
+
 		const Route = jest.fn(
 			() => html`
 				<div>
@@ -225,65 +225,73 @@ describe('Router', () => {
 				</div>
 			`
 		);
-		render(
-			html`
-				<${LocationProvider}>
-					<${Router}>
-						<${Route} default />
+
+		let pushState, loc;
+
+		beforeAll(() => {
+			pushState = jest.spyOn(history, 'pushState');
+			addEventListener('click', clickHandler);
+		});
+
+		afterAll(() => {
+			pushState.mockRestore();
+			removeEventListener('click', clickHandler);
+		});
+
+		beforeEach(async () => {
+			render(
+				html`
+					<${LocationProvider}>
+						<${Router}>
+							<${Route} default />
+						<//>
+						<${() => {
+							loc = useLocation();
+						}} />
 					<//>
-					<${() => {
-						loc = useLocation();
-					}} />
-				<//>
-			`,
-			scratch
-		);
+				`,
+				scratch
+			);
+			await sleep(10);
+			Route.mockClear();
+			clickHandler.mockClear();
+			pushState.mockClear();
+		});
 
-		// prevent actual navigations (not implemented in JSDOM)
-		const clickHandler = jest.fn(e => e.preventDefault());
-		scratch.addEventListener('click', clickHandler);
-
-		expect(Route).toHaveBeenCalledTimes(1);
-		Route.mockClear();
-
-		await sleep(10);
+		const getName = target => (target == null ? 'no target attribute' : `target="${target}"`);
 
 		// these should all be intercepted by the router.
 		for (const target of shouldIntercept) {
-			await sleep(10);
+			it(`should intercept clicks on links with ${getName(target)}`, async () => {
+				await sleep(10);
 
-			console.log('should intercept: ', target);
-			const sel = target == null ? `a:not([target])` : `a[target="${target}"]`;
-			const el = scratch.querySelector(sel);
-			if (!el) throw Error(`Unable to find link: ${sel}`);
-			const url = el.getAttribute('href');
-			el.click();
-			await sleep(10);
-			expect(loc).toMatchObject({ url });
-			expect(Route).toHaveBeenCalledTimes(1);
-			expect(pushState).toHaveBeenCalledWith(null, '', url);
-			expect(clickHandler).toHaveBeenCalled();
-
-			clickHandler.mockClear();
-			Route.mockClear();
-			pushState.mockClear();
+				const sel = target == null ? `a:not([target])` : `a[target="${target}"]`;
+				const el = scratch.querySelector(sel);
+				if (!el) throw Error(`Unable to find link: ${sel}`);
+				const url = el.getAttribute('href');
+				el.click();
+				await sleep(1);
+				expect(loc).toMatchObject({ url });
+				expect(Route).toHaveBeenCalledTimes(1);
+				expect(pushState).toHaveBeenCalledWith(null, '', url);
+				expect(clickHandler).toHaveBeenCalled();
+			});
 		}
 
 		// these should all navigate.
 		for (const target of shouldNavigate) {
-			await sleep(10);
+			it(`should allow default browser navigation for links with ${getName(target)}`, async () => {
+				await sleep(10);
 
-			console.log('should allow browser navigation: ', target);
-			const sel = target == null ? `a:not([target])` : `a[target="${target}"]`;
-			const el = scratch.querySelector(sel);
-			if (!el) throw Error(`Unable to find link: ${sel}`);
-			el.click();
-			await sleep(10);
-			expect(Route).not.toHaveBeenCalled();
-			expect(pushState).not.toHaveBeenCalled();
-			expect(clickHandler).toHaveBeenCalled();
-
-			clickHandler.mockClear();
+				const sel = target == null ? `a:not([target])` : `a[target="${target}"]`;
+				const el = scratch.querySelector(sel);
+				if (!el) throw Error(`Unable to find link: ${sel}`);
+				el.click();
+				await sleep(1);
+				expect(Route).not.toHaveBeenCalled();
+				expect(pushState).not.toHaveBeenCalled();
+				expect(clickHandler).toHaveBeenCalled();
+			});
 		}
 	});
 });
