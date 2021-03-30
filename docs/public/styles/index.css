@@ -50,6 +50,9 @@ body {
 	margin: 0;
 	padding: 0;
 	height: 100%;
+}
+
+body {
 	font: 100%/1.5 system-ui, helvetica, sans-serif;
 	background: var(--color-bg);
 	color: var(--color-text);
