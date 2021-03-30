@@ -48,7 +48,6 @@ async function processMarkdown(filename, opts) {
 		return s;
 	});
 	content = `# ${meta.title}${content}`;
-	console.log(`# ${meta.title}${content}`);
 	// "HTML with JSON frontmatter":
 	return '<!--' + JSON.stringify(meta) + '-->\n' + marked(content, opts);
 }
