@@ -338,6 +338,17 @@ describe('production', () => {
 			const index = await fs.readFile(indexHtml, 'utf8');
 			expect(index).toMatch(/{"foo":42,"bar":"bar"}/);
 		});
+
+		it('should not crash during prerendering', async () => {
+			await loadFixture('prerender-crash', env);
+			instance = await runWmr(env.tmp.path, 'build', '--prerender');
+			const code = await instance.done;
+			console.info(instance.output.join('\n'));
+			expect(instance.output.join('\n')).toMatch(/Error: fail/);
+			// Check if stack trace is present
+			expect(instance.output.join('\n')).toMatch(/^\s+at\s\w+/gm);
+			expect(code).toBe(1);
+		});
 	});
 
 	describe('Code Splitting', () => {
