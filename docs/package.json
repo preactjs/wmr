@@ -1,11 +1,22 @@
 {
-	"name": "@wmr/docs",
+	"name": "docs",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
 	"scripts": {
-		"dev": "wmr",
-		"build": "wmr build"
+		"start": "wmr",
+		"build": "wmr build --prerender",
+		"serve": "wmr serve"
+	},
+	"dependencies": {
+		"preact": "^10.5.13",
+		"preact-iso": "*",
+		"preact-markup": "^2.1.1"
 	},
 	"devDependencies": {
-		"@wmr-plugins/directory-import": "0.1.1",
-		"wmr": "1.3.2"
+		"@wmr-plugins/directory-import": "*",
+		"wmr": "*",
+		"marked": "^2.0.1",
+		"yaml": "^1.10.2"
 	}
 }
