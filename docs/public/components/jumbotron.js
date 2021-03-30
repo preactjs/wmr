@@ -11,9 +11,9 @@ export default function Jumbotron() {
 				<a href="/docs" class="btn btn-primary">
 					Get started
 				</a>
-				<button class="btn btn-secondary">
+				<a href="https://github.com/preactjs/wmr" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
 					<img class="btn-img-left icon" src="/assets/github.svg" alt="" width="20" height="20" /> GitHub
-				</button>
+				</a>
 			</div>
 			<div>
 				<code>
