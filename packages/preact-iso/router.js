@@ -1,17 +1,34 @@
 import { h, createContext, cloneElement } from 'preact';
-import { useContext, useMemo, useReducer, useEffect, useLayoutEffect, useRef } from 'preact/hooks';
+import { useContext, useMemo, useCallback, useReducer, useEffect, useLayoutEffect, useRef } from 'preact/hooks';
 
-const UPDATE = (state, url) => {
-	let push = true;
-	if (url && url.type === 'click') {
-		const link = url.target.closest('a[href]');
+/**
+ * @param {string} state
+ * @param {MouseEvent|PopStateEvent|Object|string} update
+ * @return {string|undefined}
+ */
+const UPDATE = (state, update) => {
+	/** @type {boolean|undefined} - History state update strategy */
+	let push, url;
+
+	if (!update || typeof update === 'string') {
+		// manual invocation: route(url)
+		url = update;
+		push = true;
+	} else if (update.type === 'click') {
+		// user click
+		const link = update.target.closest('a[href]');
 		if (!link || link.origin != location.origin) return state;
 
-		url.preventDefault();
-		url = link.href.replace(location.origin, '');
-	} else if (typeof url !== 'string') {
-		url = location.pathname + location.search;
-		push = undefined;
+		update.preventDefault();
+		url = link.pathname + link.search + link.hash;
+		push = true;
+	} else if (update.type === 'popstate') {
+		// navigation
+		url = location.pathname + location.search + location.hash;
+	} else {
+		// manual invocation: route({ url, replace })
+		url = update.url || update;
+		push = !url.replace;
 	}
 
 	if (push === true) history.pushState(null, '', url);
@@ -42,7 +59,8 @@ export const exec = (url, route, matches) => {
 };
 
 export function LocationProvider(props) {
-	const [url, route] = useReducer(UPDATE, location.pathname + location.search);
+	const [url, doRoute] = useReducer(UPDATE, location.pathname + location.search);
+	const route = useCallback((url, replace) => doRoute({ url, replace }), []);
 
 	const value = useMemo(() => {
 		const u = new URL(url, location.origin);
