@@ -13,18 +13,13 @@
 :root {
 	--color-text: #222;
 	--color-page-bg: #fff;
-	--color-link: #33aef1;
-	--color-heading: #222;
-	--color-brand: #71358d;
+	--color-brand: #33aef1;
+	--color-bg: #fff;
+	--color-border: #f0f0f0;
+	--color-header-shadow: #f0f0f0;
 
-	--header-bg: #33aef1;
-	--header-fg: #fff;
-	--header-height: 50px;
-	--header-accent-dark: #bb2030;
-	--header-accent-light: #f92323;
-
-	--sidebar-fg: #371a44;
-	--sidebar-bg: #e8ebef;
+	--header-height: 3.5rem;
+	--header-accent-height: 0.125rem;
 
 	--color-quote-bg: #ebf6ff;
 	--color-quote-border: #5aa8ff;
@@ -35,20 +30,28 @@
 	--color-code-border: #5e5e5e;
 	--color-code-bg: #252931;
 }
-/*
-html[dark] {
-	--header-bg: #33aef1;
-	--header-fg: #fff;
-}
-*/
 
+@media (prefers-color-scheme: dark) {
+	:root {
+		--color-text: #ebf4f1;
+		--color-bg: rgba(37, 41, 49, 0.95);
+		--color-border: #525252;
+		--color-header-shadow: #220f2d;
+
+		--header-accent-height: 0.1875rem;
+	}
+}
+
+/**
+ * Reset
+ */
 html,
 body {
 	margin: 0;
 	padding: 0;
 	height: 100%;
-	font: 100%/1.5 system-ui,helvetica,sans-serif;
-	background: var(--color-page-bg);
+	font: 100%/1.5 system-ui, helvetica, sans-serif;
+	background: var(--color-bg);
 	color: var(--color-text);
 }
 
@@ -58,7 +61,20 @@ body {
 }
 
 a {
-	color: var(--color-link);
+	text-decoration: none;
+	color: inherit;
+}
+
+ul {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+p {
+	letter-spacing: -0.15px;
+	margin-bottom: 1.6rem;
+	font-size: 1.125rem;
 }
 
 pre,
@@ -76,115 +92,145 @@ svg[outline] {
 	stroke: currentColor;
 }
 
-.centered {
+/**
+ * Global styles
+ */
+h1 {
+	font-size: 3rem;
+	margin-top: 0;
+}
+
+/**
+ * Header
+ */
+.header-area {
+	height: var(--header-height);
+}
+.header {
+	background: var(--color-bg);
+	position: fixed;
+	top: 0;
+	z-index: 200;
+	width: 100%;
 	display: flex;
-	flex-wrap: wrap;
-	margin: auto;
-	justify-content: center;
-	justify-items: center;
-}
-.centered > * {
-	flex: 1 1 100%;
+	justify-content: space-between;
+	height: var(--header-height);
+	padding: 0 1rem;
+
+	/* top glow */
+	box-shadow: inset 0 4px 0 #49b9f5, inset 0 -1px 0 var(--color-header-shadow);
+	/* make items appear centered visually, glow messes with preception */
+	padding-top: 0.25rem;
 }
 
-main {
-	padding-top: var(--header-height);
+.menu {
+	display: flex;
+	height: 100%;
+}
+.menu-item {
+	display: flex;
+	align-items: center;
+	height: 100%;
+	padding: 0 1rem;
+	font-size: 1.25rem;
+	font-weight: 500;
+	transition: color 0.3s;
+	/* Prevent layout shift when item becomes active */
+	border-bottom: var(--header-accent-height) solid transparent;
+}
+.menu-item:hover {
+	color: var(--color-brand);
+}
+.menu-item[data-active] {
+	border-bottom: var(--header-accent-height) solid var(--color-brand);
+}
+.menu-item-icon {
+	padding: 0 0.625rem;
+}
+.menu-item-icon-label {
+	font-weight: normal;
+	font-size: 1rem;
+	padding-left: 0.5rem;
 }
 
-section {
-	padding: 32px;
-	background: var(--color-page-bg);
-	max-width: 1000px;
-	margin: auto;
-}
-section.fullwidth {
-	max-width: none;
+/**
+ * Layouts
+ */
+.sidebar-layout {
+	display: flex;
 }
 
-.page-title {
-	background: var(--color-code-bg);
-	color: #fff;
-	padding: 32px;
-}
-.page-title h1 {
-	margin: 0;
-	font-weight: 300;
-	text-align: center;
-}
-
+/**
+ * Sidebar
+ */
 .sidebar {
 	position: sticky;
 	top: var(--header-height);
 	bottom: 0;
 	float: left;
 	height: calc(100vh - var(--header-height));
-	padding: 20px 0;
+	padding: 3rem 0;
+	width: 100%;
+	max-width: 20rem;
 	background: var(--sidebar-bg);
 	color: var(--sidebar-fg);
 	overflow: auto;
-	box-shadow: 0 -1px 0 rgba(255,255,255,0.5);
+	box-shadow: 0 -1px 0 rgba(255, 255, 255, 0.5);
 	z-index: 100;
+	border-right: 1px solid var(--color-border);
 }
-.sidebar ~ * {
-	overflow: hidden;
+
+.sidebar-title {
+	margin-left: 2rem;
+	text-transform: uppercase;
+	font-size: 0.9rem;
+	letter-spacing: 0.5px;
+	font-weight: bold;
 }
-.sidebar ul {
-	list-style: none;
-	margin: 0;
-	padding: 0;
-}
-.sidebar a {
+
+.sidebar-nav-link {
 	display: block;
-	padding: .5em 20px;
+	margin: 0 1rem 0 2rem;
+	padding: 0.5rem 0;
 	color: var(--sidebar-fg);
+	position: relative;
+	transition: all 0.3s;
+	transform: translate3d(0, 0, 0);
 }
-.sidebar a:hover {
-	background: rgba(150,150,150,0.1);
-	text-decoration: underline;
+.sidebar-nav-link:hover {
+	color: var(--color-brand);
 }
-.sidebar a.current {
-	background: rgba(150,150,150,0.2);
-	color: var(--color-text);
-}
-
-a,
-a:link,
-a:visited {
-	text-decoration: none;
-}
-
-.header {
-	position: fixed;
-	top: 0;
+/**
+ * FIXME: Preact iso destroys every route on render which kills
+ * the animation here!!
+ */
+.sidebar-nav-link::before {
+	content: '';
+	position: absolute;
 	left: 0;
-	width: 100%;
-	display: flex;
-	height: var(--header-height);
-	align-items: stretch;
-	justify-content: space-between;
-	background-color: var(--header-bg);
-	opacity: 0.95;
-	backdrop-filter: blur(1px);
-	color: var(--header-fg);
-	font-size: 120%;
-	box-shadow: inset 0 4px 0 #49b9f5, inset 0 -1px 0 #220f2d;
-	z-index: 99;
+	top: 50%;
+	transform: translate3d(-1rem, -50%, 0);
+	display: block;
+	width: 0.5rem;
+	height: 0.5rem;
+	border-radius: 50%;
+	background: var(--color-brand);
+	opacity: 0;
+	transition: opacity 0.3s;
 }
-.header nav {
-	display: flex;
+.sidebar-nav-link[data-active] {
+	color: var(--color-brand);
+	transform: translate3d(1rem, 0, 0);
 }
-.header nav a {
-	display: flex;
-	align-items: center;
-	padding: 0 1.25rem;
-	font-weight: 500;
-	text-align: center;
-	text-decoration: none;
-	color: inherit;
+.sidebar-nav-link[data-active]::before {
+	opacity: 1;
 }
-.header nav a:hover,
-.header nav a:active {
-	background-color: rgba(0,0,0,0.2);
+
+/**
+ * Main Content Area
+ */
+.main {
+	padding: 2rem 4rem;
 }
 
 .jumbotron {
@@ -192,7 +238,7 @@ a:visited {
 	flex-wrap: wrap;
 	align-items: center;
 	justify-content: center;
-	margin: -32px -32px 32px;
+	margin: 0 -32px 32px;
 	padding: 32px;
 	background: var(--color-code-bg);
 	color: #fff;

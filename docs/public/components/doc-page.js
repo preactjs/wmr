@@ -13,13 +13,17 @@ export default function Docs({ slug }) {
 	return (
 		<>
 			<Meta {...meta} />
-			<Sidebar content={content} />
-			<div class="page-title">
-				<h1>{meta.title}</h1>
+			<div class="sidebar-layout">
+				<Sidebar content={content} />
+				<main class="main">
+					<div class="page-title">
+						<h1>{meta.title}</h1>
+					</div>
+					<section class="md">
+						<Markup html={html} />
+					</section>
+				</main>
 			</div>
-			<section class="md">
-				<Markup html={html} />
-			</section>
 		</>
 	);
 }

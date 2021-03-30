@@ -1,18 +1,39 @@
+import { useLocation } from 'preact-iso';
+
 export default function Header() {
+	const { path } = useLocation();
+
 	return (
-		<header class="header">
-			<nav>
-				<a href="/">Home</a>
-				<a href="/docs">Docs</a>
-			</nav>
-			<nav>
-				<a href="https://github.com/preactjs/wmr" target="_blank" rel="noopener noreferrer">
-					<img src="/assets/github.svg" alt="WMR on GitHub" width="34" height="34" />
-				</a>
-				<a href="https://twitter.com/preactjs" target="_blank" rel="noopener noreferrer">
-					<img src="/assets/twitter.svg" alt="@preactjs on Twitter" width="34" height="34" />
-				</a>
-			</nav>
-		</header>
+		<div class="header-area">
+			<header class="header">
+				<nav aria-label="primary" class="menu">
+					<a href="/" class="menu-item" data-active={path === '/'}>
+						Home
+					</a>
+					<a href="/docs" class="menu-item" data-active={path.startsWith('/docs')}>
+						Docs
+					</a>
+				</nav>
+				<nav aria-label="social" class="menu">
+					<a
+						href="https://twitter.com/preactjs"
+						target="_blank"
+						rel="noopener noreferrer"
+						class="menu-item menu-item-icon"
+					>
+						<img src="/assets/twitter.svg" alt="@preactjs on Twitter" width="20" height="20" />
+					</a>
+					<a
+						href="https://github.com/preactjs/wmr"
+						target="_blank"
+						rel="noopener noreferrer"
+						class="menu-item menu-item-icon"
+					>
+						<img src="/assets/github.svg" alt="WMR on GitHub" width="20" height="20" />
+						<span class="menu-item-icon-label">v1.4.2</span>
+					</a>
+				</nav>
+			</header>
+		</div>
 	);
 }

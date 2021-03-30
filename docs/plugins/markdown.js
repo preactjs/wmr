@@ -3,6 +3,20 @@ import yaml from 'yaml';
 import { promises as fs } from 'fs';
 import path from 'path';
 
+// Custom renderer that appends links to headings
+marked.use({
+	renderer: {
+		heading(text, level) {
+			const escapedText = text.toLowerCase().replace(/[^\w]+/g, '-');
+			console.log(text, level);
+			return `<h${level}>
+			<a id="${escapedText}" class="anchor" href="#${escapedText}">#</a>
+			${text}
+		</h${level}>`;
+		}
+	}
+});
+
 export default function markdownPlugin({ plugins, cwd, prod }, opts) {
 	plugins.push(markdownRollupPlugin({ cwd, prod, ...opts }));
 }
@@ -23,6 +37,7 @@ async function processMarkdown(filename, opts) {
 		if (meta.title.toLowerCase().trim() === s.toLowerCase().trim()) return '';
 		return s;
 	});
+	console.log(opts);
 	// "HTML with JSON frontmatter":
 	return '<!--' + JSON.stringify(meta) + '-->\n' + marked(content, opts);
 }
