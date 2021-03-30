@@ -31,8 +31,16 @@ export function prerender({ cwd = '.', out = '.cache', publicPath }) {
 		if (!/^\(node:\d+\) ExperimentalWarning:/.test(m.toString('utf-8'))) process.stderr.write(m);
 	});
 	return new Promise((resolve, reject) => {
-		w.on('message', ([f, d]) => (f ? resolve(d) : reject(d)));
-		w.once('error', reject);
+		const bubbleError = error => {
+			if (typeof error === 'string') {
+				const err = new Error('Prerendering Error: ' + error.replace(/\n {4}at [\s\S]+$/g, ''));
+				err.stack = error;
+				return reject(err);
+			}
+			reject(error);
+		};
+		w.on('message', ([f, d]) => (f ? resolve(d) : bubbleError(d)));
+		w.once('error', bubbleError);
 		w.once('exit', resolve);
 	});
 }

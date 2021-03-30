@@ -53,12 +53,15 @@ prog.parse(process.argv);
 function run(p) {
 	p.catch(err => {
 		const text = err.message || err + '';
-		const stack =
-			errorstacks
-				.parseStackTrace(err.stack)
-				.map(frame => frame.raw)
-				.join('\n') + '\n';
-		process.stderr.write(`\n${kl.red(text)}\n${kl.dim(stack)}\n`);
+		let stack = err.stack;
+		if (stack) {
+			stack =
+				errorstacks
+					.parseStackTrace(stack)
+					.map(frame => frame.raw)
+					.join('\n') + '\n\n';
+		}
+		process.stderr.write(`\n${kl.red(text)}\n${stack ? kl.dim(stack) : ''}`);
 		process.exit(p.code || 1);
 	});
 }
