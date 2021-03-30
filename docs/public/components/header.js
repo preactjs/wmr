@@ -1,4 +1,5 @@
 import { useLocation } from 'preact-iso';
+import { ThemeSwitcher } from './theme-switcher.js';
 
 export default function Header() {
 	const { path } = useLocation();
@@ -15,6 +16,8 @@ export default function Header() {
 					</a>
 				</nav>
 				<nav aria-label="social" class="menu">
+					<ThemeSwitcher class="menu-item menu-item-icon" />
+
 					<a
 						href="https://twitter.com/preactjs"
 						target="_blank"

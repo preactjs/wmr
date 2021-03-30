@@ -22,15 +22,6 @@
 
 	--header-height: 3.5rem;
 	--header-accent-height: 0.125rem;
-
-	--color-quote-bg: #ebf6ff;
-	--color-quote-border: #5aa8ff;
-	--color-quote-text: #444;
-	--color-hr: #f8f8f8;
-	--color-code-inline-bg: rgba(150, 200, 255, 0.1);
-	--color-code-inline-border: rgba(150, 200, 255, 0.2);
-	--color-code-border: #5e5e5e;
-	--color-code-bg: #252931;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -44,6 +35,46 @@
 
 		--header-accent-height: 0.1875rem;
 	}
+}
+
+/* User set theme. Would be neat to abstract in a WMR plugin */
+html[theme='light'] {
+	--color-text: #222;
+	--color-page-bg: #fff;
+	--color-brand: #33aef1;
+	--color-bg: #fff;
+	--color-border: #f0f0f0;
+	--color-header-shadow: #f0f0f0;
+	--color-bg-code-inline: #66676f;
+	--color-bg-code: #1f2427;
+
+	--header-height: 3.5rem;
+	--header-accent-height: 0.125rem;
+}
+
+html[theme='dark'] {
+	--color-text: #ebf4f1;
+	--color-bg: rgba(37, 41, 49, 0.95);
+	--color-border: #525252;
+	--color-header-shadow: #220f2d;
+	--color-bg-code-inline: #66676f;
+	--color-bg-code: #1f2427;
+
+	--header-accent-height: 0.1875rem;
+}
+
+html[theme='teatime'] {
+	--color-text: #3a3f4d;
+	--color-page-bg: #f1e7d0;
+	--color-brand: #33aef1;
+	--color-bg: #f1e7d0;
+	--color-border: #aaa;
+	--color-header-shadow: #aaa;
+	--color-bg-code-inline: #66676f;
+	--color-bg-code: #1f2427;
+
+	--header-height: 3.5rem;
+	--header-accent-height: 0.125rem;
 }
 
 /**
@@ -60,6 +91,7 @@ body {
 	font: 100%/1.5 system-ui, helvetica, sans-serif;
 	background: var(--color-bg);
 	color: var(--color-text);
+	transition: background 0.3s;
 }
 
 * {
@@ -82,6 +114,12 @@ p {
 	letter-spacing: -0.15px;
 	margin-bottom: 1.6rem;
 	font-size: 1.125rem;
+}
+
+button {
+	color: inherit;
+	background: none;
+	border: none;
 }
 
 pre,
@@ -146,6 +184,35 @@ h5:hover .anchor {
 }
 .anchor:hover {
 	text-decoration: underline;
+}
+
+.btn {
+	display: inline-flex;
+	align-items: center;
+	font-size: 1.125rem;
+	padding: 1rem;
+	height: 3rem;
+	border-radius: 0.5rem;
+	outline: none;
+}
+.btn-primary {
+	border-radius: 0.5rem;
+	border: 0.125rem solid var(--color-brand);
+	background: var(--color-brand);
+	color: #fff;
+}
+.btn-secondary {
+	border: 0.125rem solid var(--color-text);
+	border-radius: 0.5rem;
+	background: none;
+	color: inherit;
+}
+.btn-img-left {
+	display: block;
+	margin-right: 0.75rem;
+}
+
+.spacer-h {
 }
 
 /**
@@ -217,11 +284,9 @@ h5:hover .anchor {
 	bottom: 0;
 	float: left;
 	height: calc(100vh - var(--header-height));
-	padding: 3rem 0;
+	padding: 1.5rem 0;
 	width: 100%;
 	max-width: 20rem;
-	background: var(--sidebar-bg);
-	color: var(--sidebar-fg);
 	overflow: auto;
 	box-shadow: 0 -1px 0 rgba(255, 255, 255, 0.5);
 	z-index: 100;
@@ -230,6 +295,7 @@ h5:hover .anchor {
 
 .sidebar-title {
 	margin-left: 2rem;
+	padding-top: 1.5rem;
 	text-transform: uppercase;
 	font-size: 0.9rem;
 	letter-spacing: 0.5px;
@@ -239,7 +305,7 @@ h5:hover .anchor {
 .sidebar-nav-link {
 	display: block;
 	margin: 0 1rem 0 2rem;
-	padding: 0.5rem 0;
+	padding: 0.25rem 0;
 	color: var(--sidebar-fg);
 	position: relative;
 	transition: all 0.3s;
@@ -295,19 +361,11 @@ h5:hover .anchor {
  * Home Layout
  */
 .jumbotron {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	justify-content: center;
-	margin: 0 -32px 32px;
 	padding: 32px;
 	background: var(--color-code-bg);
 	color: #fff;
 	text-align: center;
 	line-height: 1.3;
-}
-.jumbotron img {
-	margin: -32px;
 }
 .jumbotron h1 {
 	padding: 0;

@@ -16,6 +16,16 @@ export default function Sidebar({ content }) {
 						</a>
 					);
 				})}
+				<h3 class="sidebar-title">Advanced</h3>
+				{content.map(page => {
+					const url = `/docs/${page.name}`.replace(/(^|\/)index$/g, '');
+					const current = url === path;
+					return (
+						<a href={url} class="sidebar-nav-link" data-active={current}>
+							{page.nav || page.title}
+						</a>
+					);
+				})}
 			</nav>
 		</aside>
 	);
