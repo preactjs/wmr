@@ -273,7 +273,9 @@ h5:hover .anchor {
 }
 
 .btn {
-	display: inline-block;
+	display: inline-flex;
+	justify-content: center;
+	align-items: center;
 	font-size: 1.125rem;
 	padding: 0.75rem 1.5rem;
 	border-radius: 0.5rem;
