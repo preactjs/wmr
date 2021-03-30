@@ -6,7 +6,14 @@ const UPDATE = (state, url) => {
 	push = undefined;
 	if (url && url.type === 'click') {
 		const link = url.target.closest('a[href]');
-		if (!link || link.origin != location.origin || !/^(_?self)?$/i.test(link.target)) return state;
+		if (
+			!link ||
+			link.origin != location.origin ||
+			/^#/.test(link.getAttribute('href')) ||
+			!/^(_?self)?$/i.test(link.target)
+		) {
+			return state;
+		}
 
 		push = true;
 		url.preventDefault();
