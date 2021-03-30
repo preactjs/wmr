@@ -24,7 +24,7 @@ export default function Header() {
 						rel="noopener noreferrer"
 						class="menu-item menu-item-icon"
 					>
-						<img src="/assets/twitter.svg" alt="@preactjs on Twitter" width="20" height="20" />
+						<img src="/assets/twitter.svg" alt="@preactjs on Twitter" class="icon" width="20" height="20" />
 					</a>
 					<a
 						href="https://github.com/preactjs/wmr"
@@ -32,7 +32,7 @@ export default function Header() {
 						rel="noopener noreferrer"
 						class="menu-item menu-item-icon"
 					>
-						<img src="/assets/github.svg" alt="WMR on GitHub" width="20" height="20" />
+						<img src="/assets/github.svg" alt="WMR on GitHub" class="icon" width="20" height="20" />
 						<span class="menu-item-icon-label">v1.4.2</span>
 					</a>
 				</nav>

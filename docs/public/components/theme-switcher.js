@@ -1,15 +1,38 @@
 import { useCallback, useEffect } from 'preact/hooks';
 import { useLocalStorage } from '../lib/use-localstorage.js';
 
+/**
+ * @param {{onChange: (event: Event<HTMLInputElement>) => void, active: string, next:string, value: string}} props
+ */
+function ThemeItem(props) {
+	const { next, active, value, onChange } = props;
+	return (
+		<>
+			<input
+				id={`theme-${value}`}
+				name="theme"
+				type="radio"
+				value={value}
+				class="is-hidden"
+				onClick={onChange}
+				checked={active === value}
+			/>
+			<label for={`theme-${value}`} class="theme-btn" data-active={active === value} data-next={next === value}>
+				<img src={`/assets/${value}.svg`} class="icon" alt={`${value} theme`} width="20" height="20" />
+			</label>
+		</>
+	);
+}
+
 const THEMES = ['auto', 'light', 'dark', 'teatime'];
 
 export function ThemeSwitcher(props) {
 	const [theme, setTheme] = useLocalStorage('theme', THEMES[0]);
+	const idx = THEMES.indexOf(theme);
+	const next = THEMES[idx + 1] || THEMES[0];
 
 	const toggleTheme = useCallback(e => {
 		setTheme(e.target.value);
-		const idx = THEMES.indexOf(theme) + 1;
-		const newTheme = idx < THEMES.length ? THEMES[idx] : THEMES[0];
 	}, []);
 
 	useEffect(() => {
@@ -17,26 +40,13 @@ export function ThemeSwitcher(props) {
 	}, [theme]);
 
 	return (
-		<>
-			<label for="theme-auto" class={props.class}>
-				<img src="/assets/auto.svg" alt="Auto theme" width="20" height="20" />
-			</label>
-			<input id="theme-auto" name="theme" type="radio" value="auto" class="theme-input" onClick={toggleTheme} />
-
-			<label for="theme-light" class={props.class}>
-				<img src="/assets/light.svg" alt="Light theme" width="20" height="20" />
-			</label>
-			<input id="theme-light" name="theme" type="radio" value="light" class="theme-input" onClick={toggleTheme} />
-
-			<label for="theme-dark" class={props.class}>
-				<img src="/assets/dark.svg" alt="Dark theme" width="20" height="20" />
-			</label>
-			<input id="theme-dark" name="theme" type="radio" value="dark" class="theme-input" onClick={toggleTheme} />
-
-			<label for="theme-teatime" class={props.class}>
-				<img src="/assets/teatime.svg" alt="teatime theme" width="20" height="20" />
-			</label>
-			<input id="theme-teatime" name="theme" type="radio" value="teatime" class="theme-input" onClick={toggleTheme} />
-		</>
+		<div class={props.class ? ' ' + props.class : ''}>
+			<div class="theme-switcher">
+				<ThemeItem value="auto" onChange={toggleTheme} next={next} active={theme} />
+				<ThemeItem value="light" onChange={toggleTheme} next={next} active={theme} />
+				<ThemeItem value="dark" onChange={toggleTheme} next={next} active={theme} />
+				<ThemeItem value="teatime" onChange={toggleTheme} next={next} active={theme} />
+			</div>
+		</div>
 	);
 }
