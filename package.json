@@ -6,6 +6,9 @@
 			"./packages/*",
 			"./examples/*",
 			"./docs"
+		],
+		"nohoist": [
+			"**/preact-iso"
 		]
 	},
 	"scripts": {
