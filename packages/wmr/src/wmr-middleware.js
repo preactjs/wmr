@@ -1,7 +1,6 @@
 import { resolve, dirname, relative, sep, posix } from 'path';
 import * as kl from 'kolorist';
 import { promises as fs, createReadStream } from 'fs';
-import chokidar from 'chokidar';
 import wmrPlugin, { getWmrClient } from './plugins/wmr/plugin.js';
 import wmrStylesPlugin, { modularizeCss, processSass } from './plugins/wmr/styles-plugin.js';
 import { createPluginContainer } from './lib/rollup-plugin-container.js';
@@ -11,6 +10,7 @@ import sassPlugin from './plugins/sass-plugin.js';
 import { getMimeType } from './lib/mimetypes.js';
 import { codeFrame } from './lib/output-utils.js';
 import { getPlugins } from './lib/plugins.js';
+import { watch } from './lib/fs-watcher.js';
 
 const NOOP = () => {};
 
@@ -44,17 +44,10 @@ export default function wmrMiddleware(options) {
 
 	NonRollup.buildStart();
 
-	let useFsEvents = false;
-	try {
-		eval('require')('fsevents');
-		useFsEvents = true;
-	} catch (e) {}
-
-	const watcher = chokidar.watch([cwd, resolve(root, 'package.json')], {
+	const watcher = watch([cwd, resolve(root, 'package.json')], {
 		cwd,
 		disableGlobbing: true,
-		ignored: [/(^|[/\\])(node_modules|\.git|\.DS_Store)([/\\]|$)/, resolve(cwd, out), resolve(cwd, distDir)],
-		useFsEvents
+		ignored: [/(^|[/\\])(node_modules|\.git|\.DS_Store)([/\\]|$)/, resolve(cwd, out), resolve(cwd, distDir)]
 	});
 	const pendingChanges = new Set();
 

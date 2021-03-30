@@ -1,0 +1,237 @@
+/*
+ * Colors from the Logo:
+ * --gray-dark: #220f2d;
+ * --gray-light: #bfb8c3;
+ * --purple-dark: #371a44;
+ * --purple-light: #c7c2cb;
+ * --blue-dark: #33aef1;
+ * --blue-light: #81cbf6;
+ * --red-dark: #bb2030;
+ * --red-light: #f92323;
+ */
+
+:root {
+	--color-text: #222;
+	--color-page-bg: #fff;
+	--color-link: #33aef1;
+	--color-heading: #222;
+	--color-brand: #71358d;
+
+	--header-bg: #33aef1;
+	--header-fg: #fff;
+	--header-height: 50px;
+	--header-accent-dark: #bb2030;
+	--header-accent-light: #f92323;
+
+	--sidebar-fg: #371a44;
+	--sidebar-bg: #e8ebef;
+
+	--color-quote-bg: #ebf6ff;
+	--color-quote-border: #5aa8ff;
+	--color-quote-text: #444;
+	--color-hr: #f8f8f8;
+	--color-code-inline-bg: rgba(150, 200, 255, 0.1);
+	--color-code-inline-border: rgba(150, 200, 255, 0.2);
+	--color-code-border: #5e5e5e;
+	--color-code-bg: #252931;
+}
+/*
+html[dark] {
+	--header-bg: #33aef1;
+	--header-fg: #fff;
+}
+*/
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+	height: 100%;
+	font: 100%/1.5 system-ui,helvetica,sans-serif;
+	background: var(--color-page-bg);
+	color: var(--color-text);
+}
+
+* {
+	box-sizing: border-box;
+	-webkit-font-smoothing: antialiased;
+}
+
+a {
+	color: var(--color-link);
+}
+
+pre,
+code {
+	font-family: 'Source Code Pro', 'source-code-pro', Menlo, Consolas, Monaco, 'Andale Mono', 'Courier New', monospace;
+	font-size: 0.9rem;
+	font-weight: 400;
+}
+
+svg {
+	fill: currentColor;
+}
+svg[outline] {
+	fill: none;
+	stroke: currentColor;
+}
+
+.centered {
+	display: flex;
+	flex-wrap: wrap;
+	margin: auto;
+	justify-content: center;
+	justify-items: center;
+}
+.centered > * {
+	flex: 1 1 100%;
+}
+
+main {
+	padding-top: var(--header-height);
+}
+
+section {
+	padding: 32px;
+	background: var(--color-page-bg);
+	max-width: 1000px;
+	margin: auto;
+}
+section.fullwidth {
+	max-width: none;
+}
+
+.page-title {
+	background: var(--color-code-bg);
+	color: #fff;
+	padding: 32px;
+}
+.page-title h1 {
+	margin: 0;
+	font-weight: 300;
+	text-align: center;
+}
+
+.sidebar {
+	position: sticky;
+	top: var(--header-height);
+	bottom: 0;
+	float: left;
+	height: calc(100vh - var(--header-height));
+	padding: 20px 0;
+	background: var(--sidebar-bg);
+	color: var(--sidebar-fg);
+	overflow: auto;
+	box-shadow: 0 -1px 0 rgba(255,255,255,0.5);
+	z-index: 100;
+}
+.sidebar ~ * {
+	overflow: hidden;
+}
+.sidebar ul {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+.sidebar a {
+	display: block;
+	padding: .5em 20px;
+	color: var(--sidebar-fg);
+}
+.sidebar a:hover {
+	background: rgba(150,150,150,0.1);
+	text-decoration: underline;
+}
+.sidebar a.current {
+	background: rgba(150,150,150,0.2);
+	color: var(--color-text);
+}
+
+a,
+a:link,
+a:visited {
+	text-decoration: none;
+}
+
+.header {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	display: flex;
+	height: var(--header-height);
+	align-items: stretch;
+	justify-content: space-between;
+	background-color: var(--header-bg);
+	opacity: 0.95;
+	backdrop-filter: blur(1px);
+	color: var(--header-fg);
+	font-size: 120%;
+	box-shadow: inset 0 4px 0 #49b9f5, inset 0 -1px 0 #220f2d;
+	z-index: 99;
+}
+.header nav {
+	display: flex;
+}
+.header nav a {
+	display: flex;
+	align-items: center;
+	padding: 0 1.25rem;
+	font-weight: 500;
+	text-align: center;
+	text-decoration: none;
+	color: inherit;
+}
+.header nav a:hover,
+.header nav a:active {
+	background-color: rgba(0,0,0,0.2);
+}
+
+.jumbotron {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	margin: -32px -32px 32px;
+	padding: 32px;
+	background: var(--color-code-bg);
+	color: #fff;
+	text-align: center;
+	line-height: 1.3;
+}
+.jumbotron img {
+	margin: -32px;
+}
+.jumbotron h1 {
+	padding: 0;
+	margin: 0;
+	font-weight: 500;
+	font-size: 100px;
+}
+.jumbotron h4,
+.jumbotron h6 {
+	flex: 0 0 100%;
+	margin: 0.5em 0 0;
+	font-weight: 300;
+}
+.jumbotron h4 {
+	font-size: 1.5rem;
+}
+.jumbotron h6 {
+	font-size: 1rem;
+}
+@media (max-width: 599px) {
+	.jumbotron img {
+		width: 200px;
+		height: 200px;
+	}
+	.jumbotron h1 {
+		font-size: 70px;
+	}
+	.jumbotron h4 {
+		font-size: 1.3rem;
+	}
+	.jumbotron h6 {
+		font-size: 0.9rem;
+	}
+}

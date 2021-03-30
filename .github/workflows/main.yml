@@ -49,6 +49,9 @@ jobs:
       - name: Test wmr
         if: ${{ needs.changes.outputs.wmr == 'true' }}
         run: yarn workspace wmr test
+      - name: Test wmr (production build)
+        if: ${{ needs.changes.outputs.wmr == 'true' }}
+        run: yarn workspace wmr test-prod
       - name: Test preact-iso
         if: ${{ needs.changes.outputs.preact-iso == 'true' }}
         run: yarn workspace preact-iso test

@@ -63,8 +63,16 @@ export async function runWmr(cwd, ...args) {
 	if (lastArg && typeof lastArg === 'object') {
 		opts = args.pop() || opts;
 	}
-	const bin = path.join(__dirname, '..', 'src', 'cli.js');
-	const child = childProcess.spawn('node', ['--experimental-modules', bin, ...args], {
+	// Allow running tests against the fully built/bundled version of WMR:
+	if (process.env.PRODUCTION_BUILD === 'true') {
+		const bin = path.join(__dirname, '..', 'wmr.cjs');
+		args.unshift(bin);
+	} else {
+		// run tests against the original Node ESM source by default:
+		const bin = path.join(__dirname, '..', 'src', 'cli.js');
+		args.unshift('--experimental-modules', bin);
+	}
+	const child = childProcess.spawn('node', args, {
 		cwd,
 		...opts,
 		env: {

@@ -4,12 +4,14 @@
 	"workspaces": {
 		"packages": [
 			"./packages/*",
-			"./examples/*"
+			"./examples/*",
+			"./docs"
 		]
 	},
 	"scripts": {
-		"demo": "yarn workspace @examples/demo run",
 		"wmr": "yarn workspace wmr run",
+		"demo": "yarn workspace @examples/demo run",
+		"docs": "yarn workspace docs",
 		"ci": "yarn wmr build && yarn --check-files && yarn demo build:prod"
 	},
 	"eslintConfig": {
