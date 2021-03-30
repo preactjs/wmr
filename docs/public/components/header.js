@@ -9,7 +9,7 @@ export default function Header() {
 			<header class="header">
 				<nav aria-label="primary" class="menu">
 					<a href="/" class="menu-item" data-active={path === '/'}>
-						Home
+						WMR
 					</a>
 					<a href="/docs" class="menu-item" data-active={path.startsWith('/docs')}>
 						Docs

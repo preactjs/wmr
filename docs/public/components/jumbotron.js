@@ -9,7 +9,7 @@ export default function Jumbotron() {
 					Get started
 				</a>
 				<button class="btn btn-secondary">
-					<img class="btn-img-left" src="/assets/github.svg" alt="" width="20" height="20" /> GitHub
+					<img class="btn-img-left icon" src="/assets/github.svg" alt="" width="20" height="20" /> GitHub
 				</button>
 			</div>
 			<div>
