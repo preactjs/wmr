@@ -3,6 +3,7 @@ export default function Jumbotron() {
 		<div class="jumbotron">
 			<div class="brand">
 				<img src="/assets/wmr.svg" class="brand-logo" alt="wmr logo" width="300" height="300" />
+				<img src="/assets/wmr-shadow.svg" class="brand-shadow" alt="wmr logo" width="300" height="300" />
 				<h1>WMR</h1>
 			</div>
 			<h2 class="tagline">The tiny all-in-one development tool for modern web apps.</h2>

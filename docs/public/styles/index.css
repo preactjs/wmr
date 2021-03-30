@@ -481,20 +481,40 @@ h5:hover .anchor {
 
 @keyframes in-space {
 	0% {
-		transform: translatey(0) rotate(-2deg);
+		transform: translateY(0) rotate(-2deg);
 	}
 	50% {
-		transform: translatey(-1.5rem) rotate(5deg);
+		transform: translateY(-1.5rem) rotate(5deg);
 	}
 	100% {
-		transform: translatey(0) rotate(-2deg);
+		transform: translateY(0) rotate(-2deg);
 	}
 }
 
-.brand-logo {
+@keyframes in-space-shadow {
+	0% {
+		transform: scale(1, 1);
+	}
+	50% {
+		transform: scale(0.7, 0.7);
+	}
+	100% {
+		transform: scale(1, 1);
+	}
+}
+
+.brand-logo,
+.brand-shadow {
 	position: absolute;
 	left: -0.75rem;
 	top: -50%;
+}
+.brand-shadow {
+	z-index: -1;
+	transform-origin: center 90%;
+	animation: in-space-shadow 8s infinite;
+}
+.brand-logo {
 	animation: in-space 8s infinite;
 }
 .tagline {
