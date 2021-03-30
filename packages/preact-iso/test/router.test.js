@@ -1,5 +1,6 @@
 import { jest, describe, it, beforeEach, expect } from '@jest/globals';
-import { h, html, render } from 'htm/preact';
+import { h, render } from 'preact';
+import { html } from 'htm/preact';
 import { LocationProvider, Router, useLocation } from '../router.js';
 import lazy, { ErrorBoundary } from '../lazy.js';
 
