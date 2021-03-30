@@ -78,15 +78,18 @@ export function Router(props) {
 	const prevChildren = useRef();
 	const pending = useRef();
 
-	let reverse = false;
 	if (url !== cur.current.url) {
-		reverse = true;
 		pending.current = null;
 		prev.current = cur.current;
 		prevChildren.current = curChildren.current;
 		// old <Committer> uses the pending promise ref to know whether to render
 		prevChildren.current.props.pending = pending;
 		cur.current = loc;
+
+		// Hi! Wondering what this horrid line is for? That's totally reasonable, it is gross.
+		// It prevents the old route from being remounted because it got shifted in the children Array.
+		// @ts-ignore-next
+		if (this.__v && this.__v.__k) this.__v.__k.reverse();
 	}
 
 	curChildren.current = useMemo(() => {
@@ -120,11 +123,7 @@ export function Router(props) {
 		} else commit();
 	}, [url]);
 
-	// Hi! Wondering what this horrid line is for? That's totally reasonable, it is gross.
-	// It prevents the old route from being remounted because it got shifted in the children Array.
-	if (reverse && this.__v && this.__v.__k) this.__v.__k.reverse();
-
-	return [curChildren.current, prevChildren.current];
+	return [prevChildren.current, curChildren.current];
 }
 
 function Committer({ pending, children }) {
