@@ -50,7 +50,11 @@ async function getMeta(filename) {
 	if (meta.description === meta.meta_description) delete meta.meta_description;
 	if (meta.title === meta.meta_title) delete meta.meta_title;
 	for (let i in meta) if (i[0] === '.' || i[0] === '_') delete meta[i];
-	return meta;
+	// we could return all the metadata here, but it's currently unused:
+	// return meta;
+	return {
+		nav: meta.nav || meta.title
+	};
 }
 
 function decodeHtmlEntities(html) {

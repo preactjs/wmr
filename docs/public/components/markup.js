@@ -1,5 +1,4 @@
 import MarkupRenderer from 'preact-markup';
-import Jumbotron from './jumbotron.js';
 
 const COMPONENTS = {
 	a(props) {
@@ -8,8 +7,7 @@ const COMPONENTS = {
 			props.rel = 'noopener noreferrer';
 		}
 		return <a {...props} />;
-	},
-	Jumbotron
+	}
 };
 
 export default function Markup({ html }) {

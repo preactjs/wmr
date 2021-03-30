@@ -8,7 +8,7 @@ export default function Docs({ slug }) {
 	// normalize `/index`:
 	for (let doc of content) if (doc.name.replace(/(^|\/)index$/g, '') === slug) slug = doc.name;
 
-	const { html, meta } = useContent(`docs/${slug}`);
+	const { html, meta } = useContent(`content/docs/${slug}`);
 
 	return (
 		<>

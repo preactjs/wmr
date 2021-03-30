@@ -18,6 +18,6 @@ All the features you'd expect and more, from development to production:
 🗜 &nbsp; Highly optimized Rollup-based production output (`wmr build`)<br>
 📑 &nbsp; Crawls and pre-renders your app's pages to static HTML at build time<br>
 🏎 &nbsp; Built-in HTTP2 in dev and prod (`wmr serve --http2`)<br>
-🔧 &nbsp; Supports [Rollup plugins](/docs/configuration-and-plugins), even in development where Rollup isn't used
+🔧 &nbsp; Supports [Rollup plugins](/docs/plugins), even in development where Rollup isn't used
 
 </div>

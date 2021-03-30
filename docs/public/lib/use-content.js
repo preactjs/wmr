@@ -11,7 +11,7 @@ async function load(url) {
 }
 
 export function useContent(url) {
-	url = '/content/' + url.replace(/(^\/|\/$|\.md$)/g, '') + '.md';
+	url = '/' + url.replace(/(^\/|\/$|\.md$)/g, '') + '.md';
 	let update = useState(0)[1];
 	let p = CACHE.get(url);
 	if (!p) {
