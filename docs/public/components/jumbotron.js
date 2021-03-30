@@ -6,7 +6,7 @@ export default function Jumbotron() {
 				<h1>WMR</h1>
 			</div>
 			<h2 class="tagline">The tiny all-in-one development tool for modern web apps.</h2>
-			<div>
+			<div class="cta">
 				<a href="/docs" class="btn btn-primary">
 					Get started
 				</a>

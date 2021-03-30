@@ -133,6 +133,7 @@ button {
 	color: inherit;
 	background: none;
 	border: none;
+	cursor: pointer;
 }
 
 pre,
@@ -258,7 +259,7 @@ h5:hover .anchor {
 	display: inline-flex;
 	align-items: center;
 	font-size: 1.125rem;
-	padding: 1rem;
+	padding: 1.5rem;
 	height: 3rem;
 	border-radius: 0.5rem;
 	outline: none;
@@ -493,6 +494,18 @@ h5:hover .anchor {
 .tagline {
 	font-size: 1.5rem;
 	font-weight: lighter;
+	margin-bottom: 2rem;
+}
+
+.cta {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	margin-bottom: 2rem;
+}
+.cta > * + * {
+	/* TODO: should we use spacer components + css grid instead? */
+	margin-left: 2rem;
 }
 .jumbotron h4,
 .jumbotron h6 {
