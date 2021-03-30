@@ -256,28 +256,27 @@ h5:hover .anchor {
 }
 
 .btn {
-	display: inline-flex;
-	align-items: center;
+	display: inline-block;
 	font-size: 1.125rem;
-	padding: 1.5rem;
-	height: 3rem;
+	padding: 0.75rem 1.5rem;
 	border-radius: 0.5rem;
 	outline: none;
+	letter-spacing: 0.5px;
+	line-height: 1;
 }
 .btn-primary {
-	border-radius: 0.5rem;
-	border: 0.125rem solid var(--color-brand);
+	border: 0.1875rem solid var(--color-brand);
 	background: var(--color-brand);
 	color: #fff;
 }
 .btn-secondary {
 	border: 0.125rem solid var(--color-text);
-	border-radius: 0.5rem;
 	background: none;
 	color: var(--color-text);
 }
 .btn-img-left {
 	display: block;
+	float: left;
 	margin-right: 0.75rem;
 }
 
