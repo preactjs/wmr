@@ -258,6 +258,14 @@ h5:hover .anchor {
 	text-decoration: underline;
 }
 
+.container {
+	max-width: 120ch;
+	margin-left: auto;
+	margin-right: auto;
+	padding-left: 1rem;
+	padding-right: 1rem;
+}
+
 /* Accessibility */
 .is-hidden {
 	border: 0;
@@ -540,6 +548,10 @@ h5:hover .anchor {
 	font-size: 1.5rem;
 	font-weight: 300;
 	margin-bottom: 2rem;
+	max-width: 50ch;
+	margin-left: auto;
+	margin-right: auto;
+	line-height: 1.3;
 }
 
 .cta {
@@ -578,4 +590,26 @@ h5:hover .anchor {
 	.jumbotron h6 {
 		font-size: 0.9rem;
 	}
+}
+
+/**
+ * Feature Grid
+ */
+.feature-grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	grid-gap: 3rem;
+	margin: 4rem auto;
+	max-width: 80rem;
+	padding: 0 2rem;
+}
+
+.feature *:last-child {
+	margin-bottom: 0;
+}
+
+.feature-title {
+	font-size: 1.75rem;
+	margin-top: 0;
+	margin-bottom: 0.5rem;
 }
