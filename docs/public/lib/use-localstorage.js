@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks';
 
-const SUPPORTS_LOCAL_STORAGE = window !== undefined && 'localStorage' in window;
+const SUPPORTS_LOCAL_STORAGE = typeof localStorage !== 'undefined';
 
 /**
  * @type {<T>(name: string, value: T) => [T, (v: T) => void]}
