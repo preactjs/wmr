@@ -22,6 +22,9 @@
 	--color-header-shadow: #f0f0f0;
 	--color-bg-code-inline: #dddddf;
 	--color-bg-code: #1f2427;
+	--color-info: #d7f1ff;
+	--color-focus: #ff459c;
+	--focus-width: 0.25rem;
 
 	--header-height: 3.5rem;
 	--header-accent-height: 0.125rem;
@@ -35,6 +38,7 @@
 		--color-header-shadow: #220f2d;
 		--color-bg-code-inline: #66676f;
 		--color-bg-code: #1f2427;
+		--color-info: #184c68;
 
 		--header-accent-height: 0.1875rem;
 	}
@@ -53,6 +57,7 @@ html[theme='light'] {
 	--color-header-shadow: #f0f0f0;
 	--color-bg-code-inline: #dddddf;
 	--color-bg-code: #1f2427;
+	--color-info: #d7f1ff;
 
 	--header-height: 3.5rem;
 	--header-accent-height: 0.125rem;
@@ -65,6 +70,7 @@ html[theme='dark'] {
 	--color-header-shadow: #220f2d;
 	--color-bg-code-inline: #66676f;
 	--color-bg-code: #1f2427;
+	--color-info: #184c68;
 
 	--header-accent-height: 0.1875rem;
 }
@@ -77,6 +83,7 @@ html[theme='teatime'] {
 	--color-header-shadow: #aaa;
 	--color-bg-code-inline: #dddddf;
 	--color-bg-code: #1f2427;
+	--color-info: #d7f1ff;
 
 	--header-height: 3.5rem;
 	--header-accent-height: 0.125rem;
@@ -168,6 +175,16 @@ svg {
 svg[outline] {
 	fill: none;
 	stroke: currentColor;
+}
+
+/* Focus */
+.btn:focus-visible,
+[name='theme']:focus-visible + label,
+.menu-item:focus-visible,
+.sidebar-nav-link:focus-visible,
+.md a:focus-visible,
+.md button:focus-visible {
+	outline: var(--focus-width) solid var(--color-focus);
 }
 
 /**
@@ -382,7 +399,7 @@ h5:hover .anchor {
 	padding: 0.25rem 0;
 	color: var(--sidebar-fg);
 	position: relative;
-	transition: all 0.3s;
+	transition: transform 0.3s, color 0.3s;
 	transform: translate3d(0, 0, 0);
 }
 .sidebar-nav-link:hover {
@@ -445,7 +462,7 @@ h5:hover .anchor {
 }
 
 .md blockquote {
-	background: #1871a0;
+	background: var(--color-info);
 	border-radius: 0.25rem;
 	margin: 2rem 0;
 	border-left: 0.5rem solid var(--color-brand);
