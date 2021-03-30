@@ -16,9 +16,6 @@ export default function Docs({ slug }) {
 			<div class="sidebar-layout">
 				<Sidebar content={content} />
 				<main class="main">
-					<div class="page-title">
-						<h1>{meta.title}</h1>
-					</div>
 					<section class="md">
 						<Markup html={html} />
 					</section>

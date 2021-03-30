@@ -7,6 +7,10 @@ import path from 'path';
 marked.use({
 	renderer: {
 		heading(text, level) {
+			if (level === 1) {
+				return `<h1>${text}</h1>`;
+			}
+
 			const escapedText = text
 				.toLowerCase()
 				.replace(/<[^>]*>/g, '')
@@ -37,11 +41,14 @@ async function processMarkdown(filename, opts) {
 	});
 	// infer title if not specified:
 	content = content.replace(TITLE_REG, s => {
-		if (!meta.title) return (meta.title = s), '';
-		if (meta.title.toLowerCase().trim() === s.toLowerCase().trim()) return '';
+		if (!meta.title) {
+			meta.title = s;
+		}
+		// if (meta.title.toLowerCase().trim() === s.toLowerCase().trim()) return '';
 		return s;
 	});
-	console.log(opts);
+	content = `# ${meta.title}${content}`;
+	console.log(`# ${meta.title}${content}`);
 	// "HTML with JSON frontmatter":
 	return '<!--' + JSON.stringify(meta) + '-->\n' + marked(content, opts);
 }
