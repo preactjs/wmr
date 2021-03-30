@@ -7,8 +7,12 @@ import path from 'path';
 marked.use({
 	renderer: {
 		heading(text, level) {
-			const escapedText = text.toLowerCase().replace(/[^\w]+/g, '-');
-			console.log(text, level);
+			const escapedText = text
+				.toLowerCase()
+				.replace(/<[^>]*>/g, '')
+				.replace(/[^\w]+/g, '-')
+				.replace(/[-]+$/g, '');
+
 			return `<h${level}>
 			<a id="${escapedText}" class="anchor" href="#${escapedText}">#</a>
 			${text}

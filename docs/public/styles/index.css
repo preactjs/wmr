@@ -103,6 +103,34 @@ h1 {
 	margin-top: 0;
 }
 
+h2 {
+	font-size: 2.2rem;
+}
+
+h2:hover .anchor,
+h3:hover .anchor,
+h4:hover .anchor,
+h5:hover .anchor {
+	opacity: 1;
+}
+
+.anchor {
+	display: block;
+	opacity: 0;
+	font-size: 0.75em;
+	font-weight: bold;
+	color: #33aef1;
+	float: left;
+	margin-left: -1.75rem;
+	padding-right: 0.75rem;
+	transition: opacity 0.3s;
+	position: relative;
+	top: 0.3em;
+}
+.anchor:hover {
+	text-decoration: underline;
+}
+
 /**
  * Header
  */
@@ -236,6 +264,9 @@ h1 {
 	padding: 2rem 4rem;
 }
 
+/**
+ * Home Layout
+ */
 .jumbotron {
 	display: flex;
 	flex-wrap: wrap;
