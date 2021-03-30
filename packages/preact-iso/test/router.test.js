@@ -4,6 +4,8 @@ import { html } from 'htm/preact';
 import { LocationProvider, Router, useLocation } from '../router.js';
 import lazy, { ErrorBoundary } from '../lazy.js';
 
+Object.defineProperty(window, 'scrollTo', { value() {} });
+
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // delayed lazy()
@@ -299,4 +301,50 @@ describe('Router', () => {
 			});
 		}
 	});
+
+	it('should scroll to top when navigating forward', async () => {
+		const scrollTo = jest.spyOn(window, 'scrollTo');
+
+		const Route = jest.fn(() => html`<div style=${{ height: '1000px' }}><a href="/link">link</a></div>`);
+		let loc;
+		render(
+			html`
+				<${LocationProvider}>
+					<${Router}>
+						<${Route} default />
+					<//>
+					<${() => {
+						loc = useLocation();
+					}} />
+				<//>
+			`,
+			scratch
+		);
+
+		await sleep(20);
+
+		expect(scrollTo).not.toHaveBeenCalled();
+		expect(Route).toHaveBeenCalledTimes(1);
+		Route.mockClear();
+
+		loc.route('/programmatic');
+		await sleep(10);
+		expect(loc).toMatchObject({ url: '/programmatic' });
+		expect(scrollTo).toHaveBeenCalledWith(0, 0);
+		expect(scrollTo).toHaveBeenCalledTimes(1);
+		expect(Route).toHaveBeenCalledTimes(1);
+		Route.mockClear();
+		scrollTo.mockClear();
+
+		scratch.querySelector('a').click();
+		await sleep(10);
+		expect(loc).toMatchObject({ url: '/link' });
+		expect(scrollTo).toHaveBeenCalledWith(0, 0);
+		expect(scrollTo).toHaveBeenCalledTimes(1);
+		expect(Route).toHaveBeenCalledTimes(1);
+		Route.mockClear();
+
+		await sleep(10);
+		scrollTo.mockRestore();
+  });
 });

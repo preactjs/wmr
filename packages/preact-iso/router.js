@@ -1,17 +1,20 @@
 import { h, createContext, cloneElement } from 'preact';
 import { useContext, useMemo, useReducer, useEffect, useLayoutEffect, useRef } from 'preact/hooks';
 
+let push;
 const UPDATE = (state, url) => {
-	let push = true;
+	push = undefined;
 	if (url && url.type === 'click') {
 		const link = url.target.closest('a[href]');
 		if (!link || link.origin != location.origin || !/^(_?self)?$/i.test(link.target)) return state;
 
+		push = true;
 		url.preventDefault();
 		url = link.href.replace(location.origin, '');
-	} else if (typeof url !== 'string') {
+	} else if (typeof url === 'string') {
+		push = true;
+	} else {
 		url = location.pathname + location.search;
-		push = undefined;
 	}
 
 	if (push === true) history.pushState(null, '', url);
@@ -43,12 +46,13 @@ export const exec = (url, route, matches) => {
 
 export function LocationProvider(props) {
 	const [url, route] = useReducer(UPDATE, location.pathname + location.search);
+	const wasPush = push === true;
 
 	const value = useMemo(() => {
 		const u = new URL(url, location.origin);
 		const path = u.pathname.replace(/(.)\/$/g, '$1');
 		// @ts-ignore-next
-		return { url, path, query: Object.fromEntries(u.searchParams), route };
+		return { url, path, query: Object.fromEntries(u.searchParams), route, wasPush };
 	}, [url]);
 
 	useEffect(() => {
@@ -70,7 +74,7 @@ export function Router(props) {
 
 	const loc = useLocation();
 
-	const { url, path, query } = loc;
+	const { url, path, query, wasPush } = loc;
 
 	const cur = useRef(loc);
 	const prev = useRef();
@@ -115,6 +119,7 @@ export function Router(props) {
 			prev.current = prevChildren.current = pending.current = null;
 			if (props.onLoadEnd) props.onLoadEnd(url);
 			update(0);
+			if (wasPush) scrollTo(0, 0);
 		};
 
 		if (p) {
