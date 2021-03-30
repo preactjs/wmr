@@ -452,15 +452,47 @@ h5:hover .anchor {
  * Home Layout
  */
 .jumbotron {
-	padding: 32px;
+	padding: 2rem;
 	background: var(--color-code-bg);
 	text-align: center;
-	line-height: 1.3;
 }
-.jumbotron h1 {
-	padding: 0;
+.brand {
+	display: flex;
+	max-width: 40rem;
+	align-items: center;
+	justify-content: center;
+	position: relative;
+	margin: 4rem auto 2rem;
+}
+.brand h1 {
+	position: relative;
+	left: 3rem;
+	font-size: 10rem;
 	margin: 0;
-	font-size: 8rem;
+	z-index: -1;
+}
+
+@keyframes in-space {
+	0% {
+		transform: translatey(0) rotate(-2deg);
+	}
+	50% {
+		transform: translatey(-1.5rem) rotate(5deg);
+	}
+	100% {
+		transform: translatey(0) rotate(-2deg);
+	}
+}
+
+.brand-logo {
+	position: absolute;
+	left: -0.75rem;
+	top: -50%;
+	animation: in-space 8s infinite;
+}
+.tagline {
+	font-size: 1.5rem;
+	font-weight: lighter;
 }
 .jumbotron h4,
 .jumbotron h6 {

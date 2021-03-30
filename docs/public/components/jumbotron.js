@@ -1,9 +1,11 @@
 export default function Jumbotron() {
 	return (
 		<div class="jumbotron">
-			<img src="/assets/wmr.svg" alt="wmr logo" width="300" height="300" />
-			<h1>WMR</h1>
-			<h4>The tiny all-in-one development tool for modern web apps.</h4>
+			<div class="brand">
+				<img src="/assets/wmr.svg" class="brand-logo" alt="wmr logo" width="300" height="300" />
+				<h1>WMR</h1>
+			</div>
+			<h2 class="tagline">The tiny all-in-one development tool for modern web apps.</h2>
 			<div>
 				<a href="/docs" class="btn btn-primary">
 					Get started
