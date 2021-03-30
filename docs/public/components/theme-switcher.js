@@ -24,7 +24,7 @@ function ThemeItem(props) {
 	);
 }
 
-const THEMES = ['auto', 'light', 'dark', 'teatime'];
+const THEMES = ['auto', 'dark', 'light', 'teatime'];
 
 export function ThemeSwitcher(props) {
 	const [theme, setTheme] = useLocalStorage('theme', THEMES[0]);
@@ -42,10 +42,9 @@ export function ThemeSwitcher(props) {
 	return (
 		<div class={props.class ? ' ' + props.class : ''}>
 			<div class="theme-switcher">
-				<ThemeItem value="auto" onChange={toggleTheme} next={next} active={theme} />
-				<ThemeItem value="light" onChange={toggleTheme} next={next} active={theme} />
-				<ThemeItem value="dark" onChange={toggleTheme} next={next} active={theme} />
-				<ThemeItem value="teatime" onChange={toggleTheme} next={next} active={theme} />
+				{THEMES.map(t => (
+					<ThemeItem value={t} onChange={toggleTheme} next={next} active={theme} />
+				))}
 			</div>
 		</div>
 	);
