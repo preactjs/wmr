@@ -25,9 +25,10 @@ Steps to reproduce the behavior:
 A clear and concise description of what you expected to happen.
 
 **Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - WMR Version [e.g. 22]
+ - OS: [e.g. MacOS 11.2.3, Windows 10]
+ - Browser: [e.g. chrome, safari]
+ - Node Version: [e.g. 15.8]
+ - WMR Version: [e.g. 1.3.1]
 
 **Additional context**
 Add any other context about the problem here.
