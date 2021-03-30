@@ -337,8 +337,7 @@ h5:hover .anchor {
  * Layouts
  */
 .sidebar-layout {
-	position: absolute;
-	grid-template-columns: minmax(min-content, 33.33%) minmax(40rem, 2fr);
+	width: 100%;
 }
 
 .sidebar {
@@ -360,7 +359,7 @@ h5:hover .anchor {
 @media (min-width: 900px) {
 	.sidebar-layout {
 		display: grid;
-		grid-template-columns: minmax(min-content, 33.33%) minmax(40rem, 2fr);
+		grid-template-columns: minmax(min-content, 33.33%) minmax(40rem, 110ch);
 	}
 
 	.sidebar {
