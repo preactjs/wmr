@@ -5,7 +5,7 @@
 	"type": "module",
 	"scripts": {
 		"start": "wmr",
-		"build": "wmr build --prerender",
+		"build": "if-env NETLIFY=true && node --experimental-modules ../packages/wmr/src/cli.js build --prerender || wmr build --prerender",
 		"serve": "wmr serve"
 	},
 	"dependencies": {
@@ -15,8 +15,9 @@
 	},
 	"devDependencies": {
 		"@wmr-plugins/directory-import": "*",
-		"wmr": "*",
+		"if-env": "^1.0.4",
 		"marked": "^2.0.1",
+		"wmr": "*",
 		"yaml": "^1.10.2"
 	}
 }
