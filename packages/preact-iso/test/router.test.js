@@ -207,4 +207,56 @@ describe('Router', () => {
 		// expect(A).toHaveBeenCalledTimes(1);
 		expect(A).toHaveBeenCalledWith({ path: '/', query: {} }, expect.anything());
 	});
+
+	it('should ignore clicks on anchor links', async () => {
+		let loc;
+		const pushState = jest.spyOn(history, 'pushState');
+
+		const Route = jest.fn(
+			() => html`
+				<div>
+					<a href="#foo">just #foo</a>
+					<a href="/other#bar">other #bar</a>
+				</div>
+			`
+		);
+		render(
+			html`
+				<${LocationProvider}>
+					<${Router}>
+						<${Route} path="/" />
+						<${Route} path="/other" />
+						<${Route} default />
+					<//>
+					<${() => {
+						loc = useLocation();
+					}} />
+				<//>
+			`,
+			scratch
+		);
+
+		expect(Route).toHaveBeenCalledTimes(1);
+		Route.mockClear();
+		await sleep(20);
+
+		scratch.querySelector('a[href="#foo"]').click();
+		await sleep(20);
+		// NOTE: we don't (currently) propagate in-page anchor navigations into context, to avoid useless renders.
+		expect(loc).toMatchObject({ url: '/' });
+		expect(Route).not.toHaveBeenCalled();
+		expect(pushState).not.toHaveBeenCalled();
+		expect(location.hash).toEqual('#foo');
+
+		await sleep(10);
+
+		scratch.querySelector('a[href="/other#bar"]').click();
+		await sleep(10);
+		expect(Route).toHaveBeenCalledTimes(1);
+		expect(loc).toMatchObject({ url: '/other#bar', path: '/other' });
+		expect(pushState).toHaveBeenCalled();
+		expect(location.hash).toEqual('#bar');
+
+		pushState.mockRestore();
+	});
 });
