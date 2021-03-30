@@ -206,4 +206,84 @@ describe('Router', () => {
 		// expect(A).toHaveBeenCalledTimes(1);
 		expect(A).toHaveBeenCalledWith({ path: '/', query: {} }, expect.anything());
 	});
+
+	it('should ignore clicks on externally-targeted links', async () => {
+		const pushState = jest.spyOn(history, 'pushState');
+
+		const shouldIntercept = [null, '', '_self', 'self', '_SELF'];
+		const shouldNavigate = ['_top', '_parent', '_blank', 'custom', '_BLANK'];
+
+		let loc;
+		const Route = jest.fn(
+			() => html`
+				<div>
+					${[...shouldIntercept, ...shouldNavigate].map((target, i) => {
+						const url = '/' + i + '/' + target;
+						if (target === null) return html`<a href=${url}>target = ${target + ''}</a>`;
+						return html`<a href=${url} target=${target}>target = ${target}</a> `;
+					})}
+				</div>
+			`
+		);
+		render(
+			html`
+				<${LocationProvider}>
+					<${Router}>
+						<${Route} default />
+					<//>
+					<${() => {
+						loc = useLocation();
+					}} />
+				<//>
+			`,
+			scratch
+		);
+
+		// prevent actual navigations (not implemented in JSDOM)
+		const clickHandler = jest.fn(e => e.preventDefault());
+		scratch.addEventListener('click', clickHandler);
+
+		expect(Route).toHaveBeenCalledTimes(1);
+		Route.mockClear();
+
+		await sleep(10);
+
+		// these should all be intercepted by the router.
+		for (const target of shouldIntercept) {
+			await sleep(10);
+
+			console.log('should intercept: ', target);
+			const sel = target == null ? `a:not([target])` : `a[target="${target}"]`;
+			const el = scratch.querySelector(sel);
+			if (!el) throw Error(`Unable to find link: ${sel}`);
+			const url = el.getAttribute('href');
+			el.click();
+			await sleep(10);
+			expect(loc).toMatchObject({ url });
+			expect(Route).toHaveBeenCalledTimes(1);
+			expect(pushState).toHaveBeenCalledWith(null, '', url);
+			expect(clickHandler).toHaveBeenCalled();
+
+			clickHandler.mockClear();
+			Route.mockClear();
+			pushState.mockClear();
+		}
+
+		// these should all navigate.
+		for (const target of shouldNavigate) {
+			await sleep(10);
+
+			console.log('should allow browser navigation: ', target);
+			const sel = target == null ? `a:not([target])` : `a[target="${target}"]`;
+			const el = scratch.querySelector(sel);
+			if (!el) throw Error(`Unable to find link: ${sel}`);
+			el.click();
+			await sleep(10);
+			expect(Route).not.toHaveBeenCalled();
+			expect(pushState).not.toHaveBeenCalled();
+			expect(clickHandler).toHaveBeenCalled();
+
+			clickHandler.mockClear();
+		}
+	});
 });
