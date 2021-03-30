@@ -1,5 +1,6 @@
 import { jest, describe, it, beforeEach, expect } from '@jest/globals';
-import { h, html, render } from 'htm/preact';
+import { h, render } from 'preact';
+import { html } from 'htm/preact';
 import { LocationProvider, Router, useLocation } from '../router.js';
 import lazy, { ErrorBoundary } from '../lazy.js';
 
@@ -205,5 +206,93 @@ describe('Router', () => {
 		expect(B).not.toHaveBeenCalled();
 		// expect(A).toHaveBeenCalledTimes(1);
 		expect(A).toHaveBeenCalledWith({ path: '/', query: {} }, expect.anything());
+	});
+
+	describe('intercepted VS external links', () => {
+		const shouldIntercept = [null, '', '_self', 'self', '_SELF'];
+		const shouldNavigate = ['_top', '_parent', '_blank', 'custom', '_BLANK'];
+
+		// prevent actual navigations (not implemented in JSDOM)
+		const clickHandler = jest.fn(e => e.preventDefault());
+
+		const Route = jest.fn(
+			() => html`
+				<div>
+					${[...shouldIntercept, ...shouldNavigate].map((target, i) => {
+						const url = '/' + i + '/' + target;
+						if (target === null) return html`<a href=${url}>target = ${target + ''}</a>`;
+						return html`<a href=${url} target=${target}>target = ${target}</a> `;
+					})}
+				</div>
+			`
+		);
+
+		let pushState, loc;
+
+		beforeAll(() => {
+			pushState = jest.spyOn(history, 'pushState');
+			addEventListener('click', clickHandler);
+		});
+
+		afterAll(() => {
+			pushState.mockRestore();
+			removeEventListener('click', clickHandler);
+		});
+
+		beforeEach(async () => {
+			render(
+				html`
+					<${LocationProvider}>
+						<${Router}>
+							<${Route} default />
+						<//>
+						<${() => {
+							loc = useLocation();
+						}} />
+					<//>
+				`,
+				scratch
+			);
+			await sleep(10);
+			Route.mockClear();
+			clickHandler.mockClear();
+			pushState.mockClear();
+		});
+
+		const getName = target => (target == null ? 'no target attribute' : `target="${target}"`);
+
+		// these should all be intercepted by the router.
+		for (const target of shouldIntercept) {
+			it(`should intercept clicks on links with ${getName(target)}`, async () => {
+				await sleep(10);
+
+				const sel = target == null ? `a:not([target])` : `a[target="${target}"]`;
+				const el = scratch.querySelector(sel);
+				if (!el) throw Error(`Unable to find link: ${sel}`);
+				const url = el.getAttribute('href');
+				el.click();
+				await sleep(1);
+				expect(loc).toMatchObject({ url });
+				expect(Route).toHaveBeenCalledTimes(1);
+				expect(pushState).toHaveBeenCalledWith(null, '', url);
+				expect(clickHandler).toHaveBeenCalled();
+			});
+		}
+
+		// these should all navigate.
+		for (const target of shouldNavigate) {
+			it(`should allow default browser navigation for links with ${getName(target)}`, async () => {
+				await sleep(10);
+
+				const sel = target == null ? `a:not([target])` : `a[target="${target}"]`;
+				const el = scratch.querySelector(sel);
+				if (!el) throw Error(`Unable to find link: ${sel}`);
+				el.click();
+				await sleep(1);
+				expect(Route).not.toHaveBeenCalled();
+				expect(pushState).not.toHaveBeenCalled();
+				expect(clickHandler).toHaveBeenCalled();
+			});
+		}
 	});
 });
