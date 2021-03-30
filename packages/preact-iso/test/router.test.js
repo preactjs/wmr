@@ -109,9 +109,13 @@ describe('Router', () => {
 	});
 
 	it('should wait for asynchronous routes', async () => {
-		const A = jest.fn(groggy(() => html`<h1>A</h1>`, 10));
-		const B = jest.fn(groggy(() => html`<h1>B</h1>`, 10));
-		const C = jest.fn(groggy(() => html`<h1>C</h1>`, 10));
+		const route = name => html`
+			<h1>${name}</h1>
+			<p>hello</p>
+		`;
+		const A = jest.fn(groggy(() => route('A'), 1));
+		const B = jest.fn(groggy(() => route('B'), 1));
+		const C = jest.fn(groggy(() => html`<h1>C</h1>`, 1));
 		let loc;
 		render(
 			html`
@@ -135,28 +139,28 @@ describe('Router', () => {
 		expect(A).toHaveBeenCalledWith({ path: '/', query: {} }, expect.anything());
 
 		A.mockClear();
-		await sleep(20);
+		await sleep(10);
 
-		expect(scratch).toHaveProperty('innerHTML', '<h1>A</h1>');
+		expect(scratch).toHaveProperty('innerHTML', '<h1>A</h1><p>hello</p>');
 		expect(A).toHaveBeenCalledWith({ path: '/', query: {} }, expect.anything());
 
 		A.mockClear();
 		loc.route('/b');
 
-		expect(scratch).toHaveProperty('innerHTML', '<h1>A</h1>');
+		expect(scratch).toHaveProperty('innerHTML', '<h1>A</h1><p>hello</p>');
 		expect(A).not.toHaveBeenCalled();
 
 		await sleep(1);
 
-		expect(scratch).toHaveProperty('innerHTML', '<h1>A</h1>');
+		expect(scratch).toHaveProperty('innerHTML', '<h1>A</h1><p>hello</p>');
 		// We should never re-invoke <A /> while loading <B /> (that would be a remount of the old route):
 		expect(A).not.toHaveBeenCalled();
 		expect(B).toHaveBeenCalledWith({ path: '/b', query: {} }, expect.anything());
 
 		B.mockClear();
-		await sleep(20);
+		await sleep(10);
 
-		expect(scratch).toHaveProperty('innerHTML', '<h1>B</h1>');
+		expect(scratch).toHaveProperty('innerHTML', '<h1>B</h1><p>hello</p>');
 		expect(A).not.toHaveBeenCalled();
 		expect(B).toHaveBeenCalledWith({ path: '/b', query: {} }, expect.anything());
 
@@ -165,7 +169,7 @@ describe('Router', () => {
 		loc.route('/c?1');
 		loc.route('/c');
 
-		expect(scratch).toHaveProperty('innerHTML', '<h1>B</h1>');
+		expect(scratch).toHaveProperty('innerHTML', '<h1>B</h1><p>hello</p>');
 		expect(B).not.toHaveBeenCalled();
 
 		await sleep(1);
@@ -174,13 +178,13 @@ describe('Router', () => {
 		loc.route('/c?2');
 		loc.route('/c');
 
-		expect(scratch).toHaveProperty('innerHTML', '<h1>B</h1>');
+		expect(scratch).toHaveProperty('innerHTML', '<h1>B</h1><p>hello</p>');
 		// We should never re-invoke <A /> while loading <B /> (that would be a remount of the old route):
 		expect(B).not.toHaveBeenCalled();
 		expect(C).toHaveBeenCalledWith({ path: '/c', query: {} }, expect.anything());
 
 		C.mockClear();
-		await sleep(20);
+		await sleep(10);
 
 		expect(scratch).toHaveProperty('innerHTML', '<h1>C</h1>');
 		expect(B).not.toHaveBeenCalled();
@@ -193,7 +197,7 @@ describe('Router', () => {
 		loc.route('/b');
 		await sleep(1);
 
-		expect(scratch).toHaveProperty('innerHTML', '<h1>B</h1>');
+		expect(scratch).toHaveProperty('innerHTML', '<h1>B</h1><p>hello</p>');
 		expect(C).not.toHaveBeenCalled();
 		// expect(B).toHaveBeenCalledTimes(1);
 		expect(B).toHaveBeenCalledWith({ path: '/b', query: {} }, expect.anything());
@@ -202,7 +206,7 @@ describe('Router', () => {
 		loc.route('/');
 		await sleep(1);
 
-		expect(scratch).toHaveProperty('innerHTML', '<h1>A</h1>');
+		expect(scratch).toHaveProperty('innerHTML', '<h1>A</h1><p>hello</p>');
 		expect(B).not.toHaveBeenCalled();
 		// expect(A).toHaveBeenCalledTimes(1);
 		expect(A).toHaveBeenCalledWith({ path: '/', query: {} }, expect.anything());
