@@ -11,16 +11,14 @@ export default function Docs({ slug }) {
 	const { html, meta } = useContent(`content/docs/${slug}`);
 
 	return (
-		<>
+		<div class="sidebar-layout">
 			<Meta {...meta} />
-			<div class="sidebar-layout">
-				<Sidebar content={content} />
-				<main class="main">
-					<section class="md">
-						<Markup html={html} />
-					</section>
-				</main>
-			</div>
-		</>
+			<Sidebar content={content} />
+			<main class="main">
+				<section class="md">
+					<Markup html={html} />
+				</section>
+			</main>
+		</div>
 	);
 }
