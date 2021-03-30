@@ -3,16 +3,18 @@ import { useContext, useMemo, useReducer, useEffect, useLayoutEffect, useRef } f
 
 let push;
 const UPDATE = (state, url) => {
-	push = true;
+	push = undefined;
 	if (url && url.type === 'click') {
 		const link = url.target.closest('a[href]');
 		if (!link || link.origin != location.origin) return state;
 
+		push = true;
 		url.preventDefault();
 		url = link.href.replace(location.origin, '');
-	} else if (typeof url !== 'string') {
+	} else if (typeof url === 'string') {
+		push = true;
+	} else {
 		url = location.pathname + location.search;
-		push = undefined;
 	}
 
 	if (push === true) history.pushState(null, '', url);
