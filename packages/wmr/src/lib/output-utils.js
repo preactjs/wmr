@@ -1,6 +1,5 @@
 import * as kl from 'kolorist';
 import * as util from 'util';
-import { relative } from 'path';
 
 /** @param {import('rollup').RollupOutput} bundle */
 export function bundleStats(bundle) {
@@ -151,9 +150,6 @@ export function formatPath(path) {
 	}
 	if (path.startsWith('\b') || path.startsWith('\0')) {
 		path = JSON.stringify(path);
-	}
-	if (path.startsWith(process.cwd())) {
-		path = relative(process.cwd(), path);
 	}
 
 	return path;
