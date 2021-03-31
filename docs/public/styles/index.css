@@ -44,7 +44,7 @@
 	}
 
 	.icon {
-		filter: grayscale(1) brightness(5);
+		filter: invert(1);
 	}
 }
 
@@ -73,6 +73,9 @@ html[theme='dark'] {
 	--color-info: #184c68;
 
 	--header-accent-height: 0.1875rem;
+}
+html[theme='dark'] .icon {
+	filter: invert(1);
 }
 
 html[theme='teatime'] {
