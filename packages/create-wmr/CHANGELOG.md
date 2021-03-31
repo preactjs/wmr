@@ -1,5 +1,11 @@
 # create-wmr
 
+## 0.3.2
+
+### Patch Changes
+
+- [`89b402e`](https://github.com/preactjs/wmr/commit/89b402e64d03850998899a74ecc62ba55eef030b) [#508](https://github.com/preactjs/wmr/pull/508) Thanks [@rschristian](https://github.com/rschristian)! - Adds a bundle visualizer to WMR
+
 ## 0.3.1
 
 ### Patch Changes
