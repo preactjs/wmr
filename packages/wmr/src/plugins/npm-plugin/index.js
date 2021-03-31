@@ -1,7 +1,9 @@
 import { posix, sep } from 'path';
+import * as kl from 'kolorist';
 import { memo } from './utils.js';
 import { resolvePackageVersion, loadPackageFile, getPackageVersionFromDeps } from './registry.js';
 import { resolveModule } from './resolve.js';
+import { debug, formatPath } from '../../lib/output-utils.js';
 
 /**
  * @param {Object} options
@@ -11,6 +13,8 @@ import { resolveModule } from './resolve.js';
  * @returns {import('rollup').Plugin}
  */
 export default function npmPlugin({ publicPath = '/@npm', prefix = '\bnpm/', external = true } = {}) {
+	const log = debug('npm:plugin');
+
 	return {
 		name: 'npm-plugin',
 		async resolveId(id, importer) {
@@ -121,12 +125,17 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = '\bnpm/', ext
 			});
 			resolvedPath = resolvedPath.replace(/^\//, '');
 
+			let res;
 			// CSS files are not handled by this plugin.
 			if (/\.css$/.test(id) && (await hasFile(resolvedPath))) {
-				return `./node_modules/${meta.module}/${resolvedPath}`;
+				res = `./node_modules/${meta.module}/${resolvedPath}`;
+				log(`${kl.cyan(formatPath(id))} -> ${kl.dim(formatPath(res))}`);
+				return res;
 			}
 
-			return `${prefix}${meta.module}${meta.version ? '@' + meta.version : ''}/${resolvedPath}`;
+			res = `${prefix}${meta.module}${meta.version ? '@' + meta.version : ''}/${resolvedPath}`;
+			log(`${kl.cyan(formatPath(id))} -> ${kl.dim(formatPath(res))}`);
+			return res;
 		},
 		load(id) {
 			// only load modules this plugin resolved
