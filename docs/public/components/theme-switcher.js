@@ -36,7 +36,11 @@ export function ThemeSwitcher(props) {
 	}, []);
 
 	useEffect(() => {
-		document.body.parentNode.setAttribute('theme', theme);
+		if (theme === 'auto') {
+			document.documentElement.removeAttribute('theme');
+		} else {
+			document.documentElement.setAttribute('theme', theme);
+		}
 	}, [theme]);
 
 	return (
