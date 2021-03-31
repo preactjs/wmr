@@ -1,3 +1,4 @@
 .cache
 node_modules
 dist
+stats.html
