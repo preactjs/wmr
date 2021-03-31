@@ -40,7 +40,7 @@ export function getPlugins(options) {
 		externalUrlsPlugin(),
 		nodeBuiltinsPlugin({ production }),
 		urlPlugin({ inline: !production, cwd }),
-		jsonPlugin({ cwd }),
+		jsonPlugin(),
 		bundlePlugin({ inline: !production, cwd }),
 		aliasesPlugin({ aliases, cwd: root }),
 		sucrasePlugin({

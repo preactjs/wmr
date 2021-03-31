@@ -299,6 +299,7 @@ export const TRANSFORMS = {
 					return NonRollup.resolveImportMeta(property);
 				},
 				async resolveId(spec, importer) {
+					console.log('TRANSFORM import', JSON.stringify(spec));
 					if (spec === 'wmr') return '/_wmr.js';
 					if (/^(data:|https?:|\/\/)/.test(spec)) {
 						logJsTransform(`${kl.cyan(formatPath(spec))} [external]`);
@@ -376,6 +377,13 @@ export const TRANSFORMS = {
 						spec = spec + `?t=${Date.now()}`;
 						logJsResolve(originalSpec, spec);
 						return spec;
+					}
+
+					// Apply default loaders if none are present already
+					if (!/\/@/.test(spec)) {
+						if (spec.endsWith('.json')) {
+							spec = '/@json/' + spec;
+						}
 					}
 
 					logJsResolve(originalSpec, spec);
