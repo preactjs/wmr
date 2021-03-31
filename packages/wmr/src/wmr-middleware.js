@@ -8,11 +8,13 @@ import { transformImports } from './lib/transform-imports.js';
 import { normalizeSpecifier } from './plugins/npm-plugin/index.js';
 import sassPlugin from './plugins/sass-plugin.js';
 import { getMimeType } from './lib/mimetypes.js';
-import { codeFrame } from './lib/output-utils.js';
+import { codeFrame, debug, formatPath } from './lib/output-utils.js';
 import { getPlugins } from './lib/plugins.js';
 import { watch } from './lib/fs-watcher.js';
 
 const NOOP = () => {};
+
+const log = debug('wmr:middleware');
 
 /**
  * In-memory cache of files that have been generated and written to .cache/
@@ -156,6 +158,8 @@ export default function wmrMiddleware(options) {
 			res.setHeader('Content-Type', type);
 		}
 
+		log(`${kl.cyan(formatPath(path))} -> ${kl.dim(id)} file: ${kl.dim(file)}`);
+
 		const ctx = { req, res, id, file, path, prefix, cwd, out, NonRollup, next };
 
 		let transform;
@@ -184,6 +188,7 @@ export default function wmrMiddleware(options) {
 
 			// return a value to use it as the response:
 			if (result != null) {
+				log(`<-- ${kl.cyan(formatPath(id))} as ${kl.dim('' + res.getHeader('Content-Type'))}`);
 				const time = Date.now() - start;
 				res.writeHead(200, {
 					'Content-Length': Buffer.byteLength(result, 'utf-8'),
@@ -219,6 +224,9 @@ export default function wmrMiddleware(options) {
  * @property {InstanceType<import('http')['IncomingMessage']>} req HTTP Request object
  * @property {InstanceType<import('http')['ServerResponse']>} res HTTP Response object
  */
+
+const logJsTransform = debug('wmr:transform.js');
+const logJsResolve = (original, id) => logJsTransform(`${kl.cyan(formatPath(original))} -> ${kl.dim(formatPath(id))}`);
 
 /** @typedef {string|false|Buffer|Uint8Array|null|void} Result */
 
@@ -261,7 +269,10 @@ export const TRANSFORMS = {
 		try {
 			res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
 
-			if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
+			if (WRITE_CACHE.has(id)) {
+				logJsTransform(`<-- ${kl.cyan(formatPath(id))} [cached]`);
+				return WRITE_CACHE.get(id);
+			}
 
 			const resolved = await NonRollup.resolveId(id);
 			const resolvedId = typeof resolved == 'object' ? resolved && resolved.id : resolved;
@@ -282,7 +293,10 @@ export const TRANSFORMS = {
 				},
 				async resolveId(spec, importer) {
 					if (spec === 'wmr') return '/_wmr.js';
-					if (/^(data:|https?:|\/\/)/.test(spec)) return spec;
+					if (/^(data:|https?:|\/\/)/.test(spec)) {
+						logJsTransform(`${kl.cyan(formatPath(spec))} [external]`);
+						return spec;
+					}
 
 					let graphId = importer.startsWith('/') ? importer.slice(1) : importer;
 					if (!moduleGraph.has(graphId)) {
@@ -291,6 +305,7 @@ export const TRANSFORMS = {
 					const mod = moduleGraph.get(graphId);
 
 					// const resolved = await NonRollup.resolveId(spec, importer);
+					let originalSpec = spec;
 					const resolved = await NonRollup.resolveId(spec, file);
 					if (resolved) {
 						spec = typeof resolved == 'object' ? resolved.id : resolved;
@@ -302,10 +317,14 @@ export const TRANSFORMS = {
 						}
 						if (typeof resolved == 'object' && resolved.external) {
 							// console.log('external: ', spec);
-							if (/^(data|https?):/.test(spec)) return spec;
+							if (/^(data|https?):/.test(spec)) {
+								logJsResolve(originalSpec, spec);
+								return spec;
+							}
 
 							spec = relative(cwd, spec).split(sep).join(posix.sep);
 							if (!/^(\/|[\w-]+:)/.test(spec)) spec = `/${spec}`;
+							logJsResolve(originalSpec, spec);
 							return spec;
 						}
 					}
@@ -347,9 +366,12 @@ export const TRANSFORMS = {
 					const specModule = moduleGraph.get(modSpec);
 					specModule.dependents.add(graphId);
 					if (specModule.stale) {
-						return spec + `?t=${Date.now()}`;
+						spec = spec + `?t=${Date.now()}`;
+						logJsResolve(originalSpec, spec);
+						return spec;
 					}
 
+					logJsResolve(originalSpec, spec);
 					return spec;
 				}
 			});

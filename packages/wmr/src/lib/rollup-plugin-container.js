@@ -294,10 +294,11 @@ export function createPluginContainer(plugins, opts = {}) {
 				if (!plugin.load) continue;
 				const result = await plugin.load.call(ctx, id);
 				if (result) {
-					logLoad(`${formatPath(id)} [${plugin.name}]`);
+					logLoad(`${kl.dim(formatPath(id))} [${plugin.name}]`);
 					return result;
 				}
 			}
+			logLoad(`${kl.dim(formatPath(id))} [__fallback__]`);
 			return null;
 		},
 
