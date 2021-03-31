@@ -43,6 +43,7 @@ declare module 'wmr' {
 		plugins: Plugin[];
 		output: OutputOption[];
 		features: Features;
+		visualize: boolean;
 	}
 
 	export type BuildError = RollupError & { clientMessage?: string };

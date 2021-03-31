@@ -19,13 +19,14 @@ import externalUrlsPlugin from '../plugins/external-urls-plugin.js';
 import copyAssetsPlugin from '../plugins/copy-assets-plugin.js';
 import nodeBuiltinsPlugin from '../plugins/node-builtins-plugin.js';
 import dynamicImportVars from '@rollup/plugin-dynamic-import-vars';
+import visualizer from 'rollup-plugin-visualizer';
 
 /**
  * @param {import("wmr").Options} options
  * @returns {import("wmr").Plugin[]}
  */
 export function getPlugins(options) {
-	const { plugins, cwd, publicPath, aliases, root, env, minify, mode, sourcemap, features } = options;
+	const { plugins, cwd, publicPath, aliases, root, env, minify, mode, sourcemap, features, visualize } = options;
 
 	// Plugins are pre-sorted
 	let split = plugins.findIndex(p => p.enforce === 'post');
@@ -75,6 +76,7 @@ export function getPlugins(options) {
 
 		production && optimizeGraphPlugin({ publicPath }),
 		minify && minifyCssPlugin({ sourcemap }),
-		production && copyAssetsPlugin({ cwd })
+		production && copyAssetsPlugin({ cwd }),
+		production && visualize && visualizer({ open: true, gzipSize: true, brotliSize: true })
 	].filter(Boolean);
 }
