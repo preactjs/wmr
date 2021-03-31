@@ -708,6 +708,14 @@ describe('fixtures', () => {
 			const text = await env.page.evaluate(`fetch('/test').then(r => r.text())`);
 			expect(text).toEqual('it works');
 		});
+
+		it.todo('should work with custom load hooks', async () => {
+			await loadFixture('plugin-absolute-load', env);
+			instance = await runWmrFast(env.tmp.path);
+			await env.page.goto(await instance.address, { waitUntil: 'networkidle0' });
+			const text = await env.page.content();
+			expect(text).toMatch('foobarbaz');
+		});
 	});
 
 	describe('node built-ins', () => {
