@@ -581,10 +581,6 @@ h5:hover .anchor {
 	font-size: 1rem;
 }
 @media (max-width: 599px) {
-	.jumbotron img {
-		width: 200px;
-		height: 200px;
-	}
 	.jumbotron h1 {
 		font-size: 70px;
 	}
@@ -600,12 +596,18 @@ h5:hover .anchor {
  * Feature Grid
  */
 .feature-grid {
-	display: grid;
-	grid-template-columns: repeat(3, minmax(0, 1fr));
-	grid-gap: 3rem;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-evenly;
 	margin: 4rem auto;
 	max-width: 80rem;
 	padding: 0 2rem;
+}
+
+.feature {
+	flex: 1 1 33%;
+	min-width: 300px;
+	padding: 1rem;
 }
 
 .feature *:last-child {
