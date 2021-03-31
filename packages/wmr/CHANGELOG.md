@@ -1,5 +1,17 @@
 # wmr
 
+## 1.5.0
+
+### Minor Changes
+
+- [`89b402e`](https://github.com/preactjs/wmr/commit/89b402e64d03850998899a74ecc62ba55eef030b) [#508](https://github.com/preactjs/wmr/pull/508) Thanks [@rschristian](https://github.com/rschristian)! - Adds a bundle visualizer to WMR
+
+### Patch Changes
+
+- [`483601f`](https://github.com/preactjs/wmr/commit/483601f80d045728d8c037009f263293de4ac213) [#498](https://github.com/preactjs/wmr/pull/498) Thanks [@developit](https://github.com/developit)! - Bugfix: Fix a crash when prerendering encounters an error, and show pretty-printed stack traces instead.
+
+* [`f15a0c5`](https://github.com/preactjs/wmr/commit/f15a0c52b59395129edd8660cda8bbf12354157a) [#500](https://github.com/preactjs/wmr/pull/500) Thanks [@developit](https://github.com/developit)! - Bugfix: fixes a crash when initializing Chokidar on some systems
+
 ## 1.4.2
 
 ### Patch Changes

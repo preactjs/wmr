@@ -1,6 +1,6 @@
 {
 	"name": "wmr",
-	"version": "1.4.2",
+	"version": "1.5.0",
 	"bin": "wmr.cjs",
 	"type": "module",
 	"scripts": {
