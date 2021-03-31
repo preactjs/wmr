@@ -130,10 +130,12 @@ export default function wmrMiddleware(options) {
 			return next();
 		}
 
+		// Rewrite serialized namespaces back to their original form
+		// Example: `/@foo/bar/baz.js` -> `foo:bar/baz.js
 		let prefix = '';
 		const prefixMatches = path.match(/^\/?@([a-z-]+)(\/.+)$/);
 		if (prefixMatches) {
-			prefix = '\0' + prefixMatches[1] + ':';
+			prefix = prefixMatches[1] + ':';
 			path = prefixMatches[2];
 		}
 
@@ -143,11 +145,16 @@ export default function wmrMiddleware(options) {
 		let file = resolve(cwd, osPath);
 
 		// Rollup-style CWD-relative Unix-normalized path "id":
-		let id = relative(cwd, file)
-			.replace(/^\.\//, '')
-			.replace(/^[\0\b]/, '')
-			.split(sep)
-			.join(posix.sep);
+		let id =
+			// Semantically `./foo` is different from `foo` in JavaScript.
+			// The first points at a file, the other at a module that
+			// is a built-in or needs to be resolved to `node_modules`
+			'./' +
+			relative(cwd, file)
+				.replace(/^\.\//, '')
+				.replace(/^[\0\b]/, '')
+				.split(sep)
+				.join(posix.sep);
 
 		// add back any prefix if there was one:
 		file = prefix + file;

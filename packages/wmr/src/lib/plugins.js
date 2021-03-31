@@ -1,3 +1,4 @@
+import { promises as fs } from 'fs';
 import htmPlugin from '../plugins/htm-plugin.js';
 import sucrasePlugin from '../plugins/sucrase-plugin.js';
 import wmrPlugin from '../plugins/wmr/plugin.js';
@@ -72,6 +73,24 @@ export function getPlugins(options) {
 		}),
 
 		...plugins.slice(split),
+
+		false && {
+			// Fallback loader when no namespace loaded a file.
+			// Strips all prefixes and attempts to load the
+			// remainder.
+			name: 'ns-loader',
+			async load(id) {
+				// Remove all prefixes
+				const PREFIX_REG = /^(\0?\w+:)(?!\/\/)/g;
+				let match;
+				while ((match = PREFIX_REG.exec(id))) {
+					id = id.slice(match[0].length);
+				}
+
+				// TODO: Check for external resource
+				return fs.readFile(id, 'utf-8');
+			}
+		},
 
 		production && optimizeGraphPlugin({ publicPath }),
 		minify && minifyCssPlugin({ sourcemap }),
