@@ -200,7 +200,7 @@ html[theme='teatime'] .icon {
 
 .theme-switcher {
 	position: relative;
-	width: 1.25rem;
+	width: 1.5rem;
 	height: 100%;
 }
 
@@ -214,6 +214,7 @@ html[theme='teatime'] .icon {
 	align-items: center;
 	justify-content: center;
 	background: var(--color-bg);
+	cursor: pointer;
 }
 
 .theme-btn[data-next] {
