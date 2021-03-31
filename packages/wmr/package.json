@@ -139,6 +139,7 @@
 		"resolve.exports": "^1.0.2",
 		"rollup": "^2.43.1",
 		"rollup-plugin-preserve-shebang": "^1.0.1",
+		"rollup-plugin-visualizer": "^4.2.2",
 		"sade": "^1.7.3",
 		"semver": "^7.3.2",
 		"sirv": "^1.0.6",
