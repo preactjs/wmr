@@ -1,5 +1,11 @@
 # wmr
 
+## 1.5.1
+
+### Patch Changes
+
+- [`91e797a`](https://github.com/preactjs/wmr/commit/91e797a8cbd2f205fb86668e66979bbf428776c6) [#511](https://github.com/preactjs/wmr/pull/511) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix missing dependency `rollup-plugin-visualize` (bad publish of 1.5.0)
+
 ## 1.5.0
 
 ### Minor Changes
