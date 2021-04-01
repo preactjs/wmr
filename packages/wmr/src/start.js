@@ -91,7 +91,7 @@ async function bootServer(options, configWatchFiles) {
 			app.ws.broadcast({
 				type: 'error',
 				error: err.clientMessage || err.message,
-				codeFrame: err.codeFrame
+				codeFrame: kl.stripColors(err.codeFrame)
 			});
 		}
 	}
