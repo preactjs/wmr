@@ -69,7 +69,7 @@ export default async function server({ cwd, root, overlayDir, middleware, http2,
 				? fullPath
 				: './' + join(relative(root, cwd), fullPath.replace(/^\//, ''));
 
-			const codeFrame = err.codeFrame ? `\n${err.codeFrame}\n` : '';
+			const codeFrame = err.codeFrame ? `\n${err.codeFrame}` : '';
 			const prettyStack = errorstacks
 				.parseStackTrace(err.stack)
 				.map(frame => {
