@@ -2,6 +2,19 @@ function log(...args) {
 	console.info('[wmr] ', ...args);
 }
 
+/**
+ * Strip ansi colors from a string. Inlined from kolorist:
+ * https://github.com/marvinhagemeister/kolorist/blob/87a6402ec3a99ee4714ffb3f9bb54fd1d16174bd/src/index.ts#L62-L66
+ * @param {string} str
+ * @returns {string}
+ */
+function stripColors(str) {
+	// eslint-disable-next-line no-control-regex
+	return ('' + str).replace(/\x1b\[[0-9;]+m/g, '').replace(/\x1b\]8;;.*?\x07(.*?)\x1b\]8;;\x07/g, function (_, group) {
+		return group;
+	});
+}
+
 const strip = url => url.replace(/\?t=\d+/g, '');
 
 const resolve = url => new URL(url, location.origin).href;
@@ -86,11 +99,15 @@ function handleMessage(e) {
 				}, 1000);
 			}
 			break;
-		case 'error':
+		case 'error': {
 			errorCount++;
-			console.error(data.error);
-			if (data.codeFrame) console.error(data.codeFrame);
+			let msg = data.error;
+			if (data.codeFrame) {
+				msg += '\n' + stripColors(data.codeFrame);
+			}
+			console.error(msg);
 			break;
+		}
 		default:
 			log('unknown message: ', data);
 	}
