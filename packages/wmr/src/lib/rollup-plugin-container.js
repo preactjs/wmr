@@ -100,15 +100,16 @@ export function createPluginContainer(plugins, opts = {}) {
 				...opts
 			});
 		},
-		async resolve(id, importer, { skipSelf = false } = { skipSelf: false }) {
+		async resolve(id, importer, { skipSelf = false, custom } = { skipSelf: false }) {
 			const skip = [];
 			if (skipSelf && plugin) skip.push(plugin);
-			let out = await container.resolveId(id, importer, skip);
+			let out = await container.resolveId(id, importer, custom, skip);
 			if (typeof out === 'string') out = { id: out };
 			if (!out || !out.id) out = { id };
 			if (out.id.match(/^\.\.?[/\\]/)) {
 				out.id = resolve(opts.cwd || '.', importer ? dirname(importer) : '.', out.id);
 			}
+			console.log('this.resolve', id, custom, out);
 			return out || false;
 		},
 		getModuleInfo(id) {
@@ -221,11 +222,15 @@ export function createPluginContainer(plugins, opts = {}) {
 
 		/**
 		 * @param {string} id
-		 * @param {string} [importer]
+		 * @param {string | undefined} importer
+		 * @param {import('rollup').CustomPluginOptions} options
 		 * @param {[Plugin]} [_skip] internal
 		 * @returns {Promise<import('rollup').ResolveIdResult>}
 		 */
-		async resolveId(id, importer, _skip) {
+		async resolveId(id, importer, options, _skip) {
+			if (options === undefined) {
+				throw new Error('options = undefined');
+			}
 			let originalId = id;
 			const key = identifierPair(id, importer);
 
@@ -242,8 +247,9 @@ export function createPluginContainer(plugins, opts = {}) {
 				plugin = p;
 
 				let result;
+				// In Rollup plugins can add custom metadata to options.custom
 				try {
-					result = await p.resolveId.call(ctx, id, importer);
+					result = await p.resolveId.call(ctx, id, importer, options);
 				} finally {
 					if (_skip) resolveSkips.delete(p, key);
 				}
@@ -253,7 +259,9 @@ export function createPluginContainer(plugins, opts = {}) {
 					id = result;
 				} else {
 					id = result.id;
+					console.log('result', result, opts);
 					Object.assign(opts, result);
+					// Object.assign(pluginOptions, result.meta);
 				}
 
 				logResolve(`${formatResolved(originalId, id)} [${p.name}]`);

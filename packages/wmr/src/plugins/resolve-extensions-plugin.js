@@ -53,7 +53,7 @@ export default function resolveExtensionsPlugin({
 
 			let resolved;
 			try {
-				resolved = await this.resolve(id, importer, { skipSelf: true });
+				resolved = await this.resolve(id, importer, { skipSelf: true, custom: { originalId: id } });
 			} catch (e) {}
 			if (resolved) {
 				id = resolved.id;

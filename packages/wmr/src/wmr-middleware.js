@@ -167,7 +167,8 @@ export default function wmrMiddleware(options) {
 
 		log(`${kl.cyan(formatPath(path))} -> ${kl.dim(id)} file: ${kl.dim(file)}`);
 
-		const ctx = { req, res, id, file, path, prefix, cwd, out, NonRollup, next };
+		/** @type {Context} */
+		const ctx = { req, res, id, file, path, prefix, cwd, out, NonRollup, next, pluginCustom: {} };
 
 		let transform;
 		if (path === '/_wmr.js') {
@@ -221,7 +222,7 @@ export default function wmrMiddleware(options) {
 
 /**
  * @typedef Context
- * @property {ReturnType<createPluginContainer>} NonRollup
+ * @property {ReturnType<typeof createPluginContainer>} NonRollup
  * @property {string} id rollup-style cwd-relative file identifier
  * @property {string} file absolute file path
  * @property {string} path request path
@@ -230,6 +231,8 @@ export default function wmrMiddleware(options) {
  * @property {string} out output directory
  * @property {InstanceType<import('http')['IncomingMessage']>} req HTTP Request object
  * @property {InstanceType<import('http')['ServerResponse']>} res HTTP Response object
+ * @property {() => void} next Call next HTTP middleware
+ * @property {import('rollup').CustomPluginOptions} pluginCustom
  */
 
 const logJsTransform = debug('wmr:transform.js');
@@ -271,7 +274,7 @@ export const TRANSFORMS = {
 	},
 
 	// Handle individual JavaScript modules
-	async js({ id, file, prefix, res, cwd, out, NonRollup, req }) {
+	async js({ id, file, prefix, res, cwd, out, NonRollup, req, pluginCustom }) {
 		let code;
 		try {
 			res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
@@ -281,7 +284,7 @@ export const TRANSFORMS = {
 				return WRITE_CACHE.get(id);
 			}
 
-			const resolved = await NonRollup.resolveId(id);
+			const resolved = await NonRollup.resolveId(id, undefined, pluginCustom);
 			const resolvedId = typeof resolved == 'object' ? resolved && resolved.id : resolved;
 			let result = resolvedId && (await NonRollup.load(resolvedId));
 
@@ -314,7 +317,7 @@ export const TRANSFORMS = {
 
 					// const resolved = await NonRollup.resolveId(spec, importer);
 					let originalSpec = spec;
-					const resolved = await NonRollup.resolveId(spec, file);
+					const resolved = await NonRollup.resolveId(spec, file, {});
 					if (resolved) {
 						spec = typeof resolved == 'object' ? resolved.id : resolved;
 						if (/^(\/|\\|[a-z]:\\)/i.test(spec)) {

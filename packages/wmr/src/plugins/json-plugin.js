@@ -14,16 +14,21 @@ export default function jsonPlugin() {
 
 	return {
 		name: 'json-plugin',
-		async resolveId(id, importer) {
-			if (id.endsWith('.json') && !/^[-\w]+:/.test(id)) {
+		async resolveId(id, importer, options) {
+			console.log('JSON opts', options);
+			console.trace();
+			const originalId = options.custom ? options.custom.originalId : null;
+
+			console.log('ORG', originalId, id, !originalId && id.endsWith('.json'), originalId && !/^[-\w]+:/.test(id));
+			if ((!originalId && id.endsWith('.json')) || (originalId && !/^[-\w]+:/.test(originalId))) {
 				id = IMPORT_PREFIX + id;
 			}
 			// Only resolve if prefix is present or NO prefix at all
-			console.log(JSON.stringify(id), JSON.stringify(importer));
 			if (!id.startsWith(IMPORT_PREFIX)) return;
+			console.log('GOGOGO', JSON.stringify(id), JSON.stringify(importer));
 			id = id.slice(IMPORT_PREFIX.length);
 
-			const resolved = await this.resolve(id, importer, { skipSelf: true, custom: { foo: 123 } });
+			const resolved = await this.resolve(id, importer, { skipSelf: true, custom: { originalId: id } });
 			return resolved && IMPORT_PREFIX + resolved.id;
 		},
 		async load(id) {

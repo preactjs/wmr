@@ -6,12 +6,13 @@ const INTERNAL = '\0my-json:';
 /** @type {import("wmr").Plugin} */
 const MY_JSON_PLUGIN = {
 	name: 'my-json',
-	async resolveId(id, importer) {
-		if (id.startsWith(PREFIX)) {
-			id = id.slice(PREFIX.length);
-			const resolved = await this.resolve(id, importer, { skipSelf: true });
-			return resolved && INTERNAL + resolved.id;
-		}
+	async resolveId(id, importer, options) {
+		console.log('MY options', options);
+		const originalId = id;
+		if (!id.startsWith(PREFIX)) return;
+		id = id.slice(PREFIX.length);
+		const resolved = await this.resolve(id, importer, { skipSelf: true, custom: { originalId } });
+		return resolved && INTERNAL + resolved.id;
 	},
 	async load(id) {
 		if (!id.startsWith(INTERNAL)) return;
