@@ -8,6 +8,7 @@ import compression from './lib/polkompress.js';
 import npmMiddleware from './lib/npm-middleware.js';
 import WebSocketServer from './lib/websocket-server.js';
 import * as kl from 'kolorist';
+import * as errorstacks from 'errorstacks';
 import { hasDebugFlag } from './lib/output-utils.js';
 
 /**
@@ -50,9 +51,7 @@ export default async function server({ cwd, root, overlayDir, middleware, http2,
 
 			let msg = '';
 			if (err) {
-				if (hasDebugFlag() && err.stack) {
-					msg = err.stack;
-				} else if (err.message) {
+				if (err.message) {
 					msg = err.message;
 				} else if (String(Object.keys(err)) === 'code') {
 					// sirv throws a `{code:404}` POJO
@@ -62,11 +61,24 @@ export default async function server({ cwd, root, overlayDir, middleware, http2,
 				}
 			}
 			res.writeHead(code, { 'content-type': 'text/plain' });
-			res.end(msg);
+			const serverMessage = hasDebugFlag() && err.stack ? err.stack : msg;
+			res.end(serverMessage);
+
+			// We can log the fully detailed error to the CLI
 			const displayPath = fullPath.startsWith('/@')
 				? fullPath
 				: './' + join(relative(root, cwd), fullPath.replace(/^\//, ''));
-			console.error(`${kl.yellow(code)} ${kl.bold(displayPath)} ${msg ? ` - ${msg}` : ''}`);
+
+			const codeFrame = err.codeFrame ? `\n${err.codeFrame}\n` : '';
+			const prettyStack = errorstacks
+				.parseStackTrace(err.stack)
+				.map(frame => {
+					return kl.dim(`  at ${frame.name} (`) + kl.cyan(frame.fileName) + kl.dim(`:${frame.line}:${frame.column})`);
+				})
+				.join('\n');
+
+			const stack = prettyStack ? `\n${prettyStack}` : '';
+			console.error(`\n${kl.yellow(code)} ${kl.bold(displayPath)} - ${msg}\n${codeFrame}${stack}`);
 		}
 	});
 

@@ -713,7 +713,7 @@ export function transform(
 	try {
 		parsed = parse(code);
 	} catch (err) {
-		throw Error(buildError(err, code, filename));
+		throw Object.assign(Error(), buildError(err, code, filename));
 	}
 
 	// start = Date.now();
@@ -745,13 +745,22 @@ export function transform(
 	};
 }
 
-function buildError(err, code, filename) {
+/**
+ * @param {Error & { loc?: { line: number, column: number }}} err
+ * @param {string} code
+ * @param {string} [filename]
+ * @returns {{ loc?: number | {line: number, column: number}, message: string, codeFrame?: string }}
+ */
+function buildError(err, code, filename = 'unknown') {
 	const { loc, message } = err;
-	if (!loc) return message;
+	if (!loc) return { message };
 	const text = message.replace(/ \(\d+:\d+\)$/, '');
 	const position = `${filename}:${loc.line}:${loc.column + 1}`;
-	const frame = codeFrame(code, loc);
-	return `${text} (${position})${frame}`;
+	return {
+		loc,
+		message: `${text} (${position})`,
+		codeFrame: codeFrame(code, loc)
+	};
 }
 
 /**
