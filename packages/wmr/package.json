@@ -142,6 +142,7 @@
 		"rollup-plugin-visualizer": "^4.2.2",
 		"sade": "^1.7.3",
 		"semver": "^7.3.2",
+		"simple-code-frame": "^1.1.1",
 		"sirv": "^1.0.6",
 		"stylis": "^4.0.2",
 		"sucrase": "^3.17.0",
