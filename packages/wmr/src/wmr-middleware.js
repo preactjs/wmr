@@ -1,5 +1,4 @@
 import { resolve, dirname, relative, sep, posix } from 'path';
-import * as kl from 'kolorist';
 import { promises as fs, createReadStream } from 'fs';
 import wmrPlugin, { getWmrClient } from './plugins/wmr/plugin.js';
 import wmrStylesPlugin, { modularizeCss, processSass } from './plugins/wmr/styles-plugin.js';
@@ -8,7 +7,6 @@ import { transformImports } from './lib/transform-imports.js';
 import { normalizeSpecifier } from './plugins/npm-plugin/index.js';
 import sassPlugin from './plugins/sass-plugin.js';
 import { getMimeType } from './lib/mimetypes.js';
-import { codeFrame } from './lib/output-utils.js';
 import { getPlugins } from './lib/plugins.js';
 import { watch } from './lib/fs-watcher.js';
 
@@ -258,113 +256,104 @@ export const TRANSFORMS = {
 	// Handle individual JavaScript modules
 	async js({ id, file, prefix, res, cwd, out, NonRollup, req }) {
 		let code;
-		try {
-			res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
+		res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
 
-			if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
+		if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
 
-			const resolved = await NonRollup.resolveId(id);
-			const resolvedId = typeof resolved == 'object' ? resolved && resolved.id : resolved;
-			let result = resolvedId && (await NonRollup.load(resolvedId));
+		const resolved = await NonRollup.resolveId(id);
+		const resolvedId = typeof resolved == 'object' ? resolved && resolved.id : resolved;
+		let result = resolvedId && (await NonRollup.load(resolvedId));
 
-			code = typeof result == 'object' ? result && result.code : result;
+		code = typeof result == 'object' ? result && result.code : result;
 
-			if (code == null || code === false) {
-				if (prefix) file = file.replace(prefix, '');
-				code = await fs.readFile(resolve(cwd, file), 'utf-8');
-			}
-
-			code = await NonRollup.transform(code, id);
-
-			code = await transformImports(code, id, {
-				resolveImportMeta(property) {
-					return NonRollup.resolveImportMeta(property);
-				},
-				async resolveId(spec, importer) {
-					if (spec === 'wmr') return '/_wmr.js';
-					if (/^(data:|https?:|\/\/)/.test(spec)) return spec;
-
-					let graphId = importer.startsWith('/') ? importer.slice(1) : importer;
-					if (!moduleGraph.has(graphId)) {
-						moduleGraph.set(graphId, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
-					}
-					const mod = moduleGraph.get(graphId);
-
-					// const resolved = await NonRollup.resolveId(spec, importer);
-					const resolved = await NonRollup.resolveId(spec, file);
-					if (resolved) {
-						spec = typeof resolved == 'object' ? resolved.id : resolved;
-						if (/^(\/|\\|[a-z]:\\)/i.test(spec)) {
-							spec = relative(dirname(file), spec).split(sep).join(posix.sep);
-							if (!/^\.?\.?\//.test(spec)) {
-								spec = './' + spec;
-							}
-						}
-						if (typeof resolved == 'object' && resolved.external) {
-							// console.log('external: ', spec);
-							if (/^(data|https?):/.test(spec)) return spec;
-
-							spec = relative(cwd, spec).split(sep).join(posix.sep);
-							if (!/^(\/|[\w-]+:)/.test(spec)) spec = `/${spec}`;
-							return spec;
-						}
-					}
-
-					// \0abc:foo --> /@abcF/foo
-					spec = spec.replace(/^\0?([a-z-]+):(.+)$/, (s, prefix, spec) => {
-						// \0abc:/abs/disk/path --> /@abc/cwd-relative-path
-						if (spec[0] === '/' || spec[0] === sep) {
-							spec = relative(cwd, spec).split(sep).join(posix.sep);
-						}
-						return '/@' + prefix + '/' + spec;
-					});
-
-					// foo.css --> foo.css.js (import of CSS Modules proxy module)
-					if (spec.match(/\.(css|s[ac]ss)$/)) spec += '.js';
-
-					// Bare specifiers are npm packages:
-					if (!/^\0?\.?\.?[/\\]/.test(spec)) {
-						const meta = normalizeSpecifier(spec);
-
-						// // Option 1: resolve all package verions (note: adds non-trivial delay to imports)
-						// await resolvePackageVersion(meta);
-						// // Option 2: omit package versions that resolve to the root
-						// // if ((await resolvePackageVersion({ module: meta.module, version: '' })).version === meta.version) {
-						// // 	meta.version = '';
-						// // }
-						// spec = `/@npm/${meta.module}${meta.version ? '@' + meta.version : ''}${meta.path ? '/' + meta.path : ''}`;
-
-						// Option 3: omit root package versions
-						spec = `/@npm/${meta.module}${meta.path ? '/' + meta.path : ''}`;
-					}
-
-					const modSpec = spec.startsWith('../') ? spec.replace(/..\/g/, '') : spec.replace('./', '');
-					mod.dependencies.add(modSpec);
-					if (!moduleGraph.has(modSpec)) {
-						moduleGraph.set(modSpec, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
-					}
-
-					const specModule = moduleGraph.get(modSpec);
-					specModule.dependents.add(graphId);
-					if (specModule.stale) {
-						return spec + `?t=${Date.now()}`;
-					}
-
-					return spec;
-				}
-			});
-
-			writeCacheFile(out, id, code);
-
-			return code;
-		} catch (e) {
-			if (code && e.loc && e.loc.line) {
-				e.codeFrame = kl.stripColors(codeFrame(code, e.loc));
-				console.error('[Build error]:\n' + e.codeFrame);
-			}
-
-			throw e;
+		if (code == null || code === false) {
+			if (prefix) file = file.replace(prefix, '');
+			code = await fs.readFile(resolve(cwd, file), 'utf-8');
 		}
+
+		code = await NonRollup.transform(code, id);
+
+		code = await transformImports(code, id, {
+			resolveImportMeta(property) {
+				return NonRollup.resolveImportMeta(property);
+			},
+			async resolveId(spec, importer) {
+				if (spec === 'wmr') return '/_wmr.js';
+				if (/^(data:|https?:|\/\/)/.test(spec)) return spec;
+
+				let graphId = importer.startsWith('/') ? importer.slice(1) : importer;
+				if (!moduleGraph.has(graphId)) {
+					moduleGraph.set(graphId, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
+				}
+				const mod = moduleGraph.get(graphId);
+
+				// const resolved = await NonRollup.resolveId(spec, importer);
+				const resolved = await NonRollup.resolveId(spec, file);
+				if (resolved) {
+					spec = typeof resolved == 'object' ? resolved.id : resolved;
+					if (/^(\/|\\|[a-z]:\\)/i.test(spec)) {
+						spec = relative(dirname(file), spec).split(sep).join(posix.sep);
+						if (!/^\.?\.?\//.test(spec)) {
+							spec = './' + spec;
+						}
+					}
+					if (typeof resolved == 'object' && resolved.external) {
+						// console.log('external: ', spec);
+						if (/^(data|https?):/.test(spec)) return spec;
+
+						spec = relative(cwd, spec).split(sep).join(posix.sep);
+						if (!/^(\/|[\w-]+:)/.test(spec)) spec = `/${spec}`;
+						return spec;
+					}
+				}
+
+				// \0abc:foo --> /@abcF/foo
+				spec = spec.replace(/^\0?([a-z-]+):(.+)$/, (s, prefix, spec) => {
+					// \0abc:/abs/disk/path --> /@abc/cwd-relative-path
+					if (spec[0] === '/' || spec[0] === sep) {
+						spec = relative(cwd, spec).split(sep).join(posix.sep);
+					}
+					return '/@' + prefix + '/' + spec;
+				});
+
+				// foo.css --> foo.css.js (import of CSS Modules proxy module)
+				if (spec.match(/\.(css|s[ac]ss)$/)) spec += '.js';
+
+				// Bare specifiers are npm packages:
+				if (!/^\0?\.?\.?[/\\]/.test(spec)) {
+					const meta = normalizeSpecifier(spec);
+
+					// // Option 1: resolve all package verions (note: adds non-trivial delay to imports)
+					// await resolvePackageVersion(meta);
+					// // Option 2: omit package versions that resolve to the root
+					// // if ((await resolvePackageVersion({ module: meta.module, version: '' })).version === meta.version) {
+					// // 	meta.version = '';
+					// // }
+					// spec = `/@npm/${meta.module}${meta.version ? '@' + meta.version : ''}${meta.path ? '/' + meta.path : ''}`;
+
+					// Option 3: omit root package versions
+					spec = `/@npm/${meta.module}${meta.path ? '/' + meta.path : ''}`;
+				}
+
+				const modSpec = spec.startsWith('../') ? spec.replace(/..\/g/, '') : spec.replace('./', '');
+				mod.dependencies.add(modSpec);
+				if (!moduleGraph.has(modSpec)) {
+					moduleGraph.set(modSpec, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
+				}
+
+				const specModule = moduleGraph.get(modSpec);
+				specModule.dependents.add(graphId);
+				if (specModule.stale) {
+					return spec + `?t=${Date.now()}`;
+				}
+
+				return spec;
+			}
+		});
+
+		writeCacheFile(out, id, code);
+
+		return code;
 	},
 	// Handles "CSS Modules" proxy modules (style.module.css.js)
 	async cssModule({ id, file, cwd, out, res }) {
