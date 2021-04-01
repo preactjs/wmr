@@ -1,4 +1,5 @@
 import { copyFileSync, readFileSync, writeFileSync } from 'fs';
+import dtsbundle from './~dtsbundle.js';
 
 const dry = /dry/.test(process.argv.join(' '));
 const read = f => readFileSync(f, 'utf-8');
@@ -17,10 +18,14 @@ const normalized = {
 	repository,
 	dependencies,
 	scripts: {
-		postpack: 'mv -f .package.json package.json'
+		postpack: 'mv -f .package.json package.json && mv -f .types.d.ts types.d.ts'
 	},
 	// engines: pkg.engines,
 	types,
 	files
 };
 write('package.json', JSON.stringify(normalized, null, 2));
+
+const t = normalized.types.replace(/^\.*\//g, '');
+copy(t, '.' + t);
+dtsbundle('.' + t, t);
