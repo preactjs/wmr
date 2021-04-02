@@ -135,7 +135,8 @@ export function Router(props) {
 		} else commit();
 	}, [url]);
 
-	return [prevChildren.current, curChildren.current];
+	// Note: curChildren must render first in order to populate pending.current
+	return [curChildren.current, prevChildren.current];
 }
 
 function Committer({ pending, children }) {
@@ -144,7 +145,9 @@ function Committer({ pending, children }) {
 
 Router.Provider = LocationProvider;
 
-LocationProvider.ctx = createContext(/** @type {{ url: string, path: string, query: object, route }} */ ({}));
+/** @typedef {{ url: string, path: string, query: object, route, wasPush: boolean }} RouteInfo */
+
+LocationProvider.ctx = createContext(/** @type {RouteInfo} */ ({}));
 const RouteContext = createContext({});
 
 export const Route = props => h(props.component, props);
