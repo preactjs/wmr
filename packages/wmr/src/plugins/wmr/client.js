@@ -7,7 +7,11 @@ const strip = url => url.replace(/\?t=\d+/g, '');
 const resolve = url => new URL(url, location.origin).href;
 let ws;
 
-function connect() {
+/**
+ * @param {boolean} [needsReload] Force page to reload once it's connected
+ * to the server.
+ */
+function connect(needsReload) {
 	ws = new WebSocket(location.origin.replace('http', 'ws') + '/_hmr', 'hmr');
 	function sendSocketMessage(msg) {
 		ws.send(JSON.stringify(msg));
@@ -15,8 +19,12 @@ function connect() {
 
 	ws.addEventListener('open', () => {
 		log(`Connected to server.`);
-		queue.forEach(sendSocketMessage);
-		queue = [];
+		if (needsReload) {
+			window.location.reload();
+		} else {
+			queue.forEach(sendSocketMessage);
+			queue = [];
+		}
 	});
 
 	ws.addEventListener('message', handleMessage);
@@ -80,7 +88,7 @@ function handleMessage(e) {
 			if (data.kind === 'restart') {
 				let timeout = setTimeout(() => {
 					try {
-						connect();
+						connect(true);
 						log(`Connected to server.`);
 						clearTimeout(timeout);
 					} catch (err) {}
