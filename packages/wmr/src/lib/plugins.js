@@ -20,6 +20,7 @@ import copyAssetsPlugin from '../plugins/copy-assets-plugin.js';
 import nodeBuiltinsPlugin from '../plugins/node-builtins-plugin.js';
 import dynamicImportVars from '@rollup/plugin-dynamic-import-vars';
 import visualizer from 'rollup-plugin-visualizer';
+import { defaultLoaders } from './default-loaders.js';
 
 /**
  * @param {import("wmr").Options} options
@@ -73,6 +74,9 @@ export function getPlugins(options) {
 		}),
 
 		...plugins.slice(split),
+
+		// Apply default loaders to unprefixed paths
+		defaultLoaders(),
 
 		production && optimizeGraphPlugin({ publicPath }),
 		minify && minifyCssPlugin({ sourcemap }),

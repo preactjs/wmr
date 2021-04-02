@@ -76,6 +76,23 @@ describe('fixtures', () => {
 		});
 	});
 
+	it('should allow overwriting default json loader', async () => {
+		await loadFixture('overwrite-loader-json', env);
+		instance = await runWmrFast(env.tmp.path);
+		const text = await getOutput(env, instance);
+		expect(text).toMatch(/foobarbaz/);
+	});
+
+	it('should allow overwriting default url loader', async () => {
+		await loadFixture('overwrite-loader-url', env);
+		instance = await runWmrFast(env.tmp.path);
+		const text = await getOutput(env, instance);
+
+		expect(text).toMatch(/my-url: \/foo\.svg\?asset/);
+		expect(text).toMatch(/url: \/foo\.svg\?asset/);
+		expect(text).toMatch(/fallback: \/foo\.svg\?asset/);
+	});
+
 	describe('empty', () => {
 		it('should print warning for missing index.html file in public dir', async () => {
 			await loadFixture('empty', env);
