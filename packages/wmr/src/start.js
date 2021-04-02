@@ -148,6 +148,7 @@ const injectWmrMiddleware = ({ cwd }) => {
 			// If we haven't intercepted the request it's safe to assume we need to inject wmr.
 			const path = posix.normalize(req.path);
 			if (!/\.[a-z]+$/gi.test(path) && !path.startsWith('/@npm')) {
+				const start = Date.now();
 				const index = resolve(cwd, 'index.html');
 				const html = await fs.readFile(index, 'utf-8');
 				const result = await injectWmr(html);
