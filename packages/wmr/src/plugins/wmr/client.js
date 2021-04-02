@@ -89,7 +89,6 @@ function handleMessage(e) {
 				let timeout = setTimeout(() => {
 					try {
 						connect(true);
-						log(`Connected to server.`);
 						clearTimeout(timeout);
 					} catch (err) {}
 				}, 1000);
