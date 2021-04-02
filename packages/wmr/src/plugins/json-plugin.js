@@ -20,12 +20,9 @@ export default function jsonPlugin({ cwd }) {
 	return {
 		name: 'json-plugin',
 		async resolveId(id, importer) {
-			if (id[0] === '\0' || !id.endsWith('.json')) return;
+			if (!id.startsWith(IMPORT_PREFIX)) return;
 
-			// always process prefixed imports
-			if (id.startsWith(IMPORT_PREFIX)) {
-				id = id.slice(IMPORT_PREFIX.length);
-			}
+			id = id.slice(IMPORT_PREFIX.length);
 
 			const resolved = await this.resolve(id, importer, { skipSelf: true });
 			return resolved && INTERNAL_PREFIX + resolved.id;
@@ -34,7 +31,7 @@ export default function jsonPlugin({ cwd }) {
 		// an internal prefix we can get rid of the whole
 		// loading logic here and let rollup handle that part.
 		async load(id) {
-			if (!id.endsWith('.json')) return null;
+			if (!id.startsWith(INTERNAL_PREFIX)) return null;
 
 			if (id.startsWith(INTERNAL_PREFIX)) {
 				id = id.slice(INTERNAL_PREFIX.length);
