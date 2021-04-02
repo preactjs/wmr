@@ -153,6 +153,7 @@ const injectWmrMiddleware = ({ cwd }) => {
 				const result = await injectWmr(html);
 				const time = Date.now() - start;
 				res.writeHead(200, {
+					'Content-Type': 'text/html;charset=utf-8',
 					'Content-Length': Buffer.byteLength(result, 'utf-8'),
 					'Server-Timing': `index.html;dur=${time}`
 				});
