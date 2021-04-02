@@ -12,7 +12,7 @@ export default function (options) {
  */
 function nomodulePlugin({} = {}) {
 	return {
-		name: '@wmr-plugins/nomodule',
+		name: '@wmrjs/nomodule',
 		async generateBundle(opts, bundle) {
 			const downleveled = new Map();
 			for (const fileName in bundle) {
