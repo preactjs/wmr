@@ -26,7 +26,7 @@ connect();
 
 let errorCount = 0;
 
-const URL_SUFFIX = /\/(index\.html)?$/;
+const URL_SUFFIX = /\/(index\.html?)?$/;
 
 function handleMessage(e) {
 	const data = JSON.parse(e.data);

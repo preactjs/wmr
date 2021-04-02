@@ -36,7 +36,7 @@ function scoreAsset(asset) {
 		return asset.isEntry ? 10 : asset.isDynamicEntry ? 8 : 6;
 	}
 	// List HTML files first, sorted by path depth
-	if (/\.html$/.test(asset.fileName)) {
+	if (/\.html?$/.test(asset.fileName)) {
 		return 30 - asset.fileName.split('/').length;
 	}
 	return 1;

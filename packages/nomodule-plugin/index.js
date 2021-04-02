@@ -32,7 +32,7 @@ function nomodulePlugin({} = {}) {
 			// Update all the HTML files with <script type=module> to add legacy loading via Shimport+Polyfills
 			for (const fileName in bundle) {
 				const asset = bundle[fileName];
-				if (asset.type !== 'asset' || typeof asset.source !== 'string' || !asset.fileName.match(/\.html$/)) continue;
+				if (asset.type !== 'asset' || typeof asset.source !== 'string' || !asset.fileName.match(/\.html?$/)) continue;
 				if (!/<script(?:\s[^>]*)?\s+type=(['"])module\1/.test(asset.source)) continue;
 				// this is gross obviously
 				const POLYFILL = 'https://unpkg.com/@babel/polyfill@7.12.1/browser.js'; // https://unpkg.com/regenerator-runtime

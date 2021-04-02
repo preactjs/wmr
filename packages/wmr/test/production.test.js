@@ -24,6 +24,24 @@ describe('production', () => {
 		cleanup.length = 0;
 	});
 
+	it('should build with .htm index file', async () => {
+		await loadFixture('prod-htm-index', env);
+		instance = await runWmr(env.tmp.path, 'build');
+		const code = await instance.done;
+		console.info(instance.output.join('\n'));
+		expect(code).toBe(0);
+
+		const readdir = async f => (await fs.readdir(path.join(env.tmp.path, f))).filter(f => f[0] !== '.');
+		const readfile = async f => await fs.readFile(path.join(env.tmp.path, 'dist', f), 'utf-8');
+
+		const files = await readdir('dist/');
+		const js = files.find(f => f.endsWith('.js'));
+		const html = files.find(f => f.endsWith('.htm'));
+
+		expect(await readfile(js)).toMatch(/['"]foo["']/);
+		expect(await readfile(html)).toMatch(/Hello wmr/);
+	});
+
 	describe('demo app', () => {
 		it('should serve the demo app', async () => {
 			await loadFixture('../../../../examples/demo', env);
