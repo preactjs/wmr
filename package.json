@@ -10,7 +10,7 @@
 	},
 	"scripts": {
 		"wmr": "yarn workspace wmr run",
-		"demo": "yarn workspace @examples/demo dev",
+		"demo": "yarn workspace @examples/demo run",
 		"docs": "yarn workspace docs",
 		"ci": "yarn wmr build && yarn --check-files && yarn demo build:prod"
 	},
