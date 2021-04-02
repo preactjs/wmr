@@ -4,21 +4,26 @@ import Meta from '../components/meta.js';
 import { useContent } from '../lib/use-content.js';
 import content from 'content:../content/docs';
 
-export default function Docs({ slug }) {
+export default function DocPage({ slug }) {
 	// normalize `/index`:
 	for (let doc of content) if (doc.name.replace(/(^|\/)index$/g, '') === slug) slug = doc.name;
 
-	const { html, meta } = useContent(`content/docs/${slug}`);
-
 	return (
 		<div class="sidebar-layout">
-			<Meta {...meta} />
 			<Sidebar content={content} />
-			<main class="main">
-				<section class="md">
-					<Markup html={html} />
-				</section>
-			</main>
+			<Doc slug={slug} />
 		</div>
+	);
+}
+
+function Doc({ slug }) {
+	const { html, meta } = useContent(`content/docs/${slug}`);
+	return (
+		<main class="main">
+			<Meta {...meta} />
+			<section class="md">
+				<Markup html={html} />
+			</section>
+		</main>
 	);
 }

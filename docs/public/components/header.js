@@ -33,7 +33,7 @@ export default function Header() {
 						class="menu-item menu-item-icon"
 					>
 						<img src="/assets/github.svg" alt="WMR on GitHub" class="icon" width="20" height="20" />
-						<span class="menu-item-icon-label">v1.4.2</span>
+						<span class="menu-item-icon-label version">v1.4.2</span>
 					</a>
 				</nav>
 			</header>

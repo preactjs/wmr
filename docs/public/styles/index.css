@@ -15,11 +15,11 @@
  */
 :root {
 	--color-text: #222;
-	--color-page-bg: #fff;
 	--color-brand: #33aef1;
 	--color-bg: #fff;
-	--color-border: #f0f0f0;
+	--color-header-bg: var(--color-bg);
 	--color-header-shadow: #f0f0f0;
+	--color-border: #f0f0f0;
 	--color-bg-code-inline: #dddddf;
 	--color-bg-code: #1f2427;
 	--color-info: #d7f1ff;
@@ -33,9 +33,10 @@
 @media (prefers-color-scheme: dark) {
 	:root {
 		--color-text: #ebf4f1;
-		--color-bg: rgba(37, 41, 49, 0.95);
-		--color-border: #525252;
+		--color-bg: #272b34;
+		--color-header-bg: rgba(37, 41, 49, 0.95);
 		--color-header-shadow: #220f2d;
+		--color-border: #525252;
 		--color-bg-code-inline: #66676f;
 		--color-bg-code: #1f2427;
 		--color-info: #184c68;
@@ -50,11 +51,10 @@
 
 html[theme='light'] {
 	--color-text: #222;
-	--color-page-bg: #fff;
 	--color-brand: #33aef1;
 	--color-bg: #fff;
-	--color-border: #f0f0f0;
 	--color-header-shadow: #f0f0f0;
+	--color-border: #f0f0f0;
 	--color-bg-code-inline: #dddddf;
 	--color-bg-code: #1f2427;
 	--color-info: #d7f1ff;
@@ -65,9 +65,10 @@ html[theme='light'] {
 
 html[theme='dark'] {
 	--color-text: #ebf4f1;
-	--color-bg: rgba(37, 41, 49, 0.95);
-	--color-border: #525252;
+	--color-bg: #272b34;
+	--color-header-bg: rgba(37, 41, 49, 0.95);
 	--color-header-shadow: #220f2d;
+	--color-border: #525252;
 	--color-bg-code-inline: #66676f;
 	--color-bg-code: #1f2427;
 	--color-info: #184c68;
@@ -109,9 +110,15 @@ body {
 	transition: background 0.3s;
 }
 
+/** Wraps the content */
+#page {
+	outline: none;
+}
+
 * {
 	box-sizing: border-box;
 	-webkit-font-smoothing: antialiased;
+	-webkit-tap-highlight-color: rgba(255,255,255,0);
 }
 
 h1,
@@ -258,6 +265,9 @@ h5:hover .anchor {
 	position: relative;
 	top: 0.3em;
 }
+.anchor:focus {
+	opacity: 1;
+}
 .anchor:hover {
 	text-decoration: underline;
 }
@@ -293,6 +303,7 @@ h5:hover .anchor {
 	border-radius: 0.5rem;
 	outline: none;
 	letter-spacing: 0.5px;
+	white-space: nowrap;
 	line-height: 1;
 }
 .btn-primary {
@@ -321,8 +332,10 @@ h5:hover .anchor {
 	background: var(--color-bg);
 	position: fixed;
 	top: 0;
+	left: 0;
 	z-index: 200;
 	width: 100%;
+	overflow: hidden;
 	display: flex;
 	justify-content: space-between;
 	height: var(--header-height);
@@ -368,33 +381,101 @@ h5:hover .anchor {
  * Layouts
  */
 .sidebar-layout {
-	width: 100%;
+	margin-left: 16rem;
 }
 
 .sidebar {
-	position: sticky;
+	position: fixed;
 	top: var(--header-height);
+	left: 0;
 	bottom: 0;
-	float: left;
-	height: calc(100vh - var(--header-height));
+	width: 16rem;
 	padding: 1.5rem 0;
-	width: 100%;
-	max-width: 20rem;
-	min-width: 16rem;
-	overflow: auto;
-	box-shadow: 0 -1px 0 rgba(255, 255, 255, 0.5);
-	z-index: 100;
+	background: var(--color-bg);
 	border-right: 1px solid var(--color-border);
+	overflow: auto;
+	z-index: 200;
+	outline: none;
 }
 
-@media (min-width: 900px) {
+/** Mobile off-canvas sidebar layout */
+@media (max-width: 900px) {
+	.header {
+		padding-left: var(--header-height);
+	}
 	.sidebar-layout {
-		display: grid;
-		grid-template-columns: minmax(min-content, 33.33%) minmax(40rem, 110ch);
+		margin: 0;
+	}
+	.sidebar {
+		transform: translateX(-16rem);
+		transition: transform 150ms ease;
+		overflow: visible;
+	}
+	.sidebar:focus,
+	.sidebar:focus-within,
+	.sidebar:active {
+		transform: translateX(0);
 	}
 
-	.sidebar {
-		position: sticky;
+	/** Sidebar toggle button */
+	.sidebar:before {
+		position: absolute;
+		left: 0;
+		top: calc(-1 * var(--header-height));
+		content: 'Ⅲ';
+		transform: translateX(16rem) rotate(90deg);
+		width: var(--header-height);
+		height: var(--header-height);
+		padding: 0;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		font-size: calc(var(--header-height)/2);
+		line-height: 1;
+		background: var(--color-brand);
+		color: #fff;
+		pointer-events: all;
+		transition: transform 150ms ease;
+	}
+	.sidebar:focus:before,
+	.sidebar:focus-within:before,
+	.sidebar:active:before {
+		animation: pointer-events 500ms linear forwards 1;
+		content: '×';
+		transform: translateX(0) rotate(90deg);
+	}
+	@keyframes pointer-events {
+		100% {
+			pointer-events: none;
+		}
+	}
+
+	/** Sidebar scrim */
+	.sidebar:focus:after,
+	.sidebar:focus-within:after,
+	.sidebar:active:after {
+		content: '';
+		position: fixed;
+		left: 100%;
+		top: 0;
+		width: 100vw;
+		height: 100vh;
+		background: rgba(0,0,0,0.2);
+		backdrop-filter: blur(1px);
+		opacity: 1;
+		pointer-events: none;
+		animation: sidebar-scrim 300ms ease forwards 1;
+	}
+	@keyframes sidebar-scrim {
+		0% { opacity: 0; }
+	}
+
+	body .main {
+		padding: 1.5rem;
+	}
+
+	.version {
+		display: none;
 	}
 }
 
@@ -419,10 +500,6 @@ h5:hover .anchor {
 .sidebar-nav-link:hover {
 	color: var(--color-brand);
 }
-/**
- * FIXME: Preact iso destroys every route on render which kills
- * the animation here!!
- */
 .sidebar-nav-link::before {
 	content: '';
 	position: absolute;
@@ -460,6 +537,10 @@ h5:hover .anchor {
 	margin-left: auto;
 	margin-right: auto;
 	max-width: 88ch;
+}
+
+.md img {
+	max-width: 100%;
 }
 
 .md p {
