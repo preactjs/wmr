@@ -618,8 +618,9 @@ h5:hover .anchor {
 .brand-logo,
 .brand-shadow {
 	position: absolute;
-	left: -0.75rem;
-	top: -50%;
+	top: -40%;
+	left: 50%;
+	margin-left: -320px;
 }
 .brand-shadow {
 	z-index: -1;
@@ -628,6 +629,15 @@ h5:hover .anchor {
 }
 .brand-logo {
 	animation: in-space 8s infinite;
+}
+@media (max-width: 600px) {
+	.brand-logo,
+	.brand-shadow {
+		width: 200px;
+		height: 200px;
+		margin-left: -160px;
+		top: -75%;
+	}
 }
 .tagline {
 	font-size: 1.5rem;
