@@ -1,11 +1,14 @@
 import * as kl from 'kolorist';
+import { promises as fs } from 'fs';
+import { posix, resolve } from 'path';
 import server from './server.js';
 import wmrMiddleware from './wmr-middleware.js';
 import { getServerAddresses, supportsSearchParams } from './lib/net-utils.js';
 import { normalizeOptions } from './lib/normalize-options.js';
 import { setCwd } from './plugins/npm-plugin/registry.js';
-import { formatBootMessage, debug, hasDebugFlag } from './lib/output-utils.js';
+import { formatBootMessage, debug } from './lib/output-utils.js';
 import { watch } from './lib/fs-watcher.js';
+import { injectWmr } from './lib/transform-html.js';
 
 /**
  * @typedef OtherOptions
@@ -82,7 +85,8 @@ async function bootServer(options, configWatchFiles) {
 			...options,
 			onError: sendError,
 			onChange: sendChanges
-		})
+		}),
+		injectWmrMiddleware(options)
 	);
 
 	// eslint-disable-next-line
@@ -91,15 +95,8 @@ async function bootServer(options, configWatchFiles) {
 			app.ws.broadcast({
 				type: 'error',
 				error: err.clientMessage || err.message,
-				codeFrame: err.codeFrame
+				codeFrame: kl.stripColors(err.codeFrame)
 			});
-		} else if (((err.code / 200) | 0) === 2) {
-			// skip 400-599 errors, they're net errors logged to console
-		} else if (hasDebugFlag()) {
-			console.error(err);
-		} else {
-			const message = err.formatted ? err.formatted : /^Error/.test(err.message) ? err.message : err + '';
-			console.error(message);
 		}
 	}
 
@@ -144,6 +141,31 @@ async function bootServer(options, configWatchFiles) {
 		}
 	};
 }
+
+const injectWmrMiddleware = ({ cwd }) => {
+	return async (req, res, next) => {
+		try {
+			// If we haven't intercepted the request it's safe to assume we need to inject wmr.
+			const path = posix.normalize(req.path);
+			if (!/\.[a-z]+$/gi.test(path) && !path.startsWith('/@npm')) {
+				const start = Date.now();
+				const index = resolve(cwd, 'index.html');
+				const html = await fs.readFile(index, 'utf-8');
+				const result = await injectWmr(html);
+				const time = Date.now() - start;
+				res.writeHead(200, {
+					'Content-Type': 'text/html;charset=utf-8',
+					'Content-Length': Buffer.byteLength(result, 'utf-8'),
+					'Server-Timing': `index.html;dur=${time}`
+				});
+				res.end(result);
+			}
+		} catch (e) {
+			next();
+		}
+		next();
+	};
+};
 
 /**
  * Close all open connections to a server. Adapted from

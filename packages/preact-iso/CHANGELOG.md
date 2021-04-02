@@ -1,5 +1,17 @@
 # preact-iso
 
+## 1.1.1
+
+### Patch Changes
+
+- [`2d0bb8a`](https://github.com/preactjs/wmr/commit/2d0bb8a64783c32cfdaad05563b6293649059ef9) [#504](https://github.com/preactjs/wmr/pull/504) Thanks [@developit](https://github.com/developit)! - Bugfix: fix route flashing for routes that render fragments
+
+* [`321dfce`](https://github.com/preactjs/wmr/commit/321dfced389800e661174e1e304fa8ecab593f96) [#496](https://github.com/preactjs/wmr/pull/496) Thanks [@developit](https://github.com/developit)! - [preact-iso] Router: reset page scroll position on forward navigations
+
+- [`c07c39f`](https://github.com/preactjs/wmr/commit/c07c39fba101e34e673997262f71f80a8488b6d6) [#505](https://github.com/preactjs/wmr/pull/505) Thanks [@developit](https://github.com/developit)! - [preact-iso] Prevent the router from intercepting clicks on anchor links
+
+* [`764830f`](https://github.com/preactjs/wmr/commit/764830fde981e60f67fbc74f7e5b46dcbc98d573) [#493](https://github.com/preactjs/wmr/pull/493) Thanks [@developit](https://github.com/developit)! - [preact-iso] Prevent the Router from intercepting clicks on links with an "external" target (`target="anything"`).
+
 ## 1.1.0
 
 ### Minor Changes

@@ -1,5 +1,5 @@
 {
-	"name": "@wmr-plugins/directory-import",
+	"name": "@wmrjs/directory-import",
 	"version": "0.1.2",
 	"type": "module",
 	"main": "./directory-plugin.cjs",

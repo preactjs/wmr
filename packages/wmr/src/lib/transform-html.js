@@ -60,3 +60,22 @@ export async function transformHtml(html, { transformUrl }) {
 	const result = await transformer.process(html);
 	return result.html;
 }
+
+const transformInjectWmr = async tree => {
+	tree.walk(node => {
+		if (node.tag === 'head') {
+			node.content.unshift('\n\t\t', {
+				tag: 'script',
+				attrs: { type: 'module' },
+				content: ["\n\t\t\timport '/_wmr.js';\n\t\t"]
+			});
+		}
+		return node;
+	});
+};
+
+export async function injectWmr(html) {
+	const transformer = posthtml([transformInjectWmr]);
+	const result = await transformer.process(html);
+	return result.html;
+}

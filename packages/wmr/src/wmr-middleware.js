@@ -1,6 +1,6 @@
 import { resolve, dirname, relative, sep, posix } from 'path';
-import * as kl from 'kolorist';
 import { promises as fs, createReadStream } from 'fs';
+import * as kl from 'kolorist';
 import wmrPlugin, { getWmrClient } from './plugins/wmr/plugin.js';
 import wmrStylesPlugin, { modularizeCss, processSass } from './plugins/wmr/styles-plugin.js';
 import { createPluginContainer } from './lib/rollup-plugin-container.js';
@@ -8,11 +8,13 @@ import { transformImports } from './lib/transform-imports.js';
 import { normalizeSpecifier } from './plugins/npm-plugin/index.js';
 import sassPlugin from './plugins/sass-plugin.js';
 import { getMimeType } from './lib/mimetypes.js';
-import { codeFrame } from './lib/output-utils.js';
+import { debug, formatPath } from './lib/output-utils.js';
 import { getPlugins } from './lib/plugins.js';
 import { watch } from './lib/fs-watcher.js';
 
 const NOOP = () => {};
+
+const log = debug('wmr:middleware');
 
 /**
  * In-memory cache of files that have been generated and written to .cache/
@@ -67,6 +69,11 @@ export default function wmrMiddleware(options) {
 		const mod = moduleGraph.get(filename);
 		if (!mod) return false;
 
+		if (mod.hasErrored) {
+			mod.hasErrored = false;
+			return false;
+		}
+
 		if (mod.acceptingUpdates) {
 			mod.stale = true;
 			pendingChanges.add(filename);
@@ -101,6 +108,7 @@ export default function wmrMiddleware(options) {
 			pendingChanges.add('/' + filename);
 		} else if (/\.(mjs|[tj]sx?)$/.test(filename)) {
 			if (!moduleGraph.has(filename)) {
+				onChange({ reload: true });
 				clearTimeout(timeout);
 				return;
 			}
@@ -156,6 +164,8 @@ export default function wmrMiddleware(options) {
 			res.setHeader('Content-Type', type);
 		}
 
+		log(`${kl.cyan(formatPath(path))} -> ${kl.dim(id)} file: ${kl.dim(file)}`);
+
 		const ctx = { req, res, id, file, path, prefix, cwd, out, NonRollup, next };
 
 		let transform;
@@ -184,6 +194,7 @@ export default function wmrMiddleware(options) {
 
 			// return a value to use it as the response:
 			if (result != null) {
+				log(`<-- ${kl.cyan(formatPath(id))} as ${kl.dim('' + res.getHeader('Content-Type'))}`);
 				const time = Date.now() - start;
 				res.writeHead(200, {
 					'Content-Length': Buffer.byteLength(result, 'utf-8'),
@@ -219,6 +230,8 @@ export default function wmrMiddleware(options) {
  * @property {InstanceType<import('http')['IncomingMessage']>} req HTTP Request object
  * @property {InstanceType<import('http')['ServerResponse']>} res HTTP Response object
  */
+
+const logJsTransform = debug('wmr:transform.js');
 
 /** @typedef {string|false|Buffer|Uint8Array|null|void} Result */
 
@@ -261,7 +274,10 @@ export const TRANSFORMS = {
 		try {
 			res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
 
-			if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
+			if (WRITE_CACHE.has(id)) {
+				logJsTransform(`<-- ${kl.cyan(formatPath(id))} [cached]`);
+				return WRITE_CACHE.get(id);
+			}
 
 			const resolved = await NonRollup.resolveId(id);
 			const resolvedId = typeof resolved == 'object' ? resolved && resolved.id : resolved;
@@ -282,15 +298,19 @@ export const TRANSFORMS = {
 				},
 				async resolveId(spec, importer) {
 					if (spec === 'wmr') return '/_wmr.js';
-					if (/^(data:|https?:|\/\/)/.test(spec)) return spec;
-
+					if (/^(data:|https?:|\/\/)/.test(spec)) {
+						logJsTransform(`${kl.cyan(formatPath(spec))} [external]`);
+						return spec;
+					}
 					let graphId = importer.startsWith('/') ? importer.slice(1) : importer;
 					if (!moduleGraph.has(graphId)) {
 						moduleGraph.set(graphId, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
 					}
 					const mod = moduleGraph.get(graphId);
+					if (mod.hasErrored) mod.hasErrored = false;
 
 					// const resolved = await NonRollup.resolveId(spec, importer);
+					let originalSpec = spec;
 					const resolved = await NonRollup.resolveId(spec, file);
 					if (resolved) {
 						spec = typeof resolved == 'object' ? resolved.id : resolved;
@@ -301,8 +321,10 @@ export const TRANSFORMS = {
 							}
 						}
 						if (typeof resolved == 'object' && resolved.external) {
-							// console.log('external: ', spec);
-							if (/^(data|https?):/.test(spec)) return spec;
+							if (/^(data|https?):/.test(spec)) {
+								logJsTransform(`${kl.cyan(formatPath(spec))} [external]`);
+								return spec;
+							}
 
 							spec = relative(cwd, spec).split(sep).join(posix.sep);
 							if (!/^(\/|[\w-]+:)/.test(spec)) spec = `/${spec}`;
@@ -350,6 +372,10 @@ export const TRANSFORMS = {
 						return spec + `?t=${Date.now()}`;
 					}
 
+					if (originalSpec !== spec) {
+						logJsTransform(`${kl.cyan(formatPath(originalSpec))} -> ${kl.dim(formatPath(spec))}`);
+					}
+
 					return spec;
 				}
 			});
@@ -358,11 +384,10 @@ export const TRANSFORMS = {
 
 			return code;
 		} catch (e) {
-			if (code && e.loc && e.loc.line) {
-				e.codeFrame = kl.stripColors(codeFrame(code, e.loc));
-				console.error('[Build error]:\n' + e.codeFrame);
+			const mod = moduleGraph.get(id);
+			if (mod) {
+				mod.hasErrored = true;
 			}
-
 			throw e;
 		}
 	},

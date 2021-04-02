@@ -1,6 +1,6 @@
 {
 	"name": "wmr",
-	"version": "1.4.2",
+	"version": "1.5.1",
 	"bin": "wmr.cjs",
 	"type": "module",
 	"scripts": {
@@ -139,8 +139,10 @@
 		"resolve.exports": "^1.0.2",
 		"rollup": "^2.43.1",
 		"rollup-plugin-preserve-shebang": "^1.0.1",
+		"rollup-plugin-visualizer": "^4.2.2",
 		"sade": "^1.7.3",
 		"semver": "^7.3.2",
+		"simple-code-frame": "^1.1.1",
 		"sirv": "^1.0.6",
 		"stylis": "^4.0.2",
 		"sucrase": "^3.17.0",
