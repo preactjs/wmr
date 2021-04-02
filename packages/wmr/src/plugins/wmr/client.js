@@ -86,11 +86,15 @@ function handleMessage(e) {
 				}, 1000);
 			}
 			break;
-		case 'error':
+		case 'error': {
 			errorCount++;
-			console.error(data.error);
-			if (data.codeFrame) console.error(data.codeFrame);
+			let msg = data.error;
+			if (data.codeFrame) {
+				msg += '\n' + data.codeFrame;
+			}
+			console.error(msg);
 			break;
+		}
 		default:
 			log('unknown message: ', data);
 	}

@@ -1,4 +1,5 @@
 import * as sucrase from 'sucrase';
+import { createCodeFrame } from 'simple-code-frame';
 
 const cjsDefault = m => ('default' in m ? m.default : m);
 
@@ -43,21 +44,27 @@ export default function sucrasePlugin(opts = {}) {
 				return allTransforms.includes(v);
 			};
 
-			const result = transform(code, {
-				transforms,
-				production: opts.production === true,
-				filePath: id,
-				sourceMapOptions: opts.sourcemap
-					? {
-							compiledFilename: id
-					  }
-					: undefined
-			});
+			try {
+				const result = transform(code, {
+					transforms,
+					production: opts.production === true,
+					filePath: id,
+					sourceMapOptions: opts.sourcemap
+						? {
+								compiledFilename: id
+						  }
+						: undefined
+				});
 
-			return {
-				code: result.code,
-				map: opts.sourcemap ? result.sourceMap : null
-			};
+				return {
+					code: result.code,
+					map: opts.sourcemap ? result.sourceMap : null
+				};
+			} catch (err) {
+				// Enhance error with code frame
+				err.codeFrame = createCodeFrame(code, err.loc.line - 1, err.loc.column);
+				throw err;
+			}
 		}
 	};
 }

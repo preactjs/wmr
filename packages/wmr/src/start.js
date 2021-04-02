@@ -4,7 +4,7 @@ import wmrMiddleware from './wmr-middleware.js';
 import { getServerAddresses, supportsSearchParams } from './lib/net-utils.js';
 import { normalizeOptions } from './lib/normalize-options.js';
 import { setCwd } from './plugins/npm-plugin/registry.js';
-import { formatBootMessage, debug, hasDebugFlag } from './lib/output-utils.js';
+import { formatBootMessage, debug } from './lib/output-utils.js';
 import { watch } from './lib/fs-watcher.js';
 
 /**
@@ -91,15 +91,8 @@ async function bootServer(options, configWatchFiles) {
 			app.ws.broadcast({
 				type: 'error',
 				error: err.clientMessage || err.message,
-				codeFrame: err.codeFrame
+				codeFrame: kl.stripColors(err.codeFrame)
 			});
-		} else if (((err.code / 200) | 0) === 2) {
-			// skip 400-599 errors, they're net errors logged to console
-		} else if (hasDebugFlag()) {
-			console.error(err);
-		} else {
-			const message = err.formatted ? err.formatted : /^Error/.test(err.message) ? err.message : err + '';
-			console.error(message);
 		}
 	}
 
