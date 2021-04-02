@@ -4,7 +4,7 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"start": "cross-env DEBUG=true node ../../packages/wmr/src/cli.js",
+		"start": "cross-env DEBUG=true node ../../packages/wmr/src/cli.js --port 3000",
 		"build": "yarn start build --prerender",
 		"serve": "yarn start serve",
 		"start:prod": "cross-env DEBUG=true wmr",
