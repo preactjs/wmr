@@ -75,8 +75,6 @@ export default async function start(options = {}) {
 async function bootServer(options, configWatchFiles) {
 	options = await normalizeOptions(options, 'start', configWatchFiles);
 
-	options.host = options.host || process.env.HOST;
-
 	options.middleware = [].concat(
 		// @ts-ignore-next
 		options.middleware || [],
