@@ -271,14 +271,14 @@ export const TRANSFORMS = {
 	// Handle individual JavaScript modules
 	async js({ id, file, prefix, res, cwd, out, NonRollup, req }) {
 		let code;
-		res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
-
-		if (WRITE_CACHE.has(id)) {
-			logJsTransform(`<-- ${kl.cyan(formatPath(id))} [cached]`);
-			return WRITE_CACHE.get(id);
-		}
-
 		try {
+			res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
+
+			if (WRITE_CACHE.has(id)) {
+				logJsTransform(`<-- ${kl.cyan(formatPath(id))} [cached]`);
+				return WRITE_CACHE.get(id);
+			}
+
 			const resolved = await NonRollup.resolveId(id);
 			const resolvedId = typeof resolved == 'object' ? resolved && resolved.id : resolved;
 			let result = resolvedId && (await NonRollup.load(resolvedId));
