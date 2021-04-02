@@ -14,6 +14,7 @@ function connect() {
 	}
 
 	ws.addEventListener('open', () => {
+		log(`Connected to server.`);
 		queue.forEach(sendSocketMessage);
 		queue = [];
 	});
@@ -80,7 +81,6 @@ function handleMessage(e) {
 				let timeout = setTimeout(() => {
 					try {
 						connect();
-						log(`Connected to server.`);
 						clearTimeout(timeout);
 					} catch (err) {}
 				}, 1000);

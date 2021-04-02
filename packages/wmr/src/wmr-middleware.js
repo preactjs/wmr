@@ -69,6 +69,11 @@ export default function wmrMiddleware(options) {
 		const mod = moduleGraph.get(filename);
 		if (!mod) return false;
 
+		if (mod.hasErrored) {
+			mod.hasErrored = false;
+			return false;
+		}
+
 		if (mod.acceptingUpdates) {
 			mod.stale = true;
 			pendingChanges.add(filename);
@@ -103,6 +108,7 @@ export default function wmrMiddleware(options) {
 			pendingChanges.add('/' + filename);
 		} else if (/\.(mjs|[tj]sx?)$/.test(filename)) {
 			if (!moduleGraph.has(filename)) {
+				onChange({ reload: true });
 				clearTimeout(timeout);
 				return;
 			}
@@ -295,81 +301,89 @@ export const TRANSFORMS = {
 					logJsTransform(`${kl.cyan(formatPath(spec))} [external]`);
 					return spec;
 				}
-
-				let graphId = importer.startsWith('/') ? importer.slice(1) : importer;
-				if (!moduleGraph.has(graphId)) {
-					moduleGraph.set(graphId, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
-				}
-				const mod = moduleGraph.get(graphId);
-
-				// const resolved = await NonRollup.resolveId(spec, importer);
-				let originalSpec = spec;
-				const resolved = await NonRollup.resolveId(spec, file);
-				if (resolved) {
-					spec = typeof resolved == 'object' ? resolved.id : resolved;
-					if (/^(\/|\\|[a-z]:\\)/i.test(spec)) {
-						spec = relative(dirname(file), spec).split(sep).join(posix.sep);
-						if (!/^\.?\.?\//.test(spec)) {
-							spec = './' + spec;
-						}
+				try {
+					let graphId = importer.startsWith('/') ? importer.slice(1) : importer;
+					if (!moduleGraph.has(graphId)) {
+						moduleGraph.set(graphId, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
 					}
-					if (typeof resolved == 'object' && resolved.external) {
-						if (/^(data|https?):/.test(spec)) {
-							logJsTransform(`${kl.cyan(formatPath(spec))} [external]`);
+					const mod = moduleGraph.get(graphId);
+					if (mod.hasErrored) mod.hasErrored = false;
+
+					// const resolved = await NonRollup.resolveId(spec, importer);
+					let originalSpec = spec;
+					const resolved = await NonRollup.resolveId(spec, file);
+					if (resolved) {
+						spec = typeof resolved == 'object' ? resolved.id : resolved;
+						if (/^(\/|\\|[a-z]:\\)/i.test(spec)) {
+							spec = relative(dirname(file), spec).split(sep).join(posix.sep);
+							if (!/^\.?\.?\//.test(spec)) {
+								spec = './' + spec;
+							}
+						}
+						if (typeof resolved == 'object' && resolved.external) {
+							if (/^(data|https?):/.test(spec)) {
+								logJsTransform(`${kl.cyan(formatPath(spec))} [external]`);
+								return spec;
+							}
+
+							spec = relative(cwd, spec).split(sep).join(posix.sep);
+							if (!/^(\/|[\w-]+:)/.test(spec)) spec = `/${spec}`;
 							return spec;
 						}
-
-						spec = relative(cwd, spec).split(sep).join(posix.sep);
-						if (!/^(\/|[\w-]+:)/.test(spec)) spec = `/${spec}`;
-						return spec;
 					}
-				}
 
-				// \0abc:foo --> /@abcF/foo
-				spec = spec.replace(/^\0?([a-z-]+):(.+)$/, (s, prefix, spec) => {
-					// \0abc:/abs/disk/path --> /@abc/cwd-relative-path
-					if (spec[0] === '/' || spec[0] === sep) {
-						spec = relative(cwd, spec).split(sep).join(posix.sep);
+					// \0abc:foo --> /@abcF/foo
+					spec = spec.replace(/^\0?([a-z-]+):(.+)$/, (s, prefix, spec) => {
+						// \0abc:/abs/disk/path --> /@abc/cwd-relative-path
+						if (spec[0] === '/' || spec[0] === sep) {
+							spec = relative(cwd, spec).split(sep).join(posix.sep);
+						}
+						return '/@' + prefix + '/' + spec;
+					});
+
+					// foo.css --> foo.css.js (import of CSS Modules proxy module)
+					if (spec.match(/\.(css|s[ac]ss)$/)) spec += '.js';
+
+					// Bare specifiers are npm packages:
+					if (!/^\0?\.?\.?[/\\]/.test(spec)) {
+						const meta = normalizeSpecifier(spec);
+
+						// // Option 1: resolve all package verions (note: adds non-trivial delay to imports)
+						// await resolvePackageVersion(meta);
+						// // Option 2: omit package versions that resolve to the root
+						// // if ((await resolvePackageVersion({ module: meta.module, version: '' })).version === meta.version) {
+						// // 	meta.version = '';
+						// // }
+						// spec = `/@npm/${meta.module}${meta.version ? '@' + meta.version : ''}${meta.path ? '/' + meta.path : ''}`;
+
+						// Option 3: omit root package versions
+						spec = `/@npm/${meta.module}${meta.path ? '/' + meta.path : ''}`;
 					}
-					return '/@' + prefix + '/' + spec;
-				});
 
-				// foo.css --> foo.css.js (import of CSS Modules proxy module)
-				if (spec.match(/\.(css|s[ac]ss)$/)) spec += '.js';
+					const modSpec = spec.startsWith('../') ? spec.replace(/..\/g/, '') : spec.replace('./', '');
+					mod.dependencies.add(modSpec);
+					if (!moduleGraph.has(modSpec)) {
+						moduleGraph.set(modSpec, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
+					}
 
-				// Bare specifiers are npm packages:
-				if (!/^\0?\.?\.?[/\\]/.test(spec)) {
-					const meta = normalizeSpecifier(spec);
+					const specModule = moduleGraph.get(modSpec);
+					specModule.dependents.add(graphId);
+					if (specModule.stale) {
+						return spec + `?t=${Date.now()}`;
+					}
 
-					// // Option 1: resolve all package verions (note: adds non-trivial delay to imports)
-					// await resolvePackageVersion(meta);
-					// // Option 2: omit package versions that resolve to the root
-					// // if ((await resolvePackageVersion({ module: meta.module, version: '' })).version === meta.version) {
-					// // 	meta.version = '';
-					// // }
-					// spec = `/@npm/${meta.module}${meta.version ? '@' + meta.version : ''}${meta.path ? '/' + meta.path : ''}`;
+					if (originalSpec !== spec) {
+						logJsTransform(`${kl.cyan(formatPath(originalSpec))} -> ${kl.dim(formatPath(spec))}`);
+					}
 
-					// Option 3: omit root package versions
-					spec = `/@npm/${meta.module}${meta.path ? '/' + meta.path : ''}`;
+					return spec;
+				} catch (e) {
+					const mod = moduleGraph.get(id);
+					if (mod) {
+						mod.hasErrored = true;
+					}
+					throw e;
 				}
-
-				const modSpec = spec.startsWith('../') ? spec.replace(/..\/g/, '') : spec.replace('./', '');
-				mod.dependencies.add(modSpec);
-				if (!moduleGraph.has(modSpec)) {
-					moduleGraph.set(modSpec, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
-				}
-
-				const specModule = moduleGraph.get(modSpec);
-				specModule.dependents.add(graphId);
-				if (specModule.stale) {
-					return spec + `?t=${Date.now()}`;
-				}
-
-				if (originalSpec !== spec) {
-					logJsTransform(`${kl.cyan(formatPath(originalSpec))} -> ${kl.dim(formatPath(spec))}`);
-				}
-
-				return spec;
 			}
 		});
 
