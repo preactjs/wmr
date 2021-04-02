@@ -18,7 +18,7 @@ import { formatBootMessage } from './lib/output-utils.js';
  * @property {string} [out='./dist']
  * @property {string} [cwd='.']
  * @property {string} [host]
- * @property {string} [port]
+ * @property {number} [port]
  * @property {boolean} [http2]
  * @property {boolean|number} [compress]
  * @property {polka.Middleware[]} [middleware] Additional Polka middlewares to inject
