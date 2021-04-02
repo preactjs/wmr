@@ -278,30 +278,30 @@ export const TRANSFORMS = {
 			return WRITE_CACHE.get(id);
 		}
 
-		const resolved = await NonRollup.resolveId(id);
-		const resolvedId = typeof resolved == 'object' ? resolved && resolved.id : resolved;
-		let result = resolvedId && (await NonRollup.load(resolvedId));
+		try {
+			const resolved = await NonRollup.resolveId(id);
+			const resolvedId = typeof resolved == 'object' ? resolved && resolved.id : resolved;
+			let result = resolvedId && (await NonRollup.load(resolvedId));
 
-		code = typeof result == 'object' ? result && result.code : result;
+			code = typeof result == 'object' ? result && result.code : result;
 
-		if (code == null || code === false) {
-			if (prefix) file = file.replace(prefix, '');
-			code = await fs.readFile(resolve(cwd, file), 'utf-8');
-		}
+			if (code == null || code === false) {
+				if (prefix) file = file.replace(prefix, '');
+				code = await fs.readFile(resolve(cwd, file), 'utf-8');
+			}
 
-		code = await NonRollup.transform(code, id);
+			code = await NonRollup.transform(code, id);
 
-		code = await transformImports(code, id, {
-			resolveImportMeta(property) {
-				return NonRollup.resolveImportMeta(property);
-			},
-			async resolveId(spec, importer) {
-				if (spec === 'wmr') return '/_wmr.js';
-				if (/^(data:|https?:|\/\/)/.test(spec)) {
-					logJsTransform(`${kl.cyan(formatPath(spec))} [external]`);
-					return spec;
-				}
-				try {
+			code = await transformImports(code, id, {
+				resolveImportMeta(property) {
+					return NonRollup.resolveImportMeta(property);
+				},
+				async resolveId(spec, importer) {
+					if (spec === 'wmr') return '/_wmr.js';
+					if (/^(data:|https?:|\/\/)/.test(spec)) {
+						logJsTransform(`${kl.cyan(formatPath(spec))} [external]`);
+						return spec;
+					}
 					let graphId = importer.startsWith('/') ? importer.slice(1) : importer;
 					if (!moduleGraph.has(graphId)) {
 						moduleGraph.set(graphId, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
@@ -377,19 +377,19 @@ export const TRANSFORMS = {
 					}
 
 					return spec;
-				} catch (e) {
-					const mod = moduleGraph.get(id);
-					if (mod) {
-						mod.hasErrored = true;
-					}
-					throw e;
 				}
+			});
+
+			writeCacheFile(out, id, code);
+
+			return code;
+		} catch (e) {
+			const mod = moduleGraph.get(id);
+			if (mod) {
+				mod.hasErrored = true;
 			}
-		});
-
-		writeCacheFile(out, id, code);
-
-		return code;
+			throw e;
+		}
 	},
 	// Handles "CSS Modules" proxy modules (style.module.css.js)
 	async cssModule({ id, file, cwd, out, res }) {

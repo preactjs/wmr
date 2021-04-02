@@ -1234,6 +1234,11 @@
     semver "^7.3.2"
     tsutils "^3.17.1"
 
+"@wmr-plugins/directory-import@*":
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/@wmr-plugins/directory-import/-/directory-import-0.1.2.tgz#492603b7d31b501f4bcb040b3b8aa33b3aef69fd"
+  integrity sha512-/7Ox60OLG4tuG5qbHVLgDm7XD/lJ+mNVZAODGXfJ10vlR+FMxGbM17jNd64BSePQuDoU+iGZim2IPXUem7BOGQ==
+
 JSV@^4.0.2:
   version "4.0.2"
   resolved "https://registry.yarnpkg.com/JSV/-/JSV-4.0.2.tgz#d077f6825571f82132f9dffaed587b4029feff57"
