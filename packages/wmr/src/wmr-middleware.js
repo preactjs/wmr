@@ -226,7 +226,6 @@ export default function wmrMiddleware(options) {
  */
 
 const logJsTransform = debug('wmr:transform.js');
-const logJsResolve = (original, id) => logJsTransform(`${kl.cyan(formatPath(original))} -> ${kl.dim(formatPath(id))}`);
 
 /** @typedef {string|false|Buffer|Uint8Array|null|void} Result */
 
@@ -366,7 +365,10 @@ export const TRANSFORMS = {
 					return spec + `?t=${Date.now()}`;
 				}
 
-				logJsResolve(originalSpec, spec);
+				if (originalSpec !== spec) {
+					logJsTransform(`${kl.cyan(formatPath(originalSpec))} -> ${kl.dim(formatPath(spec))}`);
+				}
+
 				return spec;
 			}
 		});
