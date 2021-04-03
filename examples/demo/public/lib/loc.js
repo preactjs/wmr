@@ -1,15 +1,26 @@
 import { h, createContext, cloneElement } from 'preact';
 import { useContext, useMemo, useReducer, useEffect, useLayoutEffect, useRef } from 'preact/hooks';
 
-const UPDATE = (state, url, push) => {
+let push;
+const UPDATE = (state, url) => {
+	push = undefined;
 	if (url && url.type === 'click') {
 		const link = url.target.closest('a[href]');
-		if (!link || link.origin != location.origin) return state;
+		if (
+			!link ||
+			link.origin != location.origin ||
+			/^#/.test(link.getAttribute('href')) ||
+			!/^(_?self)?$/i.test(link.target)
+		) {
+			return state;
+		}
 
-		url.preventDefault();
 		push = true;
+		url.preventDefault();
 		url = link.href.replace(location.origin, '');
-	} else if (typeof url !== 'string') {
+	} else if (typeof url === 'string') {
+		push = true;
+	} else {
 		url = location.pathname + location.search;
 	}
 
@@ -39,14 +50,16 @@ export const exec = (url, route, matches) => {
 
 	return matches;
 };
+
 export function LocationProvider(props) {
 	const [url, route] = useReducer(UPDATE, location.pathname + location.search);
+	const wasPush = push === true;
 
 	const value = useMemo(() => {
 		const u = new URL(url, location.origin);
 		const path = u.pathname.replace(/(.)\/$/g, '$1');
 		// @ts-ignore-next
-		return { url, path, query: Object.fromEntries(u.searchParams), route };
+		return { url, path, query: Object.fromEntries(u.searchParams), route, wasPush };
 	}, [url]);
 
 	useEffect(() => {
@@ -68,7 +81,7 @@ export function Router(props) {
 
 	const loc = useLocation();
 
-	const { url, path, query } = loc;
+	const { url, path, query, wasPush } = loc;
 
 	const cur = useRef(loc);
 	const prev = useRef();
@@ -76,16 +89,11 @@ export function Router(props) {
 	const prevChildren = useRef();
 	const pending = useRef();
 
-	let reverse = false;
-	if (url !== cur.current.url) {
-		reverse = true;
-		pending.current = null;
-		prev.current = cur.current;
-		prevChildren.current = curChildren.current;
-		// old <Committer> uses the pending promise ref to know whether to render
-		prevChildren.current.props.pending = pending;
-		cur.current = loc;
-	}
+	this.componentDidCatch = err => {
+		if (err && err.then) {
+			pending.current = err;
+		}
+	};
 
 	curChildren.current = useMemo(() => {
 		let p, d, m;
@@ -96,33 +104,54 @@ export function Router(props) {
 		});
 
 		return h(Committer, {}, h(RouteContext.Provider, { value: m }, p || d));
-	}, [url]);
-
-	this.componentDidCatch = err => {
-		if (err && err.then) pending.current = err;
-	};
+	}, [url, path, query]);
 
 	useLayoutEffect(() => {
 		let p = pending.current;
+		let isCurrentCycle = true;
 
 		const commit = () => {
-			if (cur.current.url !== url || pending.current !== p) return;
-			prev.current = prevChildren.current = pending.current = null;
-			if (props.onLoadEnd) props.onLoadEnd(url);
-			update(0);
+			if (cur.current.url !== url || pending.current !== p || !isCurrentCycle) {
+				let p, d, m;
+				[].concat(props.children || []).some(vnode => {
+					const matches = exec(path, vnode.props.path, (m = { path, query }));
+					if (matches) return (p = cloneElement(vnode, m));
+					if (vnode.props.default) d = cloneElement(vnode, m);
+				});
+
+				cur.current.url = url;
+				prevChildren.current = null;
+				curChildren.current = h(Committer, {}, h(RouteContext.Provider, { value: m }, p || d));
+				update(0);
+				return;
+			} else {
+				prev.current = prevChildren.current = pending.current = null;
+				if (props.onLoadEnd) props.onLoadEnd(url);
+				update(0);
+				if (wasPush) scrollTo(0, 0);
+			}
 		};
 
 		if (p) {
 			if (props.onLoadStart) props.onLoadStart(url);
 			p.then(commit);
-		} else commit();
+		} else {
+			commit();
+		}
+
+		return () => {
+			if (cur.current.url !== url || pending.current !== p) {
+				isCurrentCycle = false
+				pending.current = null;
+				prev.current = cur.current;
+				prevChildren.current = curChildren.current;
+				prevChildren.current.props.pending = pending;
+				cur.current = loc;
+			}
+		}
 	}, [url]);
 
-	// Hi! Wondering what this horrid line is for? That's totally reasonable, it is gross.
-	// It prevents the old route from being remounted because it got shifted in the children Array.
-	if (reverse && this.__v && this.__v.__k) this.__v.__k.reverse();
-
-	return [curChildren.current, prevChildren.current];
+	return [prevChildren.current, curChildren.current];
 }
 
 function Committer({ pending, children }) {
@@ -133,6 +162,8 @@ Router.Provider = LocationProvider;
 
 LocationProvider.ctx = createContext(/** @type {{ url: string, path: string, query: object, route }} */ ({}));
 const RouteContext = createContext({});
+
+export const Route = props => h(props.component, props);
 
 export const useLocation = () => useContext(LocationProvider.ctx);
 export const useRoute = () => useContext(RouteContext);

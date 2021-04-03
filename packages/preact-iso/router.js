@@ -89,19 +89,11 @@ export function Router(props) {
 	const prevChildren = useRef();
 	const pending = useRef();
 
-	if (url !== cur.current.url) {
-		pending.current = null;
-		prev.current = cur.current;
-		prevChildren.current = curChildren.current;
-		// old <Committer> uses the pending promise ref to know whether to render
-		prevChildren.current.props.pending = pending;
-		cur.current = loc;
-
-		// Hi! Wondering what this horrid line is for? That's totally reasonable, it is gross.
-		// It prevents the old route from being remounted because it got shifted in the children Array.
-		// @ts-ignore-next
-		if (this.__v && this.__v.__k) this.__v.__k.reverse();
-	}
+	this.componentDidCatch = err => {
+		if (err && err.then) {
+			pending.current = err;
+		}
+	};
 
 	curChildren.current = useMemo(() => {
 		let p, d, m;
@@ -112,27 +104,51 @@ export function Router(props) {
 		});
 
 		return h(Committer, {}, h(RouteContext.Provider, { value: m }, p || d));
-	}, [url]);
-
-	this.componentDidCatch = err => {
-		if (err && err.then) pending.current = err;
-	};
+	}, [url, path, query]);
 
 	useLayoutEffect(() => {
 		let p = pending.current;
+		let isCurrentCycle = true;
 
 		const commit = () => {
-			if (cur.current.url !== url || pending.current !== p) return;
-			prev.current = prevChildren.current = pending.current = null;
-			if (props.onLoadEnd) props.onLoadEnd(url);
-			update(0);
-			if (wasPush) scrollTo(0, 0);
+			if (cur.current.url !== url || pending.current !== p || !isCurrentCycle) {
+				let p, d, m;
+				[].concat(props.children || []).some(vnode => {
+					const matches = exec(path, vnode.props.path, (m = { path, query }));
+					if (matches) return (p = cloneElement(vnode, m));
+					if (vnode.props.default) d = cloneElement(vnode, m);
+				});
+
+				cur.current.url = url;
+				prevChildren.current = null;
+				curChildren.current = h(Committer, {}, h(RouteContext.Provider, { value: m }, p || d));
+				update(0);
+				return;
+			} else {
+				prev.current = prevChildren.current = pending.current = null;
+				if (props.onLoadEnd) props.onLoadEnd(url);
+				update(0);
+				if (wasPush) scrollTo(0, 0);
+			}
 		};
 
 		if (p) {
 			if (props.onLoadStart) props.onLoadStart(url);
 			p.then(commit);
-		} else commit();
+		} else {
+			commit();
+		}
+
+		return () => {
+			if (cur.current.url !== url || pending.current !== p) {
+				isCurrentCycle = false
+				pending.current = null;
+				prev.current = cur.current;
+				prevChildren.current = curChildren.current;
+				prevChildren.current.props.pending = pending;
+				cur.current = loc;
+			}
+		}
 	}, [url]);
 
 	return [prevChildren.current, curChildren.current];
