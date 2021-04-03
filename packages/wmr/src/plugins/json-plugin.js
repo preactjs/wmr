@@ -1,5 +1,5 @@
 import { promises as fs } from 'fs';
-import { resolveFile } from '../lib/plugins.js';
+import { resolveFile } from '../plugins/plugin-utils.js';
 
 /**
  * Convert JSON imports to ESM. Uses a prefix `\0json:./foo.json`.
@@ -36,7 +36,7 @@ export default function jsonPlugin({ cwd }) {
 			id = id.slice(INTERNAL_PREFIX.length);
 
 			// Check that we're allowed to load this file
-			const file = await resolveFile(id, [cwd]);
+			const file = await resolveFile(id, cwd, [cwd]);
 			return await fs.readFile(file, 'utf-8');
 		},
 		transform(code, id) {

@@ -5,6 +5,8 @@ import * as acorn from 'acorn';
 import * as kl from 'kolorist';
 import acornClassFields from 'acorn-class-fields';
 import { debug, formatResolved, formatPath } from './output-utils.js';
+import { serializeSpecifier } from '../plugins/plugin-utils.js';
+import { resolveCachePath } from '../wmr-middleware.js';
 
 // Rollup respects "module", Node 14 doesn't.
 const cjsDefault = m => ('default' in m ? m.default : m);
@@ -46,9 +48,9 @@ function identifierPair(id, importer) {
 
 /**
  * @param {Plugin[]} plugins
- * @param {import('rollup').InputOptions & PluginContainerOptions} [opts]
+ * @param {import('rollup').InputOptions & PluginContainerOptions & { includeDirs: string[], cwd: string }} opts
  */
-export function createPluginContainer(plugins, opts = {}) {
+export function createPluginContainer(plugins, opts) {
 	if (!Array.isArray(plugins)) plugins = [plugins];
 
 	const MODULES = opts.modules || new Map();
@@ -63,9 +65,8 @@ export function createPluginContainer(plugins, opts = {}) {
 			fileName = fileName.replace('[ext]', posix.extname(posixName).substring(1));
 			fileName = fileName.replace('[name]', posix.basename(posixName).replace(/\.[a-z0-9]+$/g, ''));
 		}
-		const result = resolve(opts.cwd || '.', ctx.outputOptions.dir || '.', fileName);
-		// console.log('filename for ' + name + ': ', result);
-		return result;
+		const out = resolve(opts.cwd || '.', ctx.outputOptions.dir || '.');
+		return resolveCachePath(out, fileName);
 	}
 
 	// counter for generating unique emitted asset IDs
@@ -307,13 +308,16 @@ export function createPluginContainer(plugins, opts = {}) {
 			const file = files.get(referenceId);
 			if (file == null) return null;
 			const out = resolve(opts.cwd || '.', ctx.outputOptions.dir || '.');
-			const fileName = relative(out, file.filename);
+			const cachePath = resolveCachePath(out, file.filename);
+			const fileName = relative(out, cachePath);
+
 			const assetInfo = {
 				referenceId,
 				fileName,
 				// @TODO: this should be relative to the module that imported the asset
 				relativePath: fileName
 			};
+
 			for (plugin of plugins) {
 				if (!plugin.resolveFileUrl) continue;
 				const result = plugin.resolveFileUrl.call(ctx, assetInfo);
@@ -321,7 +325,17 @@ export function createPluginContainer(plugins, opts = {}) {
 					return result;
 				}
 			}
-			return JSON.stringify('/' + fileName.split(sep).join(posix.sep));
+
+			const absolute = resolve(opts.cwd, file.filename);
+			let resolved = serializeSpecifier(absolute, opts.cwd, opts.includeDirs, { forceAbsolute: true });
+
+			// Assets may include the `.cache` folder in the path which
+			// should not be public for the client
+			if (resolved.startsWith('/.cache')) {
+				resolved = resolved.slice('/.cache'.length);
+			}
+
+			return JSON.stringify(resolved);
 		}
 	};
 

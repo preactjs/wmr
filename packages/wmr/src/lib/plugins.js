@@ -1,5 +1,3 @@
-import { promises as fs } from 'fs';
-import * as path from 'path';
 import htmPlugin from '../plugins/htm-plugin.js';
 import sucrasePlugin from '../plugins/sucrase-plugin.js';
 import wmrPlugin from '../plugins/wmr/plugin.js';
@@ -85,41 +83,4 @@ export function getPlugins(options) {
 		production && copyAssetsPlugin({ cwd }),
 		production && visualize && visualizer({ open: true, gzipSize: true, brotliSize: true })
 	].filter(Boolean);
-}
-
-/**
- * Check if a file exists on disk
- * @param {string} filePath
- * @returns {Promise<boolean>}
- */
-export function fileExists(filePath) {
-	return fs
-		.access(filePath)
-		.then(() => true)
-		.catch(() => false);
-}
-
-/**
- * Ensure that a file path resolves to a file in one of the allowed
- * directories to include files from.
- * @param {string} file
- * @param {string[]} includeDirs
- */
-export async function resolveFile(file, includeDirs) {
-	file = path.normalize(file);
-
-	for (const dir of includeDirs) {
-		const resolved = path.resolve(dir, file);
-		if (resolved.startsWith(dir) && (await fileExists(resolved))) {
-			return resolved;
-		}
-	}
-
-	const err = new Error(
-		`Unable to resolve ${file}. Files must be placed in one of the following directories:\n` +
-			`  ${includeDirs.join('\n  ')}`
-	);
-	// Used by top level error handler to rewrite it to a 404
-	err.code = 'ENOENT';
-	throw err;
 }

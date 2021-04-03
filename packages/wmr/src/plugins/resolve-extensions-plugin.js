@@ -1,20 +1,12 @@
 import { promises as fs } from 'fs';
 import { resolve, dirname, join } from 'path';
+import { fileExists } from './plugin-utils.js';
 
 const EXTS = ['.js', '.cjs'];
 
 const EXTS_TS = ['.ts', '.tsx'];
 
 const MAINFIELDS = ['module', 'main'];
-
-async function fileExists(file) {
-	try {
-		if ((await fs.stat(file)).isFile()) {
-			return true;
-		}
-	} catch (e) {}
-	return false;
-}
 
 async function fstat(file) {
 	try {

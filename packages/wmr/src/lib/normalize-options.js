@@ -61,10 +61,20 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 	options.host = process.env.HOST || options.host || 'localhost';
 	options.port = await getPort(options);
 
+	options.includeDirs = [];
+
 	// If the CWD has a public/ directory, all files are assumed to be within it.
 	// From here, everything except node_modules and `out` are relative to public:
 	if (options.public !== '.' && (await isDirectory(join(options.cwd, options.public)))) {
 		options.cwd = join(options.cwd, options.public);
+	}
+
+	options.includeDirs.push(options.cwd);
+
+	// Add `<project>/src` as a valid include directory by default
+	const maybeSrc = join(options.root, 'src');
+	if (await isDirectory(maybeSrc)) {
+		options.includeDirs.push(maybeSrc);
 	}
 
 	await ensureOutDirPromise;

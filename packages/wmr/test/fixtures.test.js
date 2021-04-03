@@ -22,6 +22,27 @@ async function updateFile(tempDir, file, replacer) {
 	await fs.writeFile(compPath, replacer(content));
 }
 
+/**
+ * Alternative to Jest's `await expect().rejects` that ensures that
+ * the promise is caught. Prints an optional value on failure to make
+ * debugging easier.
+ * @param {() => any} fn
+ * @param {any} [logOnFailure] Value to log on failure
+ */
+async function expectToThrow(fn, logOnFailure) {
+	try {
+		await fn();
+		throw 'fail';
+	} catch (err) {
+		if (err === 'fail') {
+			if (logOnFailure) {
+				console.log(typeof logOnFailure === 'function' ? await logOnFailure() : logOnFailure);
+			}
+			throw new Error('Expected function to throw');
+		}
+	}
+}
+
 describe('fixtures', () => {
 	/** @type {TestEnv} */
 	let env;
@@ -88,9 +109,14 @@ describe('fixtures', () => {
 		instance = await runWmrFast(env.tmp.path);
 		const text = await getOutput(env, instance);
 
-		expect(text).toMatch(/my-url: \/foo\.svg\?asset/);
-		expect(text).toMatch(/url: \/foo\.svg\?asset/);
-		expect(text).toMatch(/fallback: \/foo\.svg\?asset/);
+		try {
+			expect(text).toMatch(/my-url: \/foo\.svg\?asset/);
+			expect(text).toMatch(/url: \/foo\.svg\?asset/);
+			expect(text).toMatch(/fallback: \/foo\.svg\?asset/);
+		} catch (err) {
+			console.log(instance.output);
+			throw err;
+		}
 	});
 
 	it('should allow custom resolve aliases resolution', async () => {
@@ -98,6 +124,50 @@ describe('fixtures', () => {
 		instance = await runWmrFast(env.tmp.path);
 		const text = await getOutput(env, instance);
 		expect(text).toMatch(/42 {"bar":"bar"}/);
+	});
+
+	describe('include directories', () => {
+		it('should prevent loading files outside of allowed include directories', async () => {
+			await loadFixture('resolve-include-dir', env);
+			instance = await runWmrFast(env.tmp.path);
+			await env.page.goto(await instance.address);
+
+			await expect(env.page.evaluate(`import('/sub/../../outside.js')`)).rejects.toThrow();
+		});
+
+		it('should load file from include directories ', async () => {
+			await loadFixture('resolve-include-dir2', env);
+			instance = await runWmrFast(env.tmp.path);
+			await env.page.goto(await instance.address);
+
+			await expectToThrow(() => env.page.evaluate(`import('./invalid.js')`), instance.output);
+
+			const text = await env.page.evaluate(`
+				import('./valid.js').then(r => r.foo)
+			`);
+			expect(text).toEqual('bar');
+		});
+
+		// eslint-disable-next-line jest/expect-expect
+		it('should only load CSS from include directories', async () => {
+			await loadFixture('resolve-include-dir2', env);
+			instance = await runWmrFast(env.tmp.path);
+			await env.page.goto(await instance.address);
+
+			try {
+				await env.page.evaluate(`
+					import('./valid-css.js')
+				`);
+				await env.page.waitForFunction(
+					() => window.getComputedStyle(document.body).backgroundColor === 'rgb(255, 0, 0)'
+				);
+			} catch (err) {
+				console.log(instance.output);
+				throw err;
+			}
+
+			await expectToThrow(() => env.page.evaluate(`import('./invalid-css.js')`), instance.output);
+		});
 	});
 
 	describe('empty', () => {
@@ -144,7 +214,12 @@ describe('fixtures', () => {
 			expect(await env.page.title()).toBe('index.html');
 
 			expect(await env.page.evaluate(async () => (await fetch('/foo.js')).status)).toBe(404);
-			expect(await env.page.evaluate(async () => await (await fetch('/foo.js')).text())).toMatch(/not found/i);
+			try {
+				expect(await env.page.evaluate(async () => await (await fetch('/foo.js')).text())).toMatch(/not found/i);
+			} catch (err) {
+				console.log(instance.output);
+				throw err;
+			}
 		});
 
 		it('should use 200.html for fallback if present', async () => {

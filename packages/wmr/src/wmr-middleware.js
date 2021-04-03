@@ -9,7 +9,8 @@ import { normalizeSpecifier } from './plugins/npm-plugin/index.js';
 import sassPlugin from './plugins/sass-plugin.js';
 import { getMimeType } from './lib/mimetypes.js';
 import { debug, formatPath } from './lib/output-utils.js';
-import { fileExists, getPlugins, resolveFile } from './lib/plugins.js';
+import { getPlugins } from './lib/plugins.js';
+import { deserializeSpecifier, fileExists, resolveFile, serializeSpecifier } from './plugins/plugin-utils.js';
 import { watch } from './lib/fs-watcher.js';
 
 const NOOP = () => {};
@@ -29,12 +30,13 @@ export const moduleGraph = new Map();
  * @returns {import('polka').Middleware}
  */
 export default function wmrMiddleware(options) {
-	let { cwd, root, out, distDir = 'dist', onError, onChange = NOOP } = options;
+	let { cwd, root, out, distDir = 'dist', onError, onChange = NOOP, includeDirs } = options;
 
 	distDir = resolve(dirname(out), distDir);
 
 	const NonRollup = createPluginContainer(getPlugins(options), {
 		cwd,
+		includeDirs,
 		writeFile: (filename, source) => writeCacheFile(out, filename, source),
 		output: {
 			// assetFileNames: '@asset/[name][extname]',
@@ -46,7 +48,7 @@ export default function wmrMiddleware(options) {
 
 	NonRollup.buildStart();
 
-	const watcher = watch([cwd, resolve(root, 'package.json')], {
+	const watcher = watch([...includeDirs, resolve(root, 'package.json')], {
 		cwd,
 		disableGlobbing: true,
 		ignored: [/(^|[/\\])(node_modules|\.git|\.DS_Store)([/\\]|$)/, resolve(cwd, out), resolve(cwd, distDir)]
@@ -105,7 +107,8 @@ export default function wmrMiddleware(options) {
 
 		if (/\.(css|s[ac]ss)$/.test(filename)) {
 			WRITE_CACHE.delete(filename);
-			pendingChanges.add('/' + filename);
+			const url = serializeSpecifier(filename, cwd, includeDirs);
+			pendingChanges.add(url);
 		} else if (/\.(mjs|[tj]sx?)$/.test(filename)) {
 			if (!moduleGraph.has(filename)) {
 				onChange({ reload: true });
@@ -137,6 +140,13 @@ export default function wmrMiddleware(options) {
 			return next();
 		}
 
+		// Paths leading outside of cwd ar encoded via the `/@path` prefix.
+		// Just before loading the files we check if we are actually allowed
+		// to load a file outside cwd. It's only allowed if the resolved file
+		// is in one of `options.includeDir`
+		path = deserializeSpecifier(path);
+		if (path.startsWith('.')) path = '/' + path;
+
 		let prefix = '';
 		const prefixMatches = path.match(/^\/?@([a-z-]+)(\/.+)$/);
 		if (prefixMatches) {
@@ -164,7 +174,7 @@ export default function wmrMiddleware(options) {
 
 		log(`${kl.cyan(formatPath(path))} -> ${kl.dim(id)} file: ${kl.dim(file)}`);
 
-		const ctx = { req, res, id, file, path, prefix, cwd, out, NonRollup, next };
+		const ctx = { req, res, id, file, path, prefix, cwd, out, NonRollup, next, includeDirs };
 
 		let transform;
 		if (path === '/_wmr.js') {
@@ -206,6 +216,7 @@ export default function wmrMiddleware(options) {
 
 			if (e.code === 'ENOENT') {
 				// e.message = `not found (.${sep}${relative(root, e.path)})`;
+				log(e.message);
 				e.message = `File not found`;
 				e.code = 404;
 			}
@@ -224,6 +235,7 @@ export default function wmrMiddleware(options) {
  * @property {string} path request path
  * @property {string} prefix a Rollup plugin -style path `\0prefix:`, if the URL was `/＠prefix/*`
  * @property {string} cwd working directory, including ./public if detected
+ * @property {string[]} includeDirs List of directories to we are allowed to include files from
  * @property {string} out output directory
  * @property {InstanceType<import('http')['IncomingMessage']>} req HTTP Request object
  * @property {InstanceType<import('http')['ServerResponse']>} res HTTP Response object
@@ -236,8 +248,8 @@ const logJsTransform = debug('wmr:transform.js');
 /** @type {{ [key: string]: (ctx: Context) => Result|Promise<Result> }} */
 export const TRANSFORMS = {
 	// Handle direct asset requests (/foo?asset)
-	async asset({ file, cwd, req, res }) {
-		const filename = resolve(cwd, file);
+	async asset({ file, cwd, req, res, includeDirs }) {
+		const filename = resolveFile(file, cwd, includeDirs);
 		let stats;
 		try {
 			stats = await fs.stat(filename);
@@ -267,7 +279,7 @@ export const TRANSFORMS = {
 	},
 
 	// Handle individual JavaScript modules
-	async js({ id, file, prefix, res, cwd, out, NonRollup, req }) {
+	async js({ id, file, prefix, res, cwd, out, NonRollup, req, includeDirs }) {
 		let code;
 		try {
 			res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
@@ -279,10 +291,25 @@ export const TRANSFORMS = {
 			}
 
 			const resolved = await NonRollup.resolveId(id);
-			const resolvedId = typeof resolved == 'object' ? resolved && resolved.id : resolved;
-			let result = resolvedId && (await NonRollup.load(resolvedId));
+			let resolvedId = typeof resolved == 'object' ? resolved && resolved.id : resolved;
 
-			code = typeof result == 'object' ? result && result.code : result;
+			if (resolvedId) {
+				let loadId = resolvedId;
+
+				// Convert path to absolute if it has no prefix
+				const lastPrefix = resolvedId.lastIndexOf(':') + 1;
+
+				if (lastPrefix === 0) {
+					let importer = resolvedId.slice(lastPrefix);
+					file = resolveFile(importer, cwd, includeDirs);
+					loadId = resolvedId.slice(0, lastPrefix) + file;
+				}
+
+				logJsTransform(`before load file: ${kl.cyan(file)}`);
+				let result = await NonRollup.load(loadId);
+
+				code = typeof result == 'object' ? result && result.code : result;
+			}
 
 			// Nobody loaded the id, so it must be a file on disk because
 			// virtual ones need to be loaded by plugins themselves.
@@ -291,7 +318,7 @@ export const TRANSFORMS = {
 
 				// Ensure that the file path resolves to a file
 				// that we're actually allowed to load.
-				file = await resolveFile(file, [cwd]);
+				file = resolveFile(file, cwd, includeDirs);
 				logJsTransform(`load file: ${kl.cyan(file)} [fallback]`);
 				code = await fs.readFile(file, 'utf-8');
 			}
@@ -382,6 +409,12 @@ export const TRANSFORMS = {
 						logJsTransform(`${kl.cyan(formatPath(originalSpec))} -> ${kl.dim(formatPath(spec))}`);
 					}
 
+					// Serialize path if it has no serialized prefix because it
+					// may resolve outside of cwd
+					if (!spec.startsWith('/@')) {
+						return serializeSpecifier(spec, cwd, includeDirs, importer);
+					}
+
 					return spec;
 				}
 			});
@@ -398,7 +431,7 @@ export const TRANSFORMS = {
 		}
 	},
 	// Handles "CSS Modules" proxy modules (style.module.css.js)
-	async cssModule({ id, file, cwd, out, res }) {
+	async cssModule({ id, file, cwd, out, res, includeDirs }) {
 		res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
 
 		// Cache the generated mapping/proxy module with a .js extension (the CSS itself is also cached)
@@ -406,11 +439,15 @@ export const TRANSFORMS = {
 
 		file = file.replace(/\.js$/, '');
 
+		// Check if we're allowed to load this file
+		file = resolveFile(file, cwd, includeDirs);
+
 		// We create a plugin container for each request to prevent asset referenceId clashes
 		const container = createPluginContainer(
 			[wmrPlugin({ hot: true }), sassPlugin(), wmrStylesPlugin({ cwd, hot: true, fullPath: true })],
 			{
 				cwd,
+				includeDirs,
 				output: {
 					dir: out,
 					assetFileNames: '[name][extname]'
@@ -421,13 +458,13 @@ export const TRANSFORMS = {
 			}
 		);
 
-		const result = (await container.load(file)) || (await fs.readFile(resolve(cwd, file), 'utf-8'));
+		const result = (await container.load(file)) || (await fs.readFile(file, 'utf-8'));
 
 		let code = typeof result === 'string' ? result : result && result.code;
 
 		code = await container.transform(code, file);
 
-		code = await transformImports(code, id, {
+		code = await transformImports(code, file, {
 			resolveImportMeta(property) {
 				return container.resolveImportMeta(property);
 			},
@@ -506,6 +543,26 @@ export const TRANSFORMS = {
 };
 
 /**
+ * Resolve fileName to a an absolute cache path that is
+ * guaranteed to be inside `rootDir`.
+ * @param {string} rootDir
+ * @param {string} fileName
+ * @returns {string}
+ */
+export function resolveCachePath(rootDir, fileName) {
+	let filePath = resolve(rootDir, fileName);
+
+	// Normalize cache path for when the file resolves
+	// outside of the cache directory to avoid accidentally
+	// overwriting user files
+	if (!filePath.startsWith(rootDir)) {
+		return resolve(rootDir, fileName.replace(/\.\./g, '__'));
+	}
+
+	return filePath;
+}
+
+/**
  * Write a file to a directory, ensuring any nested paths exist
  * @param {string} rootDir
  * @param {string} fileName
@@ -515,7 +572,9 @@ async function writeCacheFile(rootDir, fileName, data) {
 	if (fileName.includes('\0')) return;
 
 	WRITE_CACHE.set(fileName, data);
-	const filePath = resolve(rootDir, fileName);
+
+	let filePath = resolveCachePath(rootDir, fileName);
+
 	if (dirname(filePath) !== rootDir) {
 		await fs.mkdir(dirname(filePath), { recursive: true });
 	}
