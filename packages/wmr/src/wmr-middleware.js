@@ -9,7 +9,7 @@ import { normalizeSpecifier } from './plugins/npm-plugin/index.js';
 import sassPlugin from './plugins/sass-plugin.js';
 import { getMimeType } from './lib/mimetypes.js';
 import { debug, formatPath } from './lib/output-utils.js';
-import { getPlugins } from './lib/plugins.js';
+import { getPlugins, resolveFile } from './lib/plugins.js';
 import { watch } from './lib/fs-watcher.js';
 
 const NOOP = () => {};
@@ -129,6 +129,7 @@ export default function wmrMiddleware(options) {
 	return async (req, res, next) => {
 		// @ts-ignore
 		let path = posix.normalize(req.path);
+		log(`--> ${kl.cyan(formatPath(path))}`);
 
 		const queryParams = new URL(req.url, 'file://').searchParams;
 
@@ -146,17 +147,14 @@ export default function wmrMiddleware(options) {
 		// convert to OS path:
 		const osPath = path.slice(1).split(posix.sep).join(sep);
 
-		let file = resolve(cwd, osPath);
-
-		// Rollup-style CWD-relative Unix-normalized path "id":
-		let id = relative(cwd, file)
+		let id = osPath
 			.replace(/^\.\//, '')
 			.replace(/^[\0\b]/, '')
 			.split(sep)
 			.join(posix.sep);
 
 		// add back any prefix if there was one:
-		file = prefix + file;
+		let file = prefix + osPath;
 		id = prefix + id;
 
 		let type = getMimeType(file);
@@ -274,6 +272,7 @@ export const TRANSFORMS = {
 		try {
 			res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
 
+			logJsTransform(`--> ${kl.cyan(formatPath(id))}`);
 			if (WRITE_CACHE.has(id)) {
 				logJsTransform(`<-- ${kl.cyan(formatPath(id))} [cached]`);
 				return WRITE_CACHE.get(id);
@@ -285,9 +284,16 @@ export const TRANSFORMS = {
 
 			code = typeof result == 'object' ? result && result.code : result;
 
+			// Nobody loaded the id, so it must be a file on disk because
+			// virtual ones need to be loaded by plugins themselves.
 			if (code == null || code === false) {
 				if (prefix) file = file.replace(prefix, '');
-				code = await fs.readFile(resolve(cwd, file), 'utf-8');
+
+				// Ensure that the file path resolves to a file
+				// that we're actually allowed to load.
+				file = await resolveFile(file, [cwd]);
+				logJsTransform(`load file: ${kl.cyan(file)} [fallback]`);
+				code = await fs.readFile(file, 'utf-8');
 			}
 
 			code = await NonRollup.transform(code, id);

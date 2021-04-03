@@ -93,6 +93,13 @@ describe('fixtures', () => {
 		expect(text).toMatch(/fallback: \/foo\.svg\?asset/);
 	});
 
+	it('should allow custom resolve aliases resolution', async () => {
+		await loadFixture('alias-custom-plugin', env);
+		instance = await runWmrFast(env.tmp.path);
+		const text = await getOutput(env, instance);
+		expect(text).toMatch(/42 {"bar":"bar"}/);
+	});
+
 	describe('empty', () => {
 		it('should print warning for missing index.html file in public dir', async () => {
 			await loadFixture('empty', env);
