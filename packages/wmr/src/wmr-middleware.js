@@ -9,7 +9,7 @@ import { normalizeSpecifier } from './plugins/npm-plugin/index.js';
 import sassPlugin from './plugins/sass-plugin.js';
 import { getMimeType } from './lib/mimetypes.js';
 import { debug, formatPath } from './lib/output-utils.js';
-import { getPlugins, resolveFile } from './lib/plugins.js';
+import { fileExists, getPlugins, resolveFile } from './lib/plugins.js';
 import { watch } from './lib/fs-watcher.js';
 
 const NOOP = () => {};
@@ -483,12 +483,7 @@ export const TRANSFORMS = {
 		// Serve ~/200.html fallback for requests with no extension
 		if (ctx.path !== '/' && !/\.[a-z]+$/gi.test(ctx.path)) {
 			const fallback = resolve(ctx.cwd, '200.html');
-			let use200 = false;
-			try {
-				const hasFile = await fs.lstat(ctx.file).catch(() => false);
-				use200 = !hasFile && !!(await fs.lstat(fallback));
-			} catch (e) {}
-			if (use200) {
+			if (!(await fileExists(ctx.file)) && (await fileExists(fallback))) {
 				ctx.file = fallback;
 				const mime = getMimeType(ctx.file) || 'text/html;charset=utf-8';
 				ctx.res.setHeader('Content-Type', mime);
