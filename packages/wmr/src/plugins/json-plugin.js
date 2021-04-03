@@ -1,5 +1,5 @@
-import path from 'path';
 import { promises as fs } from 'fs';
+import { resolveFile } from '../lib/plugins.js';
 
 /**
  * Convert JSON imports to ESM. Uses a prefix `\0json:./foo.json`.
@@ -33,17 +33,10 @@ export default function jsonPlugin({ cwd }) {
 		async load(id) {
 			if (!id.startsWith(INTERNAL_PREFIX)) return null;
 
-			if (id.startsWith(INTERNAL_PREFIX)) {
-				id = id.slice(INTERNAL_PREFIX.length);
-			}
+			id = id.slice(INTERNAL_PREFIX.length);
 
-			// TODO: Add a global helper function to normalize paths
-			// and check that we're allowed to load a file.
-			const file = path.resolve(cwd, id);
-			if (!file.startsWith(cwd)) {
-				throw new Error(`JSON file must be placed inside ${cwd}`);
-			}
-
+			// Check that we're allowed to load this file
+			const file = await resolveFile(id, [cwd]);
 			return await fs.readFile(file, 'utf-8');
 		},
 		transform(code, id) {
