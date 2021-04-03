@@ -104,7 +104,7 @@ export function Router(props) {
 		});
 
 		return h(Committer, {}, h(RouteContext.Provider, { value: m }, p || d));
-	}, [url, path, query]);
+	}, [url]);
 
 	useLayoutEffect(() => {
 		let p = pending.current;
