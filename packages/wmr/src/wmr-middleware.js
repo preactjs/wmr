@@ -481,7 +481,7 @@ export const TRANSFORMS = {
 	// Falls through to sirv
 	async generic(ctx) {
 		// Serve ~/200.html fallback for requests with no extension
-		if (!/\.[a-z]+$/gi.test(ctx.path)) {
+		if (ctx.path !== '/' && !/\.[a-z]+$/gi.test(ctx.path)) {
 			const fallback = resolve(ctx.cwd, '200.html');
 			let use200 = false;
 			try {
