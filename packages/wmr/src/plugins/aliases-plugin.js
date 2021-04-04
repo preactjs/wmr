@@ -1,4 +1,3 @@
-import { dirname, resolve } from 'path';
 import { debug, formatResolved } from '../lib/output-utils.js';
 
 /**
@@ -9,30 +8,34 @@ import { debug, formatResolved } from '../lib/output-utils.js';
  */
 export default function aliasesPlugin({ aliases }) {
 	const log = debug('aliases');
-	let pkgFilename;
 
 	return {
 		name: 'aliases',
 		async resolveId(id, importer) {
 			if (typeof id !== 'string' || id.match(/^(\0|\.\.?\/)/)) return;
-			let aliased;
+
+			let aliased = null;
+			let partial = null;
 			for (let i in aliases) {
+				// Find an exact match
 				if (id === i) {
 					aliased = aliases[i];
 					break;
 				}
-			}
-			for (let i in aliases) {
-				if (id.startsWith(i + '/')) {
-					aliased = aliases[i] + id.substring(i.length);
+
+				// Fall back to a partial match if any
+				if (partial === null && id.startsWith(i + '/')) {
+					partial = aliases[i] + id.substring(i.length);
 					break;
 				}
 			}
-			if (aliased == null) return;
-			if (aliased.startsWith('./')) {
-				aliased = resolve(dirname(pkgFilename), aliased);
+
+			// We had no exact match, use partial one
+			if (aliased === null && partial) {
+				aliased = partial;
 			}
-			if (aliased === id) return;
+
+			if (aliased == null || aliased === id) return;
 			// now allow other resolvers to handle the aliased version
 			// (this is important since they may mark as external!)
 			const resolved = await this.resolve(aliased, importer, { skipSelf: true });

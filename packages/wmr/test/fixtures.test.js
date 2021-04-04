@@ -259,6 +259,20 @@ describe('fixtures', () => {
 			expect(await env.page.evaluate(`window.React === window.preactCompat`)).toBe(true);
 			expect(await env.page.evaluate(`window.ReactDOM === window.preactCompat`)).toBe(true);
 		});
+
+		it('should allow aliasing directories', async () => {
+			await loadFixture('alias-directory', env);
+			instance = await runWmrFast(env.tmp.path);
+			const output = await getOutput(env, instance);
+			expect(output).toMatch(/it works/);
+		});
+
+		it('should allow aliasing directories outside of cwd', async () => {
+			await loadFixture('alias-directory-outside', env);
+			instance = await runWmrFast(env.tmp.path);
+			const output = await getOutput(env, instance);
+			expect(output).toMatch(/it works/);
+		});
 	});
 
 	describe('rmwc', () => {

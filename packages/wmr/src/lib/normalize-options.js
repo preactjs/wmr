@@ -1,4 +1,4 @@
-import { resolve, join } from 'path';
+import { resolve, join, dirname } from 'path';
 import { promises as fs } from 'fs';
 import url from 'url';
 import { readEnvFiles } from './environment.js';
@@ -83,6 +83,16 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 	try {
 		const pkg = JSON.parse(await fs.readFile(pkgFile, 'utf-8'));
 		options.aliases = pkg.alias || {};
+
+		// Turn aliases into absolute paths if resolves to a path
+		for (const alias in options.aliases) {
+			const value = options.aliases[alias];
+			if (/^\.?\.\//.test(value)) {
+				const resolved = resolve(dirname(pkgFile), value);
+				options.aliases[alias] = resolved;
+				options.includeDirs.push(dirname(resolved));
+			}
+		}
 		configWatchFiles.push(pkgFile);
 	} catch (e) {
 		// ignore error, reading aliases from package.json is an optional feature
