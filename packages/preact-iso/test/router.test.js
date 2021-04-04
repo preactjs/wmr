@@ -154,7 +154,8 @@ describe('Router', () => {
 
 		await sleep(1);
 
-		expect(scratch).toHaveProperty('innerHTML', '<h1>A</h1><p>hello</p>');
+		// DOM-transition
+		expect(scratch).toHaveProperty('innerHTML', '');
 		// We should never re-invoke <A /> while loading <B /> (that would be a remount of the old route):
 		expect(A).not.toHaveBeenCalled();
 		expect(B).toHaveBeenCalledWith({ path: '/b', query: {} }, expect.anything());
@@ -180,7 +181,8 @@ describe('Router', () => {
 		loc.route('/c?2');
 		loc.route('/c');
 
-		expect(scratch).toHaveProperty('innerHTML', '<h1>B</h1><p>hello</p>');
+		// DOM-transition
+		expect(scratch).toHaveProperty('innerHTML', '');
 		// We should never re-invoke <A /> while loading <B /> (that would be a remount of the old route):
 		expect(B).not.toHaveBeenCalled();
 		expect(C).toHaveBeenCalledWith({ path: '/c', query: {} }, expect.anything());

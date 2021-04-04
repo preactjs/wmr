@@ -122,6 +122,7 @@ export function Router(props) {
 				cur.current.url = url;
 				prevChildren.current = null;
 				curChildren.current = h(Committer, {}, h(RouteContext.Provider, { value: m }, p || d));
+				if (wasPush) scrollTo(0, 0);
 				update(0);
 				return;
 			} else {
