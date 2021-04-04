@@ -4,7 +4,7 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"start": "wmr",
+		"start": "node ../packages/wmr/src/cli.js",
 		"build": "if-env NETLIFY=true && node --experimental-modules ../packages/wmr/src/cli.js build --prerender || wmr build --prerender",
 		"serve": "wmr serve"
 	},

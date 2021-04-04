@@ -12,11 +12,15 @@ However, it's often useful to start with a bit of structure. You can create this
 
 Create a new project in seconds using [create-wmr](https://npm.im/create-wmr). This tiny tool scaffolds a new project for you, with npm scripts for dev and prod builds, type checking and a simple demo application to start from.
 
-<strong><code>npm init wmr your-project-name</code></strong>
+```sh
+npm init wmr your-project-name
+```
 
 or
 
-<strong><code>yarn create wmr your-project-name</code></strong>
+```sh
+yarn create wmr your-project-name
+```
 
 <p>
 <img width="400" src="https://user-images.githubusercontent.com/105127/100917537-4661e100-34a5-11eb-89bd-565b7bc31919.gif">
