@@ -77,7 +77,7 @@ export function getServerAddresses(addr, { https = false } = {}) {
 	}
 
 	const protocol = https ? 'https:' : 'http:';
-	const host = addr.address.replace(/^(127\.0\.0\.1|::1)$/, 'localhost');
+	const host = addr.address === '0.0.0.0' ? 'localhost' : addr.address;
 	const port = addr.port;
 
 	// Get network address
