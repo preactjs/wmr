@@ -571,6 +571,11 @@ export function resolveCachePath(rootDir, fileName) {
 async function writeCacheFile(rootDir, fileName, data) {
 	if (fileName.includes('\0')) return;
 
+	// Strip all search params
+	const idx = fileName.indexOf('?');
+	if (idx > 0) {
+		fileName = fileName.slice(0, idx);
+	}
 	WRITE_CACHE.set(fileName, data);
 
 	let filePath = resolveCachePath(rootDir, fileName);
