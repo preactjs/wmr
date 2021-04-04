@@ -75,8 +75,6 @@ export default async function start(options = {}) {
 async function bootServer(options, configWatchFiles) {
 	options = await normalizeOptions(options, 'start', configWatchFiles);
 
-	options.host = options.host || process.env.HOST;
-
 	options.middleware = [].concat(
 		// @ts-ignore-next
 		options.middleware || [],
@@ -118,14 +116,19 @@ async function bootServer(options, configWatchFiles) {
 	let actualPort = new Promise(r => (resolveActualPort = r));
 	const closeServer = makeCloseable(app.server);
 	app.listen(options.port, options.host, () => {
-		const addresses = getServerAddresses(app.server.address(), { https: app.http2 });
+		const addresses = getServerAddresses(app.server.address(), {
+			host: options.host,
+			https: app.http2
+		});
+
 		const message = `server running at:`;
 		process.stdout.write(formatBootMessage(message, addresses));
 
 		// If the port was `0` than the OS picks a random
 		// free port. Get the actual port here so that we
 		// can reconnect to the same server from the client.
-		resolveActualPort(+addresses[0].slice(addresses[0].lastIndexOf(':') + 1));
+		const port = +app.server.address().port;
+		resolveActualPort(port);
 	});
 
 	return {
