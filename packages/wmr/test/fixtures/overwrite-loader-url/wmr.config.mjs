@@ -9,7 +9,6 @@ const MY_URL_PLUGIN = {
 	name: 'my-url',
 	async resolveId(id, importer) {
 		if (!id.startsWith(PREFIX)) return;
-		console.log('MY URL resolve', JSON.stringify(id));
 		id = id.slice(PREFIX.length);
 
 		const resolved = await this.resolve(id, importer, { skipSelf: true });
