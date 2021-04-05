@@ -5,7 +5,6 @@ import wmrPlugin, { getWmrClient } from './plugins/wmr/plugin.js';
 import wmrStylesPlugin, { modularizeCss, processSass } from './plugins/wmr/styles-plugin.js';
 import { createPluginContainer } from './lib/rollup-plugin-container.js';
 import { transformImports } from './lib/transform-imports.js';
-import { normalizeSpecifier } from './plugins/npm-plugin/index.js';
 import sassPlugin from './plugins/sass-plugin.js';
 import { getMimeType } from './lib/mimetypes.js';
 import { debug, formatPath } from './lib/output-utils.js';
@@ -312,6 +311,9 @@ export const TRANSFORMS = {
 					// const resolved = await NonRollup.resolveId(spec, importer);
 					let originalSpec = spec;
 					const resolved = await NonRollup.resolveId(spec, file);
+
+					// Everything from here on should only concern with making
+					// the resolved path URL safe.
 					if (resolved) {
 						spec = typeof resolved == 'object' ? resolved.id : resolved;
 						if (/^(\/|\\|[a-z]:\\)/i.test(spec)) {
@@ -344,20 +346,9 @@ export const TRANSFORMS = {
 					// foo.css --> foo.css.js (import of CSS Modules proxy module)
 					if (spec.match(/\.(css|s[ac]ss)$/)) spec += '.js';
 
-					// Bare specifiers are npm packages:
+					// Turn bare specifiers into an absolute URL
 					if (!/^\0?\.?\.?[/\\]/.test(spec)) {
-						const meta = normalizeSpecifier(spec);
-
-						// // Option 1: resolve all package verions (note: adds non-trivial delay to imports)
-						// await resolvePackageVersion(meta);
-						// // Option 2: omit package versions that resolve to the root
-						// // if ((await resolvePackageVersion({ module: meta.module, version: '' })).version === meta.version) {
-						// // 	meta.version = '';
-						// // }
-						// spec = `/@npm/${meta.module}${meta.version ? '@' + meta.version : ''}${meta.path ? '/' + meta.path : ''}`;
-
-						// Option 3: omit root package versions
-						spec = `/@npm/${meta.module}${meta.path ? '/' + meta.path : ''}`;
+						spec = '/' + spec;
 					}
 
 					const modSpec = spec.startsWith('../') ? spec.replace(/..\/g/, '') : spec.replace('./', '');

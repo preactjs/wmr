@@ -1,16 +1,19 @@
 import * as rollup from 'rollup';
+import { promises as fs } from 'fs';
+import * as path from 'path';
 import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
-// import unpkgPlugin from '../plugins/unpkg-plugin.js';
-import npmPlugin, { normalizeSpecifier } from '../plugins/npm-plugin/index.js';
-import { resolvePackageVersion, loadPackageFile } from '../plugins/npm-plugin/registry.js';
+import { getNpmPackageDir, normalizeSpecifier } from '../plugins/npm-plugin/index.js';
+import { loadPackageFile } from '../plugins/npm-plugin/registry.js';
 import { getCachedBundle, setCachedBundle, sendCachedBundle, enqueueCompress } from './npm-middleware-cache.js';
 import processGlobalPlugin from '../plugins/process-global-plugin.js';
 import aliasesPlugin from '../plugins/aliases-plugin.js';
 import { getMimeType } from './mimetypes.js';
 import nodeBuiltinsPlugin from '../plugins/node-builtins-plugin.js';
 import * as kl from 'kolorist';
-import { hasDebugFlag } from './output-utils.js';
+import { hasDebugFlag, debug } from './output-utils.js';
+import { resolve as resolveExports, legacy as resolveLegacy } from 'resolve.exports';
+import { transformImports } from './transform-imports.js';
 
 /**
  * Serve a "proxy module" that uses the WMR runtime to load CSS.
@@ -34,22 +37,21 @@ async function handleAsset(meta, res) {
 }
 
 /**
- * @param {object} [options]
- * @param {'npm'|'unpkg'} [options.source = 'npm'] How to fetch package files
- * @param {Record<string,string>} [options.aliases]
+ * @param {object} options
+ * @param {Record<string,string>} options.aliases
  * @param {boolean} [options.optimize = true] Progressively minify and compress dependency bundles?
  * @param {string} [options.cwd] Virtual cwd
  * @returns {import('polka').Middleware}
  */
-export default function npmMiddleware({ source = 'npm', aliases, optimize, cwd } = {}) {
+export default function npmMiddleware({ aliases, optimize, cwd }) {
 	return async (req, res, next) => {
 		// @ts-ignore
 		const mod = req.path.replace(/^\//, '');
-
 		const meta = normalizeSpecifier(mod);
+		const packageDir = getNpmPackageDir(mod);
 
 		try {
-			await resolvePackageVersion(meta);
+			meta.version = JSON.parse(await fs.readFile(path.join(packageDir, 'package.json'), 'utf-8')).version;
 		} catch (e) {
 			return next(e);
 		}
@@ -72,12 +74,22 @@ export default function npmMiddleware({ source = 'npm', aliases, optimize, cwd }
 			if (hasDebugFlag()) {
 				console.log(`  ${kl.dim('middleware:') + kl.bold(kl.magenta('npm'))}  ${JSON.stringify(meta.specifier)}`);
 			}
+
 			// serve from memory and disk caches:
 			const cached = await getCachedBundle(etag, meta, cwd);
 			if (cached) return sendCachedBundle(req, res, cached);
 
 			// const start = Date.now();
-			const code = await bundleNpmModule(mod, { source, aliases, cwd });
+			let code = await bundleNpmModule(mod, { aliases, packageDir });
+			code = await transformImports(code, mod, {
+				resolveId(spec) {
+					// Turn bare specifiers into an absolute URL
+					if (!/^\0?\.?\.?[/\\]/.test(spec)) {
+						return '/@npm/' + spec;
+					}
+					return null;
+				}
+			});
 			// console.log(`Bundle dep: ${mod}: ${Date.now() - start}ms`);
 
 			// send it!
@@ -99,42 +111,53 @@ export default function npmMiddleware({ source = 'npm', aliases, optimize, cwd }
 
 let npmCache;
 
+const log = debug('bundle:npm');
+
 /**
  * Bundle am npm module entry path into a single file
  * @param {string} mod The module to bundle, including subpackage/path
  * @param {object} options
- * @param {'npm'|'unpkg'} [options.source]
- * @param {Record<string,string>} [options.aliases]
- * @param {string} [options.cwd]
+ * @param {Record<string,string>} options.aliases
+ * @param {boolean} [options.streaming]
+ * @param {string} options.packageDir Folder where the module lies on
+ * disk (= same folder as package.json of that module)
  */
-async function bundleNpmModule(mod, { source, aliases, cwd }) {
-	let npmProviderPlugin;
+export async function bundleNpmModule(mod, { aliases, packageDir, streaming }) {
+	// Now let's find the entry file
+	const pkgJson = JSON.parse(await fs.readFile(path.join(packageDir, 'package.json'), 'utf-8'));
 
-	if (source === 'unpkg') {
-		throw Error('unpkg plugin is disabled');
-		// npmProviderPlugin = unpkgPlugin({
-		// 	publicPath: '/@npm',
-		// 	perPackage: true
-		// });
-	} else {
-		npmProviderPlugin = npmPlugin({
-			publicPath: '/@npm'
+	// Thanks to Luke Edwards for this excellent package!!
+	let resolved =
+		resolveExports(pkgJson, mod) ||
+		resolveLegacy(pkgJson, {
+			browser: false
 		});
+
+	if (!resolved) {
+		throw new Error(`Could not resolve npm module: ${mod}. Did you forget to install it?`);
 	}
 
+	const entry = path.join(packageDir, resolved);
+	log(`Bundling ${kl.cyan(mod)} -> ${kl.dim(entry + '...')}`);
+
 	const bundle = await rollup.rollup({
-		input: mod,
-		// input: '\0entry',
+		input: entry,
 		cache: npmCache,
 		shimMissingExports: true,
 		treeshake: false,
-		// inlineDynamicImports: true,
-		// shimMissingExports: true,
 		preserveEntrySignatures: 'allow-extension',
+		onwarn: warning => {
+			// Ignore external dependencies warning, because we want those
+			// to be external.
+			if (warning.code === 'UNRESOLVED_IMPORT') return;
+		},
 		plugins: [
 			nodeBuiltinsPlugin({}),
-			aliasesPlugin({ aliases, cwd }),
-			npmProviderPlugin,
+			aliasesPlugin({ aliases }),
+			// TODO: Add back a streaming plugin
+			streaming && {
+				name: 'stream-npm'
+			},
 			processGlobalPlugin({
 				NODE_ENV: 'development'
 			}),
@@ -152,13 +175,13 @@ async function bundleNpmModule(mod, { source, aliases, cwd }) {
 					}
 				}
 			},
-			{
+			streaming && {
 				name: 'never-disk',
 				load(s) {
 					throw Error('local access not allowed');
 				}
 			}
-		]
+		].filter(Boolean)
 	});
 
 	npmCache = bundle.cache;

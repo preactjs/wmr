@@ -67,11 +67,11 @@ export function getPlugins(options) {
 			// Only transpile CommonJS in node_modules and explicit .cjs files:
 			include: /(?:^[\b]npm\/|[/\\]node_modules[/\\]|\.cjs$)/
 		}),
-		production && npmPlugin({ external: false }),
 		resolveExtensionsPlugin({
 			typescript: true,
 			index: true
 		}),
+		npmPlugin({ aliases, external: false }),
 
 		...plugins.slice(split),
 
