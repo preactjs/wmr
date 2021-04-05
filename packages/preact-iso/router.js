@@ -123,13 +123,11 @@ export function Router(props) {
 				prevChildren.current = null;
 				curChildren.current = h(Committer, {}, h(RouteContext.Provider, { value: m }, p || d));
 				if (wasPush) scrollTo(0, 0);
-				if (this.__v && this.__v.__k) this.__v.__k.reverse();
 				update(0);
 				return;
 			} else {
 				prev.current = prevChildren.current = pending.current = null;
 				if (props.onLoadEnd) props.onLoadEnd(url);
-				if (this.__v && this.__v.__k) this.__v.__k.reverse();
 				update(0);
 				if (wasPush) scrollTo(0, 0);
 			}
