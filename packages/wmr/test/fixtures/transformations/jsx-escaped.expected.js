@@ -1,4 +1,4 @@
-import { html as $$html } from '/@npm/htm/preact';
+import { html as $$html } from '/htm-jsx-factory.js';
 export function Foo() {
 	return $$html`<span>${`<`}</span>`;
 }

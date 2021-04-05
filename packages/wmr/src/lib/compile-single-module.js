@@ -27,8 +27,9 @@ let cache;
  * @param {string} options.out
  * @param {boolean} [options.hmr]
  * @param {boolean} [options.rewriteNodeImports]
+ * @param {import('wmr').Options["jsx"]} options.jsx
  */
-export const compileSingleModule = withCache(async (input, { cwd, out, hmr = true, rewriteNodeImports = true }) => {
+export const compileSingleModule = withCache(async (input, { out, hmr = true, rewriteNodeImports = true, jsx }) => {
 	input = input.replace(/\.css\.js$/, '.css');
 	// console.log('compiling ' + input);
 	const bundle = await rollup.rollup({
@@ -63,7 +64,7 @@ export const compileSingleModule = withCache(async (input, { cwd, out, hmr = tru
 			// localNpmPlugin(),
 			// wmrStylesPlugin({ cwd }),
 			hmr && wmrPlugin(),
-			htmPlugin()
+			htmPlugin({ pragma: jsx.pragma, importSource: jsx.improtSource })
 		].filter(Boolean)
 	});
 	cache = bundle.cache;

@@ -5,12 +5,18 @@ import transformJsxToHtmLite from '../lib/transform-jsx-to-htm-lite.js';
 
 /**
  * Convert JSX to HTM
- * @param {object} [options]
+ * @param {object} options
  * @param {RegExp | ((filename: string) => boolean)} [options.include] Controls whether files are processed to transform JSX.
+ * @param {string} options.importSource
+ * @param {string} options.pragma
  * @param {boolean} [options.production = true] If `false`, a simpler whitespace-preserving transform is used.
  * @returns {import('rollup').Plugin}
  */
-export default function htmPlugin({ include, production = true } = {}) {
+export default function htmPlugin({ include, pragma, importSource, production = true }) {
+	const VIRTUAL = 'htm-jsx-factory';
+	// Workaround to make wmrMiddleware make this fall into Transform.js
+	const VIRTUAL_FILE = 'htm-jsx-factory.js';
+
 	return {
 		name: 'htm-plugin',
 
@@ -20,6 +26,21 @@ export default function htmPlugin({ include, production = true } = {}) {
 				opts.acornInjectPlugins || []
 			);
 			return opts;
+		},
+
+		resolveId(id) {
+			if (id === VIRTUAL) {
+				return VIRTUAL_FILE;
+			}
+		},
+
+		load(id) {
+			if (id === VIRTUAL_FILE) {
+				return `
+import htm from "htm";
+import { ${pragma} } from "${importSource}";
+export const html = htm.bind(${pragma});`;
+			}
 		},
 
 		transform(code, filename) {
@@ -48,7 +69,7 @@ export default function htmPlugin({ include, production = true } = {}) {
 						jsxTransform,
 						{
 							import: {
-								module: 'htm/preact',
+								module: VIRTUAL,
 								export: 'html'
 							},
 							// avoid a variable collisions:

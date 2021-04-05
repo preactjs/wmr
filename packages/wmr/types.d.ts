@@ -44,6 +44,10 @@ declare module 'wmr' {
 		plugins: Plugin[];
 		output: OutputOption[];
 		features: Features;
+		jsx: {
+			pragma: string;
+			importSource: string;
+		};
 		visualize: boolean;
 	}
 

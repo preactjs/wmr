@@ -1,4 +1,4 @@
-import { html as $$html } from '/@npm/htm/preact';
+import { html as $$html } from '/htm-jsx-factory.js';
 const Bar = () => null;
 const Bob = () => null;
 

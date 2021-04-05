@@ -1,4 +1,4 @@
-import { html as $$html } from '/@npm/htm/preact';
+import { html as $$html } from '/htm-jsx-factory.js';
 const LIST = [
 	{ id: 'one', text: 'item 1', props: {} },
 	{ id: 'two', text: 'item 2', props: { class: 'foo' } },

@@ -31,6 +31,12 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 	options.prod = prod;
 	options.mode = mode;
 
+	// JSX
+	options.jsx = {
+		pragma: 'h',
+		importSource: 'preact'
+	};
+
 	const NODE_ENV = process.env.NODE_ENV || (prod ? 'production' : 'development');
 	options.env = await readEnvFiles(
 		options.root,
@@ -92,7 +98,13 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 				// Create a temporary file to write compiled output into
 				// TODO: Do this in memory
 				configFile = resolve(options.root, 'wmr.config.js');
-				await compileSingleModule(file, { cwd: options.cwd, out: resolve('.'), hmr: false, rewriteNodeImports: false });
+				await compileSingleModule(file, {
+					cwd: options.cwd,
+					out: resolve('.'),
+					hmr: false,
+					rewriteNodeImports: false,
+					jsx: options.jsx
+				});
 			}
 
 			const fileUrl = url.pathToFileURL(configFile);
