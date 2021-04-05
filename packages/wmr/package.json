@@ -3,6 +3,7 @@
 	"version": "1.7.0",
 	"bin": "wmr.cjs",
 	"type": "module",
+	"main": "index.js",
 	"scripts": {
 		"build": "rollup -c",
 		"prepublishOnly": "yarn build",
@@ -18,6 +19,7 @@
 	"repository": "preactjs/wmr",
 	"files": [
 		"wmr.cjs",
+		"index.js",
 		"types.d.ts",
 		"README.md"
 	],

@@ -64,6 +64,10 @@ declare module 'wmr' {
 		/** @hidden Internal use only, don't use this */
 		onChange?: (event: ChangeEvent) => void;
 	}
+
+	export function defineConfig<
+		T extends Partial<Options> | ((options: Options) => void | Partial<Options> | Promise<void | Partial<Options>>)
+	>(options: T): T;
 }
 
 // Declarations used by WMR-based applications

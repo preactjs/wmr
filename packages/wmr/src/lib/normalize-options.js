@@ -164,7 +164,7 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 
 	if (custom) {
 		if (custom.default) {
-			const res = await custom.default(options);
+			const res = typeof custom.default === 'function' ? await custom.default(options) : custom.default;
 			applyConfigResult(res);
 		}
 		if (custom[mode]) {
