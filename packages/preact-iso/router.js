@@ -79,31 +79,30 @@ export function LocationProvider(props) {
 export function Router(props) {
 	const [, update] = useReducer(c => c + 1, 0);
 
-	const loc = useLocation();
+	const { url, path, query, wasPush } = useLocation();
 
-	const { url, path, query, wasPush } = loc;
-
-	const cur = useRef(loc);
+	// Monotonic counter used to check if an un-suspending route is still the current route:
+	const count = useRef(0);
+	// The current route:
+	const cur = useRef();
+	// Previous route (if current route is suspended):
 	const prev = useRef();
-	const curChildren = useRef();
-	const prevChildren = useRef();
-	const pending = useRef();
+	// A not-yet-hydrated DOM root to remove once we commit:
+	const pendingBase = useRef();
+	// has this component ever successfully rendered without suspending:
+	const hasEverCommitted = useRef(false);
+	// was the most recent render successful (did not suspend):
+	const didSuspend = useRef();
+	didSuspend.current = false;
 
-	if (url !== cur.current.url) {
-		pending.current = null;
-		prev.current = cur.current;
-		prevChildren.current = curChildren.current;
-		// old <Committer> uses the pending promise ref to know whether to render
-		prevChildren.current.props.pending = pending;
-		cur.current = loc;
-
-		// Hi! Wondering what this horrid line is for? That's totally reasonable, it is gross.
-		// It prevents the old route from being remounted because it got shifted in the children Array.
-		// @ts-ignore-next
+	cur.current = useMemo(() => {
+		// This hack prevents Preact from diffing when we swap `cur` to `prev`:
 		if (this.__v && this.__v.__k) this.__v.__k.reverse();
-	}
 
-	curChildren.current = useMemo(() => {
+		count.current++;
+
+		prev.current = cur.current;
+
 		let p, d, m;
 		[].concat(props.children || []).some(vnode => {
 			const matches = exec(path, vnode.props.path, (m = { path, query }));
@@ -111,37 +110,67 @@ export function Router(props) {
 			if (vnode.props.default) d = cloneElement(vnode, m);
 		});
 
-		return h(Committer, {}, h(RouteContext.Provider, { value: m }, p || d));
+		return h(RouteContext.Provider, { value: m }, p || d);
 	}, [url]);
 
-	this.componentDidCatch = err => {
-		if (err && err.then) pending.current = err;
+	// Reset previous children - if rendering succeeds synchronously, we shouldn't render the previous children.
+	const p = prev.current;
+	prev.current = null;
+
+	this.componentDidCatch = e => {
+		// Ignore (and don't intercept) actual errors:
+		if (!e || !e.then) return;
+
+		// Mark the current render as having suspended:
+		didSuspend.current = true;
+
+		// The new route suspended, so keep the previous route around while it loads:
+		prev.current = p;
+
+		// If we've never committed, mark any hydration DOM for removal on the next commit:
+		if (!hasEverCommitted.current && !pendingBase.current) {
+			pendingBase.current = this.base;
+		}
+
+		// Fire an event saying we're waiting for the route:
+		if (props.onLoadStart) props.onLoadStart(url);
+
+		// Re-render on unsuspend:
+		let c = count.current;
+		e.then(() => {
+			// Ignore this update if it isn't the most recently suspended update:
+			if (c !== count.current) return;
+
+			// Successful route transition: un-suspend and stop rendering the old route:
+			prev.current = null;
+			update(0);
+		});
 	};
 
 	useLayoutEffect(() => {
-		let p = pending.current;
+		// Ignore suspended renders (failed commits):
+		if (didSuspend.current) return;
 
-		const commit = () => {
-			if (cur.current.url !== url || pending.current !== p) return;
-			prev.current = prevChildren.current = pending.current = null;
-			if (props.onLoadEnd) props.onLoadEnd(url);
-			update(0);
-			if (wasPush) scrollTo(0, 0);
-		};
+		// If this is the first ever successful commit and we have a hydration base, remove it:
+		if (!hasEverCommitted.current && pendingBase.current) {
+			pendingBase.current.remove();
+			pendingBase.current = null;
+		}
 
-		if (p) {
-			if (props.onLoadStart) props.onLoadStart(url);
-			p.then(commit);
-		} else commit();
-	}, [url]);
+		// Mark the component has having committed:
+		hasEverCommitted.current = true;
 
-	// Note: curChildren must render first in order to populate pending.current
-	return [curChildren.current, prevChildren.current];
+		// The route is loaded and rendered.
+		if (wasPush) scrollTo(0, 0);
+		if (props.onLoadEnd) props.onLoadEnd(url);
+	});
+
+	// Note: curChildren MUST render first in order to set didSuspend & prev.
+	return [h(RenderRef, { r: cur }), h(RenderRef, { r: prev })];
 }
 
-function Committer({ pending, children }) {
-	return pending && !pending.current ? null : children;
-}
+// Lazily render a ref's current value:
+const RenderRef = ({ r }) => r.current;
 
 Router.Provider = LocationProvider;
 
