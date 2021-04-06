@@ -17,13 +17,20 @@ const Files = lazy(() => import('./pages/files/index.js'));
 const Environment = lazy(async () => (await import('./pages/environment/index.js')).Environment);
 const JSONView = lazy(async () => (await import('./pages/json.js')).JSONView);
 
+function showLoading() {
+	document.body.classList.add('loading');
+}
+function hideLoading() {
+	document.body.classList.remove('loading');
+}
+
 export function App() {
 	return (
 		<LocationProvider>
 			<div class="app">
 				<Header />
 				<ErrorBoundary>
-					<Router>
+					<Router onLoadStart={showLoading} onLoadEnd={hideLoading}>
 						<Home path="/" />
 						<About path="/about" />
 						<LazyAndLate path="/lazy-and-late" title={'Lazy and Late'} />
