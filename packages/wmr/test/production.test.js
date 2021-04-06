@@ -437,10 +437,11 @@ describe('production', () => {
 	});
 
 	describe('Prerender', () => {
-		it('should remove search params', async () => {
+		it.only('should remove search params', async () => {
 			await loadFixture('prod-routes', env);
-			instance = await runWmr(env.tmp.path, 'build', '--prerender');
+			instance = await runWmr(env.tmp.path, 'build', '--prerender', '--stream');
 			const code = await instance.done;
+			console.log(instance.output);
 			expect(code).toBe(0);
 
 			const readdir = async f => (await fs.readdir(path.join(env.tmp.path, f))).filter(f => f[0] !== '.');

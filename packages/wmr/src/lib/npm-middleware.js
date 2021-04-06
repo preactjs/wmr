@@ -118,11 +118,11 @@ const log = debug('bundle:npm');
  * @param {string} mod The module to bundle, including subpackage/path
  * @param {object} options
  * @param {Record<string,string>} options.aliases
- * @param {boolean} [options.streaming]
+ * @param {boolean} [options.stream]
  * @param {string} options.packageDir Folder where the module lies on
  * disk (= same folder as package.json of that module)
  */
-export async function bundleNpmModule(mod, { aliases, packageDir, streaming }) {
+export async function bundleNpmModule(mod, { aliases, packageDir, stream }) {
 	// Now let's find the entry file
 	const pkgJson = JSON.parse(await fs.readFile(path.join(packageDir, 'package.json'), 'utf-8'));
 
@@ -155,7 +155,7 @@ export async function bundleNpmModule(mod, { aliases, packageDir, streaming }) {
 			nodeBuiltinsPlugin({}),
 			aliasesPlugin({ aliases }),
 			// TODO: Add back a streaming plugin
-			streaming && {
+			stream && {
 				name: 'stream-npm'
 			},
 			processGlobalPlugin({
@@ -175,7 +175,7 @@ export async function bundleNpmModule(mod, { aliases, packageDir, streaming }) {
 					}
 				}
 			},
-			streaming && {
+			stream && {
 				name: 'never-disk',
 				load(s) {
 					throw Error('local access not allowed');

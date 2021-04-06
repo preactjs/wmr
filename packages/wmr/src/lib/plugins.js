@@ -1,3 +1,4 @@
+import * as path from 'path';
 import htmPlugin from '../plugins/htm-plugin.js';
 import sucrasePlugin from '../plugins/sucrase-plugin.js';
 import wmrPlugin from '../plugins/wmr/plugin.js';
@@ -71,7 +72,7 @@ export function getPlugins(options) {
 			typescript: true,
 			index: true
 		}),
-		npmPlugin({ aliases, external: false }),
+		npmPlugin({ aliases, production, root: options.root, stream: options.stream }),
 
 		...plugins.slice(split),
 

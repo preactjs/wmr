@@ -16,6 +16,8 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 	options.cwd = resolve(options.cwd || '');
 	process.chdir(options.cwd);
 
+	console.log(options);
+
 	options.root = options.cwd;
 
 	options.sourcemap = false;

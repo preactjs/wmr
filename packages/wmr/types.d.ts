@@ -38,6 +38,8 @@ declare module 'wmr' {
 		out: string;
 		overlayDir: string;
 		sourcemap: boolean;
+		/** Stream npm packages on install */
+		stream: boolean;
 		aliases: Record<string, string>;
 		env: Record<string, string>;
 		middleware: Middleware[];

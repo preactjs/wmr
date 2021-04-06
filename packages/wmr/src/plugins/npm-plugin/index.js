@@ -1,3 +1,4 @@
+import * as path from 'path';
 import { memo } from './utils.js';
 import { bundleNpmModule } from '../../lib/npm-middleware.js';
 import { createRequire } from 'module';
@@ -6,10 +7,11 @@ import { createRequire } from 'module';
  * @param {Object} options
  * @param {Record<string, string>} options.aliases
  * @param {boolean} [options.external] If `false`, resolved npm dependencies will be inlined by Rollup.
- * @param {string} [options.packageDir] Directory of the npm package (= same folder where the package's package.json lies)
+ * @param {string} options.root
+ * @param {boolean} [options.stream]
  * @returns {import('rollup').Plugin}
  */
-export default function npmPlugin({ aliases, packageDir }) {
+export default function npmPlugin({ aliases, root, stream }) {
 	// TODO: Our prefix logic forces everything to have the leading \0.
 	// Refactor this at some point in the future
 	const INTERNAL_PREFIX = '\0npm:';
@@ -33,14 +35,36 @@ export default function npmPlugin({ aliases, packageDir }) {
 
 			id = id.slice(INTERNAL_PREFIX.length);
 
+			// Try to find package in local `node_module` first
+			let packageDir;
+			try {
+				packageDir = getNpmPackageDir(id);
+			} catch (err) {
+				if (!stream) throw err;
+
+				const match = id.match(/(@[\w-]+\/[\w-]+|[\w-]+)/);
+				packageDir = path.join(root, '.cache', match[1]);
+			}
+
 			const code = await bundleNpmModule(id, {
-				packageDir: packageDir || getNpmPackageDir(id),
-				aliases
+				packageDir,
+				aliases,
+				stream
 			});
 
 			return code;
 		}
 	};
+}
+
+/**
+ * Get cache package dir
+ * @param {string} id
+ * @param {string} cwd
+ * @returns {string}
+ */
+export function getCachePackageDir(id, cwd) {
+	return path.join(cwd, '.cache', id);
 }
 
 /**

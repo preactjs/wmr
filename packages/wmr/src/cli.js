@@ -20,9 +20,11 @@ prog
 	.command('build', 'make a production build')
 	.option('--prerender', 'Pre-render the application to HTML')
 	.option('--sourcemap', 'Enable Source Maps')
+	.option('--stream', 'Enable streaming installation of npm packages', false)
 	.option('--visualize', 'Launch interactive bundle visualizer')
 	.action(opts => {
 		opts.minify = opts.minify !== false && !/false|0/.test(opts.minify);
+		console.log(opts);
 		run(build(opts));
 	})
 	.command('serve', 'Start a production server')
@@ -42,6 +44,7 @@ prog
 	.option('--compress', 'Enable compression (default: enabled)')
 	.option('--profile', 'Generate build statistics')
 	.option('--reload', 'Switch off hmr and reload on file saves')
+	.option('--stream', 'Enable streaming installation of npm packages', true)
 	.action(opts => {
 		opts.optimize = !/false|0/.test(opts.compress);
 		opts.compress = bool(opts.compress);
