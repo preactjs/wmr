@@ -1,7 +1,7 @@
 import * as kl from 'kolorist';
 import polka from 'polka';
 import { normalizeOptions } from './lib/normalize-options.js';
-import { getPort, getServerAddresses } from './lib/net-utils.js';
+import { getServerAddresses } from './lib/net-utils.js';
 import { createServer } from 'http';
 import { createHttp2Server } from './lib/http2.js';
 import compression from './lib/polkompress.js';
@@ -18,7 +18,7 @@ import { formatBootMessage } from './lib/output-utils.js';
  * @property {string} [out='./dist']
  * @property {string} [cwd='.']
  * @property {string} [host]
- * @property {string} [port]
+ * @property {number} [port]
  * @property {boolean} [http2]
  * @property {boolean|number} [compress]
  * @property {polka.Middleware[]} [middleware] Additional Polka middlewares to inject
@@ -98,10 +98,10 @@ export default async function serve(options = {}) {
 		app.http2 = false;
 	}
 
-	const port = await getPort(options);
-	const host = options.host || process.env.HOST;
+	const port = options.port;
+	const host = options.host;
 	app.listen(port, host, () => {
-		const addresses = getServerAddresses(app.server.address(), { https: app.http2 });
+		const addresses = getServerAddresses(app.server.address(), { https: app.http2, host: options.host });
 
 		const message = `dev server running at:`;
 		process.stdout.write(formatBootMessage(message, addresses));

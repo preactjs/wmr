@@ -32,6 +32,7 @@ declare module 'wmr' {
 		reload: boolean;
 		public: string;
 		publicPath: string;
+		host: string;
 		port: number;
 		root: string;
 		out: string;

@@ -69,20 +69,31 @@ export async function getPort(options) {
 /**
  * Display local and network origins for a server's address.
  * @param {net.AddressInfo|string} addr
+ * @param {{ https?: boolean, host: string }} options
  * @returns {string[]}
  */
-export function getServerAddresses(addr, { https = false } = {}) {
+export function getServerAddresses(addr, { host, https }) {
 	if (typeof addr === 'string') {
 		return [addr];
 	}
 
 	const protocol = https ? 'https:' : 'http:';
-	const host = addr.address.replace('::', 'localhost');
 	const port = addr.port;
+
+	if (host !== '0.0.0.0') {
+		// Use the explicit value the user gave us
+		return [`${protocol}//${host}:${port}`];
+	}
+
+	// If the user binds to all interfaces via `0.0.0.0`, we'll
+	// query network interfaces to get addresses from.
 
 	// Get network address
 	const ifaces = os.networkInterfaces();
-	const addresses = [`${protocol}//${host}:${port}`];
+
+	// Print `0.0.0.0` as `localhost` as the former isn't
+	// accessible.
+	const addresses = [`${protocol}//localhost:${port}`];
 	for (const name in ifaces) {
 		for (const iface of ifaces[name]) {
 			const { family, address, internal } = iface;

@@ -29,7 +29,7 @@ describe('boot', () => {
 		expect(output).not.toMatch(/^Error/m);
 
 		expect(output).toMatch(/server running at/);
-		expect(output).toMatch(/Network:\s+http:\/\/\d+.\d+.\d+.\d+:\d+/);
+		expect(output).toMatch(/Local:\s+http:\/\/localhost:\d+/);
 	});
 
 	it('should build simple HTML pages', async () => {

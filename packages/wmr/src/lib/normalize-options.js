@@ -58,6 +58,7 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 		options.publicPath += '/';
 	}
 
+	options.host = process.env.HOST || options.host || 'localhost';
 	options.port = await getPort(options);
 
 	// If the CWD has a public/ directory, all files are assumed to be within it.
