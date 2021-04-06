@@ -76,6 +76,8 @@ export function LocationProvider(props) {
 	return h(LocationProvider.ctx.Provider, { value }, props.children);
 }
 
+const RESOLVED = Promise.resolve();
+
 export function Router(props) {
 	const [, update] = useReducer(c => c + 1, 0);
 
@@ -117,20 +119,13 @@ export function Router(props) {
 	const p = prev.current;
 	prev.current = null;
 
-	this.componentDidCatch = e => {
-		// Ignore (and don't intercept) actual errors:
-		if (!e || !e.then) return;
-
+	// This borrows the _childDidSuspend() solution from compat.
+	this.__c = e => {
 		// Mark the current render as having suspended:
 		didSuspend.current = true;
 
 		// The new route suspended, so keep the previous route around while it loads:
 		prev.current = p;
-
-		// If we've never committed, mark any hydration DOM for removal on the next commit:
-		if (!hasEverCommitted.current && !pendingBase.current) {
-			pendingBase.current = this.base;
-		}
 
 		// Fire an event saying we're waiting for the route:
 		if (props.onLoadStart) props.onLoadStart(url);
@@ -141,19 +136,27 @@ export function Router(props) {
 			// Ignore this update if it isn't the most recently suspended update:
 			if (c !== count.current) return;
 
-			// Successful route transition: un-suspend and stop rendering the old route:
+			// Successful route transition: un-suspend after a tick and stop rendering the old route:
 			prev.current = null;
-			update(0);
+			RESOLVED.then(update);
 		});
 	};
 
 	useLayoutEffect(() => {
-		// Ignore suspended renders (failed commits):
-		if (didSuspend.current) return;
+		const currentDom = this.__v && this.__v.__e;
 
-		// If this is the first ever successful commit and we have a hydration base, remove it:
+		// Ignore suspended renders (failed commits):
+		if (didSuspend.current) {
+			// If we've never committed, mark any hydration DOM for removal on the next commit:
+			if (!hasEverCommitted.current && !pendingBase.current) {
+				pendingBase.current = currentDom;
+			}
+			return;
+		}
+
+		// If this is the first ever successful commit and we didn't use the hydration DOM, remove it:
 		if (!hasEverCommitted.current && pendingBase.current) {
-			pendingBase.current.remove();
+			if (pendingBase.current !== currentDom) pendingBase.current.remove();
 			pendingBase.current = null;
 		}
 
