@@ -45,6 +45,7 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = '\bnpm/', ext
 
 			let isExternal = false;
 			let isEntry = false;
+			let wasRelative = false;
 
 			// A relative import from within a module (resolve based on importer):
 			if (isDiskPath(id)) {
@@ -53,6 +54,8 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = '\bnpm/', ext
 
 				meta = Object.assign({}, importerMeta);
 				meta.path = posix.join(posix.dirname(meta.path || ''), id);
+
+				wasRelative = true;
 			} else {
 				// An absolute, self or bare import
 				meta = normalizeSpecifier(id);
@@ -97,6 +100,29 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = '\bnpm/', ext
 				// meta.version = '';
 			}
 
+			// Compute the final path
+			const { module, version, path } = meta;
+			const readFile = (path = '') => loadPackageFile({ module, version, path });
+			const hasFile = path =>
+				readFile(path)
+					.then(() => true)
+					.catch(() => false);
+
+			// When referencing a file within a package containing many files that import eachother,
+			// it's unfortunately impossible to know whether those imports should be bundled or not.
+			// Unless a package provides an export map, any file within a package could be referenced directly.
+			// That means we can't bundle the imports without risking duplication.
+			if (wasRelative) {
+				const pkg = JSON.parse(await loadPackageFile({ ...meta, path: 'package.json' }));
+				if (!pkg.exports) {
+					isExternal = true;
+					// directory traversal resolved to mainfield - remove to avoid duplicated modules:
+					if ([pkg.module, pkg.main, pkg.browser].some(f => f && f.replace(/^\.\//, '') === path)) {
+						meta.path = '';
+					}
+				}
+			}
+
 			// Mark everything except self-imports as external: (eg: "preact/hooks" importing "preact")
 			// Note: if `external=false` here, we're building a combined bundle and want to merge npm deps.
 			if (isExternal) {
@@ -105,14 +131,6 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = '\bnpm/', ext
 
 				return { id: `${publicPath}/${id}`, external: true };
 			}
-
-			// Compute the final path
-			const { module, version, path } = meta;
-			const readFile = (path = '') => loadPackageFile({ module, version, path });
-			const hasFile = path =>
-				readFile(path)
-					.then(() => true)
-					.catch(() => false);
 
 			// If external=true, we're bundling a single module, so "no importer" means an entry
 			// If external=false, we're bundling a whole app, so "different importer" means an entry
