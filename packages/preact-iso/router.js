@@ -52,7 +52,7 @@ export const exec = (url, route, matches) => {
 };
 
 export function LocationProvider(props) {
-	const [url, route] = useReducer(UPDATE, location.pathname + location.search);
+	const [url, route] = useReducer(UPDATE, props.url || location.pathname + location.search);
 	const wasPush = push === true;
 
 	const value = useMemo(() => {
