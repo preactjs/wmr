@@ -13,7 +13,7 @@ Make a lazily-loaded version of a Component.
 
 ```js
 import { render } from 'preact';
-import { lazy, ErrorBoundary } from 'preact-iso/lazy';
+import lazy, { ErrorBoundary } from 'preact-iso/lazy';
 import { Router } from 'preact-iso/router';
 
 // Synchronous, not code-splitted:
@@ -43,7 +43,7 @@ render(<App />, document.body);
 The Promise returned from `prerender()` resolves to an Object with `html` and `links[]` properties. The `html` property contains your pre-rendered static HTML markup, and `links` is an Array of any non-external URL strings found in links on the generated page.
 
 ```js
-import { lazy, ErrorBoundary } from 'preact-iso/lazy';
+import lazy, { ErrorBoundary } from 'preact-iso/lazy';
 import prerender from 'preact-iso/prerender';
 
 // Asynchronous (throws a promise)
@@ -79,7 +79,7 @@ hydrate(<App />);
 A simple router for Preact with conventional and hooks-based APIs. The `<Router>` component is async-aware: when transitioning from one route to another, if the incoming route suspends (throws a Promise), the outgoing route is preserved until the new one becomes ready.
 
 ```js
-import { lazy, ErrorBoundary } from 'preact-iso/lazy';
+import lazy, { ErrorBoundary } from 'preact-iso/lazy';
 import { LocationProvider, Router, useLocation } from 'preact-iso/router';
 
 // Asynchronous (throws a promise)
