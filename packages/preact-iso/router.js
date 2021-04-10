@@ -1,5 +1,5 @@
 import { h, createContext, cloneElement } from 'preact';
-import { useContext, useMemo, useReducer, useEffect, useLayoutEffect, useRef } from 'preact/hooks';
+import { useContext, useMemo, useReducer, useEffect, useRef } from 'preact/hooks';
 
 let push;
 const UPDATE = (state, url) => {
@@ -79,29 +79,10 @@ export function LocationProvider(props) {
 export function Router(props) {
 	const [, update] = useReducer(c => c + 1, 0);
 
-	const loc = useLocation();
+	const { url, path, query, wasPush } = useLocation();
 
-	const { url, path, query, wasPush } = loc;
-
-	const cur = useRef(loc);
-	const prev = useRef();
 	const curChildren = useRef();
-	const prevChildren = useRef();
 	const pending = useRef();
-
-	if (url !== cur.current.url) {
-		pending.current = null;
-		prev.current = cur.current;
-		prevChildren.current = curChildren.current;
-		// old <Committer> uses the pending promise ref to know whether to render
-		prevChildren.current.props.pending = pending;
-		cur.current = loc;
-
-		// Hi! Wondering what this horrid line is for? That's totally reasonable, it is gross.
-		// It prevents the old route from being remounted because it got shifted in the children Array.
-		// @ts-ignore-next
-		if (this.__v && this.__v.__k) this.__v.__k.reverse();
-	}
 
 	curChildren.current = useMemo(() => {
 		let p, d, m;
@@ -111,36 +92,40 @@ export function Router(props) {
 			if (vnode.props.default) d = cloneElement(vnode, m);
 		});
 
-		return h(Committer, {}, h(RouteContext.Provider, { value: m }, p || d));
+		return h(RouteContext.Provider, { value: m }, p || d);
 	}, [url]);
 
 	this.componentDidCatch = err => {
-		if (err && err.then) pending.current = err;
+		if (err && err.then) {
+			pending.current = err;
+		}
 	};
 
-	useLayoutEffect(() => {
+	useEffect(() => {
 		let p = pending.current;
+		let cancelled = false;
 
-		const commit = () => {
-			if (cur.current.url !== url || pending.current !== p) return;
-			prev.current = prevChildren.current = pending.current = null;
+		function commit() {
+			// Promise has changed or we've already navigated away.
+			if (pending.current !== p || cancelled) return;
 			if (props.onLoadEnd) props.onLoadEnd(url);
 			update(0);
 			if (wasPush) scrollTo(0, 0);
-		};
+		}
 
 		if (p) {
 			if (props.onLoadStart) props.onLoadStart(url);
 			p.then(commit);
-		} else commit();
+		} else {
+			commit();
+		}
+
+		return function onBail() {
+			cancelled = true;
+		}
 	}, [url]);
 
-	// Note: curChildren must render first in order to populate pending.current
-	return [curChildren.current, prevChildren.current];
-}
-
-function Committer({ pending, children }) {
-	return pending && !pending.current ? null : children;
+	return curChildren.current;
 }
 
 Router.Provider = LocationProvider;

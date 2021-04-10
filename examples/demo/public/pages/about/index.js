@@ -1,6 +1,6 @@
 import styles from './style.module.css';
 
-const About = ({ query, title }) => (
+const About = ({ query, title }) => console.log('about') || (
 	<section class={styles.about}>
 		<h1>{title || 'About'}</h1>
 		<p>My name is Jason.</p>
