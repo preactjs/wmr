@@ -15,6 +15,7 @@ export default function lazy(load) {
 
 export function ErrorBoundary(props) {
 	this.componentDidCatch = absorb;
+	this._childDidSuspend = Object;
 	return props.children;
 }
 
