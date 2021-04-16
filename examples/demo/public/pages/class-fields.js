@@ -12,7 +12,9 @@ export default class ClassFields extends Component {
 	render() {
 		return (
 			<div>
-				<p>State: {this.state.value}</p>
+				<p>
+					State: <span>{this.state.value}</span>
+				</p>
 				<button onClick={this.onClick}>click me</button>
 			</div>
 		);
