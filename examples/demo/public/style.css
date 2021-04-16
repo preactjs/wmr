@@ -1,3 +1,8 @@
+:root {
+	--color-brand: #673ab8;
+	--color-brand-light: #f1e9ff;
+}
+
 html,
 body {
 	margin: 0;
@@ -17,12 +22,12 @@ header > nav {
 
 header > nav a {
 	padding: 10px;
-	color: #673ab8;
+	color: var(--color-brand);
 	text-decoration: none;
 }
 
 header > nav a:hover {
-	background-color: #f1e9ff;
+	background-color: var(--color-brand-light);
 }
 
 header > label {
@@ -42,4 +47,30 @@ header input {
 
 .app > section {
 	padding: 20px;
+}
+
+/** Loading indicator */
+body::before {
+	content: '';
+	display: block;
+	position: fixed;
+	left: 0;
+	top: -2px;
+	width: 100%;
+	height: 2px;
+	background: linear-gradient(to right, var(--color-brand), var(--color-brand)) no-repeat 0 0;
+	opacity: 0;
+	transition: all 300ms ease;
+	z-index: 999;
+	pointer-events: none;
+}
+body.loading::before {
+	transform: translateY(2px);
+	opacity: 1;
+	transition: all 1s ease 1s;
+	animation: page-loading 4s forwards ease-out 1;
+}
+@keyframes page-loading {
+	0% { background-position: -100vw 0; }
+	25% { background-position: -100vw 0; }
 }

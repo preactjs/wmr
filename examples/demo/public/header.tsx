@@ -1,4 +1,4 @@
-import { useLocation } from './lib/loc.js';
+import { useLocation } from 'preact-iso/router';
 
 export default function Header() {
 	const { url }: { url: string } = useLocation();
