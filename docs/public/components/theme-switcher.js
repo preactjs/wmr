@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'preact/hooks';
+import { useCallback, useEffect, useRef } from 'preact/hooks';
 import { useLocalStorage } from '../lib/use-localstorage.js';
 
 /**
@@ -7,9 +7,9 @@ import { useLocalStorage } from '../lib/use-localstorage.js';
 function ThemeItem(props) {
 	const { next, active, value, onChange } = props;
 	return (
-		<>
+		<label class="theme-btn" data-active={active === value} data-next={next === value}>
+			<img src={`/assets/${value}.svg`} class="icon" alt={`${value} theme`} width="20" height="20" />
 			<input
-				id={`theme-${value}`}
 				name="theme"
 				type="radio"
 				value={value}
@@ -17,17 +17,14 @@ function ThemeItem(props) {
 				onClick={onChange}
 				checked={active === value}
 			/>
-			<label for={`theme-${value}`} class="theme-btn" data-active={active === value} data-next={next === value}>
-				<img src={`/assets/${value}.svg`} class="icon" alt={`${value} theme`} width="20" height="20" />
-			</label>
-		</>
+		</label>
 	);
 }
 
 const THEMES = ['auto', 'dark', 'light', 'teatime'];
 
 export function ThemeSwitcher(props) {
-	const [theme, setTheme] = useLocalStorage('theme', THEMES[0]);
+	const [theme, setTheme] = useLocalStorage('theme', THEMES[0], true);
 	const idx = THEMES.indexOf(theme);
 	const next = THEMES[idx + 1] || THEMES[0];
 
@@ -35,8 +32,13 @@ export function ThemeSwitcher(props) {
 		setTheme(e.target.value);
 	}, []);
 
+	const first = useRef(true);
+
 	useEffect(() => {
-		if (theme === 'auto') {
+		if (first.current) {
+			// ignore the first render, which is just "auto" for hydration
+			first.current = false;
+		} else if (theme === 'auto') {
 			document.documentElement.removeAttribute('theme');
 		} else {
 			document.documentElement.setAttribute('theme', theme);
