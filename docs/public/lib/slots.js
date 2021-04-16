@@ -40,12 +40,12 @@ export function SlotContent({ name, children = null }) {
 	const { owners, pub } = useContext(SlotContext);
 	const content = useRef();
 	const owner = useRef();
+	const initial = useRef(true);
 	if (!owner.current) pub(name, children, (owner.current = ++c));
 	content.current = children;
-	let initial = true;
 	useLayoutEffect(() => {
-		if (!initial) pub(name, content.current, owner.current);
-		initial = true;
+		if (!initial.current) pub(name, content.current, owner.current);
+		initial.current = false;
 		return () => owners[name] === owner.current && pub(name, null, 0);
 	}, [name]);
 	return null;

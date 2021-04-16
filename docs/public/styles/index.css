@@ -124,6 +124,12 @@ body {
 #page {
 	outline: none;
 }
+#page::before {
+	content: '';
+	display: block;
+	height: var(--header-height);
+	margin-top: calc(-1 * var(--header-height));
+}
 
 * {
 	box-sizing: border-box;
