@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks';
+import { useState, useLayoutEffect } from 'preact/hooks';
 
 const SUPPORTS_LOCAL_STORAGE = typeof localStorage !== 'undefined';
 
@@ -19,7 +19,7 @@ export function useLocalStorage(key, initial, hydrateWithInitial) {
 		return stored == null ? initial : stored;
 	});
 	
-	useEffect(() => {
+	useLayoutEffect(() => {
 		if (hydrateWithInitial) {
 			const stored = getItem(key);
 			if (stored != null) setValue(stored);
