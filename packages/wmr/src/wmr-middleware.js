@@ -99,7 +99,7 @@ export default function wmrMiddleware(options) {
 		filename = filename.split(sep).join(posix.sep);
 
 		// Delete any generated CSS Modules mapping modules:
-		if (/\.module\.css$/.test(filename)) WRITE_CACHE.delete(filename + '.js');
+		if (/\.module\.(css|s[ac]ss)$/.test(filename)) WRITE_CACHE.delete(filename + '.js');
 
 		if (!pendingChanges.size) timeout = setTimeout(flushChanges, 60);
 
