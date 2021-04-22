@@ -170,7 +170,7 @@ export function formatBootMessage(message, addresses) {
 	const intro = `\n  👩‍🚀 ${kl.lightYellow('WMR')} ${message}\n\n`;
 	const local = `  ${kl.dim('Local:')}   ${formatAddr(addresses[0])}\n`;
 
-	let network = '';
+	let network = kl.dim(`  Network: (disabled, see --host)\n`);
 	if (addresses.length > 1) {
 		network =
 			addresses
