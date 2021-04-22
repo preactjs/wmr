@@ -124,7 +124,6 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath } = {}) {
 			if (isModular) {
 				source = await modularizeCss(source, idRelative, mappings, id);
 			} else {
-				// } else if (isSass || isIcss) {
 				if (isIcss) {
 					console.warn(`Warning: ICSS ("composes:") is only supported in CSS Modules.`);
 				}
