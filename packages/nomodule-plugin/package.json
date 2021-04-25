@@ -3,7 +3,7 @@
 	"publishConfig": {
 		"access": "public"
 	},
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Generate legacy bundles and serve them to older browsers as a fallback.",
 	"main": "./dist/index.js",
 	"type": "module",
