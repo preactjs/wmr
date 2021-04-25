@@ -26,7 +26,7 @@ export default function htmPlugin({ include, production = true } = {}) {
 			if (!/\.[tj]sx?$/.test(filename)) return;
 
 			// skip internal modules
-			if (filename[0] === '\0' || filename[0] === '\b') return;
+			if (filename[0] === '\0') return;
 
 			if (include) {
 				const shouldTransform = typeof include === 'function' ? include(filename) : filename.match(include);

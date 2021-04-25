@@ -137,7 +137,7 @@ export function formatPath(path) {
 	if (typeof path === 'object') {
 		path = path.id;
 	}
-	if (path.startsWith('\b') || path.startsWith('\0')) {
+	if (path.startsWith('\0')) {
 		path = JSON.stringify(path);
 	}
 

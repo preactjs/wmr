@@ -112,7 +112,7 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath } = {}) {
 		},
 		async transform(source, id) {
 			if (!id.match(/\.(css|s[ac]ss)$/)) return;
-			if (id[0] === '\b' || id[0] === '\0') return;
+			if (id[0] === '\0') return;
 
 			const isIcss = /(composes:|:global|:local)/.test(source);
 			const isModular = /\.module\.(css|s[ac]ss)$/.test(id);
