@@ -50,7 +50,7 @@ export async function bundleProd(options) {
 			// strip leading relative path
 			url = url.replace(/^\.\//g, '');
 			// replace internal npm prefix
-			url = url.replace(/^(\.?\.?\/)?[\b]npm\//, '@npm/');
+			url = url.replace(/^(\.?\.?\/)?npm\//, '@npm/');
 			return 'source:///' + url;
 		},
 		preferConst: true,
@@ -81,9 +81,9 @@ export async function bundleProd(options) {
 /** @type {import('rollup').GetManualChunk} */
 function extractNpmChunks(id, { getModuleIds, getModuleInfo }) {
 	const chunk = getModuleInfo(id);
-	if (/^[\b]npm\//.test(chunk.id)) {
+	if (/^npm\//.test(chunk.id)) {
 		// merge any modules that are only used by other modules:
-		const isInternalModule = chunk.importers.every(c => /^[\b]npm\//.test(c));
+		const isInternalModule = chunk.importers.every(c => /^npm\//.test(c));
 		if (isInternalModule) return null;
 
 		// create dedicated chunks for npm dependencies that are used in more than one place:
@@ -99,7 +99,7 @@ function extractNpmChunks(id, { getModuleIds, getModuleInfo }) {
 				name = dir;
 			}
 			// /chunks/@npm/NAME.[hash].js
-			return name.replace(/^[\b]npm\/((?:@[^/]+\/)?[^/]+)@[^/]+/, '@npm/$1');
+			return name.replace(/^npm\/((?:@[^/]+\/)?[^/]+)@[^/]+/, '@npm/$1');
 		}
 	}
 	return null;
