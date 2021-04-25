@@ -33,9 +33,7 @@ export default function jsonPlugin({ cwd }) {
 		async load(id) {
 			if (!id.startsWith(INTERNAL_PREFIX)) return null;
 
-			if (id.startsWith(INTERNAL_PREFIX)) {
-				id = id.slice(INTERNAL_PREFIX.length);
-			}
+			id = id.slice(INTERNAL_PREFIX.length);
 
 			// TODO: Add a global helper function to normalize paths
 			// and check that we're allowed to load a file.
