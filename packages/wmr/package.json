@@ -133,7 +133,6 @@
 		"postcss": "^7.0.32",
 		"postcss-es6": "github:postcss/postcss#7.0.32",
 		"posthtml": "0.13.1",
-		"premove": "^3.0.1",
 		"prettier": "^2.0.5",
 		"puppeteer": "^3.3.0",
 		"resolve.exports": "^1.0.2",
