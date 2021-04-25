@@ -58,7 +58,7 @@ export default function sassPlugin({ production = false, sourcemap = false } = {
 	return {
 		name: 'sass',
 		async transform(code, id) {
-			if (id[0] === '\0' || id[0] === '\b') return;
+			if (id[0] === '\0') return;
 			if (!/\.s[ac]ss$/.test(id)) return;
 
 			const result = await renderSass({

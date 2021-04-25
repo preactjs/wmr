@@ -39,7 +39,7 @@ export default function copyAssetsPlugin({ cwd = '.' } = {}) {
 				if (chunk.type === 'chunk') {
 					for (const f of chunk.referencedFiles) processed.add(f);
 					for (const f in chunk.modules) {
-						if (f[0] === '\0' || f[0] === '\b') continue;
+						if (f[0] === '\0') continue;
 						processed.add(relative(cwd, f));
 					}
 				} else if (chunk.name) {

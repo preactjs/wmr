@@ -149,11 +149,7 @@ export default function wmrMiddleware(options) {
 		let file = resolve(cwd, osPath);
 
 		// Rollup-style CWD-relative Unix-normalized path "id":
-		let id = relative(cwd, file)
-			.replace(/^\.\//, '')
-			.replace(/^[\0\b]/, '')
-			.split(sep)
-			.join(posix.sep);
+		let id = relative(cwd, file).replace(/^\.\//, '').replace(/^[\0]/, '').split(sep).join(posix.sep);
 
 		// add back any prefix if there was one:
 		file = prefix + file;
