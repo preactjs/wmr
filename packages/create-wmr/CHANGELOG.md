@@ -1,5 +1,11 @@
 # create-wmr
 
+## 0.3.3
+
+### Patch Changes
+
+- [`163a214`](https://github.com/preactjs/wmr/commit/163a2148fde5960490e6369c48288df8b331e173) [#516](https://github.com/preactjs/wmr/pull/516) Thanks [@rschristian](https://github.com/rschristian)! - Correcting file path in template's tsconfig "include"
+
 ## 0.3.2
 
 ### Patch Changes

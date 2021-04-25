@@ -1,5 +1,15 @@
 # preact-iso
 
+## 1.2.0
+
+### Minor Changes
+
+- [`a7e79c9`](https://github.com/preactjs/wmr/commit/a7e79c9759ec87983bceb83819b5c8387299c867) [#530](https://github.com/preactjs/wmr/pull/530) Thanks [@developit](https://github.com/developit)! - `<Router>` is now an async boundary (it handles `lazy()` descendants by itself), and supports cancellable + stacked route transitions.
+
+### Patch Changes
+
+- [`8d5d1d8`](https://github.com/preactjs/wmr/commit/8d5d1d82d98c7f2e2eaccb92ff6890cf1e2e6139) [#534](https://github.com/preactjs/wmr/pull/534) Thanks [@developit](https://github.com/developit)! - [preact-iso] Support setting a manual URL via `<LocationProvider url="/" />`
+
 ## 1.1.1
 
 ### Patch Changes

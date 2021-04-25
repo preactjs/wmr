@@ -1,5 +1,37 @@
 # wmr
 
+## 1.6.0
+
+### Minor Changes
+
+- [`81771f5`](https://github.com/preactjs/wmr/commit/81771f5c3e8a2bfefe8c432f4a73070b4bcefb2e) [#543](https://github.com/preactjs/wmr/pull/543) Thanks [@Inviz](https://github.com/Inviz)! - Fixes an issue that caused scss/sass modules to not be properly updated when new classes were added to the file.
+
+### Patch Changes
+
+- [`d10d08c`](https://github.com/preactjs/wmr/commit/d10d08cc3b30e6a3baf588665275ea3f64a4a414) [#547](https://github.com/preactjs/wmr/pull/547) Thanks [@rschristian](https://github.com/rschristian)! - Corrects output when referrencing module with npm prefix
+
+* [`18952d1`](https://github.com/preactjs/wmr/commit/18952d11280644670eb01f11fe89f37ee7177295) [#526](https://github.com/preactjs/wmr/pull/526) Thanks [@developit](https://github.com/developit)! - Bind to localhost by default instead of ::0 (in both `wmr start` and `wmr serve`).
+
+- [`af3403b`](https://github.com/preactjs/wmr/commit/af3403b908aee17afefc45996767b089e6e22a99) [#546](https://github.com/preactjs/wmr/pull/546) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix pre-rendering not supported in older node <12.22.0 versions
+
+* [`19bb41c`](https://github.com/preactjs/wmr/commit/19bb41c9d929ff3f51d72030071d0ce55a7ef8db) [#523](https://github.com/preactjs/wmr/pull/523) Thanks [@JoviDeCroock](https://github.com/JoviDeCroock)! - Eagerly load "\_wmr.js" in the "index.html" file to provide graceful error-fallbacks
+
+- [`4487b6c`](https://github.com/preactjs/wmr/commit/4487b6cf8cf2e288bb9e9b2a494aa7fa1954cfcd) [#536](https://github.com/preactjs/wmr/pull/536) Thanks [@developit](https://github.com/developit)! - Include `.wasm` files in streamed npm packages
+
+* [`fa07bea`](https://github.com/preactjs/wmr/commit/fa07bea74639d7a78a0187a25265557ae2fe6b72) [#544](https://github.com/preactjs/wmr/pull/544) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Add note on how to enable network access to startup screen
+
+- [`30644b3`](https://github.com/preactjs/wmr/commit/30644b39434f1bfd82cd54302e37fbe601effdcf) [#520](https://github.com/preactjs/wmr/pull/520) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix code frame indentation with tabs and remove ansi codes from code frames logged in the browser. And while we're at it make it pretty too!
+
+* [`9a6777f`](https://github.com/preactjs/wmr/commit/9a6777ff186a288ce126d473013c41d1b8f33bc3) Thanks [@developit](https://github.com/developit)! - Fix router transitions between suspended routes
+
+- [`09b40d9`](https://github.com/preactjs/wmr/commit/09b40d90dae7f8ef181b83e9a7a5e7ad17c8198d) [#548](https://github.com/preactjs/wmr/pull/548) Thanks [@rschristian](https://github.com/rschristian)! - Replaces premove with native fs.rmdir
+
+* [`e72ff27`](https://github.com/preactjs/wmr/commit/e72ff274473b92cfd5dbcdc4d5ef3b7f5cd902d0) [#537](https://github.com/preactjs/wmr/pull/537) Thanks [@developit](https://github.com/developit)! - Process all CSS to compile nested selectors, instead of only CSS Modules.
+
+- [`31c83e7`](https://github.com/preactjs/wmr/commit/31c83e74fc0814481445c4b152625041751c2a1f) [#522](https://github.com/preactjs/wmr/pull/522) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Allow plugins to overwrite url and json loading behavior. Default loading semantics will only apply if no other prefix is present on the import specifier
+
+* [`1907901`](https://github.com/preactjs/wmr/commit/1907901f49bb425c2b885e59e8fcd8cc778aeab5) [#513](https://github.com/preactjs/wmr/pull/513) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Add more path resolution messages in debug mode
+
 ## 1.5.1
 
 ### Patch Changes
