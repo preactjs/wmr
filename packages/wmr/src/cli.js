@@ -16,6 +16,7 @@ function bool(v) {
 // global options
 prog
 	.option('--cwd', 'The working directory - equivalent to "(cd FOO && wmr)"')
+	.option('--pagesDir', 'Directory for filesystem-based routes(default: <cwd>/pages)')
 	// Setting env variables isn't common knowledege for many windows users. Much
 	// easier to pass a flag to our binary instead.
 	.option('--debug', 'Print internal debugging messages to the console. Same as setting DEBUG=true');
@@ -29,6 +30,7 @@ prog
 	.option('--visualize', 'Launch interactive bundle visualizer')
 	.action(opts => {
 		opts.minify = opts.minify !== false && !/false|0/.test(opts.minify);
+		console.log(opts);
 		run(build(opts));
 	});
 
@@ -54,6 +56,7 @@ prog
 	.option('--profile', 'Generate build statistics')
 	.option('--reload', 'Switch off hmr and reload on file saves')
 	.action(opts => {
+		console.log(opts);
 		opts.optimize = !/false|0/.test(opts.compress);
 		opts.compress = bool(opts.compress);
 		if (/true/.test(process.env.PROFILE || '')) opts.profile = true;

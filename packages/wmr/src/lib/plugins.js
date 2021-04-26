@@ -1,3 +1,4 @@
+import path from 'path';
 import htmPlugin from '../plugins/htm-plugin.js';
 import sucrasePlugin from '../plugins/sucrase-plugin.js';
 import wmrPlugin from '../plugins/wmr/plugin.js';
@@ -21,6 +22,7 @@ import nodeBuiltinsPlugin from '../plugins/node-builtins-plugin.js';
 import dynamicImportVars from '@rollup/plugin-dynamic-import-vars';
 import visualizer from 'rollup-plugin-visualizer';
 import { defaultLoaders } from './default-loaders.js';
+import fsRoutesPlugin from '../plugins/fs-routes-plugin.js';
 
 /**
  * @param {import("wmr").Options} options
@@ -44,6 +46,7 @@ export function getPlugins(options) {
 		jsonPlugin({ cwd }),
 		bundlePlugin({ inline: !production, cwd }),
 		aliasPlugin({ alias, cwd: root }),
+		fsRoutesPlugin({ pagesDir: options.pagesDir, cwd, publicPath: options.publicPath }),
 		sucrasePlugin({
 			typescript: true,
 			sourcemap,

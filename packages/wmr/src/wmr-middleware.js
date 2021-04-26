@@ -420,9 +420,11 @@ export const TRANSFORMS = {
 					// const resolved = await NonRollup.resolveId(spec, importer);
 					let originalSpec = spec;
 					const resolved = await NonRollup.resolveId(spec, file);
+					console.log('RESOLVED', resolved, spec);
 					if (resolved) {
 						spec = typeof resolved == 'object' ? resolved.id : resolved;
 						if (/^(\/|\\|[a-z]:\\)/i.test(spec)) {
+							console.log('   spec', spec, file);
 							spec = relative(dirname(file), spec).split(sep).join(posix.sep);
 							if (!/^\.?\.?\//.test(spec)) {
 								spec = './' + spec;

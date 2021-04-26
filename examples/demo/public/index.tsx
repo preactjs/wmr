@@ -4,6 +4,9 @@ import Home from './pages/home.js';
 import NotFound from './pages/_404.js';
 import Header from './header.tsx';
 // import './style.css';
+import { routes } from 'builtins:fs-routes';
+
+console.log(routes);
 
 const sleep = t => new Promise(r => setTimeout(r, t));
 
