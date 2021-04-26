@@ -3,10 +3,19 @@ import Home from './pages/home.js';
 // import About from './pages/about/index.js';
 import NotFound from './pages/_404.js';
 import Header from './header.tsx';
+import { PageRoutes } from './pages/page-routes.js';
 // import './style.css';
 import { routes } from 'builtins:fs-routes';
 
 console.log(routes);
+const pageRoutes = routes.map(route => {
+	const Comp = lazy(route.load);
+	return (
+		<Route path={route.route}>
+			<Comp />
+		</Route>
+	);
+});
 
 const sleep = t => new Promise(r => setTimeout(r, t));
 
@@ -30,6 +39,7 @@ function hideLoading() {
 }
 
 export function App() {
+	console.log(pageRoutes);
 	return (
 		<LocationProvider>
 			<div class="app">
@@ -46,6 +56,8 @@ export function App() {
 						<JSONView path="/json" />
 						<MetaTags path="/meta-tags" />
 						<AliasOutside path="/alias-outside" />
+						<PageRoutes path="/fs-routes" />
+						{pageRoutes}
 						<NotFound default />
 					</Router>
 				</ErrorBoundary>

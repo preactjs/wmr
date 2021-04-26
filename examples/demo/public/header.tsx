@@ -16,6 +16,7 @@ export default function Header() {
 				<a href="/alias-outside">Alias outside</a>
 				<a href="/error">Error</a>
 				<a href="/meta-tags">Meta-Tags</a>
+				<a href="/fs-routes">FS Routes</a>
 			</nav>
 			<label>
 				URL:

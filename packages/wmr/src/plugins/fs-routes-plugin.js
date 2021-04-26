@@ -68,6 +68,7 @@ export default function fsRoutesPlugin({ pagesDir, publicPath, cwd }) {
 				.map(route => {
 					return `{
           route: ${JSON.stringify(route.route)},
+					// FIXME: Workaround 
           load: () => import("${base}${route.url}")
         }`;
 				})
@@ -76,11 +77,6 @@ export default function fsRoutesPlugin({ pagesDir, publicPath, cwd }) {
 			console.log(routesStr);
 
 			return `export const routes = [${routesStr}]`;
-		},
-		transform(code, id) {
-			if (id !== INTERNAL) return;
-
-			console.log(code);
 		}
 	};
 }

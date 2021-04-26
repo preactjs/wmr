@@ -423,8 +423,12 @@ export const TRANSFORMS = {
 					console.log('RESOLVED', resolved, spec);
 					if (resolved) {
 						spec = typeof resolved == 'object' ? resolved.id : resolved;
-						if (/^(\/|\\|[a-z]:\\)/i.test(spec)) {
-							console.log('   spec', spec, file);
+
+						// Absolute paths are resolved relative to root dir.
+						console.log('   spec', spec, file);
+						if (/^\//.test(spec)) {
+							spec = '/' + relative(cwd, spec);
+						} else if (/^(\\|[a-z]:\\)/i.test(spec)) {
 							spec = relative(dirname(file), spec).split(sep).join(posix.sep);
 							if (!/^\.?\.?\//.test(spec)) {
 								spec = './' + spec;
