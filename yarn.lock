@@ -1234,11 +1234,6 @@
     semver "^7.3.2"
     tsutils "^3.17.1"
 
-"@wmr-plugins/directory-import@*":
-  version "0.1.2"
-  resolved "https://registry.yarnpkg.com/@wmr-plugins/directory-import/-/directory-import-0.1.2.tgz#492603b7d31b501f4bcb040b3b8aa33b3aef69fd"
-  integrity sha512-/7Ox60OLG4tuG5qbHVLgDm7XD/lJ+mNVZAODGXfJ10vlR+FMxGbM17jNd64BSePQuDoU+iGZim2IPXUem7BOGQ==
-
 JSV@^4.0.2:
   version "4.0.2"
   resolved "https://registry.yarnpkg.com/JSV/-/JSV-4.0.2.tgz#d077f6825571f82132f9dffaed587b4029feff57"
@@ -7263,11 +7258,6 @@ prelude-ls@~1.1.2:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/prelude-ls/-/prelude-ls-1.1.2.tgz#21932a549f5e52ffd9a827f570e04be62a97da54"
   integrity sha1-IZMqVJ9eUv/ZqCf1cOBL5iqX2lQ=
-
-premove@^3.0.1:
-  version "3.0.1"
-  resolved "https://registry.yarnpkg.com/premove/-/premove-3.0.1.tgz#3e6f1508e963716f317fe0d39785758485d02cb4"
-  integrity sha512-lH6+7lVMTu7Fl3NdfptcY7E5ElRVhAOpW0mfJq8qPex84KEaT7TOXYvGLW2PFp+wpWrvNMAn3RNYyy+QKx2kiA==
 
 prepend-http@^2.0.0:
   version "2.0.0"
