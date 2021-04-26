@@ -1,4 +1,4 @@
-import { resolve, dirname, relative, sep, posix } from 'path';
+import { resolve, dirname, relative, sep, posix, isAbsolute } from 'path';
 import { promises as fs, createReadStream } from 'fs';
 import * as kl from 'kolorist';
 import wmrPlugin, { getWmrClient } from './plugins/wmr/plugin.js';
@@ -145,6 +145,18 @@ export default function wmrMiddleware(options) {
 			path = path.slice('/@id'.length);
 		}
 
+		if (path.startsWith('/@alias/')) {
+			path = posix.normalize(path.slice('/@alias/'.length));
+			for (const name in options.aliases) {
+				const value = options.aliases[name];
+				if (isAbsolute(value) && path.startsWith(name)) {
+					// Strip alias name from path.
+					const stripped = path.slice((name + posix.sep).length);
+					path = '/' + posix.relative(cwd, posix.resolve(value, stripped));
+				}
+			}
+		}
+
 		let prefix = '';
 		const prefixMatches = path.match(/^\/?@([a-z-]+)(\/.+)$/);
 		if (prefixMatches) {
@@ -191,7 +203,18 @@ export default function wmrMiddleware(options) {
 
 		try {
 			const start = Date.now();
-			const result = await transform({ req, res, id, file, path, prefix, cwd, out, NonRollup });
+			const result = await transform({
+				req,
+				res,
+				id,
+				file,
+				path,
+				prefix,
+				cwd,
+				out,
+				NonRollup,
+				aliases: options.aliases
+			});
 
 			// return false to skip handling:
 			if (result === false) return next();
@@ -231,6 +254,7 @@ export default function wmrMiddleware(options) {
  * @property {string} prefix a Rollup plugin -style path `\0prefix:`, if the URL was `/＠prefix/*`
  * @property {string} cwd working directory, including ./public if detected
  * @property {string} out output directory
+ * @property {Record<string, string>} aliases
  * @property {InstanceType<import('http')['IncomingMessage']>} req HTTP Request object
  * @property {InstanceType<import('http')['ServerResponse']>} res HTTP Response object
  */
@@ -273,7 +297,7 @@ export const TRANSFORMS = {
 	},
 
 	// Handle individual JavaScript modules
-	async js({ id, file, prefix, res, cwd, out, NonRollup, req }) {
+	async js({ id, file, prefix, res, cwd, out, NonRollup, req, aliases }) {
 		let code;
 		try {
 			res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
@@ -374,10 +398,27 @@ export const TRANSFORMS = {
 						}
 					}
 
-					const modSpec = spec.startsWith('../') ? spec.replace(/..\/g/, '') : spec.replace('./', '');
+					const modSpec = spec.replace(/^\.\//, '');
 					mod.dependencies.add(modSpec);
 					if (!moduleGraph.has(modSpec)) {
 						moduleGraph.set(modSpec, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
+					}
+
+					// Check if the file resolves outside of root. If it does, it may be
+					// an aliased path
+					if (spec.startsWith('..')) {
+						const posixCwd = cwd.split(sep).join(posix.sep);
+						const absoluteSpec = posix.resolve(posix.dirname(file), spec);
+						if (!absoluteSpec.startsWith(posixCwd + posix.sep)) {
+							for (const name in aliases) {
+								const value = aliases[name];
+
+								// Only check path-like aliases
+								if (posix.isAbsolute(value) && absoluteSpec.startsWith(value + posix.sep)) {
+									spec = '/@alias/' + posix.join(name, posix.relative(value, absoluteSpec));
+								}
+							}
+						}
 					}
 
 					const specModule = moduleGraph.get(modSpec);
