@@ -162,8 +162,7 @@ export default function wmrMiddleware(options) {
 
 		log(`${kl.cyan(formatPath(path))} -> ${kl.dim(id)} file: ${kl.dim(file)}`);
 
-		const ctx = { req, res, id, file, path, prefix, cwd, out, NonRollup, next };
-
+		/** @type {(ctx: Context) => Result | Promise<Result>} */
 		let transform;
 		if (path === '/_wmr.js') {
 			transform = getWmrClient.bind(null);
@@ -183,7 +182,7 @@ export default function wmrMiddleware(options) {
 
 		try {
 			const start = Date.now();
-			const result = await transform(ctx);
+			const result = await transform({ req, res, id, file, path, prefix, cwd, out, NonRollup });
 
 			// return false to skip handling:
 			if (result === false) return next();
