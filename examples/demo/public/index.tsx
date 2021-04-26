@@ -15,6 +15,7 @@ const Files = lazy(() => import('./pages/files/index.js'));
 const Environment = lazy(async () => (await import('./pages/environment/index.js')).Environment);
 const JSONView = lazy(async () => (await import('./pages/json.js')).JSONView);
 const MetaTags = lazy(async () => (await import('./pages/meta-tags.js')).MetaTags);
+const AliasOutside = lazy(async () => await import('./pages/alias-outside.js'));
 
 function showLoading() {
 	document.body.classList.add('loading');
@@ -39,6 +40,7 @@ export function App() {
 						<Environment path="/env" />
 						<JSONView path="/json" />
 						<MetaTags path="/meta-tags" />
+						<AliasOutside path="/alias-outside" />
 						<NotFound default />
 					</Router>
 				</ErrorBoundary>
