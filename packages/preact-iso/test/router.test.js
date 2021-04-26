@@ -399,4 +399,38 @@ describe('Router', () => {
 
 		pushState.mockRestore();
 	});
+
+	it('should normalize children', async () => {
+		let loc;
+		const pushState = jest.spyOn(history, 'pushState');
+		const Route = jest.fn(() => html`<a href="/foo#foo">foo</a>`);
+
+		const routes = ['/foo', '/bar'];
+		render(
+			html`
+				<${LocationProvider}>
+					<${Router}>
+						${routes.map(route => html`<${Route} path=${route} />`)}
+						<${Route} default />
+					<//>
+					<${() => {
+						loc = useLocation();
+					}} />
+				<//>
+			`,
+			scratch
+		);
+
+		expect(Route).toHaveBeenCalledTimes(1);
+		Route.mockClear();
+		await sleep(20);
+
+		scratch.querySelector('a[href="/foo#foo"]').click();
+		await sleep(100);
+		expect(Route).toHaveBeenCalledTimes(1);
+		expect(loc).toMatchObject({ url: '/foo#foo', path: '/foo' });
+		expect(pushState).toHaveBeenCalled();
+
+		pushState.mockRestore();
+	});
 });
