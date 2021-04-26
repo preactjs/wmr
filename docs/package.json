@@ -14,7 +14,7 @@
 		"preact-markup": "^2.1.1"
 	},
 	"devDependencies": {
-		"@wmr-plugins/directory-import": "*",
+		"@wmrjs/directory-import": "*",
 		"if-env": "^1.0.4",
 		"marked": "^2.0.1",
 		"wmr": "*",
