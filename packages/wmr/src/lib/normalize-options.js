@@ -27,6 +27,7 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 	options.output = [];
 	options.middleware = [];
 	options.features = { preact: true };
+	options.aliases = options.aliases || {};
 
 	// `wmr` / `wmr start` is a development command.
 	// `wmr build` / `wmr serve` are production commands.
@@ -183,10 +184,18 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 		});
 	}
 
-	debug('wmr:config')(options);
-
 	await runConfigHook('config', options.plugins);
 	await runConfigHook('configResolved', options.plugins);
+
+	// Resolve path-like aliases to absolute paths
+	for (const name in options.aliases) {
+		const value = options.aliases[name];
+		if (value.startsWith('.')) {
+			options.aliases[name] = resolve(options.root, value);
+		}
+	}
+
+	debug('wmr:config')(options);
 
 	// @ts-ignore-next
 	return options;
