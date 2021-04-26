@@ -1,4 +1,4 @@
-import { h, createContext, cloneElement } from 'preact';
+import { h, createContext, cloneElement, toChildArray } from 'preact';
 import { useContext, useMemo, useReducer, useEffect, useLayoutEffect, useRef } from 'preact/hooks';
 
 let push;
@@ -106,7 +106,7 @@ export function Router(props) {
 		prev.current = cur.current;
 
 		let p, d, m;
-		[].concat(props.children || []).some(vnode => {
+		toChildArray(props.children).some(vnode => {
 			const matches = exec(path, vnode.props.path, (m = { path, query }));
 			if (matches) return (p = cloneElement(vnode, m));
 			if (vnode.props.default) d = cloneElement(vnode, m);
