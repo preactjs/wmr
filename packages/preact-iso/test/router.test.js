@@ -26,7 +26,7 @@ describe('Router', () => {
 	it('should switch between synchronous routes', async () => {
 		const Home = jest.fn(() => html`<h1>Home</h1>`);
 		const Profiles = jest.fn(() => html`<h1>Profiles</h1>`);
-		const Profile = jest.fn(({ id }) => html`<h1>Profile: ${id}</h1>`);
+		const Profile = jest.fn(({ params }) => html`<h1>Profile: ${params.id}</h1>`);
 		const Fallback = jest.fn(() => html`<h1>Fallback</h1>`);
 		let loc;
 		render(
@@ -47,7 +47,7 @@ describe('Router', () => {
 		);
 
 		expect(scratch).toHaveProperty('textContent', 'Home');
-		expect(Home).toHaveBeenCalledWith({ path: '/', query: {} }, expect.anything());
+		expect(Home).toHaveBeenCalledWith({ path: '/', query: {}, params: {} }, expect.anything());
 		expect(Profiles).not.toHaveBeenCalled();
 		expect(Profile).not.toHaveBeenCalled();
 		expect(Fallback).not.toHaveBeenCalled();
@@ -64,7 +64,7 @@ describe('Router', () => {
 
 		expect(scratch).toHaveProperty('textContent', 'Profiles');
 		expect(Home).not.toHaveBeenCalled();
-		expect(Profiles).toHaveBeenCalledWith({ path: '/profiles', query: {} }, expect.anything());
+		expect(Profiles).toHaveBeenCalledWith({ path: '/profiles', query: {}, params: {} }, expect.anything());
 		expect(Profile).not.toHaveBeenCalled();
 		expect(Fallback).not.toHaveBeenCalled();
 
@@ -81,7 +81,10 @@ describe('Router', () => {
 		expect(scratch).toHaveProperty('textContent', 'Profile: bob');
 		expect(Home).not.toHaveBeenCalled();
 		expect(Profiles).not.toHaveBeenCalled();
-		expect(Profile).toHaveBeenCalledWith({ path: '/profiles/bob', query: {}, id: 'bob' }, expect.anything());
+		expect(Profile).toHaveBeenCalledWith(
+			{ path: '/profiles/bob', query: {}, params: { id: 'bob' } },
+			expect.anything()
+		);
 		expect(Fallback).not.toHaveBeenCalled();
 
 		expect(loc).toMatchObject({
@@ -99,7 +102,7 @@ describe('Router', () => {
 		expect(Profiles).not.toHaveBeenCalled();
 		expect(Profile).not.toHaveBeenCalled();
 		expect(Fallback).toHaveBeenCalledWith(
-			{ default: true, path: '/other', query: { a: 'b', c: 'd' } },
+			{ default: true, path: '/other', query: { a: 'b', c: 'd' }, params: {} },
 			expect.anything()
 		);
 
@@ -138,13 +141,13 @@ describe('Router', () => {
 		);
 
 		expect(scratch).toHaveProperty('innerHTML', '');
-		expect(A).toHaveBeenCalledWith({ path: '/', query: {} }, expect.anything());
+		expect(A).toHaveBeenCalledWith({ path: '/', query: {}, params: {} }, expect.anything());
 
 		A.mockClear();
 		await sleep(10);
 
 		expect(scratch).toHaveProperty('innerHTML', '<h1>A</h1><p>hello</p>');
-		expect(A).toHaveBeenCalledWith({ path: '/', query: {} }, expect.anything());
+		expect(A).toHaveBeenCalledWith({ path: '/', query: {}, params: {} }, expect.anything());
 
 		A.mockClear();
 		loc.route('/b');
@@ -157,14 +160,14 @@ describe('Router', () => {
 		expect(scratch).toHaveProperty('innerHTML', '<h1>A</h1><p>hello</p>');
 		// We should never re-invoke <A /> while loading <B /> (that would be a remount of the old route):
 		expect(A).not.toHaveBeenCalled();
-		expect(B).toHaveBeenCalledWith({ path: '/b', query: {} }, expect.anything());
+		expect(B).toHaveBeenCalledWith({ path: '/b', query: {}, params: {} }, expect.anything());
 
 		B.mockClear();
 		await sleep(10);
 
 		expect(scratch).toHaveProperty('innerHTML', '<h1>B</h1><p>hello</p>');
 		expect(A).not.toHaveBeenCalled();
-		expect(B).toHaveBeenCalledWith({ path: '/b', query: {} }, expect.anything());
+		expect(B).toHaveBeenCalledWith({ path: '/b', query: {}, params: {} }, expect.anything());
 
 		B.mockClear();
 		loc.route('/c');
@@ -183,14 +186,14 @@ describe('Router', () => {
 		expect(scratch).toHaveProperty('innerHTML', '<h1>B</h1><p>hello</p>');
 		// We should never re-invoke <A /> while loading <B /> (that would be a remount of the old route):
 		expect(B).not.toHaveBeenCalled();
-		expect(C).toHaveBeenCalledWith({ path: '/c', query: {} }, expect.anything());
+		expect(C).toHaveBeenCalledWith({ path: '/c', query: {}, params: {} }, expect.anything());
 
 		C.mockClear();
 		await sleep(10);
 
 		expect(scratch).toHaveProperty('innerHTML', '<h1>C</h1>');
 		expect(B).not.toHaveBeenCalled();
-		expect(C).toHaveBeenCalledWith({ path: '/c', query: {} }, expect.anything());
+		expect(C).toHaveBeenCalledWith({ path: '/c', query: {}, params: {} }, expect.anything());
 
 		// "instant" routing to already-loaded routes
 
@@ -202,7 +205,7 @@ describe('Router', () => {
 		expect(scratch).toHaveProperty('innerHTML', '<h1>B</h1><p>hello</p>');
 		expect(C).not.toHaveBeenCalled();
 		// expect(B).toHaveBeenCalledTimes(1);
-		expect(B).toHaveBeenCalledWith({ path: '/b', query: {} }, expect.anything());
+		expect(B).toHaveBeenCalledWith({ path: '/b', query: {}, params: {} }, expect.anything());
 
 		B.mockClear();
 		loc.route('/');
@@ -211,7 +214,7 @@ describe('Router', () => {
 		expect(scratch).toHaveProperty('innerHTML', '<h1>A</h1><p>hello</p>');
 		expect(B).not.toHaveBeenCalled();
 		// expect(A).toHaveBeenCalledTimes(1);
-		expect(A).toHaveBeenCalledWith({ path: '/', query: {} }, expect.anything());
+		expect(A).toHaveBeenCalledWith({ path: '/', query: {}, params: {} }, expect.anything());
 	});
 
 	describe('intercepted VS external links', () => {

@@ -32,6 +32,7 @@ const UPDATE = (state, url) => {
 export const exec = (url, route, matches) => {
 	url = url.split('/').filter(Boolean);
 	route = (route || '').split('/').filter(Boolean);
+	const params = matches.params || (matches.params = {});
 	for (let i = 0, val; i < Math.max(url.length, route.length); i++) {
 		let [, m, param, flag] = (route[i] || '').match(/^(:?)(.*?)([+*?]?)$/);
 		val = url[i];
@@ -40,7 +41,7 @@ export const exec = (url, route, matches) => {
 		// segment mismatch / missing required field:
 		if (!m || (!val && flag != '?' && flag != '*')) return;
 		// field match:
-		matches[param] = val && decodeURIComponent(val);
+		params[param] = val && decodeURIComponent(val);
 		// normal/optional field:
 		if (flag >= '?' || flag === '') continue;
 		// rest (+/*) match:
