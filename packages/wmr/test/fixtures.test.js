@@ -237,10 +237,10 @@ describe('fixtures', () => {
 			expect(text).toMatch(/success/);
 
 			await updateFile(env.tmp.path, 'index.js', content => content.replace('success', 'hmr'));
-			await page.waitForFunction('document.body.textContent.includes("hmr")');
+			await page.waitForFunction('document.body?.textContent.includes("hmr")');
 
 			await updateFile(env.tmp.path, 'index.js', content => content.replace('hmr', 'success'));
-			await page.waitForFunction('document.body.textContent.includes("success")');
+			await page.waitForFunction('document.body?.textContent.includes("success")');
 		});
 
 		it('should hot reload the child-file', async () => {
