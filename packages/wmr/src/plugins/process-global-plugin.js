@@ -1,3 +1,28 @@
+import { transform } from '../lib/acorn-traverse.js';
+
+/**
+ * Plugin to replace `process.env.MY_VAR` or `import.meta.env.MY_VAR` with
+ * the actual value.
+ * @param {Record<string, string>} env
+ */
+function acornEnvPlugin(env) {
+	return () => {
+		return {
+			name: 'transform-env',
+			visitor: {
+				MemberExpression(path) {
+					const source = path.getSource();
+					const match = source.match(/^(?:import\.meta|process)\.env\.(.+)/);
+
+					if (match) {
+						path.replaceWithString(JSON.stringify(env[match[1]]));
+					}
+				}
+			}
+		};
+	};
+}
+
 /**
  * Inject process globals and inline process.env.NODE_ENV.
  * @param {object} [options]
@@ -18,15 +43,13 @@ export default function processGlobalPlugin({ NODE_ENV = 'development', env = {}
 		},
 		transform(code) {
 			const orig = code;
-			// TODO: this should probably use acorn-traverse.
-			code = code.replace(
-				/([(){}&|,;=!]\s*)process\.env\.NODE_ENV\s*([!=]==?)\s*(['"])(.*?)\3/g,
-				(str, before, comparator, quote, value) => {
-					let isMatch = value == NODE_ENV;
-					if (comparator[0] == '!') isMatch = !isMatch;
-					return before + isMatch;
-				}
-			);
+
+			const result = transform(code, {
+				plugins: [acornEnvPlugin({ ...env, NODE_ENV })],
+				parse: this.parse
+			});
+
+			code = result.code;
 
 			// if that wasn't the only way `process.env` was referenced...
 			if (code.match(/[^a-zA-Z0-9]process\.env/)) {
