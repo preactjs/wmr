@@ -10,7 +10,8 @@
 		"postpack": "mv -f .package.json package.json",
 		"test-e2e": "cross-env JEST_PUPPETEER_CONFIG=jest-puppeteer.config.cjs jest",
 		"test-prod": "cross-env PRODUCTION_BUILD=true JEST_PUPPETEER_CONFIG=jest-puppeteer.config.cjs jest",
-		"test": "eslint src test && npm run test-e2e"
+		"test": "eslint src test && npm run test-e2e",
+		"fixture": "node tools/run-fixture.js"
 	},
 	"author": "The Preact Authors (https://preactjs.com)",
 	"license": "MIT",
