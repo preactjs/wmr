@@ -166,7 +166,6 @@ const injectWmrMiddleware = ({ cwd }) => {
 		} catch (e) {
 			next();
 		}
-		next();
 	};
 };
 
