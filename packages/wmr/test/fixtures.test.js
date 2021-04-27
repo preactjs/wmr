@@ -8,7 +8,8 @@ import {
 	getOutput,
 	get,
 	waitForMessage,
-	waitForNotMessage
+	waitForNotMessage,
+	waitFor
 } from './test-helpers.js';
 import { rollup } from 'rollup';
 import nodeBuiltinsPlugin from '../src/plugins/node-builtins-plugin.js';
@@ -237,10 +238,14 @@ describe('fixtures', () => {
 			expect(text).toMatch(/success/);
 
 			await updateFile(env.tmp.path, 'index.js', content => content.replace('success', 'hmr'));
-			await page.waitForFunction('document.body?.textContent.includes("hmr")');
+			await waitFor(async () => {
+				return (await page.content()).includes('hmr');
+			});
 
 			await updateFile(env.tmp.path, 'index.js', content => content.replace('hmr', 'success'));
-			await page.waitForFunction('document.body?.textContent.includes("success")');
+			await waitFor(async () => {
+				return (await page.content()).includes('success');
+			});
 		});
 
 		it('should hot reload the child-file', async () => {
