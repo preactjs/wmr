@@ -302,7 +302,7 @@ function createErrorOverlay(data) {
 		}
 
 		.inner {
-			max-width: 80ch;
+			max-width: 48rem;
 			padding: 4rem 1rem;
 			margin: 0 auto;
 		}
