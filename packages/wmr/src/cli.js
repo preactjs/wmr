@@ -13,10 +13,13 @@ function bool(v) {
 	return v !== false && !/false|0/.test(v);
 }
 
+// global options
 prog
 	.option('--public', 'Your web app root directory (default: ./public)')
 	.option('--out', 'Where to store generated files (default: ./dist)')
-	.option('--cwd', 'The working directory - equivalent to "(cd FOO && wmr)"')
+	.option('--cwd', 'The working directory - equivalent to "(cd FOO && wmr)"');
+
+prog
 	.command('build', 'make a production build')
 	.option('--prerender', 'Pre-render the application to HTML')
 	.option('--sourcemap', 'Enable Source Maps')
@@ -24,7 +27,9 @@ prog
 	.action(opts => {
 		opts.minify = opts.minify !== false && !/false|0/.test(opts.minify);
 		run(build(opts));
-	})
+	});
+
+prog
 	.command('serve', 'Start a production server')
 	.option('--out', 'Directory to serve (default: ./dist)')
 	.option('--port, -p', 'HTTP port to listen on (default: $PORT or 8080)')
@@ -34,7 +39,9 @@ prog
 	.action(opts => {
 		opts.compress = bool(opts.compress);
 		run(serve(opts));
-	})
+	});
+
+prog
 	.command('start', 'Start a development server', { default: true })
 	.option('--port, -p', 'HTTP port to listen on (default: $PORT or 8080)')
 	.option('--host', 'HTTP host to listen on (default: localhost)')
@@ -45,21 +52,25 @@ prog
 	.action(opts => {
 		opts.optimize = !/false|0/.test(opts.compress);
 		opts.compress = bool(opts.compress);
-		if (/true/.test(process.env.PROFILE)) opts.profile = true;
+		if (/true/.test(process.env.PROFILE || '')) opts.profile = true;
 		run(start(opts));
 	});
 
 prog.parse(process.argv);
 
 function run(p) {
-	p.catch(err => {
-		const text = err.message || err + '';
-		const stack = errorstacks
-			.parseStackTrace(err.stack)
-			.map(frame => frame.raw)
-			.join('\n');
-
-		process.stderr.write(`\n${kl.red(text)}\n${stack ? kl.dim(stack + '\n\n') : ''}`);
-		process.exit(p.code || 1);
-	});
+	p.catch(catchException);
 }
+
+function catchException(err) {
+	const text = (err.stack && err.stack.split('\n')[0]) || err.message || err + '';
+	const stack = errorstacks
+		.parseStackTrace(err.stack)
+		.map(frame => frame.raw)
+		.join('\n');
+
+	process.stderr.write(`\n${kl.red(text)}\n${stack ? kl.dim(stack + '\n\n') : ''}`);
+	process.exit(1);
+}
+
+process.setUncaughtExceptionCaptureCallback(catchException);
