@@ -34,7 +34,7 @@ function connect(needsReload) {
 connect();
 
 let errorCount = 0;
-let hasErrorOverlay = false;
+let errorOverlay;
 
 const URL_SUFFIX = /\/(index\.html)?$/;
 
@@ -45,10 +45,9 @@ function handleMessage(e) {
 			window.location.reload();
 			break;
 		case 'update':
-			if (hasErrorOverlay) {
-				hasErrorOverlay = false;
-				const el = document.getElementById('wmr-error-overlay');
-				if (el) el.remove();
+			if (errorOverlay) {
+				errorOverlay.remove();
+				errorOverlay = null;
 			}
 			data.changes.forEach(url => {
 				url = resolve(url);
@@ -102,8 +101,7 @@ function handleMessage(e) {
 			break;
 		case 'error': {
 			errorCount++;
-			hasErrorOverlay = true;
-			createErrorOverlay(data);
+			errorOverlay = createErrorOverlay(data);
 			let msg = data.error;
 			if (data.codeFrame) {
 				msg += '\n' + data.codeFrame;
@@ -238,43 +236,30 @@ function updateStyleSheet(url) {
 }
 
 // Listen for iframe close events
-window.addEventListener('message', message => {
-	if (message.data === 'wmr-close-error-overlay') {
-		document.getElementById('wmr-error-overlay')?.remove();
-	}
-});
 
 /**
  *
  * @param {{type: "error", error: string, codeFrame: string, stack: import('errorstacks').StackFrame[]}} data
  */
 function createErrorOverlay(data) {
-	document.getElementById('wmr-error-overlay')?.remove();
+	if (errorOverlay) errorOverlay.remove();
 
 	const iframe = document.createElement('iframe');
-	iframe.id = 'wmr-error-overlay';
-	iframe.setAttribute(
-		'style',
-		`position: fixed; top: 0; left: 0; bottom: 0; right: 0; z-index: 99999; width: 100%; height: 100%; border: none;`
-	);
+	iframe.style.cssText =
+		`position: fixed; top: 0; left: 0; bottom: 0; right: 0; z-index: 99999; width: 100%; height: 100%; border: none;`;
 
 	iframe.addEventListener('load', () => {
-		function createDom(tag, attrs) {
-			const el = iframe.contentDocument?.createElement(tag);
-			for (const attr in attrs) {
-				const value = attrs[attr];
-				if (typeof value === 'function') {
-					el.addEventListener(attr.slice(2), value);
-				} else {
-					el.setAttribute(attr, value);
-				}
-			}
+		const doc = iframe.contentDocument;
+
+		function h(tag, props, ...children) {
+			props = props || {};
+			tag = tag.replace(/([.#])([^.#]+)/g, (s,g,i) => ((props[g=='.'?'className':'id']=i), ''));
+			const el = Object.assign(doc.createElement(tag), props);
+			el.append(...children);
 			return el;
 		}
 
-		const outer = createDom('div', { id: 'wmr-error-overlay' });
-		const style = document.createElement('style');
-		style.textContent = `
+		const STYLE = `
 		:root {
 			--bg: #fff;
 			--bg-code-frame: rgb(255, 0, 32, 0.1);
@@ -292,7 +277,7 @@ function createErrorOverlay(data) {
 		* {
 			box-sizing: border-box;
 		}
-		
+
 		@media (prefers-color-scheme: dark) {
 			:root {
 				--bg-code-frame: rgba(251, 93, 113, 0.2);
@@ -352,57 +337,46 @@ function createErrorOverlay(data) {
 			color: var(--text2);
 			font-family: monospace;
 		}
-	`;
-		const overlay = createDom('div', {});
-		const close = createDom('button', {
-			class: 'close',
-			onclick: () => {
-				window.postMessage('wmr-close-error-overlay', '*');
-			}
-		});
-		close.textContent = 'close';
-		const inner = createDom('div', { class: 'inner' });
-		overlay.append(close, inner);
+		`;
 
-		const title = createDom('h1', { class: 'title' });
-		title.textContent = data.error;
-		inner.append(title);
+		const lines = data.codeFrame.split('\n').reduce((lines, line, i, arr) => {
+			lines.push(h('span', {
+				className: 'line' + (line.startsWith('>') ? ' active-line' : '')
+			}, line));
+			if (i < arr.length - 1) lines.push('\n');
+			return lines;
+		}, []);
 
-		const codeFrame = createDom('pre', { class: 'code-frame' });
-		const code = createDom('code', {});
-		codeFrame.append(code);
+		const frames = data.stack.map(frame =>
+			h('div.stack-frame', null,
+				h('div.stack-name', null, frame.name),
+				h('div.stack-loc', null, `${frame.fileName}:${frame.line}:${frame.column}`)
+			)
+		);
 
-		data.codeFrame.split('\n').forEach((line, i, arr) => {
-			const dom = createDom('span', {
-				class: 'line' + (line.startsWith('>') ? ' active-line' : '')
-			});
-			dom.textContent = line;
-			code.append(dom, i < arr.length - 1 ? '\n' : '');
-		});
-		inner.append(codeFrame);
-
-		outer.append(style, overlay);
-
-		const stackDetail = createDom('details', { class: 'detail' });
-		const stackSummary = createDom('summary', {});
-		stackSummary.textContent = `${data.stack.length} stack frames were collapsed.`;
-		stackDetail.append(stackSummary);
-
-		const frames = data.stack.map(frame => {
-			const container = createDom('div', { class: 'stack-frame' });
-			const name = createDom('div', { class: 'stack-name' });
-			name.textContent = frame.name;
-			const loc = createDom('div', { class: 'stack-loc' });
-			loc.textContent = `${frame.fileName}:${frame.line}:${frame.column}`;
-
-			container.append(name, loc);
-			return container;
-		});
-		stackDetail.append(...frames);
-
-		inner.append(stackDetail);
-		iframe.contentDocument?.body.appendChild(outer);
+		doc.body.append(
+			h('div#wmr-error-overlay', null,
+				h('style', null, STYLE),
+				h('div', null, 
+					h('button.close', {
+						onclick() {
+							errorOverlay.remove();
+							errorOverlay = null;
+						},
+					}, 'close'),
+					h('div.inner', null,
+						h('h1.title', null, String(data.error)),
+						h('pre.code-frame', null, h('code', null, lines)),
+						h('details.detail', null,
+							h('summary', null, `${data.stack.length} stack frames were collapsed.`),
+							...frames
+						)
+					)
+				)
+			)
+		);
 	});
 
 	document.body.appendChild(iframe);
+	return iframe;
 }
