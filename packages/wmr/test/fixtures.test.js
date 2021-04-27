@@ -228,12 +228,6 @@ describe('fixtures', () => {
 	});
 
 	describe('hmr', () => {
-		async function updateFile(tempDir, file, replacer) {
-			const compPath = path.join(tempDir, file);
-			const content = await fs.readFile(compPath, 'utf-8');
-			await fs.writeFile(compPath, replacer(content));
-		}
-
 		const timeout = n => new Promise(r => setTimeout(r, n));
 
 		it('should hot reload the child-file', async () => {
