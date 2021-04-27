@@ -147,22 +147,24 @@ async function bootServer(options, configWatchFiles) {
 
 const injectWmrMiddleware = ({ cwd }) => {
 	return async (req, res, next) => {
+		// If we haven't intercepted the request it's safe to assume we need to inject wmr.
+		const path = posix.normalize(req.path);
+		if (/\.[a-z]+$/gi.test(path) || path.startsWith('/@npm')) {
+			return next();
+		}
+
 		try {
-			// If we haven't intercepted the request it's safe to assume we need to inject wmr.
-			const path = posix.normalize(req.path);
-			if (!/\.[a-z]+$/gi.test(path) && !path.startsWith('/@npm')) {
-				const start = Date.now();
-				const index = resolve(cwd, 'index.html');
-				const html = await fs.readFile(index, 'utf-8');
-				const result = await injectWmr(html);
-				const time = Date.now() - start;
-				res.writeHead(200, {
-					'Content-Type': 'text/html;charset=utf-8',
-					'Content-Length': Buffer.byteLength(result, 'utf-8'),
-					'Server-Timing': `index.html;dur=${time}`
-				});
-				res.end(result);
-			}
+			const start = Date.now();
+			const index = resolve(cwd, 'index.html');
+			const html = await fs.readFile(index, 'utf-8');
+			const result = await injectWmr(html);
+			const time = Date.now() - start;
+			res.writeHead(200, {
+				'Content-Type': 'text/html;charset=utf-8',
+				'Content-Length': Buffer.byteLength(result, 'utf-8'),
+				'Server-Timing': `index.html;dur=${time}`
+			});
+			res.end(result);
 		} catch (e) {
 			next();
 		}
