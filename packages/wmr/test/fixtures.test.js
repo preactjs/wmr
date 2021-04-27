@@ -230,6 +230,19 @@ describe('fixtures', () => {
 	describe('hmr', () => {
 		const timeout = n => new Promise(r => setTimeout(r, n));
 
+		it('should reload js entry', async () => {
+			await loadFixture('hmr-index', env);
+			instance = await runWmrFast(env.tmp.path);
+			const text = await getOutput(env, instance);
+			expect(text).toMatch(/success/);
+
+			await updateFile(env.tmp.path, 'index.js', content => content.replace('success', 'hmr'));
+			await page.waitForFunction('document.body.textContent.includes("hmr")');
+
+			await updateFile(env.tmp.path, 'index.js', content => content.replace('hmr', 'success'));
+			await page.waitForFunction('document.body.textContent.includes("success")');
+		});
+
 		it('should hot reload the child-file', async () => {
 			await loadFixture('hmr', env);
 			instance = await runWmrFast(env.tmp.path);

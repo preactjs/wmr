@@ -99,12 +99,12 @@ export default function wmrMiddleware(options) {
 		filename = filename.split(sep).join(posix.sep);
 
 		// Delete any generated CSS Modules mapping modules:
-		if (/\.module\.(css|s[ac]ss)$/.test(filename)) WRITE_CACHE.delete(filename + '.js');
+		const suffix = /\.module\.(css|s[ac]ss)$/.test(filename) ? '.js' : '';
+		WRITE_CACHE.delete(filename + suffix);
 
 		if (!pendingChanges.size) timeout = setTimeout(flushChanges, 60);
 
 		if (/\.(css|s[ac]ss)$/.test(filename)) {
-			WRITE_CACHE.delete(filename);
 			pendingChanges.add('/' + filename);
 		} else if (/\.(mjs|[tj]sx?)$/.test(filename)) {
 			if (!moduleGraph.has(filename)) {
@@ -119,7 +119,6 @@ export default function wmrMiddleware(options) {
 				onChange({ reload: true });
 			}
 		} else {
-			WRITE_CACHE.delete(filename);
 			pendingChanges.clear();
 			clearTimeout(timeout);
 			onChange({ reload: true });
