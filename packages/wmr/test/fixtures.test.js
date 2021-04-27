@@ -8,7 +8,8 @@ import {
 	getOutput,
 	get,
 	waitForMessage,
-	waitForNotMessage
+	waitForNotMessage,
+	waitFor
 } from './test-helpers.js';
 import { rollup } from 'rollup';
 import nodeBuiltinsPlugin from '../src/plugins/node-builtins-plugin.js';
@@ -228,13 +229,24 @@ describe('fixtures', () => {
 	});
 
 	describe('hmr', () => {
-		async function updateFile(tempDir, file, replacer) {
-			const compPath = path.join(tempDir, file);
-			const content = await fs.readFile(compPath, 'utf-8');
-			await fs.writeFile(compPath, replacer(content));
-		}
-
 		const timeout = n => new Promise(r => setTimeout(r, n));
+
+		it('should reload js entry', async () => {
+			await loadFixture('hmr-index', env);
+			instance = await runWmrFast(env.tmp.path);
+			const text = await getOutput(env, instance);
+			expect(text).toMatch(/success/);
+
+			await updateFile(env.tmp.path, 'index.js', content => content.replace('success', 'hmr'));
+			await waitFor(async () => {
+				return (await page.content()).includes('hmr');
+			});
+
+			await updateFile(env.tmp.path, 'index.js', content => content.replace('hmr', 'success'));
+			await waitFor(async () => {
+				return (await page.content()).includes('success');
+			});
+		});
 
 		it('should hot reload the child-file', async () => {
 			await loadFixture('hmr', env);

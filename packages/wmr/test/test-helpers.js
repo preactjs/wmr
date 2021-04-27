@@ -141,6 +141,17 @@ const stripColors = str => str.replace(/\x1b\[(?:[0-9]{1,3}(?:;[0-9]{1,3})*)?[m|
 export const wait = ms => new Promise(r => setTimeout(r, ms));
 
 /**
+ * Pupppeteer often throws when the pages is navigated and we try
+ * to assert something. Ignore any errors when that happens.
+ * See: https://github.com/boxine/pentf/blob/c046f5275ae7201a427b9dc30965d633855bb3be/src/utils.js#L259
+ * @param {Error} err
+ * @returns {boolean}
+ */
+function ignoreError(err) {
+	return /Execution context was destroyed|(Session|Connection|Target) closed/.test(err.message);
+}
+
+/**
  * @param {() => boolean | Promise<boolean>} fn
  * @param {number} timeout
  * @returns {Promise<boolean>}
@@ -149,8 +160,14 @@ export async function waitFor(fn, timeout = 2000) {
 	const start = Date.now();
 
 	while (start + timeout >= Date.now()) {
-		const result = await fn();
-		if (result) return true;
+		try {
+			const result = await fn();
+			if (result) return true;
+		} catch (err) {
+			if (!ignoreError(err)) {
+				throw err;
+			}
+		}
 
 		// Wait a little before the next iteration
 		await wait(10);
