@@ -245,15 +245,20 @@ function createErrorOverlay(data) {
 	if (errorOverlay) errorOverlay.remove();
 
 	const iframe = document.createElement('iframe');
-	iframe.style.cssText =
-		`position: fixed; top: 0; left: 0; bottom: 0; right: 0; z-index: 99999; width: 100%; height: 100%; border: none;`;
+	iframe.style.cssText = `position: fixed; top: 0; left: 0; bottom: 0; right: 0; z-index: 99999; width: 100%; height: 100%; border: none;`;
 
 	iframe.addEventListener('load', () => {
 		const doc = iframe.contentDocument;
 
+		/**
+		 * @param {string} tag
+		 * @param {Record<string, any> | null} props
+		 * @param {any[]} children
+		 * @returns {HTMLElement}
+		 */
 		function h(tag, props, ...children) {
 			props = props || {};
-			tag = tag.replace(/([.#])([^.#]+)/g, (s,g,i) => ((props[g=='.'?'className':'id']=i), ''));
+			tag = tag.replace(/([.#])([^.#]+)/g, (s, g, i) => ((props[g == '.' ? 'className' : 'id'] = i), ''));
 			const el = Object.assign(doc.createElement(tag), props);
 			el.append(...children);
 			return el;
@@ -340,34 +345,54 @@ function createErrorOverlay(data) {
 		`;
 
 		const lines = data.codeFrame.split('\n').reduce((lines, line, i, arr) => {
-			lines.push(h('span', {
-				className: 'line' + (line.startsWith('>') ? ' active-line' : '')
-			}, line));
+			lines.push(
+				h(
+					'span',
+					{
+						className: 'line' + (line.startsWith('>') ? ' active-line' : '')
+					},
+					line
+				)
+			);
 			if (i < arr.length - 1) lines.push('\n');
 			return lines;
-		}, []);
+		}, /** @type {any} */ ([]));
 
 		const frames = data.stack.map(frame =>
-			h('div.stack-frame', null,
+			h(
+				'div.stack-frame',
+				null,
 				h('div.stack-name', null, frame.name),
 				h('div.stack-loc', null, `${frame.fileName}:${frame.line}:${frame.column}`)
 			)
 		);
 
 		doc.body.append(
-			h('div#wmr-error-overlay', null,
+			h(
+				'div#wmr-error-overlay',
+				null,
 				h('style', null, STYLE),
-				h('div', null, 
-					h('button.close', {
-						onclick() {
-							errorOverlay.remove();
-							errorOverlay = null;
+				h(
+					'div',
+					null,
+					h(
+						'button.close',
+						{
+							onclick() {
+								errorOverlay.remove();
+								errorOverlay = null;
+							}
 						},
-					}, 'close'),
-					h('div.inner', null,
+						'close'
+					),
+					h(
+						'div.inner',
+						null,
 						h('h1.title', null, String(data.error)),
 						h('pre.code-frame', null, h('code', null, lines)),
-						h('details.detail', null,
+						h(
+							'details.detail',
+							null,
 							h('summary', null, `${data.stack.length} stack frames were collapsed.`),
 							...frames
 						)
