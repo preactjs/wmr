@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
+import { toPosix } from './plugin-utils.js';
 
 /**
  * Traverse the pages directory and retrieve all routes.
@@ -9,7 +10,7 @@ import path from 'path';
 async function readRecursive(root, dir = root) {
 	const mixed = await fs.readdir(dir);
 
-	/** @type {string[]} */
+	/** @type {{ route: string, url: string }[]} */
 	const routes = [];
 
 	await Promise.all(
@@ -18,7 +19,10 @@ async function readRecursive(root, dir = root) {
 			if (/\.[tj]sx?$/.test(fileOrDir)) {
 				const name = path.basename(fileOrDir, path.extname(fileOrDir));
 				const routePath = name === 'index' ? path.relative(root, dir) : path.relative(root, path.join(dir, name));
-				routes.push(routePath);
+				routes.push({
+					route: '/' + toPosix(routePath.replace(/\[(\w+)\]/g, (m, g) => `:${g}`)),
+					url: '/' + toPosix(path.relative(root, path.join(dir, fileOrDir)))
+				});
 			}
 
 			const stats = await fs.lstat(absolute);
@@ -36,10 +40,11 @@ async function readRecursive(root, dir = root) {
  * @param {object} options
  * @param {string} options.pagesDir Controls whether files are processed to transform JSX.
  * @param {string} options.cwd
+ * @param {string} options.root
  * @param {string} options.publicPath
  * @returns {import('wmr').Plugin}
  */
-export default function fsRoutesPlugin({ pagesDir, publicPath, cwd }) {
+export default function fsRoutesPlugin({ pagesDir, publicPath, root, cwd }) {
 	const PUBLIC = 'builtins:fs-routes';
 	const INTERNAL = '\0builtins:fs-routes';
 	return {
@@ -52,24 +57,14 @@ export default function fsRoutesPlugin({ pagesDir, publicPath, cwd }) {
 		async load(id) {
 			if (id !== INTERNAL) return;
 
-			const rawRoutes = await readRecursive(pagesDir);
-
-			const routes = rawRoutes.map(raw => {
-				const url = '/' + raw.split(path.sep).join(path.posix.sep);
-				const route = url.replace(/\[(\w+)\]/g, (m, g) => `:${g}`);
-				return { url, route };
-			});
-
-			const base = path.join(cwd, path.relative(cwd, pagesDir)).split(path.sep).join(path.posix.sep);
-
-			console.log(base, cwd);
+			const routes = await readRecursive(pagesDir);
+			const base = toPosix(path.relative(cwd, path.join(root, pagesDir)));
 
 			const routesStr = routes
 				.map(route => {
 					return `{
           route: ${JSON.stringify(route.route)},
-					// FIXME: Workaround 
-          load: () => import("${base}${route.url}")
+          load: () => import("${publicPath}${base}${route.url}")
         }`;
 				})
 				.join(', ');

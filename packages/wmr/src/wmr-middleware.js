@@ -428,6 +428,8 @@ export const TRANSFORMS = {
 						console.log('   spec', spec, file);
 						if (/^\//.test(spec)) {
 							spec = '/' + relative(cwd, spec);
+							// TODO: Add to module graph
+							console.log('   >>>', spec, cwd);
 						} else if (/^(\\|[a-z]:\\)/i.test(spec)) {
 							spec = relative(dirname(file), spec).split(sep).join(posix.sep);
 							if (!/^\.?\.?\//.test(spec)) {

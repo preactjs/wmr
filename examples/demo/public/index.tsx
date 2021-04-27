@@ -10,11 +10,7 @@ import { routes } from 'builtins:fs-routes';
 console.log(routes);
 const pageRoutes = routes.map(route => {
 	const Comp = lazy(route.load);
-	return (
-		<Route path={route.route}>
-			<Comp />
-		</Route>
-	);
+	return <Route path={route.route} component={Comp} />;
 });
 
 const sleep = t => new Promise(r => setTimeout(r, t));
