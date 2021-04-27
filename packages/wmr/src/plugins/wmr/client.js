@@ -389,7 +389,7 @@ function createErrorOverlay(data) {
 						'div.inner',
 						null,
 						h('h1.title', null, String(data.error)),
-						h('pre.code-frame', null, h('code', null, lines)),
+						h('pre.code-frame', null, h('code', null, ...lines)),
 						h(
 							'details.detail',
 							null,
