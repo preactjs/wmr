@@ -34,6 +34,7 @@ function connect(needsReload) {
 connect();
 
 let errorCount = 0;
+let errorOverlay;
 
 const URL_SUFFIX = /\/(index\.html)?$/;
 
@@ -44,6 +45,10 @@ function handleMessage(e) {
 			window.location.reload();
 			break;
 		case 'update':
+			if (errorOverlay) {
+				errorOverlay.remove();
+				errorOverlay = null;
+			}
 			data.changes.forEach(url => {
 				url = resolve(url);
 				if (!mods.get(url)) {
@@ -96,6 +101,7 @@ function handleMessage(e) {
 			break;
 		case 'error': {
 			errorCount++;
+			errorOverlay = createErrorOverlay(data);
 			let msg = data.error;
 			if (data.codeFrame) {
 				msg += '\n' + data.codeFrame;
@@ -227,4 +233,175 @@ function updateStyleSheet(url) {
 			return true;
 		}
 	}
+}
+
+// Listen for iframe close events
+
+/**
+ *
+ * @param {{type: "error", error: string, codeFrame: string, stack: import('errorstacks').StackFrame[]}} data
+ */
+function createErrorOverlay(data) {
+	if (errorOverlay) errorOverlay.remove();
+
+	const iframe = document.createElement('iframe');
+	iframe.style.cssText = `position: fixed; top: 0; left: 0; bottom: 0; right: 0; z-index: 99999; width: 100%; height: 100%; border: none;`;
+
+	iframe.addEventListener('load', () => {
+		const doc = iframe.contentDocument;
+
+		/**
+		 * @param {string} tag
+		 * @param {Record<string, any> | null} props
+		 * @param {any[]} children
+		 * @returns {HTMLElement}
+		 */
+		function h(tag, props, ...children) {
+			props = props || {};
+			tag = tag.replace(/([.#])([^.#]+)/g, (s, g, i) => ((props[g == '.' ? 'className' : 'id'] = i), ''));
+			const el = Object.assign(doc.createElement(tag), props);
+			el.append(...children);
+			return el;
+		}
+
+		const STYLE = `
+		:root {
+			--bg: #fff;
+			--bg-code-frame: rgb(255, 0, 32, 0.1);
+			--bg-active-line: #fbcecc;
+			--text: #222;
+			--text2: #444;
+			--title: #e84644;
+			--code: #333;
+			font-family: sans-serif;
+			line-height: 1.4;
+			color: var(--text);
+			background: var(--bg);
+		}
+
+		* {
+			box-sizing: border-box;
+		}
+
+		@media (prefers-color-scheme: dark) {
+			:root {
+				--bg-code-frame: rgba(251, 93, 113, 0.2);
+				--bg-active-line: #4f1919;
+				--bg: #353535;
+				--text: #f7f7f7;
+				--text2: #ddd;
+				--code: #fdd1d1;
+			}
+		}
+
+		.close {
+			cursor: pointer;
+			position: absolute;
+			top: 1rem;
+			right: 1rem;
+		}
+
+		.inner {
+			max-width: 48rem;
+			padding: 4rem 1rem;
+			margin: 0 auto;
+		}
+
+		.title {
+			color: var(--title);
+			font-weight: normal;
+			font-size: 1.5rem;
+		}
+
+		.code-frame {
+			overflow: auto;
+			padding: 0.5rem;
+			background: var(--bg-code-frame);
+			color: var(--code);
+		}
+		.line {
+			padding: 0.25rem 0.5rem;
+		}
+		.active-line {
+			display: inline-block;
+			width: 100%;
+			background: var(--bg-active-line);
+		}
+
+		.detail {
+			cursor: pointer;
+			color: var(--text2);
+		}
+		.stack-frame {
+			padding: 0.5rem 0;
+		}
+		.stack-name {
+			color: var(--text);
+		}
+		.stack-loc {
+			color: var(--text2);
+			font-family: monospace;
+		}
+		`;
+
+		const lines = data.codeFrame.split('\n').reduce((lines, line, i, arr) => {
+			lines.push(
+				h(
+					'span',
+					{
+						className: 'line' + (line.startsWith('>') ? ' active-line' : '')
+					},
+					line
+				)
+			);
+			if (i < arr.length - 1) lines.push('\n');
+			return lines;
+		}, /** @type {any} */ ([]));
+
+		const frames = data.stack.map(frame =>
+			h(
+				'div.stack-frame',
+				null,
+				h('div.stack-name', null, frame.name),
+				h('div.stack-loc', null, `${frame.fileName}:${frame.line}:${frame.column}`)
+			)
+		);
+
+		doc.body.append(
+			h(
+				'div#wmr-error-overlay',
+				null,
+				h('style', null, STYLE),
+				h(
+					'div',
+					null,
+					h(
+						'button.close',
+						{
+							onclick() {
+								errorOverlay.remove();
+								errorOverlay = null;
+							}
+						},
+						'close'
+					),
+					h(
+						'div.inner',
+						null,
+						h('h1.title', null, String(data.error)),
+						h('pre.code-frame', null, h('code', null, ...lines)),
+						h(
+							'details.detail',
+							null,
+							h('summary', null, `${data.stack.length} stack frames were collapsed.`),
+							...frames
+						)
+					)
+				)
+			)
+		);
+	});
+
+	document.body.appendChild(iframe);
+	return iframe;
 }

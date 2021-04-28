@@ -9,6 +9,7 @@ import { setCwd } from './plugins/npm-plugin/registry.js';
 import { formatBootMessage, debug } from './lib/output-utils.js';
 import { watch } from './lib/fs-watcher.js';
 import { injectWmr } from './lib/transform-html.js';
+import { parseStackTrace } from 'errorstacks';
 
 /**
  * @typedef OtherOptions
@@ -93,7 +94,8 @@ async function bootServer(options, configWatchFiles) {
 			app.ws.broadcast({
 				type: 'error',
 				error: err.clientMessage || err.message,
-				codeFrame: kl.stripColors(err.codeFrame)
+				codeFrame: kl.stripColors(err.codeFrame),
+				stack: parseStackTrace(err.stack)
 			});
 		}
 	}
