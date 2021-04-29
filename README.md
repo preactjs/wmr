@@ -35,7 +35,7 @@ or
 <strong><code>yarn create wmr your-project-name</code></strong>
 
 <p>
-<img width="400" src="https://user-images.githubusercontent.com/105127/100917537-4661e100-34a5-11eb-89bd-565b7bc31919.gif" alt="illustartion of installation to build for wmr">
+<img width="400" src="https://user-images.githubusercontent.com/105127/100917537-4661e100-34a5-11eb-89bd-565b7bc31919.gif" alt="illustration of installation to build for wmr">
 </p>
 
 > 💁 If you'd like ESLint to be set up for you, add `--eslint` to the command. _Note: this will use 150mb of disk space._
@@ -72,12 +72,12 @@ yarn workspace wmr build
 
 ### Adding a changeset
 
-Don't forget to also include a changeset, by runing this command at the root of the project:
+Don't forget to also include a changeset, by running this command at the root of the project:
 
 ```sh
 yarn changeset
 ```
 
-This will take you through a process of selecting the changed packages, the version updates and a description of the change. Aferwards, `changesets`, will generate a `.md` file inside a `.changeset` directory. Please commit that file as well.
+This will take you through a process of selecting the changed packages, the version updates and a description of the change. Afterwards, `changesets`, will generate a `.md` file inside a `.changeset` directory. Please commit that file as well.
 
 After all that, you are good to go. :+1
