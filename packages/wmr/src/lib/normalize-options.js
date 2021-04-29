@@ -59,7 +59,9 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 	}
 
 	options.host = process.env.HOST || options.host || 'localhost';
-	options.port = await getPort(options);
+	if (mode !== 'build') {
+		options.port = await getPort(options);
+	}
 
 	// If the CWD has a public/ directory, all files are assumed to be within it.
 	// From here, everything except node_modules and `out` are relative to public:
