@@ -33,13 +33,15 @@ function acornEnvPlugin(env) {
 export default function processGlobalPlugin({ NODE_ENV = 'development', env = {} } = {}) {
 	const processObj = JSON.stringify({ browser: true, env: { ...env, NODE_ENV } });
 
+	const PREFIX = `\0builtins:`;
+
 	return {
 		name: 'process-global',
 		resolveId(id) {
-			if (id === '\0builtins:process.js') return id;
+			if (id === `${PREFIX}process.js`) return id;
 		},
 		load(id) {
-			if (id === '\0builtins:process.js') return `export default ${processObj};`;
+			if (id === `${PREFIX}process.js`) return `export default ${processObj};`;
 		},
 		transform(code) {
 			const orig = code;
@@ -55,7 +57,7 @@ export default function processGlobalPlugin({ NODE_ENV = 'development', env = {}
 			if (code.match(/[^a-zA-Z0-9]process\.env/)) {
 				// hack: avoid injecting imports into commonjs modules
 				if (/^\s*(import|export)[\s{]/gm.test(code)) {
-					code = `import process from '\0builtins:process.js';${code}`;
+					code = `import process from '${PREFIX}process.js';${code}`;
 				} else {
 					code = `var process=${processObj};${code}`;
 				}
