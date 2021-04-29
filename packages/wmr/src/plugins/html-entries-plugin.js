@@ -79,7 +79,7 @@ export default function htmlEntriesPlugin({ cwd, publicDir, publicPath } = {}) {
 								yellow(` <script src="${url}"> is missing type="module".\n`) +
 								white(`${dim('>')} Only module scripts are handled by WMR.\n`) +
 								white(dim('> ' + yellow(entryId) + ': ')) +
-								(frame ? white(frame) : '')
+								(frame ? '\n' + white(frame) : '')
 						);
 						return null;
 					}
