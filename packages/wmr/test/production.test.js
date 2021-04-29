@@ -65,6 +65,25 @@ describe('production', () => {
 		expect(text).toMatch(/fallback: \/assets\/foo\..*\.svg/);
 	});
 
+	describe('import.meta.env', () => {
+		it('should support process.env.NODE_ENV', async () => {
+			await loadFixture('import-meta-env', env);
+			instance = await runWmr(env.tmp.path, 'build');
+			const code = await instance.done;
+
+			expect(code).toEqual(0);
+
+			const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+			cleanup.push(stop);
+
+			await env.page.goto(address, {
+				waitUntil: ['networkidle0', 'load']
+			});
+
+			expect(await env.page.content()).toMatch(/production/);
+		});
+	});
+
 	describe('demo app', () => {
 		it('should serve the demo app', async () => {
 			await loadFixture('../../../../examples/demo', env);
