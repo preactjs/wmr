@@ -5,13 +5,7 @@ import NotFound from './pages/_404.js';
 import Header from './header.tsx';
 import { PageRoutes } from './pages/page-routes.js';
 // import './style.css';
-import { routes } from 'builtins:fs-routes';
-
-console.log(routes);
-const pageRoutes = routes.map(route => {
-	const Comp = lazy(route.load);
-	return <Route path={route.route} component={Comp} />;
-});
+import { routes as pageRoutes } from 'builtins:fs-routes-preact';
 
 const sleep = t => new Promise(r => setTimeout(r, t));
 
