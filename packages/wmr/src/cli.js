@@ -62,12 +62,22 @@ function run(p) {
 	p.catch(catchException);
 }
 
+/**
+ * @param {Error} err
+ */
 function catchException(err) {
-	const text = (err.stack && err.stack.split('\n')[0]) || err.message || err + '';
-	const stack = errorstacks
-		.parseStackTrace(err.stack)
-		.map(frame => frame.raw)
-		.join('\n');
+	let text = '';
+	let stack = '';
+	if (err.stack) {
+		const formattedStack = errorstacks.parseStackTrace(err.stack);
+		if (formattedStack.length > 0) {
+			const idx = err.stack.indexOf(formattedStack[0].raw);
+			text = err.stack.slice(0, idx).trim() + '\n';
+			stack = formattedStack.map(frame => frame.raw).join('\n');
+		}
+	}
+
+	if (!text) text = err.message || err + '';
 
 	process.stderr.write(`\n${kl.red(text)}\n${stack ? kl.dim(stack + '\n\n') : ''}`);
 	process.exit(1);

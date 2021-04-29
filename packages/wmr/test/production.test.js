@@ -1,6 +1,6 @@
 import path from 'path';
 import { promises as fs } from 'fs';
-import { setupTest, teardown, runWmr, loadFixture, serveStatic } from './test-helpers.js';
+import { setupTest, teardown, runWmr, loadFixture, serveStatic, withLog } from './test-helpers.js';
 import { printCoverage, analyzeTrace } from './tracing-helpers.js';
 
 jest.setTimeout(30000);
@@ -41,6 +41,18 @@ describe('production', () => {
 		});
 
 		expect(await env.page.content()).toMatch(/foobarbaz/);
+	});
+
+	it('should throw error on missing module type', async () => {
+		await loadFixture('script-type', env);
+		instance = await runWmr(env.tmp.path, 'build');
+		await withLog(instance.output, async () => {
+			const code = await instance.done;
+			expect(code).toEqual(1);
+
+			const log = instance.output.join('\n');
+			expect(log).toMatch(/No module scripts were found/);
+		});
 	});
 
 	it('should allow overwriting url loader', async () => {

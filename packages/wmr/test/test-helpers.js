@@ -218,6 +218,20 @@ export async function waitForNotMessage(haystack, message, timeout = 1000) {
 }
 
 /**
+ * Print haystack when `fn` throws
+ * @param {string[]} haystack
+ * @param {() => any} fn
+ */
+export async function withLog(haystack, fn) {
+	try {
+		await fn();
+	} catch (err) {
+		console.log(haystack);
+		throw err;
+	}
+}
+
+/**
  * @param {WmrInstance} instance
  * @param {string} urlPath
  * @returns {Promise<{status?: number, body: string, res: import('http').IncomingMessage }>}
