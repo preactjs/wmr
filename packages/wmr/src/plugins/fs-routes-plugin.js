@@ -48,7 +48,7 @@ export default function fsRoutesPlugin({ pagesDir, publicPath, root, cwd }) {
 	const PUBLIC = 'builtins:fs-routes';
 	const INTERNAL = '\0builtins:fs-routes';
 	return {
-		name: 'fs-router',
+		name: 'fs-routes',
 		resolveId(id) {
 			if (id === PUBLIC) {
 				return INTERNAL;
