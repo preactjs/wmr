@@ -39,5 +39,5 @@ export function ErrorBoundary(props) {
 }
 
 function childDidSuspend(err) {
-	err.then(Object).then(this.forceUpdate.bind(this));
+	err.then(() => this.forceUpdate());
 }
