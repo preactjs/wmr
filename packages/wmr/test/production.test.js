@@ -77,6 +77,19 @@ describe('production', () => {
 		expect(text).toMatch(/fallback: \/assets\/foo\..*\.svg/);
 	});
 
+	it('should show all generated files in cli output', async () => {
+		await loadFixture('file-import', env);
+		instance = await runWmr(env.tmp.path, 'build');
+		const code = await instance.done;
+		const output = instance.output;
+		console.log(output);
+
+		expect(code).toEqual(0);
+
+		const stats = output.slice(output.findIndex(line => /Wrote.*to disk/.test(line)));
+		expect(stats.join('\n')).toMatch(/img\..*\.jpg/);
+	});
+
 	describe('import.meta.env', () => {
 		it('should support process.env.NODE_ENV', async () => {
 			await loadFixture('import-meta-env', env);

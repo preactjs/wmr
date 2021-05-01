@@ -1,5 +1,6 @@
 import * as kl from 'kolorist';
 import { promises as fs } from 'fs';
+import path from 'path';
 import { bundleProd } from './bundler.js';
 import { bundleStats } from './lib/output-utils.js';
 import { prerender } from './lib/prerender.js';
@@ -21,8 +22,8 @@ export default async function build(options = {}) {
 
 	const bundleOutput = await bundleProd(options);
 
-	const stats = bundleStats(bundleOutput);
-	process.stdout.write(kl.bold(`Wrote ${stats.totalText} to disk:`) + stats.assetsText + '\n');
+	const stats = bundleStats(bundleOutput, path.relative(options.root, options.out));
+	process.stdout.write(kl.bold(`\nWrote ${stats.totalText} to disk:`) + stats.assetsText + '\n');
 
 	if (!options.prerender) return;
 
