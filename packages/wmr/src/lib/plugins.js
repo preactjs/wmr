@@ -56,7 +56,7 @@ export function getPlugins(options) {
 			}),
 		production && publicPathPlugin({ publicPath }),
 		sassPlugin({ production }),
-		production && wmrStylesPlugin({ hot: false, cwd }),
+		production && wmrStylesPlugin({ hot: false, cwd, production }),
 		processGlobalPlugin({
 			env,
 			NODE_ENV: production ? 'production' : 'development'

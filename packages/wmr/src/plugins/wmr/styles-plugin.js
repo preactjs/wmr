@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import { basename, dirname, relative, resolve, sep, posix } from 'path';
+import { transformCssImports } from '../../lib/transform-css-imports.js';
 import { transformCss } from '../../lib/transform-css.js';
 
 /**
@@ -95,10 +96,14 @@ export async function modularizeCss(css, id, mappings = [], idAbsolute) {
  * @param {string} [options.cwd] Manually specify the cwd from which to resolve filenames (important for calculating hashes!)
  * @param {boolean} [options.hot] Indicates the plugin should inject a HMR-runtime
  * @param {boolean} [options.fullPath] Preserve the full original path when producing CSS assets
+ * @param {boolean} [options.production]
  * @returns {import('rollup').Plugin}
  */
-export default function wmrStylesPlugin({ cwd, hot, fullPath } = {}) {
+export default function wmrStylesPlugin({ cwd, hot, fullPath, production } = {}) {
 	const cwds = new Set();
+
+	let assetId = 0;
+	const assetMap = new Map();
 
 	return {
 		name: 'wmr-styles',
@@ -128,6 +133,33 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath } = {}) {
 					console.warn(`Warning: ICSS ("composes:") is only supported in CSS Modules.`);
 				}
 				source = transformCss(source);
+			}
+
+			// Note: `plugin.generateBundle` is only called during prod builds for
+			// CSS files. So we need to guard the url replacement code.
+			if (production) {
+				source = await transformCssImports(source, idRelative, {
+					async resolveId(spec) {
+						// Rollup doesn't allow assets to depend on other assets. This is a
+						// pretty common case for CSS files referencing images or fonts. To
+						// work around that we'll rewrite every file reference to
+						// `__WMR_ASSET_ID_##`, similar to `import.meta.ROLLUP_FILE_URL_##`.
+						// We'll resolve those in the `generateBundle` phase.
+						// See: https://github.com/rollup/rollup/issues/2872
+						if (spec.indexOf(':') === -1) {
+							const absolute = resolve(dirname(idRelative), spec.split(posix.sep).join(sep));
+
+							if (!absolute.startsWith(cwd)) return;
+
+							const ref = `__WMR_ASSET_ID_${assetId++}`;
+							assetMap.set(ref, {
+								filePath: absolute,
+								source: absolute.endsWith('.css') ? await fs.readFile(absolute, 'utf-8') : await fs.readFile(absolute)
+							});
+							return ref;
+						}
+					}
+				});
 			}
 
 			const ref = this.emitFile({
@@ -177,6 +209,24 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath } = {}) {
 				syntheticNamedExports: true,
 				map: null
 			};
+		},
+		async generateBundle(_, bundle) {
+			for (const id in bundle) {
+				const item = bundle[id];
+
+				if (item.type === 'asset' && item.fileName.endsWith('.css')) {
+					item.source = item.source.replace(/__WMR_ASSET_ID_\d+/g, m => {
+						const mapped = assetMap.get(m);
+						const ref = this.emitFile({
+							type: 'asset',
+							name: basename(mapped.filePath),
+							source: mapped.source
+						});
+
+						return '/' + this.getFileName(ref);
+					});
+				}
+			}
 		}
 	};
 }
