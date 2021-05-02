@@ -228,6 +228,22 @@ describe('fixtures', () => {
 		});
 	});
 
+	describe('CSS', () => {
+		it('should load referenced files via @import', async () => {
+			await loadFixture('css-imports', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+			expect(await env.page.$eval('h1', el => getComputedStyle(el).color)).toBe('rgb(255, 0, 0)');
+		});
+
+		it('should load referenced files via url()', async () => {
+			await loadFixture('css-imports', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+			expect(await env.page.$eval('body', el => getComputedStyle(el).background)).toMatch(/img\.jpg/);
+		});
+	});
+
 	describe('hmr', () => {
 		const timeout = n => new Promise(r => setTimeout(r, n));
 

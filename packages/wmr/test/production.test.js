@@ -90,6 +90,26 @@ describe('production', () => {
 		expect(stats.join('\n')).toMatch(/img\..*\.jpg/);
 	});
 
+	describe('CSS', () => {
+		it('should resolve CSS imports', async () => {
+			await loadFixture('css-imports', env);
+			instance = await runWmr(env.tmp.path, 'build');
+			const code = await instance.done;
+			expect(code).toEqual(0);
+
+			const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+			cleanup.push(stop);
+
+			await env.page.goto(address, {
+				waitUntil: ['networkidle0', 'load']
+			});
+
+			expect(await env.page.$eval('h1', el => getComputedStyle(el).color)).toBe('rgb(255, 0, 0)');
+			expect(await env.page.$eval('h1', el => getComputedStyle(el).backgroundColor)).toBe('rgb(255, 218, 185)');
+			expect(await env.page.$eval('body', el => getComputedStyle(el).backgroundImage)).toContain('.jpg');
+		});
+	});
+
 	describe('import.meta.env', () => {
 		it('should support process.env.NODE_ENV', async () => {
 			await loadFixture('import-meta-env', env);
