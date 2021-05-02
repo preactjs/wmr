@@ -59,7 +59,20 @@ export async function prerender(data) {
 	const res = await render(<App {...data} />);
 
 	const head = toStatic();
-	return { ...res, head };
+	const elements = new Set([
+		...head.links.map(props => ({ type: 'link', props })),
+		...head.metas.map(props => ({ type: 'meta', props })),
+		...head.scripts.map(props => ({ type: 'script', props }))
+	]);
+
+	return {
+		...res,
+		head: {
+			title: head.title,
+			lang: head.lang,
+			elements
+		}
+	};
 }
 
 // @ts-ignore

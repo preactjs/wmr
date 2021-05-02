@@ -441,15 +441,15 @@ describe('production', () => {
 
 			const index = await fs.readFile(path.join(env.tmp.path, 'dist', 'index.html'), 'utf8');
 			expect(index).toMatch('<title>Page: /</title>');
-			expect(index).toMatch('<link rel="icon" href="data:,favicon-for-/">');
+			expect(index).toMatch('<link href="data:,favicon-for-/" rel="icon">');
 			expect(index).toMatch('<h1>page = /</h1>');
-			expect(index).toMatch(`<meta property="og:title" content="Become an SEO Expert">`);
+			expect(index).toMatch(`<meta content="Become an SEO Expert" property="og:title">`);
 
 			const other = await fs.readFile(path.join(env.tmp.path, 'dist', 'other.html'), 'utf8');
 			expect(other).toMatch('<title>Page: /other.html</title>');
-			expect(other).toMatch('<link rel="icon" href="data:,favicon-for-/other.html">');
+			expect(other).toMatch('<link href="data:,favicon-for-/other.html" rel="icon">');
 			expect(other).toMatch('<h1>page = /other.html</h1>');
-			expect(other).toMatch(`<meta property="og:title" content="Become an SEO Expert">`);
+			expect(other).toMatch(`<meta content="Become an SEO Expert" property="og:title">`);
 		});
 
 		it('should support prerendering json', async () => {

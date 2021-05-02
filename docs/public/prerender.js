@@ -19,5 +19,13 @@ export async function prerender(vnode) {
 		await init();
 	}
 	const res = await render(vnode);
-	return { ...res, head: toStatic() };
+
+	const head = toStatic();
+	const elements = new Set([
+		...head.links.map(props => ({ type: 'link', props })),
+		...head.metas.map(props => ({ type: 'meta', props })),
+		...head.scripts.map(props => ({ type: 'script', props }))
+	]);
+
+	return { ...res, head: { lang: head.lang, title: head.title, elements } };
 }

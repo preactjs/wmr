@@ -87,11 +87,46 @@ async function workerCode({ cwd, out, publicPath }) {
 		throw Error(`Unable to detect <script src="entry.js"> in your index.html.`);
 	}
 
+	/** @typedef {{ type: string, props: Record<string, string>, children?: string }} HeadElement */
+
+	/**
+	 * @type {{ lang: string, title: string, elements: Set<HeadElement>}}
+	 */
+	let head = { lang: '', title: '', elements: new Set() };
+	globalThis.wmr = { ssr: { head } };
+
 	// Prevent Rollup from transforming `import()` here.
 	const $import = new Function('s', 'return import(s)');
 	const m = await $import('file:///' + script);
 	const doPrerender = m.prerender;
 	// const App = m.default || m[Object.keys(m)[0]];
+
+	/**
+	 * @param {Set<HeadElement>} elements
+	 * @returns {Set<string>}
+	 */
+	function serializeHead(elements) {
+		return new Set(
+			Array.from(elements).map(e => {
+				if (typeof e !== 'string') {
+					const type = e.type;
+					let s = `<${type}`;
+					s += Object.keys(e.props)
+						.sort()
+						// Filter out empty values
+						.filter(p => e.props[p] != null)
+						.map(p => (p == 'children' ? '' : ` ${p}="${enc(e.props[p])}"`))
+						.join('');
+					s += '>';
+					let kids = e.props.children || e.children;
+					if (!Array.isArray(kids)) kids = [kids];
+					if (!/link|meta|base/.test(type)) s += `${kids.join('')}</${type}>`;
+					return s;
+				}
+				return e;
+			})
+		);
+	}
 
 	// We start by pre-rendering the homepage.
 	// Links discovered during pre-rendering get pushed into the list of routes.
@@ -113,6 +148,8 @@ async function workerCode({ cwd, out, publicPath }) {
 			} catch {}
 		}
 
+		head = { lang: '', title: '', elements: new Set() };
+
 		// Do pre-rendering, as defined by the entry chunk:
 		const result = await doPrerender({ ssr: true, url: route.url, route });
 
@@ -130,12 +167,7 @@ async function workerCode({ cwd, out, publicPath }) {
 			}
 		}
 
-		/**
-		 * @type {{ lang?: string, title?: string, links?: any[], metas?: any[]}}
-		 */
-		let head = {};
 		let body;
-
 		if (result && typeof result === 'object') {
 			if (result.html) body = result.html;
 			if (result.head) {
@@ -149,20 +181,7 @@ async function workerCode({ cwd, out, publicPath }) {
 		// with regex :S
 
 		// Inject HTML links at the end of <head> for any stylesheets injected during rendering of the page:
-		let headHtml = [
-			...new Set(
-				(head.metas || []).map(c => {
-					const attrs = Object.keys(c)
-						.filter(k => c[k])
-						.map(k => `${enc(k)}="${enc(c[k])}"`)
-						.join(' ');
-					return `<meta ${attrs}>`;
-				})
-			),
-			...new Set(
-				(head.links || []).filter(c => c.rel && c.href).map(c => `<link rel="${enc(c.rel)}" href="${enc(c.href)}">`)
-			)
-		].join('');
+		let headHtml = head.elements ? Array.from(serializeHead(head.elements)).join('') : '';
 
 		let html = tpl;
 
