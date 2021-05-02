@@ -374,6 +374,15 @@ describe('production', () => {
 		 */
 		const readdir = async (env, f) => (await fs.readdir(path.join(env.tmp.path, f))).filter(f => f[0] !== '.');
 
+		it('should print warning on missing entry', async () => {
+			await loadFixture('prerender-missing-entry', env);
+			instance = await runWmr(env.tmp.path, 'build', '--prerender');
+			const code = await instance.done;
+			expect(instance.output.join('\n')).toMatch(/file not found/i);
+			expect(instance.output.join('\n')).toMatch(/is the extension correct/i);
+			expect(code).toBe(1);
+		});
+
 		it('should support prerendered HTML, title & meta tags', async () => {
 			await loadFixture('prod-head', env);
 			instance = await runWmr(env.tmp.path, 'build', '--prerender');
