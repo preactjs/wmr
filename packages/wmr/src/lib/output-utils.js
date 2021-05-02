@@ -119,8 +119,17 @@ function selectColor(namespace) {
 	return colors[Math.abs(hash) % colors.length];
 }
 
+let debugCliArg = false;
+
+/**
+ * @param {boolean} enabled
+ */
+export function setDebugCliArg(enabled) {
+	debugCliArg = enabled;
+}
+
 export function hasDebugFlag() {
-	return process.env.DEBUG === 'true' || process.env.DEBUG === '1';
+	return process.env.DEBUG === 'true' || process.env.DEBUG === '1' || debugCliArg;
 }
 
 /**

@@ -3,7 +3,7 @@ import { promises as fs } from 'fs';
 import url from 'url';
 import { readEnvFiles } from './environment.js';
 import { compileSingleModule } from './compile-single-module.js';
-import { debug } from './output-utils.js';
+import { debug, setDebugCliArg } from './output-utils.js';
 import { getPort, supportsSearchParams } from './net-utils.js';
 
 /**
@@ -15,6 +15,8 @@ import { getPort, supportsSearchParams } from './net-utils.js';
 export async function normalizeOptions(options, mode, configWatchFiles = []) {
 	options.cwd = resolve(options.cwd || '');
 	process.chdir(options.cwd);
+
+	if (options.debug) setDebugCliArg(true);
 
 	options.root = options.cwd;
 

@@ -17,7 +17,10 @@ function bool(v) {
 prog
 	.option('--public', 'Your web app root directory (default: ./public)')
 	.option('--out', 'Where to store generated files (default: ./dist)')
-	.option('--cwd', 'The working directory - equivalent to "(cd FOO && wmr)"');
+	.option('--cwd', 'The working directory - equivalent to "(cd FOO && wmr)"')
+	// Setting env variables isn't common knowledege for many windows users. Much
+	// easier to pass a flag to our binary instead.
+	.option('--debug', 'Print internal debugging messages to the console. Same as setting DEBUG=true');
 
 prog
 	.command('build', 'make a production build')
