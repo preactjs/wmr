@@ -50,33 +50,12 @@ async function workerCode({ cwd, out, publicPath }) {
 
 	const path = require('path');
 	const fs = require('fs').promises;
-	const BEFORE = Symbol('before');
-	const AFTER = Symbol('after');
 
 	function enc(str) {
 		return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 	}
 
 	globalThis.location = /** @type {object} */ ({});
-
-	globalThis.document = /** @type {object} */ ({
-		createElement(type) {
-			return { type };
-		},
-		querySelector() {},
-		head: {
-			[BEFORE]: '',
-			[AFTER]: '',
-			children: /** @type {any[]} */ ([]),
-			appendChild(c) {
-				this.children.push(c);
-			},
-			/** @param {'afterbegin'|'beforeend'} position @param {string} html */
-			insertAdjacentHTML(position, html) {
-				this[position === 'afterbegin' ? BEFORE : AFTER] += String(html);
-			}
-		}
-	});
 
 	globalThis.self = /** @type {any} */ (globalThis);
 
@@ -134,11 +113,6 @@ async function workerCode({ cwd, out, publicPath }) {
 			} catch {}
 		}
 
-		// Reset document.head so that CSS for the current route will be injected into it:
-		// @ts-ignore
-		const head = (document.head.children = []);
-		document.head[BEFORE] = document.head[AFTER] = '';
-
 		// Do pre-rendering, as defined by the entry chunk:
 		const result = await doPrerender({ ssr: true, url: route.url, route });
 
@@ -155,25 +129,56 @@ async function workerCode({ cwd, out, publicPath }) {
 				routes.push({ url, _discoveredBy: route });
 			}
 		}
-		const body = (result && result.html) || result;
+
+		/**
+		 * @type {{ lang?: string, title?: string, links?: any[], metas?: any[]}}
+		 */
+		let head = {};
+		let body;
+
+		if (result && typeof result === 'object') {
+			if (result.html) body = result.html;
+			if (result.head) {
+				head = result.head;
+			}
+		} else {
+			body = result;
+		}
+
+		// TODO: Use a proper HTML parser here. We should definitely not parse HTML
+		// with regex :S
 
 		// Inject HTML links at the end of <head> for any stylesheets injected during rendering of the page:
 		let headHtml = [
-			document.head[BEFORE],
-			...new Set(head.filter(c => c.rel && c.href).map(c => `<link rel="${enc(c.rel)}" href="${enc(c.href)}">`)),
-			document.head[AFTER]
+			...new Set(
+				(head.metas || []).map(c => {
+					const attrs = Object.keys(c)
+						.map(k => `${enc(k)}="${enc(c[k])}"`)
+						.join(' ');
+					return `<meta ${attrs}>`;
+				})
+			),
+			...new Set(
+				(head.links || []).filter(c => c.rel && c.href).map(c => `<link rel="${enc(c.rel)}" href="${enc(c.href)}">`)
+			)
 		].join('');
 
 		let html = tpl;
 
-		if (document.title) {
-			const title = `<title>${enc(document.title)}</title>`;
+		if (head.title) {
+			const title = `<title>${enc(head.title)}</title>`;
 			const matchTitle = /<title>([^<>]*?)<\/title>/i;
 			if (matchTitle.test(html)) {
 				html = html.replace(matchTitle, title);
 			} else {
 				headHtml = title + headHtml;
 			}
+		}
+
+		if (head.lang) {
+			// TODO: This removes any existing attributes, but merging them without
+			// a proper HTML parser is way too error prone.
+			html = html.replace(/(<html(\s[^>]*?)?>)/, `<html lang="${enc(head.lang)}">`);
 		}
 
 		html = html.replace(/(<\/head>)/, headHtml + '$1');
