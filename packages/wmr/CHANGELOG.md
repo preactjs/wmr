@@ -1,5 +1,33 @@
 # wmr
 
+## 1.7.0
+
+### Minor Changes
+
+- [`f892650`](https://github.com/preactjs/wmr/commit/f892650a084a95cfa21a23969d04fd63f374a7b7) [#549](https://github.com/preactjs/wmr/pull/549) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Render an error overlay into the page on build errors
+
+* [`f504d22`](https://github.com/preactjs/wmr/commit/f504d22019fcb3914efd3223f22983710c8cc288) [#562](https://github.com/preactjs/wmr/pull/562) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Add support for loading environment variables from `import.meta.env`
+
+### Patch Changes
+
+- [`d2cad4e`](https://github.com/preactjs/wmr/commit/d2cad4e0f5d1330e0cb0e9ae4b8a530080e483a8) [#565](https://github.com/preactjs/wmr/pull/565) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix missing build errors in terminal
+
+* [`d3c29ef`](https://github.com/preactjs/wmr/commit/d3c29efb15b20a642278e2582225eefe97bbc3ab) [#560](https://github.com/preactjs/wmr/pull/560) Thanks [@ForsakenHarmony](https://github.com/ForsakenHarmony)! - fix: don't forward to next after responding
+
+- [`51bea9c`](https://github.com/preactjs/wmr/commit/51bea9ce97d8de5ad81060736561f5ce6bcfe55b) [#561](https://github.com/preactjs/wmr/pull/561) Thanks [@ForsakenHarmony](https://github.com/ForsakenHarmony)! - chore: make cli easier to read and add uncaught exception handler
+
+* [`3c4c993`](https://github.com/preactjs/wmr/commit/3c4c993789ca060eab7ccf46a04f243d2e609f18) [#566](https://github.com/preactjs/wmr/pull/566) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix partially indented code frame on html warnings
+
+- [`18b8f00`](https://github.com/preactjs/wmr/commit/18b8f00923ddf578f2f747c35bd24a8039eee3ba) [#570](https://github.com/preactjs/wmr/pull/570) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix assets referenced in CSS not copied to outdir
+
+* [`e6ecd14`](https://github.com/preactjs/wmr/commit/e6ecd1447dfa136ea303bfe2068d5c894c32a7c6) [#573](https://github.com/preactjs/wmr/pull/573) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Throw an error when an entry file referenced in a script tag inside the HTML cannot be found
+
+- [`2ce4d36`](https://github.com/preactjs/wmr/commit/2ce4d366921f7e73b595b3de2243c274ad1a0fed) [#558](https://github.com/preactjs/wmr/pull/558) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix stale file content for entry files in watch mode
+
+* [`41010c3`](https://github.com/preactjs/wmr/commit/41010c3b97648e88794a03e64f43720213186718) [#572](https://github.com/preactjs/wmr/pull/572) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix missing generated files on cli output on build
+
+- [`152be6c`](https://github.com/preactjs/wmr/commit/152be6c682462aaf3f3c29deb269d38efd95d95d) [#568](https://github.com/preactjs/wmr/pull/568) Thanks [@developit](https://github.com/developit)! - Prevent `wmr build` from checking port availability
+
 ## 1.6.0
 
 ### Minor Changes
