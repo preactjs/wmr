@@ -45,6 +45,7 @@ declare module 'wmr' {
 		output: OutputOption[];
 		features: Features;
 		visualize: boolean;
+		debug: boolean;
 	}
 
 	export type BuildError = RollupError & { clientMessage?: string };
