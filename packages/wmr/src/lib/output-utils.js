@@ -1,17 +1,25 @@
 import * as kl from 'kolorist';
 import { createCodeFrame } from 'simple-code-frame';
 import * as util from 'util';
+import path from 'path';
 
-/** @param {import('rollup').RollupOutput} bundle */
-export function bundleStats(bundle) {
+/**
+ * @param {import('rollup').RollupOutput} bundle
+ * @param {string} outDir
+ */
+export function bundleStats(bundle, outDir) {
 	let total = 0;
 	const assets = bundle.output
 		.filter(asset => !/\.map$/.test(asset.fileName))
 		.sort((a, b) => scoreAsset(b) - scoreAsset(a));
 
+	let nonCssAsset = false;
 	const assetsText = assets.reduce((str, output) => {
 		// TODO: group output and bring back asset sizes
-		if (output.type === 'asset' && !/\.(css|html)/.test(output.fileName)) return str;
+		if (!nonCssAsset && output.type === 'asset' && !/\.(css|html)/.test(output.fileName)) {
+			str += '\n';
+			nonCssAsset = true;
+		}
 
 		const content = output.type === 'asset' ? output.source : output.code;
 		const size = content.length;
@@ -21,7 +29,14 @@ export function bundleStats(bundle) {
 		else if (size > 10e3) sizeText = kl.lightYellow(sizeText);
 		else if (size > 5e3) sizeText = kl.lightBlue(sizeText);
 		else sizeText = kl.lightGreen(sizeText);
-		return `${str}\n  ${output.fileName} ${sizeText}`;
+
+		let { fileName } = output;
+		fileName = fileName.endsWith('.js')
+			? kl.cyan(fileName)
+			: fileName.endsWith('.css')
+			? kl.magenta(fileName)
+			: fileName;
+		return `${str}\n  ${kl.dim(outDir + path.sep)}${fileName} ${sizeText}`;
 	}, '');
 
 	const totalText = prettyBytes(total);
@@ -38,6 +53,12 @@ function scoreAsset(asset) {
 	if (/\.html$/.test(asset.fileName)) {
 		return 30 - asset.fileName.split('/').length;
 	}
+	// ...then CSS files
+	else if (/\.css$/.test(asset.fileName)) {
+		return 10;
+	}
+
+	// ...and everything else after that
 	return 1;
 }
 
