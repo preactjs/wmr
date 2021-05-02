@@ -153,6 +153,7 @@ async function workerCode({ cwd, out, publicPath }) {
 			...new Set(
 				(head.metas || []).map(c => {
 					const attrs = Object.keys(c)
+						.filter(k => c[k])
 						.map(k => `${enc(k)}="${enc(c[k])}"`)
 						.join(' ');
 					return `<meta ${attrs}>`;
