@@ -1,5 +1,19 @@
 # preact-iso
 
+## 2.0.0
+
+### Major Changes
+
+- [`8e8690a`](https://github.com/preactjs/wmr/commit/8e8690afee44e6d2bb83201ec3b283a89331995b) [#557](https://github.com/preactjs/wmr/pull/557) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix route params being able to overwrite route context. This is a breaking change in that params no need to be pulled off a `params` object instead of accessing it directly
+
+### Patch Changes
+
+- [`8a44d75`](https://github.com/preactjs/wmr/commit/8a44d756ccb72d32c36e6ed03d618462dd8a6ba3) [#571](https://github.com/preactjs/wmr/pull/571) Thanks [@developit](https://github.com/developit)! - preact-iso: fix ErrorBoundary pushing invalid callback into commit queue
+
+* [`6f93a06`](https://github.com/preactjs/wmr/commit/6f93a06bb2065e5fef15eb4f2bfffbd07bcc616d) [#567](https://github.com/preactjs/wmr/pull/567) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Update preact/iso TypeScript types
+
+- [`c7ca0a4`](https://github.com/preactjs/wmr/commit/c7ca0a436bfe99ff9d8d15dbad6b111cae40f799) [#555](https://github.com/preactjs/wmr/pull/555) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix crash when passing dynamic arrays as children. This was caused by missing children normalization.
+
 ## 1.2.0
 
 ### Minor Changes
