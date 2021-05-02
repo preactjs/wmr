@@ -90,14 +90,23 @@ async function workerCode({ cwd, out, publicPath }) {
 	// Grab the generated HTML file, which we'll use as a template:
 	const tpl = await fs.readFile(path.resolve(cwd, out, 'index.html'), 'utf-8');
 
-	// The first script in the file is assumed to have a .prerender export:
-	let script = (tpl.match(/<script(?:\s[^>]*?)?\s+src=(['"]?)([^>]*?)\1(?:\s[^>]*?)?>/) || [])[2];
+	// The first script in the file that is not external is assumed to have a
+	// `prerender` export
+	let script;
+	const SCRIPT_TAG = /<script(?:\s[^>]*?)?\s+src=(['"]?)([^>]*?)\1(?:\s[^>]*?)?>/g;
+
+	let match;
+	while ((match = SCRIPT_TAG.exec(tpl))) {
+		// Ignore external urls
+		if (!match || /^(?:https?|file|data)/.test(match[2])) continue;
+
+		script = match[2].replace(publicPath, '').replace(/^(\.?\/)?/g, '');
+		script = path.resolve(cwd, out, script);
+	}
+
 	if (!script) {
 		throw Error(`Unable to detect <script src="entry.js"> in your index.html.`);
 	}
-	// script = new URL(`../dist/${script.replace(/^(\.?\/)?/g, '')}`, selfUrl).href;
-	script = script.replace(publicPath, '');
-	script = path.resolve(cwd, out, script.replace(/^(\.?\/)?/g, ''));
 
 	// Prevent Rollup from transforming `import()` here.
 	const $import = new Function('s', 'return import(s)');
