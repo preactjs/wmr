@@ -87,7 +87,7 @@ async function workerCode({ cwd, out, publicPath }) {
 		throw Error(`Unable to detect <script src="entry.js"> in your index.html.`);
 	}
 
-	/** @typedef {{ type: string, props: Record<string, string>, children?: string }} HeadElement */
+	/** @typedef {{ type: string, props: Record<string, string>, children?: string } | string | null} HeadElement */
 
 	/**
 	 * @type {{ lang: string, title: string, elements: Set<HeadElement>}}
@@ -102,32 +102,31 @@ async function workerCode({ cwd, out, publicPath }) {
 	// const App = m.default || m[Object.keys(m)[0]];
 
 	/**
-	 * @param {Set<HeadElement>} elements
-	 * @returns {Set<string>}
+	 * @param {HeadElement|HeadElement[]|Set<HeadElement>} element
+	 * @returns {string} html
 	 */
-	function serializeHead(elements) {
-		return new Set(
-			Array.from(elements).map(e => {
-				if (typeof e !== 'string') {
-					const type = e.type;
-					let s = `<${type}`;
-					s += Object.keys(e.props)
-						.sort()
-						// Filter out empty values
-						.filter(p => e.props[p] != null)
-						.map(p => (p == 'children' ? '' : ` ${p}="${enc(e.props[p])}"`))
-						.join('');
-					s += '>';
-					let kids = e.props.children || e.children;
-					if (!Array.isArray(kids)) kids = [kids];
-					if (!/link|meta|base/.test(type)) s += `${kids.join('')}</${type}>`;
-					return s;
-				}
-				return e;
-			})
-		);
+	function serializeElement(element) {
+		if (element == null) return '';
+		if (typeof element !== 'object') return String(element);
+		if (Array.isArray(element)) return element.map(serializeElement).join('');
+		const type = element.type;
+		let s = `<${type}`;
+		const props = element.props || {};
+		let children = element.children;
+		for (const prop of Object.keys(props).sort()) {
+			const value = props[prop];
+			// Filter out empty values:
+			if (value == null) continue;
+			if (prop === 'children' || prop === 'textContent') children = value;
+			else s += ` ${prop}="${enc(value)}"`;
+		}
+		s += '>';
+		if (!/link|meta|base/.test(type)) {
+			if (children) s += serializeElement(children);
+			s += `</${type}>`;
+		}
+		return s;
 	}
-
 	// We start by pre-rendering the homepage.
 	// Links discovered during pre-rendering get pushed into the list of routes.
 	const seen = new Set(['/']);
@@ -181,7 +180,7 @@ async function workerCode({ cwd, out, publicPath }) {
 		// with regex :S
 
 		// Inject HTML links at the end of <head> for any stylesheets injected during rendering of the page:
-		let headHtml = head.elements ? Array.from(serializeHead(head.elements)).join('') : '';
+		let headHtml = head.elements ? Array.from(new Set(Array.from(head.elements).map(serializeElement))).join('') : '';
 
 		let html = tpl;
 
