@@ -11,7 +11,8 @@
 	"dependencies": {
 		"preact": "^10.5.13",
 		"preact-iso": "*",
-		"preact-markup": "^2.1.1"
+		"preact-markup": "^2.1.1",
+		"hoofd": "^1.2.2"
 	},
 	"devDependencies": {
 		"@wmrjs/directory-import": "*",

@@ -1,4 +1,5 @@
 import render from 'preact-iso/prerender';
+import { toStatic } from 'hoofd/preact';
 
 let initialized = false;
 // install a fetch+DOMParser "polyfills" for Node (used by content & <Markup>)
@@ -17,5 +18,6 @@ export async function prerender(vnode) {
 		initialized = true;
 		await init();
 	}
-	return await render(vnode);
+	const res = await render(vnode);
+	return { ...res, head: toStatic() };
 }
