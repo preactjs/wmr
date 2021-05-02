@@ -518,6 +518,15 @@ describe('fixtures', () => {
 		});
 	});
 
+	describe('import.meta.env', () => {
+		it('should support process.env.NODE_ENV', async () => {
+			await loadFixture('import-meta-env', env);
+			instance = await runWmrFast(env.tmp.path);
+			const output = await getOutput(env, instance);
+			expect(output).toMatch(/development/i);
+		});
+	});
+
 	describe('json', () => {
 		it('should allow importing .json files', async () => {
 			await loadFixture('json', env);

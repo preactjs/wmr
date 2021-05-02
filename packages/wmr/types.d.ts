@@ -73,6 +73,7 @@ declare interface ImportMeta {
 		invalidate(): void;
 		reject(): void;
 	};
+	env: Record<string, string>;
 }
 
 declare interface NodeModule {

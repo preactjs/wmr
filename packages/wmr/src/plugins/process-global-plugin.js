@@ -1,3 +1,28 @@
+import { transform } from '../lib/acorn-traverse.js';
+
+/**
+ * Plugin to replace `process.env.MY_VAR` or `import.meta.env.MY_VAR` with
+ * the actual value.
+ * @param {Record<string, string>} env
+ */
+function acornEnvPlugin(env) {
+	return () => {
+		return {
+			name: 'transform-env',
+			visitor: {
+				MemberExpression(path) {
+					const source = path.getSource();
+					const match = source.match(/^(?:import\.meta|process)\.env\.(.+)/);
+
+					if (match) {
+						path.replaceWithString(JSON.stringify(env[match[1]]));
+					}
+				}
+			}
+		};
+	};
+}
+
 /**
  * Inject process globals and inline process.env.NODE_ENV.
  * @param {object} [options]
@@ -8,31 +33,31 @@
 export default function processGlobalPlugin({ NODE_ENV = 'development', env = {} } = {}) {
 	const processObj = JSON.stringify({ browser: true, env: { ...env, NODE_ENV } });
 
+	const PREFIX = `\0builtins:`;
+
 	return {
 		name: 'process-global',
 		resolveId(id) {
-			if (id === '\0builtins:process.js') return id;
+			if (id === `${PREFIX}process.js`) return id;
 		},
 		load(id) {
-			if (id === '\0builtins:process.js') return `export default ${processObj};`;
+			if (id === `${PREFIX}process.js`) return `export default ${processObj};`;
 		},
 		transform(code) {
 			const orig = code;
-			// TODO: this should probably use acorn-traverse.
-			code = code.replace(
-				/([(){}&|,;=!]\s*)process\.env\.NODE_ENV\s*([!=]==?)\s*(['"])(.*?)\3/g,
-				(str, before, comparator, quote, value) => {
-					let isMatch = value == NODE_ENV;
-					if (comparator[0] == '!') isMatch = !isMatch;
-					return before + isMatch;
-				}
-			);
+
+			const result = transform(code, {
+				plugins: [acornEnvPlugin({ ...env, NODE_ENV })],
+				parse: this.parse
+			});
+
+			code = result.code;
 
 			// if that wasn't the only way `process.env` was referenced...
 			if (code.match(/[^a-zA-Z0-9]process\.env/)) {
 				// hack: avoid injecting imports into commonjs modules
 				if (/^\s*(import|export)[\s{]/gm.test(code)) {
-					code = `import process from '\0builtins:process.js';${code}`;
+					code = `import process from '${PREFIX}process.js';${code}`;
 				} else {
 					code = `var process=${processObj};${code}`;
 				}
