@@ -67,6 +67,9 @@ export async function prerender(data) {
 
 	return {
 		...res,
+		data: {
+			hello: 'world',
+		},
 		head: {
 			title: head.title,
 			lang: head.lang,

@@ -172,6 +172,12 @@ async function workerCode({ cwd, out, publicPath }) {
 			if (result.head) {
 				head = result.head;
 			}
+
+			if (result.data && typeof result.data === 'object') {
+				body += `<script type="isodata">${JSON.stringify(result.data)}</script>`;
+			} else if (result.data) {
+				console.warn('You passed in prerender-data in a non-object format: ', result.data);
+			}
 		} else {
 			body = result;
 		}

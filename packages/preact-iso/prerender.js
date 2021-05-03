@@ -46,8 +46,7 @@ export default async function prerender(vnode, options) {
 	};
 
 	try {
-		let html = await render();
-		html += `<script type="isodata"></script>`;
+		const html = await render();
 		return { html, links };
 	} finally {
 		vnodeHook = null;
