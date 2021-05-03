@@ -135,6 +135,16 @@ export default function wmrMiddleware(options) {
 			return next();
 		}
 
+		// Workaround for transform forcing extensionless ids to be
+		// non-js
+		let hasIdPrefix = false;
+
+		// Path for virtual modules that refer to an unprefixed id.
+		if (path.startsWith('/@id/')) {
+			hasIdPrefix = true;
+			path = path.slice('/@id'.length);
+		}
+
 		let prefix = '';
 		const prefixMatches = path.match(/^\/?@([a-z-]+)(\/.+)$/);
 		if (prefixMatches) {
@@ -167,7 +177,7 @@ export default function wmrMiddleware(options) {
 			transform = getWmrClient.bind(null);
 		} else if (queryParams.has('asset')) {
 			transform = TRANSFORMS.asset;
-		} else if (prefix) {
+		} else if (prefix || hasIdPrefix) {
 			transform = TRANSFORMS.js;
 		} else if (/\.(css|s[ac]ss)\.js$/.test(file)) {
 			transform = TRANSFORMS.cssModule;
@@ -340,18 +350,28 @@ export const TRANSFORMS = {
 
 					// Bare specifiers are npm packages:
 					if (!/^\0?\.?\.?[/\\]/.test(spec)) {
-						const meta = normalizeSpecifier(spec);
+						// Check if this is a virtual module path from a plugin. If
+						// no plugin loads the id, then we know that the bare specifier
+						// must refer to an npm plugin.
+						// TODO: Cache the result to avoid having to load an id twice.
+						const res = await NonRollup.load(spec);
 
-						// // Option 1: resolve all package verions (note: adds non-trivial delay to imports)
-						// await resolvePackageVersion(meta);
-						// // Option 2: omit package versions that resolve to the root
-						// // if ((await resolvePackageVersion({ module: meta.module, version: '' })).version === meta.version) {
-						// // 	meta.version = '';
-						// // }
-						// spec = `/@npm/${meta.module}${meta.version ? '@' + meta.version : ''}${meta.path ? '/' + meta.path : ''}`;
+						if (res === null) {
+							const meta = normalizeSpecifier(spec);
 
-						// Option 3: omit root package versions
-						spec = `/@npm/${meta.module}${meta.path ? '/' + meta.path : ''}`;
+							// // Option 1: resolve all package verions (note: adds non-trivial delay to imports)
+							// await resolvePackageVersion(meta);
+							// // Option 2: omit package versions that resolve to the root
+							// // if ((await resolvePackageVersion({ module: meta.module, version: '' })).version === meta.version) {
+							// // 	meta.version = '';
+							// // }
+							// spec = `/@npm/${meta.module}${meta.version ? '@' + meta.version : ''}${meta.path ? '/' + meta.path : ''}`;
+
+							// Option 3: omit root package versions
+							spec = `/@npm/${meta.module}${meta.path ? '/' + meta.path : ''}`;
+						} else {
+							spec = `/@id/${spec}`;
+						}
 					}
 
 					const modSpec = spec.startsWith('../') ? spec.replace(/..\/g/, '') : spec.replace('./', '');

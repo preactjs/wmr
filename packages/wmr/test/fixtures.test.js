@@ -94,6 +94,14 @@ describe('fixtures', () => {
 		expect(text).toMatch(/fallback: \/foo\.svg\?asset/);
 	});
 
+	it('should support virtual ids', async () => {
+		await loadFixture('virtual-id', env);
+		instance = await runWmrFast(env.tmp.path);
+		const text = await getOutput(env, instance);
+
+		expect(text).toMatch('it works');
+	});
+
 	describe('empty', () => {
 		it('should print warning for missing index.html file in public dir', async () => {
 			await loadFixture('empty', env);
