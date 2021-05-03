@@ -46,7 +46,9 @@ describe('boot', () => {
 
 		await waitForMessage(instance.output, /Wrote/);
 
-		const files = (await fs.readdir(env.tmp.path)).filter(file => !file.startsWith('.env') && file !== 'wmr-main.mjs');
+		const files = (await fs.readdir(env.tmp.path)).filter(
+			file => !file.startsWith('.env') && !file.includes('node_modules')
+		);
 		expect(files).toEqual(['dist', 'public']);
 
 		const dist = await fs.readdir(path.join(env.tmp.path, 'dist'));
