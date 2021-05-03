@@ -18,7 +18,13 @@ export default async function build(options = {}) {
 
 	options = await normalizeOptions(options, 'build');
 
-	await fs.rmdir(options.out, { recursive: true });
+	// Clears out the output folder without deleting it -- useful
+	// when mounted with Docker and the like
+	(await fs.readdir(options.out)).forEach(async item => {
+		item = path.join(options.out, item);
+		if ((await fs.stat(item)).isFile()) await fs.unlink(item);
+		else await fs.rmdir(item, { recursive: true });
+	});
 
 	const bundleOutput = await bundleProd(options);
 
