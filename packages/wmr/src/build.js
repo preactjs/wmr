@@ -21,7 +21,7 @@ export default async function build(options) {
 
 	// Clears out the output folder without deleting it -- useful
 	// when mounted with Docker and the like
-	await Promise.all((await fs.readdir(options.out)).map(item => rm(path.join(options.out, item))));
+	await Promise.all((await fs.readdir(options.out)).map(item => rm(path.join(options.out, item), { recursive: true })));
 
 	const bundleOutput = await bundleProd(options);
 
