@@ -1,5 +1,6 @@
 import tmp from 'tmp-promise';
 import path from 'path';
+import { promises as fs } from 'fs';
 import ncpCb from 'ncp';
 import childProcess from 'child_process';
 import { promisify } from 'util';
@@ -50,6 +51,20 @@ export async function teardown(env) {
 export async function loadFixture(name, env) {
 	const fixture = path.join(__dirname, 'fixtures', name);
 	await ncp(fixture, env.tmp.path);
+	try {
+		await fs.mkdir(path.join(env.tmp.path, 'node_modules', 'wmr'), { recursive: true });
+	} catch (err) {
+		if (!/EEXIST/.test(err.message)) {
+			throw err;
+		}
+	}
+
+	// Copy fake wmr node_modules over
+	await fs.copyFile(path.join(__dirname, '..', 'index.js'), path.join(env.tmp.path, 'node_modules', 'wmr', 'index.js'));
+	await fs.copyFile(
+		path.join(__dirname, '..', 'package.json'),
+		path.join(env.tmp.path, 'node_modules', 'wmr', 'package.json')
+	);
 }
 
 /**

@@ -7,11 +7,12 @@ const copy = dry ? (f, t) => console.info(`copy ${f} to ${t}`) : copyFileSync;
 
 const pkg = JSON.parse(read('package.json'));
 copy('package.json', '.package.json');
-const { name, version, bin, author, contributors, repository, dependencies, types, files, engines } = pkg;
+const { name, version, bin, author, contributors, repository, dependencies, types, files, engines, main } = pkg;
 const normalized = {
 	name,
 	version,
 	bin,
+	main,
 	author,
 	contributors,
 	repository,
