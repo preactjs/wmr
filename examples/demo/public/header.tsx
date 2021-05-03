@@ -14,6 +14,7 @@ export default function Header() {
 				<a href="/env">Env</a>
 				<a href="/json">JSON</a>
 				<a href="/error">Error</a>
+				<a href="/meta-tags">Meta-Tags</a>
 			</nav>
 			<label>
 				URL:

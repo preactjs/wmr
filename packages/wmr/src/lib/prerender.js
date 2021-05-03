@@ -50,33 +50,12 @@ async function workerCode({ cwd, out, publicPath }) {
 
 	const path = require('path');
 	const fs = require('fs').promises;
-	const BEFORE = Symbol('before');
-	const AFTER = Symbol('after');
 
 	function enc(str) {
 		return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 	}
 
 	globalThis.location = /** @type {object} */ ({});
-
-	globalThis.document = /** @type {object} */ ({
-		createElement(type) {
-			return { type };
-		},
-		querySelector() {},
-		head: {
-			[BEFORE]: '',
-			[AFTER]: '',
-			children: /** @type {any[]} */ ([]),
-			appendChild(c) {
-				this.children.push(c);
-			},
-			/** @param {'afterbegin'|'beforeend'} position @param {string} html */
-			insertAdjacentHTML(position, html) {
-				this[position === 'afterbegin' ? BEFORE : AFTER] += String(html);
-			}
-		}
-	});
 
 	globalThis.self = /** @type {any} */ (globalThis);
 
@@ -108,12 +87,46 @@ async function workerCode({ cwd, out, publicPath }) {
 		throw Error(`Unable to detect <script src="entry.js"> in your index.html.`);
 	}
 
+	/** @typedef {{ type: string, props: Record<string, string>, children?: string } | string | null} HeadElement */
+
+	/**
+	 * @type {{ lang: string, title: string, elements: Set<HeadElement>}}
+	 */
+	let head = { lang: '', title: '', elements: new Set() };
+	globalThis.wmr = { ssr: { head } };
+
 	// Prevent Rollup from transforming `import()` here.
 	const $import = new Function('s', 'return import(s)');
 	const m = await $import('file:///' + script);
 	const doPrerender = m.prerender;
 	// const App = m.default || m[Object.keys(m)[0]];
 
+	/**
+	 * @param {HeadElement|HeadElement[]|Set<HeadElement>} element
+	 * @returns {string} html
+	 */
+	function serializeElement(element) {
+		if (element == null) return '';
+		if (typeof element !== 'object') return String(element);
+		if (Array.isArray(element)) return element.map(serializeElement).join('');
+		const type = element.type;
+		let s = `<${type}`;
+		const props = element.props || {};
+		let children = element.children;
+		for (const prop of Object.keys(props).sort()) {
+			const value = props[prop];
+			// Filter out empty values:
+			if (value == null) continue;
+			if (prop === 'children' || prop === 'textContent') children = value;
+			else s += ` ${prop}="${enc(value)}"`;
+		}
+		s += '>';
+		if (!/link|meta|base/.test(type)) {
+			if (children) s += serializeElement(children);
+			s += `</${type}>`;
+		}
+		return s;
+	}
 	// We start by pre-rendering the homepage.
 	// Links discovered during pre-rendering get pushed into the list of routes.
 	const seen = new Set(['/']);
@@ -134,10 +147,7 @@ async function workerCode({ cwd, out, publicPath }) {
 			} catch {}
 		}
 
-		// Reset document.head so that CSS for the current route will be injected into it:
-		// @ts-ignore
-		const head = (document.head.children = []);
-		document.head[BEFORE] = document.head[AFTER] = '';
+		head = { lang: '', title: '', elements: new Set() };
 
 		// Do pre-rendering, as defined by the entry chunk:
 		const result = await doPrerender({ ssr: true, url: route.url, route });
@@ -155,25 +165,39 @@ async function workerCode({ cwd, out, publicPath }) {
 				routes.push({ url, _discoveredBy: route });
 			}
 		}
-		const body = (result && result.html) || result;
+
+		let body;
+		if (result && typeof result === 'object') {
+			if (result.html) body = result.html;
+			if (result.head) {
+				head = result.head;
+			}
+		} else {
+			body = result;
+		}
+
+		// TODO: Use a proper HTML parser here. We should definitely not parse HTML
+		// with regex :S
 
 		// Inject HTML links at the end of <head> for any stylesheets injected during rendering of the page:
-		let headHtml = [
-			document.head[BEFORE],
-			...new Set(head.filter(c => c.rel && c.href).map(c => `<link rel="${enc(c.rel)}" href="${enc(c.href)}">`)),
-			document.head[AFTER]
-		].join('');
+		let headHtml = head.elements ? Array.from(new Set(Array.from(head.elements).map(serializeElement))).join('') : '';
 
 		let html = tpl;
 
-		if (document.title) {
-			const title = `<title>${enc(document.title)}</title>`;
+		if (head.title) {
+			const title = `<title>${enc(head.title)}</title>`;
 			const matchTitle = /<title>([^<>]*?)<\/title>/i;
 			if (matchTitle.test(html)) {
 				html = html.replace(matchTitle, title);
 			} else {
 				headHtml = title + headHtml;
 			}
+		}
+
+		if (head.lang) {
+			// TODO: This removes any existing attributes, but merging them without
+			// a proper HTML parser is way too error prone.
+			html = html.replace(/(<html(\s[^>]*?)?>)/, `<html lang="${enc(head.lang)}">`);
 		}
 
 		html = html.replace(/(<\/head>)/, headHtml + '$1');

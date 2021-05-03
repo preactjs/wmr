@@ -1,5 +1,6 @@
 import { LocationProvider, Router } from 'preact-iso/router';
 import lazy, { ErrorBoundary } from 'preact-iso/lazy';
+import { toStatic } from 'hoofd/preact';
 import hydrate from 'preact-iso/hydrate';
 import Home from './pages/home.js';
 // import About from './pages/about/index.js';
@@ -16,6 +17,7 @@ const ClassFields = lazy(async () => (await sleep(1500), import('./pages/class-f
 const Files = lazy(() => import('./pages/files/index.js'));
 const Environment = lazy(async () => (await import('./pages/environment/index.js')).Environment);
 const JSONView = lazy(async () => (await import('./pages/json.js')).JSONView);
+const MetaTags = lazy(async () => (await import('./pages/meta-tags.js')).MetaTags);
 
 function showLoading() {
 	document.body.classList.add('loading');
@@ -39,6 +41,7 @@ export function App() {
 						<Files path="/files" />
 						<Environment path="/env" />
 						<JSONView path="/json" />
+						<MetaTags path="/meta-tags" />
 						<NotFound default />
 					</Router>
 				</ErrorBoundary>
@@ -53,7 +56,23 @@ if (typeof window !== 'undefined') {
 
 export async function prerender(data) {
 	const { default: render } = await import('preact-iso/prerender');
-	return await render(<App {...data} />);
+	const res = await render(<App {...data} />);
+
+	const head = toStatic();
+	const elements = new Set([
+		...head.links.map(props => ({ type: 'link', props })),
+		...head.metas.map(props => ({ type: 'meta', props })),
+		...head.scripts.map(props => ({ type: 'script', props }))
+	]);
+
+	return {
+		...res,
+		head: {
+			title: head.title,
+			lang: head.lang,
+			elements
+		}
+	};
 }
 
 // @ts-ignore

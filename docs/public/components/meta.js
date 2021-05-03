@@ -1,10 +1,7 @@
-let meta;
+import { useTitle, useMeta } from 'hoofd/preact';
+
 export default function Meta({ title, description }) {
-	document.title = 'WMR: ' + title;
-	if (!meta || !meta.parentNode) {
-		meta = document.createElement('meta');
-		meta.name = 'description';
-		meta.content = description;
-		document.head.appendChild(meta);
-	}
+	useTitle('WMR: ' + title);
+	useMeta({ name: 'description', content: description });
+	return null;
 }
