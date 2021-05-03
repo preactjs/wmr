@@ -444,6 +444,17 @@ describe('production', () => {
 			expect(index).toMatch('it works');
 		});
 
+		it('should inject prerendered data into the html', async () => {
+			await loadFixture('prerender-data', env);
+			instance = await runWmr(env.tmp.path, 'build', '--prerender');
+			const code = await instance.done;
+			expect(instance.output.join('\n')).toMatch(/Prerendered 1 page/i);
+			expect(code).toBe(0);
+
+			const index = await fs.readFile(path.join(env.tmp.path, 'dist', 'index.html'), 'utf8');
+			expect(index).toMatch('<script type="isodata">{"hello":"world"}</script>');
+		});
+
 		it('should support prerendered HTML, title & meta tags', async () => {
 			await loadFixture('prod-head', env);
 			instance = await runWmr(env.tmp.path, 'build', '--prerender');
