@@ -9,7 +9,7 @@ import { hasDebugFlag } from '../lib/output-utils.js';
 const DEBUG = hasDebugFlag();
 
 const DEFAULT_STYLE_LOAD_FN = '$w_s$';
-const DEFAULT_STYLE_LOAD_IMPL = `function $w_s$(e,t){if(typeof document==='undefined'){wmr.ssr.head.elements.add({type:'link',props:{rel:'stylesheet',href:e}});}else{document.querySelector('link[rel=stylesheet][href="'+e+'"]')||((t=document.createElement("link")).rel="stylesheet",t.href=e,document.head.appendChild(t))}}`;
+const DEFAULT_STYLE_LOAD_IMPL = `function $w_s$(e,t){typeof document=='undefined'?wmr.ssr.head.elements.add({type:'link',props:{rel:'stylesheet',href:e}}):document.querySelector('link[rel=stylesheet][href="'+e+'"]')||((t=document.createElement("link")).rel="stylesheet",t.href=e,document.head.appendChild(t))}`;
 
 /**
  * Performs graph-based optimizations on generated assets and chunks:
