@@ -52,13 +52,19 @@ export async function loadFixture(name, env) {
 	const fixture = path.join(__dirname, 'fixtures', name);
 	await ncp(fixture, env.tmp.path);
 	try {
-		await fs.mkdir(path.join(env.tmp.path, 'node_modules'));
+		await fs.mkdir(path.join(env.tmp.path, 'node_modules', 'wmr'), { recursive: true });
 	} catch (err) {
 		if (!/EEXIST/.test(err.message)) {
 			throw err;
 		}
 	}
-	await fs.symlink(path.join(__dirname, '..'), path.join(env.tmp.path, 'node_modules', 'wmr'));
+
+	// Copy fake wmr node_modules over
+	await fs.copyFile(path.join(__dirname, '..', 'index.js'), path.join(env.tmp.path, 'node_modules', 'wmr', 'index.js'));
+	await fs.copyFile(
+		path.join(__dirname, '..', 'package.json'),
+		path.join(env.tmp.path, 'node_modules', 'wmr', 'package.json')
+	);
 }
 
 /**
