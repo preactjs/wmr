@@ -1,6 +1,7 @@
 import * as kl from 'kolorist';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { rm } from './lib/fs-utils.js';
 import { bundleProd } from './bundler.js';
 import { bundleStats } from './lib/output-utils.js';
 import { prerender } from './lib/prerender.js';
@@ -10,7 +11,7 @@ import { setCwd } from './plugins/npm-plugin/registry.js';
 /**
  * @param {Parameters<bundleProd>[0] & { prerender?: boolean }} options
  */
-export default async function build(options = {}) {
+export default async function build(options) {
 	options.out = options.out || 'dist';
 
 	// @todo remove this hack once registry.js is instantiable
@@ -20,11 +21,7 @@ export default async function build(options = {}) {
 
 	// Clears out the output folder without deleting it -- useful
 	// when mounted with Docker and the like
-	(await fs.readdir(options.out)).forEach(async item => {
-		item = path.join(options.out, item);
-		if ((await fs.stat(item)).isFile()) await fs.unlink(item);
-		else await fs.rmdir(item, { recursive: true });
-	});
+	await Promise.all((await fs.readdir(options.out)).map(item => rm(path.join(options.out, item))));
 
 	const bundleOutput = await bundleProd(options);
 

@@ -1,6 +1,7 @@
 import { resolve, join } from 'path';
 import { promises as fs } from 'fs';
 import url from 'url';
+import { isFile, isDirectory } from './fs-utils.js';
 import { readEnvFiles } from './environment.js';
 import { compileSingleModule } from './compile-single-module.js';
 import { debug, setDebugCliArg } from './output-utils.js';
@@ -220,18 +221,4 @@ function mergeConfig(a, b) {
 	}
 
 	return merged;
-}
-
-function isDirectory(path) {
-	return fs
-		.stat(path)
-		.then(s => s.isDirectory())
-		.catch(() => false);
-}
-
-function isFile(path) {
-	return fs
-		.stat(path)
-		.then(s => s.isFile())
-		.catch(() => false);
 }
