@@ -110,7 +110,7 @@ render(<App />, document.body);
 
 ```diff
 -import { render } from 'preact';
-+import hydrate from 'preact-iso/hydrate';
++import { hydrate } from 'preact-iso';
 
 function App() {
   return <h1>Hello World!</h1>;
@@ -121,7 +121,7 @@ function App() {
 
 +export async function prerender(data) {
 +  // we use dynamic import to prevent this from being loaded in the browser:
-+  return (await import('preact-iso/prerender')).default(<App {...data} />);
++  return (await import('preact-iso')).prerender(<App {...data} />);
 +}
 ```
 

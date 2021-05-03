@@ -1,6 +1,4 @@
-import hydrate from 'preact-iso/hydrate';
-import { LocationProvider, Router, Route } from 'preact-iso/router';
-import lazy, { ErrorBoundary } from 'preact-iso/lazy';
+import { LocationProvider, Router, Route, lazy, ErrorBoundary, hydrate } from 'preact-iso';
 import Home from './pages/home/index.js';
 import NotFound from './pages/_404.js';
 import Header from './header.js';
@@ -27,6 +25,6 @@ export function App() {
 hydrate(<App />);
 
 export async function prerender(data) {
-	const { default: prerender } = await import('preact-iso/prerender');
-	return await prerender(<App {...data} />);
+	const { prerender: render } = await import('preact-iso');
+	return await render(<App {...data} />);
 }
