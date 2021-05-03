@@ -6,7 +6,7 @@ import sade from 'sade';
 import ora from 'ora';
 import kleur from 'kleur';
 import pkgInstall from 'pkg-install';
-const { getPackageManager, install } = pkgInstall;
+const { install } = pkgInstall;
 const { dim, bold, cyan, red } = kleur;
 
 sade('create-wmr [dir]', true)
@@ -52,13 +52,13 @@ sade('create-wmr [dir]', true)
 			color: 'yellow',
 			text: 'installing WMR...'
 		}).start();
+
+		spinner.start('scaffolding new project...');
+		await scaffold(ctx);
+		spinner.succeed('project created!');
+
 		const packageManager = /yarn/.test(process.env.npm_execpath) ? 'yarn' : 'npm';
-		// @ts-ignore-next
-		await getPackageManager({ prefer: packageManager }).catch(() => {
-			process.stderr.write(`\n${red(`${packageManager} cannot be found`)}\n`);
-			process.exit(1);
-		});
-		await install(['wmr@^1.7.0', 'preact@^10.5.12', 'preact-iso@^2.0.0'], { prefer: packageManager, cwd });
+		await install(['wmr', 'preact', 'preact-iso'], { prefer: packageManager, cwd });
 		spinner.succeed('installed WMR.');
 
 		if (opts.eslint) {
@@ -66,10 +66,6 @@ sade('create-wmr [dir]', true)
 			await install(['eslint', 'eslint-config-preact'], { prefer: packageManager, cwd });
 			spinner.succeed('installed eslint.');
 		}
-
-		spinner.start('scaffolding new project...');
-		await scaffold(ctx);
-		spinner.succeed('project created!');
 
 		spinner.stop();
 		if (dir) {
