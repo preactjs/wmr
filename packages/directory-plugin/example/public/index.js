@@ -1,4 +1,4 @@
-import { LocationProvider, Router, lazy, ErrorBoundary, hydrate } from 'preact-iso';
+import { LocationProvider, Router, lazy, ErrorBoundary, hydrate, prerender as ssr } from 'preact-iso';
 
 import pages from 'dir:./pages';
 
@@ -31,6 +31,5 @@ function App() {
 hydrate(<App />);
 
 export async function prerender(data) {
-	const { prerender: render } = await import('preact-iso');
-	return await render(<App {...data} />);
+	return await ssr(<App {...data} />);
 }
