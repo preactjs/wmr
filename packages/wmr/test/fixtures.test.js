@@ -9,7 +9,8 @@ import {
 	get,
 	waitForMessage,
 	waitForNotMessage,
-	waitFor
+	waitFor,
+	withLog
 } from './test-helpers.js';
 import { rollup } from 'rollup';
 import nodeBuiltinsPlugin from '../src/plugins/node-builtins-plugin.js';
@@ -185,6 +186,32 @@ describe('fixtures', () => {
 			expect(output).toMatch(/preact was used to render/);
 			expect(await env.page.evaluate(`window.React === window.preactCompat`)).toBe(true);
 			expect(await env.page.evaluate(`window.ReactDOM === window.preactCompat`)).toBe(true);
+		});
+
+		it('should allow directory aliasing outside of cwd', async () => {
+			await loadFixture('alias-outside', env);
+			instance = await runWmrFast(env.tmp.path);
+			await withLog(instance.output, async () => {
+				const output = await getOutput(env, instance);
+				expect(output).toMatch(/it works/);
+
+				await page.evaluate(async () => {
+					try {
+						await import('./forbidden.js');
+						throw new Error('fail');
+					} catch (err) {
+						if (err.message === 'fail') {
+							throw err;
+						}
+					}
+				});
+
+				const status = await page.evaluate(async () => {
+					const res = await fetch('/@alias/forbidden/forbidden.js');
+					return res.status;
+				});
+				expect(status).toEqual(404);
+			});
 		});
 	});
 

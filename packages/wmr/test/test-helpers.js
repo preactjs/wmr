@@ -251,7 +251,7 @@ export async function withLog(haystack, fn) {
 	try {
 		await fn();
 	} catch (err) {
-		console.log(haystack);
+		console.log(haystack.join('\n'));
 		throw err;
 	}
 }
