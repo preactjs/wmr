@@ -1,5 +1,5 @@
 import { h, render } from 'preact';
-import { LocationProvider, Router, lazy, ErrorBoundary } from 'preact-iso';
+import { LocationProvider, Router, lazy, ErrorBoundary, prerender as ssr } from 'preact-iso';
 import NotFound from './_404.js';
 import Header from './header.js';
 
@@ -29,6 +29,5 @@ if (typeof window !== 'undefined') {
 }
 
 export async function prerender(data) {
-	const { prerender } = await import('preact-iso');
-	return await prerender(<App {...data} />);
+	return await ssr(<App {...data} />);
 }

@@ -1,4 +1,4 @@
-import render from 'preact-iso/prerender';
+import { prerender as render } from 'preact-iso';
 import { toStatic } from 'hoofd/preact';
 
 let initialized = false;

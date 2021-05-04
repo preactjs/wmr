@@ -13,8 +13,7 @@ Make a lazily-loaded version of a Component.
 
 ```js
 import { render } from 'preact';
-import lazy, { ErrorBoundary } from 'preact-iso/lazy';
-import { Router } from 'preact-iso/router';
+import { ErrorBoundary, lazy, Router } from 'preact-iso';
 
 // Synchronous, not code-splitted:
 // import Home from './routes/home.js';
@@ -43,8 +42,7 @@ render(<App />, document.body);
 The Promise returned from `prerender()` resolves to an Object with `html` and `links[]` properties. The `html` property contains your pre-rendered static HTML markup, and `links` is an Array of any non-external URL strings found in links on the generated page.
 
 ```js
-import lazy, { ErrorBoundary } from 'preact-iso/lazy';
-import prerender from 'preact-iso/prerender';
+import { ErrorBoundary, lazy, prerender } from 'preact-iso';
 
 // Asynchronous (throws a promise)
 const Foo = lazy(() => import('./foo.js'));
@@ -63,7 +61,7 @@ const { html, links } = await prerender(<App />, { maxDepth: 10 });
 `hydrate()` is a thin wrapper around Preact's hydrate() method. It performs hydration when the HTML for the current page includes pre-rendered output from `prerender()`. It falls back to plain rendering in any other cases, which is useful if you're not pre-rendering during development. This method also checks to make sure its running in a browser context before attempting any rendering - if not, it does nothing.
 
 ```js
-import hydrate from 'preact-iso/hydrate';
+import { hydrate } from 'preact-iso';
 
 const App = () => (
 	<div class="app">
@@ -79,8 +77,7 @@ hydrate(<App />);
 A simple router for Preact with conventional and hooks-based APIs. The `<Router>` component is async-aware: when transitioning from one route to another, if the incoming route suspends (throws a Promise), the outgoing route is preserved until the new one becomes ready.
 
 ```js
-import lazy, { ErrorBoundary } from 'preact-iso/lazy';
-import { LocationProvider, Router, useLocation } from 'preact-iso/router';
+import { ErrorBoundary, lazy, LocationProvider, Router, useLocation } from 'preact-iso';
 
 // Asynchronous (throws a promise)
 const Home = lazy(() => import('./routes/home.js'));

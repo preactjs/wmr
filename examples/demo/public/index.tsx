@@ -1,7 +1,5 @@
-import { LocationProvider, Router } from 'preact-iso/router';
-import lazy, { ErrorBoundary } from 'preact-iso/lazy';
+import { LocationProvider, Router, lazy, ErrorBoundary, hydrate, prerender as ssr } from 'preact-iso';
 import { toStatic } from 'hoofd/preact';
-import hydrate from 'preact-iso/hydrate';
 import Home from './pages/home.js';
 // import About from './pages/about/index.js';
 import NotFound from './pages/_404.js';
@@ -55,8 +53,7 @@ if (typeof window !== 'undefined') {
 }
 
 export async function prerender(data) {
-	const { default: render } = await import('preact-iso/prerender');
-	const res = await render(<App {...data} />);
+	const res = await ssr(<App {...data} />);
 
 	const head = toStatic();
 	const elements = new Set([
