@@ -32,23 +32,22 @@ const UPDATE = (state, url) => {
 export const exec = (url, route, matches) => {
 	url = url.split('/').filter(Boolean);
 	route = (route || '').split('/').filter(Boolean);
-	const params = matches.params || (matches.params = {});
-	for (let i = 0, val; i < Math.max(url.length, route.length); i++) {
+	for (let i = 0, val, rest; i < Math.max(url.length, route.length); i++) {
 		let [, m, param, flag] = (route[i] || '').match(/^(:?)(.*?)([+*?]?)$/);
 		val = url[i];
 		// segment match:
 		if (!m && param == val) continue;
 		// segment mismatch / missing required field:
 		if (!m || (!val && flag != '?' && flag != '*')) return;
-		// field match:
-		params[param] = val && decodeURIComponent(val);
-		// normal/optional field:
-		if (flag >= '?' || flag === '') continue;
+		rest = flag == '+' || flag == '*';
 		// rest (+/*) match:
-		matches[param] = url.slice(i).map(decodeURIComponent).join('/');
-		break;
+		if (rest) val = url.slice(i).map(decodeURIComponent).join('/');
+		// normal/optional field:
+		else if (val) val = decodeURIComponent(val);
+		matches.params[param] = val;
+		if (param != 'ref' && param != 'key' && param != 'path' && param != 'query' && param != 'params') matches[param] = val;
+		if (rest) break;
 	}
-
 	return matches;
 };
 
@@ -108,7 +107,7 @@ export function Router(props) {
 
 		let p, d, m;
 		toChildArray(props.children).some(vnode => {
-			const matches = exec(path, vnode.props.path, (m = { path, query }));
+			const matches = exec(path, vnode.props.path, (m = { path, query, params: {} }));
 			if (matches) return (p = cloneElement(vnode, m));
 			if (vnode.props.default) d = cloneElement(vnode, m);
 		});
