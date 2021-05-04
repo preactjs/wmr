@@ -1,32 +1,36 @@
 import { exec } from '../router.js';
 
+function doExec(path, route, opts) {
+	return exec(path, route, { path, query: {}, params: {}, ...(opts || {}) });
+}
+
 describe('match', () => {
 	it('Base route', () => {
-		const accurateResult = exec('/', '/', { path: '/' });
+		const accurateResult = doExec('/', '/');
 		expect(accurateResult).toEqual({ path: '/', params: {} });
 
-		const inaccurateResult = exec('/user/1', '/', { path: '/' });
+		const inaccurateResult = doExec('/user/1', '/');
 		expect(inaccurateResult).toEqual(undefined);
 	});
 
 	it('Param route', () => {
-		const accurateResult = exec('/user/2', '/user/:id', { path: '/' });
+		const accurateResult = doExec('/user/2', '/user/:id');
 		expect(accurateResult).toEqual({ path: '/', params: { id: '2' } });
 
-		const inaccurateResult = exec('/', '/user/:id', { path: '/' });
+		const inaccurateResult = doExec('/', '/user/:id');
 		expect(inaccurateResult).toEqual(undefined);
 	});
 
 	it('Optional param route', () => {
-		const accurateResult = exec('/user', '/user/:id?', { path: '/' });
+		const accurateResult = doExec('/user', '/user/:id?');
 		expect(accurateResult).toEqual({ path: '/', params: { id: undefined } });
 
-		const inaccurateResult = exec('/', '/user/:id?', { path: '/' });
+		const inaccurateResult = doExec('/', '/user/:id?');
 		expect(inaccurateResult).toEqual(undefined);
 	});
 
 	it('Handles leading/trailing slashes', () => {
-		const result = exec('/about-late/_SEGMENT1_/_SEGMENT2_/', '/about-late/:seg1/:seg2/', {});
+		const result = doExec('/about-late/_SEGMENT1_/_SEGMENT2_/', '/about-late/:seg1/:seg2/');
 		expect(result).toEqual({
 			params: {
 				seg1: '_SEGMENT1_',
@@ -36,7 +40,7 @@ describe('match', () => {
 	});
 
 	it('should not overwrite existing properties', () => {
-		const result = exec('/foo/bar', '/:path/:query', { path: '/' });
+		const result = doExec('/foo/bar', '/:path/:query');
 		expect(result).toEqual({
 			params: { path: 'foo', query: 'bar' },
 			path: '/'
