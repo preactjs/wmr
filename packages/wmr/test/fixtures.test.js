@@ -213,6 +213,15 @@ describe('fixtures', () => {
 				expect(status).toEqual(404);
 			});
 		});
+
+		it('should alias <project>/src/ by default', async () => {
+			await loadFixture('alias-src', env);
+			instance = await runWmrFast(env.tmp.path);
+			await withLog(instance.output, async () => {
+				const output = await getOutput(env, instance);
+				expect(output).toMatch(/it works/);
+			});
+		});
 	});
 
 	describe('rmwc', () => {

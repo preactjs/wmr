@@ -107,22 +107,43 @@ describe('production', () => {
 		expect(text).toMatch(/it works/);
 	});
 
-	it('should alias directories', async () => {
-		await loadFixture('alias-outside', env);
-		instance = await runWmr(env.tmp.path, 'build');
-		const code = await instance.done;
-		await withLog(instance.output, async () => {
-			expect(code).toEqual(0);
+	describe('alias', () => {
+		it('should alias directories', async () => {
+			await loadFixture('alias-outside', env);
+			instance = await runWmr(env.tmp.path, 'build');
+			const code = await instance.done;
+			await withLog(instance.output, async () => {
+				expect(code).toEqual(0);
 
-			const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
-			cleanup.push(stop);
+				const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+				cleanup.push(stop);
 
-			await env.page.goto(address, {
-				waitUntil: ['networkidle0', 'load']
+				await env.page.goto(address, {
+					waitUntil: ['networkidle0', 'load']
+				});
+
+				const text = await env.page.content();
+				expect(text).toMatch(/it works/);
 			});
+		});
 
-			const text = await env.page.content();
-			expect(text).toMatch(/it works/);
+		it('should alias src by default', async () => {
+			await loadFixture('alias-src', env);
+			instance = await runWmr(env.tmp.path, 'build');
+			const code = await instance.done;
+			await withLog(instance.output, async () => {
+				expect(code).toEqual(0);
+
+				const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+				cleanup.push(stop);
+
+				await env.page.goto(address, {
+					waitUntil: ['networkidle0', 'load']
+				});
+
+				const text = await env.page.content();
+				expect(text).toMatch(/it works/);
+			});
 		});
 	});
 

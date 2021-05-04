@@ -187,6 +187,12 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 	await runConfigHook('config', options.plugins);
 	await runConfigHook('configResolved', options.plugins);
 
+	// Add src as a default alias if such a folder is present
+	const maybeSrc = resolve(options.root, 'src');
+	if (await isDirectory(maybeSrc)) {
+		options.aliases['src/'] = maybeSrc;
+	}
+
 	// Resolve path-like aliases to absolute paths
 	for (const name in options.aliases) {
 		const value = options.aliases[name];
