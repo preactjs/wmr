@@ -1,4 +1,4 @@
-import { resolve, dirname, relative, sep, posix, isAbsolute } from 'path';
+import { resolve, dirname, relative, sep, posix, isAbsolute, normalize, basename } from 'path';
 import { promises as fs, createReadStream } from 'fs';
 import * as kl from 'kolorist';
 import wmrPlugin, { getWmrClient } from './plugins/wmr/plugin.js';
@@ -135,46 +135,45 @@ export default function wmrMiddleware(options) {
 			return next();
 		}
 
+		let prefix = '';
+
 		// Workaround for transform forcing extensionless ids to be
 		// non-js
 		let hasIdPrefix = false;
 
+		let file = '';
+		let id = path;
+
 		// Path for virtual modules that refer to an unprefixed id.
 		if (path.startsWith('/@id/')) {
+			// Virtual paths have no exact file match, so we don't set `file`
 			hasIdPrefix = true;
-			path = path.slice('/@id'.length);
-		}
+			id = path.slice('/@id/'.length);
+		} else if (path.startsWith('/@alias/')) {
+			id = posix.normalize(path.slice('/@alias/'.length));
 
-		if (path.startsWith('/@alias/')) {
-			path = posix.normalize(path.slice('/@alias/'.length));
-			for (const name in options.aliases) {
-				const value = options.aliases[name];
-				if (isAbsolute(value) && path.startsWith(name)) {
-					// Strip alias name from path.
-					const stripped = path.slice((name + posix.sep).length);
-					path = '/' + posix.relative(cwd, posix.resolve(value, stripped));
-				}
+			// TODO: We shouldn't set a file here, but we need it to ensure
+			// that we're hitting the `TRANSFORM.js` path.
+			file = resolve(cwd, id.split(posix.sep).join(sep));
+		} else {
+			const prefixMatches = path.match(/^\/?@([a-z-]+)(\/.+)$/);
+			if (prefixMatches) {
+				prefix = '\0' + prefixMatches[1] + ':';
+				path = prefixMatches[2];
 			}
+
+			// convert to OS path:
+			const osPath = path.slice(1).split(posix.sep).join(sep);
+
+			file = resolve(cwd, osPath);
+
+			// Rollup-style CWD-relative Unix-normalized path "id":
+			id = relative(cwd, file).replace(/^\.\//, '').replace(/^[\0]/, '').split(sep).join(posix.sep);
+
+			// add back any prefix if there was one:
+			file = prefix + file;
+			id = prefix + id;
 		}
-
-		let prefix = '';
-		const prefixMatches = path.match(/^\/?@([a-z-]+)(\/.+)$/);
-		if (prefixMatches) {
-			prefix = '\0' + prefixMatches[1] + ':';
-			path = prefixMatches[2];
-		}
-
-		// convert to OS path:
-		const osPath = path.slice(1).split(posix.sep).join(sep);
-
-		let file = resolve(cwd, osPath);
-
-		// Rollup-style CWD-relative Unix-normalized path "id":
-		let id = relative(cwd, file).replace(/^\.\//, '').replace(/^[\0]/, '').split(sep).join(posix.sep);
-
-		// add back any prefix if there was one:
-		file = prefix + file;
-		id = prefix + id;
 
 		let type = getMimeType(file);
 		if (type) {
@@ -243,6 +242,86 @@ export default function wmrMiddleware(options) {
 			next(e);
 		}
 	};
+}
+
+const logServe = debug('wmr:serve');
+
+/**
+ * Potentially resolve an import specifier to an aliased url
+ * @param {Record<string, string>} aliases
+ * @param {string} spec
+ * @returns {string}
+ */
+function matchAlias(aliases, spec) {
+	for (const name in aliases) {
+		const value = aliases[name];
+
+		// Only check path-like aliases
+		if (posix.isAbsolute(value)) {
+			if (spec.startsWith(name)) {
+				const res = posix.resolve('/@alias', name, posix.relative(value, spec));
+				logServe(`${kl.green(formatPath(res))} <- ${kl.dim(formatPath(spec))} `);
+				return res;
+			} else if (posix.isAbsolute(spec) && spec.startsWith(value)) {
+				const res = posix.resolve('/@alias', name, posix.relative(value, spec));
+				logServe(`${kl.green(formatPath(res))} <- ${kl.dim(formatPath(spec))} `);
+				return res;
+			}
+		}
+	}
+
+	return spec;
+}
+
+/**
+ *
+ * @param {string} file Path to file to load
+ * @param {string} cwd
+ * @param {Record<string, string>} aliases
+ * @returns
+ */
+function resolveFile(file, cwd, aliases) {
+	// Probably an error if we ar enot called with an absolute path
+	if (!isAbsolute(file)) {
+		throw new Error(`Expected absolute path but got: ${file}`);
+	}
+
+	// Safety measures should always be as close as possible to the thing that
+	// they're trying to protect. Otherwise those meausures will be accidentally
+	// removed during a future refactoring.
+
+	// Normalize the result, collapses `/../` and stuff
+	file = normalize(file);
+
+	// No dotfiles, which usually contain sensitive stuff
+	if (basename(file).startsWith('.')) {
+		throw new Error(`Loading files starting with a dot is not allowed: ${file}`);
+	}
+
+	// Check if the file resolved to something we are actually allowed to load.
+	meup: if (relative(cwd, file).startsWith('..')) {
+		// TODO: Better to precompute this in normalizeOptions?
+		const includeDirs = [cwd];
+		// File is not in cwd, but might still be in an aliased directory
+		for (const alias in aliases) {
+			const value = aliases[alias];
+
+			if (isAbsolute(value)) {
+				includeDirs.push(value);
+
+				if (!relative(value, file).startsWith('..')) {
+					break meup;
+				}
+			}
+		}
+
+		const allowed = includeDirs.map(d => `- ${d}`).join('\n');
+		throw new Error(
+			`Not allowed to load file: ${file}.\nAdd an alias to a directory if you want to include load files outside of the web root. The current configured directories to load files from are:\n${allowed}`
+		);
+	}
+
+	return file;
 }
 
 /**
@@ -314,8 +393,12 @@ export const TRANSFORMS = {
 			code = typeof result == 'object' ? result && result.code : result;
 
 			if (code == null || code === false) {
+				// Always use the resolved id as the basis for our file
+				let file = resolvedId;
 				if (prefix) file = file.replace(prefix, '');
-				code = await fs.readFile(resolve(cwd, file), 'utf-8');
+				file = file.split(posix.sep).join(sep);
+				if (!isAbsolute(file)) file = resolve(cwd, file);
+				code = await fs.readFile(resolveFile(file, cwd, aliases), 'utf-8');
 			}
 
 			code = await NonRollup.transform(code, id);
@@ -372,29 +455,39 @@ export const TRANSFORMS = {
 					// foo.css --> foo.css.js (import of CSS Modules proxy module)
 					if (spec.match(/\.(css|s[ac]ss)$/)) spec += '.js';
 
-					// Bare specifiers are npm packages:
-					if (!/^\0?\.?\.?[/\\]/.test(spec)) {
-						// Check if this is a virtual module path from a plugin. If
-						// no plugin loads the id, then we know that the bare specifier
-						// must refer to an npm plugin.
-						// TODO: Cache the result to avoid having to load an id twice.
-						const res = await NonRollup.load(spec);
+					// If file resolves outside of root it may be an aliased path.
+					if (spec.startsWith('..')) {
+						spec = matchAlias(aliases, posix.resolve(posix.dirname(file), spec));
+					}
 
-						if (res === null) {
-							const meta = normalizeSpecifier(spec);
+					if (!spec.startsWith('/@alias/') && !/^\0?\.?\.?[/\\]/.test(spec)) {
+						// Check if the spec is an alias
+						spec = matchAlias(aliases, spec);
 
-							// // Option 1: resolve all package verions (note: adds non-trivial delay to imports)
-							// await resolvePackageVersion(meta);
-							// // Option 2: omit package versions that resolve to the root
-							// // if ((await resolvePackageVersion({ module: meta.module, version: '' })).version === meta.version) {
-							// // 	meta.version = '';
-							// // }
-							// spec = `/@npm/${meta.module}${meta.version ? '@' + meta.version : ''}${meta.path ? '/' + meta.path : ''}`;
+						if (!spec.startsWith('/@alias/')) {
+							// Check if this is a virtual module path from a plugin. If
+							// no plugin loads the id, then we know that the bare specifier
+							// must refer to an npm plugin.
+							// TODO: Cache the result to avoid having to load an id twice.
+							const res = await NonRollup.load(spec);
 
-							// Option 3: omit root package versions
-							spec = `/@npm/${meta.module}${meta.path ? '/' + meta.path : ''}`;
-						} else {
-							spec = `/@id/${spec}`;
+							if (res === null) {
+								// Bare specifiers are npm packages:
+								const meta = normalizeSpecifier(spec);
+
+								// // Option 1: resolve all package verions (note: adds non-trivial delay to imports)
+								// await resolvePackageVersion(meta);
+								// // Option 2: omit package versions that resolve to the root
+								// // if ((await resolvePackageVersion({ module: meta.module, version: '' })).version === meta.version) {
+								// // 	meta.version = '';
+								// // }
+								// spec = `/@npm/${meta.module}${meta.version ? '@' + meta.version : ''}${meta.path ? '/' + meta.path : ''}`;
+
+								// Option 3: omit root package versions
+								spec = `/@npm/${meta.module}${meta.path ? '/' + meta.path : ''}`;
+							} else {
+								spec = `/@id/${spec}`;
+							}
 						}
 					}
 
@@ -402,23 +495,6 @@ export const TRANSFORMS = {
 					mod.dependencies.add(modSpec);
 					if (!moduleGraph.has(modSpec)) {
 						moduleGraph.set(modSpec, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
-					}
-
-					// Check if the file resolves outside of root. If it does, it may be
-					// an aliased path
-					if (spec.startsWith('..')) {
-						const posixCwd = cwd.split(sep).join(posix.sep);
-						const absoluteSpec = posix.resolve(posix.dirname(file), spec);
-						if (!absoluteSpec.startsWith(posixCwd + posix.sep)) {
-							for (const name in aliases) {
-								const value = aliases[name];
-
-								// Only check path-like aliases
-								if (posix.isAbsolute(value) && absoluteSpec.startsWith(value + posix.sep)) {
-									spec = '/@alias/' + posix.join(name, posix.relative(value, absoluteSpec));
-								}
-							}
-						}
 					}
 
 					const specModule = moduleGraph.get(modSpec);
@@ -447,7 +523,7 @@ export const TRANSFORMS = {
 		}
 	},
 	// Handles "CSS Modules" proxy modules (style.module.css.js)
-	async cssModule({ id, file, cwd, out, res }) {
+	async cssModule({ id, file, cwd, out, res, aliases }) {
 		res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
 
 		// Cache the generated mapping/proxy module with a .js extension (the CSS itself is also cached)
@@ -470,7 +546,7 @@ export const TRANSFORMS = {
 			}
 		);
 
-		const result = (await container.load(file)) || (await fs.readFile(resolve(cwd, file), 'utf-8'));
+		const result = (await container.load(file)) || (await fs.readFile(resolveFile(file, cwd, aliases), 'utf-8'));
 
 		let code = typeof result === 'string' ? result : result && result.code;
 
@@ -493,7 +569,7 @@ export const TRANSFORMS = {
 	},
 
 	// Handles CSS Modules (the actual CSS)
-	async css({ id, path, file, cwd, out, res }) {
+	async css({ id, path, file, cwd, out, res, aliases }) {
 		if (!/\.(css|s[ac]ss)$/.test(path)) throw null;
 
 		const isModular = /\.module\.(css|s[ac]ss)$/.test(path);
@@ -504,7 +580,7 @@ export const TRANSFORMS = {
 
 		if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
 
-		const idAbsolute = resolve(cwd, file);
+		const idAbsolute = resolveFile(file, cwd, aliases);
 		let code = await fs.readFile(idAbsolute, 'utf-8');
 
 		if (isModular) {
