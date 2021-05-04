@@ -45,7 +45,9 @@ export const exec = (url, route, matches) => {
 		// normal/optional field:
 		else if (val) val = decodeURIComponent(val);
 		matches.params[param] = val;
-		if (param != 'ref' && param != 'key' && param != 'path' && param != 'query' && param != 'params') matches[param] = val;
+		if (param != 'ref' && param != 'key' && param != 'path' && param != 'query' && param != 'params') {
+			matches[param] = val;
+		}
 		if (rest) break;
 	}
 	return matches;

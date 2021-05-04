@@ -15,7 +15,7 @@ describe('match', () => {
 
 	it('Param route', () => {
 		const accurateResult = doExec('/user/2', '/user/:id');
-		expect(accurateResult).toEqual({ path: '/', params: { id: '2' }, query: {} });
+		expect(accurateResult).toEqual({ path: '/user/2', params: { id: '2' }, query: {}, id: '2' });
 
 		const inaccurateResult = doExec('/', '/user/:id');
 		expect(inaccurateResult).toEqual(undefined);
@@ -23,7 +23,7 @@ describe('match', () => {
 
 	it('Optional param route', () => {
 		const accurateResult = doExec('/user', '/user/:id?');
-		expect(accurateResult).toEqual({ path: '/', params: { id: undefined }, query: {} });
+		expect(accurateResult).toEqual({ path: '/user', params: { id: undefined }, query: {} });
 
 		const inaccurateResult = doExec('/', '/user/:id?');
 		expect(inaccurateResult).toEqual(undefined);
@@ -37,7 +37,9 @@ describe('match', () => {
 				seg2: '_SEGMENT2_'
 			},
 			path: '/about-late/_SEGMENT1_/_SEGMENT2_/',
-			query: {}
+			query: {},
+			seg1: '_SEGMENT1_',
+			seg2: '_SEGMENT2_'
 		});
 	});
 
