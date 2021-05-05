@@ -63,7 +63,7 @@ export function LocationProvider(props) {
 		return { url, path, query: Object.fromEntries(u.searchParams), route, wasPush };
 	}, [url]);
 
-	useEffect(() => {
+	useLayoutEffect(() => {
 		addEventListener('click', route);
 		addEventListener('popstate', route);
 
