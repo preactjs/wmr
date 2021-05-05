@@ -1,5 +1,15 @@
 # create-wmr
 
+## 0.3.4
+
+### Patch Changes
+
+- [`56a5492`](https://github.com/preactjs/wmr/commit/56a5492056bb7ba1dab64d358c56d2726011f707) [#584](https://github.com/preactjs/wmr/pull/584) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Switch from preact-iso subpackage imports to main import
+
+* [`096e6a8`](https://github.com/preactjs/wmr/commit/096e6a82709418f492d5dedf8c4cae2284b652fa) [#579](https://github.com/preactjs/wmr/pull/579) Thanks [@rschristian](https://github.com/rschristian)! - Bumping wmr template deps
+
+- [`1183a41`](https://github.com/preactjs/wmr/commit/1183a41f5937baf5d4362c98c234a199d3b57486) [#583](https://github.com/preactjs/wmr/pull/583) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Use Route components in create template to make it easier for potential TypeScript users
+
 ## 0.3.3
 
 ### Patch Changes

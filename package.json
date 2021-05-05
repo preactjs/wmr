@@ -15,6 +15,7 @@
 		"wmr": "yarn workspace wmr run",
 		"demo": "yarn workspace @examples/demo run",
 		"docs": "yarn workspace docs",
+		"iso": "yarn workspace preact-iso",
 		"ci": "yarn wmr build && yarn --check-files && yarn demo build:prod"
 	},
 	"eslintConfig": {

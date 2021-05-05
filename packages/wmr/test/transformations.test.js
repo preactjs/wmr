@@ -72,5 +72,11 @@ describe('transformations', () => {
 			expected = `.name_375o4j:not([data-type="empty"][a^="b"])::after{padding:0;}`;
 			expect(await modularizeCss(css, 'foo')).toEqual(expected);
 		});
+
+		it('should hash nested classes', async () => {
+			const css = `.nav a:focus-visible,.nav a:hover{--color: var(--app-color-primary-contrast) !important;}.nav a:focus-visible::after,.nav a:hover::after{transform:scaleX(1)}`;
+			const expected = `.nav_375o4j a:focus-visible,.nav_375o4j a:hover{--color:var(--app-color-primary-contrast)!important;}.nav_375o4j a:focus-visible::after,.nav_375o4j a:hover::after{transform:scaleX(1);}`;
+			expect(await modularizeCss(css, 'foo')).toEqual(expected);
+		});
 	});
 });
