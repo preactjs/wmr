@@ -68,6 +68,8 @@ declare module 'wmr' {
 	export function defineConfig<
 		T extends Partial<Options> | ((options: Options) => void | Partial<Options> | Promise<void | Partial<Options>>)
 	>(options: T): T;
+
+	export function normalizePath(path: string): string;
 }
 
 // Declarations used by WMR-based applications

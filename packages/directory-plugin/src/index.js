@@ -1,7 +1,6 @@
 import { promises as fs } from 'fs';
+import { normalizePath } from 'wmr';
 import path from 'path';
-
-const pathToPosix = p => p.split(path.sep).join(path.posix.sep);
 
 /**
  * @param {object} [options]
@@ -17,7 +16,7 @@ function directoryPlugin(options) {
 			const resolved = await this.resolve(id.slice(4) + '\0', importer, { skipSelf: true });
 
 			if (resolved) {
-				return '\0dir:' + pathToPosix(resolved.id).replace(/\0$/, '');
+				return '\0dir:' + normalizePath(resolved.id).replace(/\0$/, '');
 			}
 		},
 		async load(id) {
