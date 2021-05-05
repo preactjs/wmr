@@ -152,9 +152,16 @@ export default function wmrMiddleware(options) {
 		} else if (path.startsWith('/@alias/')) {
 			id = posix.normalize(path.slice('/@alias/'.length));
 
-			// TODO: We shouldn't set a file here, but we need it to ensure
-			// that we're hitting the `TRANSFORM.js` path.
-			file = resolve(cwd, id.split(posix.sep).join(sep));
+			// Resolve to a file here for non-js Transforms
+			const { aliases } = options;
+			for (const name in aliases) {
+				const value = aliases[name];
+
+				if (posix.isAbsolute(value) && id.startsWith(name)) {
+					file = resolve(value, id.split(posix.sep).join(sep).slice(name.length));
+					break;
+				}
+			}
 		} else {
 			const prefixMatches = path.match(/^\/?@([a-z-]+)(\/.+)$/);
 			if (prefixMatches) {
@@ -252,7 +259,7 @@ const logServe = debug('wmr:serve');
  * @param {string} spec
  * @returns {string}
  */
-function matchAlias(aliases, spec) {
+export function matchAlias(aliases, spec) {
 	for (const name in aliases) {
 		const value = aliases[name];
 
@@ -456,7 +463,7 @@ export const TRANSFORMS = {
 					if (spec.match(/\.(css|s[ac]ss)$/)) spec += '.js';
 
 					// If file resolves outside of root it may be an aliased path.
-					if (spec.startsWith('..')) {
+					if (spec.startsWith('.')) {
 						spec = matchAlias(aliases, posix.resolve(posix.dirname(file), spec));
 					}
 
