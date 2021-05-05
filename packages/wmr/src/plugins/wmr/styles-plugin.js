@@ -129,12 +129,10 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath, production, aliase
 			if (aliased) {
 				idRelative = aliased.slice('/@alias/'.length);
 			} else {
-				console.log('RR', idRelative, cwd);
 				idRelative = cwd ? relative(cwd || '', id) : multiRelative(cwds, id);
 			}
 
 			if (idRelative.match(/^[^/]*\\/)) idRelative = idRelative.split(sep).join(posix.sep);
-			console.log('ID RELATIVE', idRelative);
 
 			const mappings = [];
 			if (isModular) {
