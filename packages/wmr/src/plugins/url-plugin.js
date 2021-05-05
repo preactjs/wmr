@@ -1,7 +1,7 @@
-import { basename } from 'path';
+import { basename, relative } from 'path';
 import { promises as fs } from 'fs';
 import * as kl from 'kolorist';
-import { matchAlias } from '../wmr-middleware.js';
+import { matchAlias } from '../lib/aliasing.js';
 import { debug } from '../lib/output-utils.js';
 
 export const IMPLICIT_URL = /\.(?:png|jpe?g|gif|webp|svg|mp4|webm|ogg|mp3|wav|flac|aac|woff2?|eot|ttf|otf)$/i;
@@ -33,7 +33,8 @@ export default function urlPlugin({ inline, cwd, aliases }) {
 
 			// In dev mode, we turn the import into an inline module that avoids a network request:
 			if (inline) {
-				const url = matchAlias(aliases, resolved.id) + '?asset';
+				const aliased = matchAlias(aliases, resolved.id);
+				const url = (aliased || '/' + relative(cwd, resolved.id)) + '?asset';
 				log(`${kl.green('inline')} ${kl.dim(url)} <- ${kl.dim(resolved.id)}`);
 				return {
 					id: escapeUrl(`data:text/javascript,export default${JSON.stringify(url)}`),

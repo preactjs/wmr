@@ -11,6 +11,7 @@ import { getMimeType } from './lib/mimetypes.js';
 import { debug, formatPath } from './lib/output-utils.js';
 import { getPlugins } from './lib/plugins.js';
 import { watch } from './lib/fs-watcher.js';
+import { matchAlias, resolveAlias } from './lib/aliasing.js';
 
 const NOOP = () => {};
 
@@ -153,15 +154,7 @@ export default function wmrMiddleware(options) {
 			id = posix.normalize(path.slice('/@alias/'.length));
 
 			// Resolve to a file here for non-js Transforms
-			const { aliases } = options;
-			for (const name in aliases) {
-				const value = aliases[name];
-
-				if (posix.isAbsolute(value) && id.startsWith(name)) {
-					file = resolve(value, id.split(posix.sep).join(sep).slice(name.length));
-					break;
-				}
-			}
+			file = resolveAlias(options.aliases, id);
 		} else {
 			const prefixMatches = path.match(/^\/?@([a-z-]+)(\/.+)$/);
 			if (prefixMatches) {
@@ -249,35 +242,6 @@ export default function wmrMiddleware(options) {
 			next(e);
 		}
 	};
-}
-
-const logServe = debug('wmr:serve');
-
-/**
- * Potentially resolve an import specifier to an aliased url
- * @param {Record<string, string>} aliases
- * @param {string} spec
- * @returns {string}
- */
-export function matchAlias(aliases, spec) {
-	for (const name in aliases) {
-		const value = aliases[name];
-
-		// Only check path-like aliases
-		if (posix.isAbsolute(value)) {
-			if (spec.startsWith(name)) {
-				const res = posix.resolve('/@alias', name, posix.relative(value, spec));
-				logServe(`${kl.green(formatPath(res))} <- ${kl.dim(formatPath(spec))} `);
-				return res;
-			} else if (posix.isAbsolute(spec) && spec.startsWith(value)) {
-				const res = posix.resolve('/@alias', name, posix.relative(value, spec));
-				logServe(`${kl.green(formatPath(res))} <- ${kl.dim(formatPath(spec))} `);
-				return res;
-			}
-		}
-	}
-
-	return spec;
 }
 
 /**
@@ -464,12 +428,14 @@ export const TRANSFORMS = {
 
 					// If file resolves outside of root it may be an aliased path.
 					if (spec.startsWith('.')) {
-						spec = matchAlias(aliases, posix.resolve(posix.dirname(file), spec));
+						const aliased = matchAlias(aliases, posix.resolve(posix.dirname(file), spec));
+						if (aliased) spec = aliased;
 					}
 
 					if (!spec.startsWith('/@alias/') && !/^\0?\.?\.?[/\\]/.test(spec)) {
 						// Check if the spec is an alias
-						spec = matchAlias(aliases, spec);
+						const aliased = matchAlias(aliases, spec);
+						if (aliased) spec = aliased;
 
 						if (!spec.startsWith('/@alias/')) {
 							// Check if this is a virtual module path from a plugin. If
@@ -540,7 +506,7 @@ export const TRANSFORMS = {
 
 		// We create a plugin container for each request to prevent asset referenceId clashes
 		const container = createPluginContainer(
-			[wmrPlugin({ hot: true }), sassPlugin(), wmrStylesPlugin({ cwd, hot: true, fullPath: true })],
+			[wmrPlugin({ hot: true }), sassPlugin(), wmrStylesPlugin({ cwd, hot: true, fullPath: true, aliases })],
 			{
 				cwd,
 				output: {
@@ -653,6 +619,13 @@ async function writeCacheFile(rootDir, fileName, data) {
 
 	WRITE_CACHE.set(fileName, data);
 	const filePath = resolve(rootDir, fileName);
+
+	// Safeguard to avoid accidentally overwriting user files. If we throw here
+	// we have very likely a bug in WMR.
+	if (!filePath.startsWith(rootDir)) {
+		throw new Error(`Attempting to write outside cache dir: ${filePath}`);
+	}
+
 	if (dirname(filePath) !== rootDir) {
 		await fs.mkdir(dirname(filePath), { recursive: true });
 	}

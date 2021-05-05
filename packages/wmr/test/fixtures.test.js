@@ -168,13 +168,15 @@ describe('fixtures', () => {
 		it('should return ?asset URLs in development', async () => {
 			await loadFixture('url-prefix', env);
 			instance = await runWmrFast(env.tmp.path);
-			const output = await getOutput(env, instance);
-			expect(output).toMatch(/<pre id="out">{.+}<\/pre>/);
-			const json = JSON.parse(await env.page.$eval('#out', el => el.textContent || ''));
-			expect(json).toHaveProperty('htmlUrl', '/index.html?asset');
-			expect(json).toHaveProperty('selfUrl', '/index.js?asset');
-			const out = await env.page.evaluate(async () => await (await fetch('/index.js?asset')).text());
-			expect(out).toEqual(await fs.readFile(path.resolve(__dirname, 'fixtures/url-prefix/index.js'), 'utf-8'));
+			await withLog(instance.output, async () => {
+				const output = await getOutput(env, instance);
+				expect(output).toMatch(/<pre id="out">{.+}<\/pre>/);
+				const json = JSON.parse(await env.page.$eval('#out', el => el.textContent || ''));
+				expect(json).toHaveProperty('htmlUrl', '/index.html?asset');
+				expect(json).toHaveProperty('selfUrl', '/index.js?asset');
+				const out = await env.page.evaluate(async () => await (await fetch('/index.js?asset')).text());
+				expect(out).toEqual(await fs.readFile(path.resolve(__dirname, 'fixtures/url-prefix/index.js'), 'utf-8'));
+			});
 		});
 	});
 
@@ -229,6 +231,16 @@ describe('fixtures', () => {
 			await withLog(instance.output, async () => {
 				const output = await getOutput(env, instance);
 				expect(output).toMatch(/it works/);
+			});
+		});
+
+		it('should alias CSS', async () => {
+			await loadFixture('alias-css', env);
+			instance = await runWmrFast(env.tmp.path);
+			await withLog(instance.output, async () => {
+				await getOutput(env, instance);
+				const color = await env.page.$eval('h1', el => getComputedStyle(el).color);
+				expect(color).toBe('rgb(255, 218, 185)');
 			});
 		});
 	});
@@ -286,6 +298,7 @@ describe('fixtures', () => {
 			await loadFixture('css-imports', env);
 			instance = await runWmrFast(env.tmp.path);
 			await getOutput(env, instance);
+			console.log(instance.output);
 			expect(await env.page.$eval('h1', el => getComputedStyle(el).color)).toBe('rgb(255, 0, 0)');
 		});
 
