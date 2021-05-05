@@ -429,7 +429,7 @@ describe('Router', () => {
 		await sleep(20);
 
 		scratch.querySelector('a[href="/foo#foo"]').click();
-		await sleep(100);
+		await sleep(20);
 		expect(Route).toHaveBeenCalledTimes(1);
 		expect(loc).toMatchObject({ url: '/foo#foo', path: '/foo' });
 		expect(pushState).toHaveBeenCalled();
