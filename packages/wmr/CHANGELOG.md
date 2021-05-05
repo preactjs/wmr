@@ -1,5 +1,53 @@
 # wmr
 
+## 2.0.0
+
+### Major Changes
+
+- [`7561dc7`](https://github.com/preactjs/wmr/commit/7561dc7b5f3e2604ef0bf51ec4b337633bfc70d7) [#576](https://github.com/preactjs/wmr/pull/576) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Rework prerendering API for tags in `document.head`. Previously the API is based on a subset of the actual `document.head` object. But in supplying a `document` global we rendered third party library checks invalid which usually use a variant of `typeof document === "undefined"` to determine if they're in a server environment or not. Since every library uses a different subset of the DOM API, it's impossible to support everyone. Instead using the server code paths of those libraries is a much more reliable approach.
+
+  Any tags that should land in `document.head` can be added to the return value of the `prerender` function:
+
+  ```js
+  export async function prerender(data) {
+  	// ...do your prerendering here
+
+  	return {
+  		// The string that is put inside <body>
+  		html: '<h1>Hello world</h1>',
+  		head: {
+  			// sets document.title
+  			title: 'My Cool Title',
+  			// Sets the lang attribute on the <html> element
+  			lang: 'en',
+  			// Any element you want to put into document.head
+  			elements: [
+  				{ type: 'link', props: { rel: 'stylesheet', href: '/path/to/my/style.css' } },
+  				{ type: 'meta', props: { property: 'og:title', content: 'Become an SEO Expert' } }
+  			]
+  		}
+  	};
+  }
+  ```
+
+### Minor Changes
+
+- [`c10f534`](https://github.com/preactjs/wmr/commit/c10f534880ce652166c1513af18261ceb591f971) [#585](https://github.com/preactjs/wmr/pull/585) Thanks [@JoviDeCroock](https://github.com/JoviDeCroock)! - Support injecting prerender data by returning a `data` key from the prerender function
+
+* [`bb77f83`](https://github.com/preactjs/wmr/commit/bb77f838404e69cfa4bf442761e7ae701908a41f) [#574](https://github.com/preactjs/wmr/pull/574) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Add --debug flag as an alternative to DEBUG=true. It's easier on windows to pass a flag than to set an environment variable
+
+- [`6e3bac1`](https://github.com/preactjs/wmr/commit/6e3bac1c0c2c696847275bcff7649edffc8d3ad0) [#529](https://github.com/preactjs/wmr/pull/529) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Add defineConfig helper for better intellisense in config files
+
+### Patch Changes
+
+- [`ba2e29f`](https://github.com/preactjs/wmr/commit/ba2e29f2d5b3fb1a91301c1bff4f2dfba37fb335) [#575](https://github.com/preactjs/wmr/pull/575) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Don't attempt to prerender external script urls
+
+* [`79496a3`](https://github.com/preactjs/wmr/commit/79496a30be7245bf3429a07cd9ffa8c151e0fdde) [#590](https://github.com/preactjs/wmr/pull/590) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix deeply nested CSS class not being hashed
+
+- [`480d3b5`](https://github.com/preactjs/wmr/commit/480d3b5f4f407dff415d8fa6ba6d28ec5e495e1e) [#578](https://github.com/preactjs/wmr/pull/578) Thanks [@rschristian](https://github.com/rschristian)! - Instead of deleting the build output folder, it is instead emptied, allowing references to it to remain intact.
+
+* [`01c4501`](https://github.com/preactjs/wmr/commit/01c4501a000fd256453d3d3b32a78d760fd2f2e7) [#569](https://github.com/preactjs/wmr/pull/569) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Allow plugins to pick any specifier for virtual modules
+
 ## 1.7.0
 
 ### Minor Changes
