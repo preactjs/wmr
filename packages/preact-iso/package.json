@@ -7,7 +7,7 @@
 	"types": "./index.d.ts",
 	"type": "module",
 	"scripts": {
-		"test-build": "rm -rf .dist .tmp && mkdir -p .tmp && cd .tmp && echo 'import \"preact\";import \"preact/hooks\";import \"preact-render-to-string\";import(\"../index.js\")' > x.js && echo '<script type=module src=x.js>' > index.html && npx wmr build && mv -f dist/chunks ../.dist && rm -rf ../.tmp",
+		"test-build": "node --experimental-modules test/bundle-using-wmr.js",
 		"test": "node --experimental-vm-modules node_modules/.bin/jest"
 	},
 	"exports": {
