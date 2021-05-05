@@ -9,7 +9,8 @@ spawn(
 			// Package "application-config-path" needs this (required by devcert)
 			HOME: process.env.HOME,
 			FORCE_COLOR: '1',
-			DEBUG: 'true'
+			DEBUG: 'true',
+			TERM: 'xterm-256color'
 		}
 	}
 );
