@@ -17,6 +17,8 @@ jobs:
             wmr:
               - 'packages/wmr/**'
               - 'examples/demo/**'
+            preact-iso:
+              - 'packages/preact-iso/**'
 
       - name: compressed-size-action
         if: ${{ steps.filter.outputs.wmr == 'true' }}
@@ -25,4 +27,13 @@ jobs:
           pattern: '{packages/wmr/wmr.cjs,examples/demo/dist/**/*.{js,css,html}}'
           build-script: ci
           strip-hash: "\\.(\\w{8})\\.(?:js|css)$"
+          repo-token: '${{ secrets.GITHUB_TOKEN }}'
+
+      - name: compressed-size-action
+        if: ${{ steps.filter.outputs.preact-iso == 'true' }}
+        uses: preactjs/compressed-size-action@v2
+        with:
+          pattern: '{packages/preact-iso/*.js,packages/preact-iso/.dist/*.js}'
+          build-script: 'iso test-build'
+          strip-hash: "\\.(\\w{8})\\.js$"
           repo-token: '${{ secrets.GITHUB_TOKEN }}'

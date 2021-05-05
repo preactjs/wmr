@@ -7,6 +7,7 @@
 	"types": "./index.d.ts",
 	"type": "module",
 	"scripts": {
+		"test-build": "node --experimental-modules test/bundle-using-wmr.js",
 		"test": "node --experimental-vm-modules node_modules/.bin/jest"
 	},
 	"exports": {
