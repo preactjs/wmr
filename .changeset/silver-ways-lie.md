@@ -11,7 +11,7 @@ import { defineConfig } from 'wmr';
 export default defineConfig({
 	aliases: {
 		// This will alias "~" to "<project>/src/components/"
-		'~/': 'src/components/'
+		'~/': './src/components/'
 	}
 });
 ```
