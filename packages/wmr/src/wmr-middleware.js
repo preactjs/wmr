@@ -464,7 +464,7 @@ export const TRANSFORMS = {
 						}
 					}
 
-					const modSpec = spec.replace(/^\.\//, '');
+					const modSpec = spec.startsWith('../') ? spec.replace(/..\/g/, '') : spec.replace('./', '');
 					mod.dependencies.add(modSpec);
 					if (!moduleGraph.has(modSpec)) {
 						moduleGraph.set(modSpec, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
