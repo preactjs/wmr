@@ -1,5 +1,4 @@
-import { LocationProvider, Router, lazy, ErrorBoundary, hydrate, prerender as ssr } from 'preact-iso';
-import { toStatic } from 'hoofd/preact';
+import { LocationProvider, Router, lazy, ErrorBoundary, hydrate } from 'preact-iso';
 import Home from './pages/home.js';
 // import About from './pages/about/index.js';
 import NotFound from './pages/_404.js';
@@ -53,26 +52,7 @@ if (typeof window !== 'undefined') {
 }
 
 export async function prerender(data) {
-	const res = await ssr(<App {...data} />);
-
-	const head = toStatic();
-	const elements = new Set([
-		...head.links.map(props => ({ type: 'link', props })),
-		...head.metas.map(props => ({ type: 'meta', props })),
-		...head.scripts.map(props => ({ type: 'script', props }))
-	]);
-
-	return {
-		...res,
-		data: {
-			hello: 'world',
-		},
-		head: {
-			title: head.title,
-			lang: head.lang,
-			elements
-		}
-	};
+	return (await import('./prerender.js')).prerender(<App {...data} />);
 }
 
 // @ts-ignore
