@@ -14,11 +14,11 @@ function directoryPlugin(options) {
 		async resolveId(id, importer) {
 			if (!id.startsWith('dir:')) return;
 
-			const resolved = await this.resolve(id.slice(4) + '\0', importer, { skipSelf: true });
+			const resolved = path.resolve(options.cwd || '.', importer, id.slice(4));
+			const stats = await fs.stat(resolved);
+			if (!stats.isDirectory()) throw Error(`Not a directory.`);
 
-			if (resolved) {
-				return '\0dir:' + pathToPosix(resolved.id).replace(/\0$/, '');
-			}
+			return '\0dir:' + resolved;
 		},
 		async load(id) {
 			if (!id.startsWith('\0dir:')) return;
