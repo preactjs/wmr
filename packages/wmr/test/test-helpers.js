@@ -53,6 +53,7 @@ export async function loadFixture(name, env) {
 	await ncp(fixture, env.tmp.path);
 	try {
 		await fs.mkdir(path.join(env.tmp.path, 'node_modules', 'wmr'), { recursive: true });
+		await fs.mkdir(path.join(env.tmp.path, 'node_modules', '@wmrjs', 'directory-import', 'src'), { recursive: true });
 	} catch (err) {
 		if (!/EEXIST/.test(err.message)) {
 			throw err;
@@ -64,6 +65,15 @@ export async function loadFixture(name, env) {
 	await fs.copyFile(
 		path.join(__dirname, '..', 'package.json'),
 		path.join(env.tmp.path, 'node_modules', 'wmr', 'package.json')
+	);
+
+	await fs.copyFile(
+		path.join(__dirname, '..', '..', 'directory-plugin', 'src', 'index.js'),
+		path.join(env.tmp.path, 'node_modules', '@wmrjs', 'directory-import', 'src', 'index.js')
+	);
+	await fs.copyFile(
+		path.join(__dirname, '..', '..', 'directory-plugin', 'package.json'),
+		path.join(env.tmp.path, 'node_modules', '@wmrjs', 'directory-import', 'package.json')
 	);
 }
 
