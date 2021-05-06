@@ -214,9 +214,6 @@ async function workerCode({ cwd, out, publicPath }) {
 		// Write the generated HTML to disk:
 		await fs.mkdir(path.dirname(outFile), { recursive: true }).catch(Object);
 		await fs.writeFile(outFile, html);
-		if (result && typeof result.data == 'object') {
-			await fs.writeFile(outFile.replace('.html', '.json'), JSON.stringify(result.data));
-		}
 	}
 	await fs.unlink(path.resolve(cwd, out, 'package.json')).catch(Object);
 
