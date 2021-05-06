@@ -1,5 +1,11 @@
 # create-wmr
 
+## 0.3.5
+
+### Patch Changes
+
+- [`6b59a90`](https://github.com/preactjs/wmr/commit/6b59a903f898c86fb1395aec2e2617aa134542f8) [#601](https://github.com/preactjs/wmr/pull/601) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix unable to load default template file
+
 ## 0.3.4
 
 ### Patch Changes
