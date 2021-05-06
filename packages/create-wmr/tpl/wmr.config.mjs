@@ -1,5 +1,5 @@
 import { defineConfig } from 'wmr';
 
-module.exports = defineConfig({
+export default defineConfig({
 	/* Your configuration here */
 });
