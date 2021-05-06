@@ -20,11 +20,12 @@ npm i --save @wmrjs/directory-import
 Enable the plugin by importing _(or pasting!)_ it into your `wmr.config.js`:
 
 ```js
+import { defineConfig } from 'wmr';
 import directoryPlugin from '@wmrjs/directory-import';
 
-export default function (config) {
-	directoryPlugin(config);
-}
+export default defineConfig({
+	plugins: [directoryPlugin()]
+});
 ```
 
 [Use it for automatic routes](https://github.com/preactjs/wmr/wiki/Configuration-Recipes#filesystem-based-routing--page-component-loading-)

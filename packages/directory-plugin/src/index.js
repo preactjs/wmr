@@ -2,16 +2,20 @@ import { promises as fs } from 'fs';
 import path from 'path';
 
 /**
- * @param {import("wmr").Options} options
- * @param {string} options.cwd
- * @returns {import('rollup').Plugin}
+ * @returns {import('wmr').Plugin}
  */
-function directoryPlugin(options) {
+export default function directoryPlugin() {
 	const PREFIX = 'dir:';
 	const INTERNAL = '\0dir:';
 
-	options.plugins.push({
+	/** @type {import("wmr").Options} */
+	let options;
+
+	return {
 		name: 'directory',
+		configResolved(config) {
+			options = config;
+		},
 		async resolveId(id, importer) {
 			if (!id.startsWith(PREFIX)) return;
 
@@ -39,7 +43,5 @@ function directoryPlugin(options) {
 			const files = (await fs.readdir(dir)).filter(d => d[0] != '.');
 			return `export default ${JSON.stringify(files)}`;
 		}
-	});
+	};
 }
-
-export default directoryPlugin;
