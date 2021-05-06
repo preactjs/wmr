@@ -1,5 +1,11 @@
 # wmr
 
+## 2.0.1
+
+### Patch Changes
+
+- [`0a9cbe8`](https://github.com/preactjs/wmr/commit/0a9cbe808f38aab10f15fb8f3e51cde8b3e37e37) [#596](https://github.com/preactjs/wmr/pull/596) Thanks [@rschristian](https://github.com/rschristian)! - WMR was published missing `"type": "module"` which immediately broke new projects due to the `wmr.config.mjs`
+
 ## 2.0.0
 
 ### Major Changes

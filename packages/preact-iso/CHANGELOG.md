@@ -1,5 +1,11 @@
 # preact-iso
 
+## 2.0.1
+
+### Patch Changes
+
+- [`79c7fd6`](https://github.com/preactjs/wmr/commit/79c7fd6a5cd46904779a630ac42207e9bf918f1c) [#594](https://github.com/preactjs/wmr/pull/594) Thanks [@developit](https://github.com/developit)! - Fixes a race condition in preact-iso `Router` by registering the link click handler immediately.
+
 ## 2.0.0
 
 ### Major Changes
