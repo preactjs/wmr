@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import { basename, dirname, relative, resolve, sep, posix } from 'path';
+import { normalizePath } from '../../../index.js';
 import { transformCssImports } from '../../lib/transform-css-imports.js';
 import { transformCss } from '../../lib/transform-css.js';
 
@@ -20,7 +21,7 @@ export function processSass(sass) {
  */
 export async function modularizeCss(css, id, mappings = [], idAbsolute) {
 	// normalize to posix id for consistent hashing
-	if (id.match(/^[^/]*\\/)) id = id.split(sep).join(posix.sep);
+	if (id.match(/^[^/]*\\/)) id = normalizePath(id);
 
 	const suffix = '_' + hash(id);
 
@@ -123,7 +124,7 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath, production } = {})
 			const isModular = /\.module\.(css|s[ac]ss)$/.test(id);
 
 			let idRelative = cwd ? relative(cwd || '', resolve(cwd, id)) : multiRelative(cwds, id);
-			if (idRelative.match(/^[^/]*\\/)) idRelative = idRelative.split(sep).join(posix.sep);
+			if (idRelative.match(/^[^/]*\\/)) idRelative = normalizePath(idRelative);
 
 			const mappings = [];
 			if (isModular) {

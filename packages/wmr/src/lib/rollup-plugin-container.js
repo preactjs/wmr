@@ -1,17 +1,16 @@
-import { resolve, relative, dirname, sep, posix } from 'path';
+import { resolve, relative, dirname, posix } from 'path';
 import { createHash } from 'crypto';
 import { promises as fs } from 'fs';
 import * as acorn from 'acorn';
 import * as kl from 'kolorist';
 import acornClassFields from 'acorn-class-fields';
 import { debug, formatResolved, formatPath } from './output-utils.js';
+import { normalizePath } from '../../index.js';
 
 // Rollup respects "module", Node 14 doesn't.
 const cjsDefault = m => ('default' in m ? m.default : m);
 /** @type acorn */
 const { Parser } = cjsDefault(acorn);
-
-const toPosixPath = path => path.split(sep).join(posix.sep);
 
 /** Fast splice(x,1) when order doesn't matter (h/t Rich)
  *  @param {Array} array @param {number} index
@@ -54,7 +53,7 @@ export function createPluginContainer(plugins, opts = {}) {
 	const MODULES = opts.modules || new Map();
 
 	function generateFilename({ type, name, fileName, source }) {
-		const posixName = toPosixPath(name);
+		const posixName = normalizePath(name);
 		if (!fileName) {
 			fileName =
 				(type === 'entry' && ctx.outputOptions.file) || ctx.outputOptions[type + 'FileNames'] || '[name][extname]';
@@ -321,7 +320,7 @@ export function createPluginContainer(plugins, opts = {}) {
 					return result;
 				}
 			}
-			return JSON.stringify('/' + fileName.split(sep).join(posix.sep));
+			return JSON.stringify('/' + normalizePath(fileName));
 		}
 	};
 

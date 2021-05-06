@@ -11,6 +11,7 @@ import { getMimeType } from './lib/mimetypes.js';
 import { debug, formatPath } from './lib/output-utils.js';
 import { getPlugins } from './lib/plugins.js';
 import { watch } from './lib/fs-watcher.js';
+import { normalizePath } from '../index.js';
 
 const NOOP = () => {};
 
@@ -96,7 +97,7 @@ export default function wmrMiddleware(options) {
 	watcher.on('change', filename => {
 		NonRollup.watchChange(resolve(cwd, filename));
 		// normalize paths to 'nix:
-		filename = filename.split(sep).join(posix.sep);
+		filename = normalizePath(filename);
 
 		// Delete any generated CSS Modules mapping modules:
 		const suffix = /\.module\.(css|s[ac]ss)$/.test(filename) ? '.js' : '';
@@ -158,7 +159,7 @@ export default function wmrMiddleware(options) {
 		let file = resolve(cwd, osPath);
 
 		// Rollup-style CWD-relative Unix-normalized path "id":
-		let id = relative(cwd, file).replace(/^\.\//, '').replace(/^[\0]/, '').split(sep).join(posix.sep);
+		let id = normalizePath(relative(cwd, file).replace(/^\.\//, '').replace(/^[\0]/, ''));
 
 		// add back any prefix if there was one:
 		file = prefix + file;
@@ -319,7 +320,7 @@ export const TRANSFORMS = {
 					if (resolved) {
 						spec = typeof resolved == 'object' ? resolved.id : resolved;
 						if (/^(\/|\\|[a-z]:\\)/i.test(spec)) {
-							spec = relative(dirname(file), spec).split(sep).join(posix.sep);
+							spec = normalizePath(relative(dirname(file), spec));
 							if (!/^\.?\.?\//.test(spec)) {
 								spec = './' + spec;
 							}
@@ -330,7 +331,7 @@ export const TRANSFORMS = {
 								return spec;
 							}
 
-							spec = relative(cwd, spec).split(sep).join(posix.sep);
+							spec = normalizePath(relative(cwd, spec));
 							if (!/^(\/|[\w-]+:)/.test(spec)) spec = `/${spec}`;
 							return spec;
 						}
@@ -340,7 +341,7 @@ export const TRANSFORMS = {
 					spec = spec.replace(/^\0?([a-z-]+):(.+)$/, (s, prefix, spec) => {
 						// \0abc:/abs/disk/path --> /@abc/cwd-relative-path
 						if (spec[0] === '/' || spec[0] === sep) {
-							spec = relative(cwd, spec).split(sep).join(posix.sep);
+							spec = normalizePath(relative(cwd, spec));
 						}
 						return '/@' + prefix + '/' + spec;
 					});

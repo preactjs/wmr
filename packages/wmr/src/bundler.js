@@ -1,11 +1,9 @@
-import { relative, sep, posix, resolve, dirname } from 'path';
+import { relative, posix, resolve, dirname } from 'path';
 import * as rollup from 'rollup';
 import terser from './plugins/fast-minify.js';
 import totalist from 'totalist';
 import { getPlugins } from './lib/plugins.js';
-
-/** @param {string} p */
-const pathToPosix = p => p.split(sep).join(posix.sep);
+import { normalizePath } from '../index.js';
 
 /** @param {import('wmr').BuildOptions} options */
 export async function bundleProd(options) {
@@ -18,7 +16,7 @@ export async function bundleProd(options) {
 	await totalist(cwd, (rel, abs) => {
 		if (ignore.test(abs)) return;
 		if (!/\.html?/.test(rel)) return;
-		input.push('./' + pathToPosix(relative(root, abs)));
+		input.push('./' + normalizePath(relative(root, abs)));
 	});
 
 	const bundle = await rollup.rollup({
@@ -46,7 +44,7 @@ export async function bundleProd(options) {
 		plugins: [minify && terser({ compress: true, sourcemap })],
 		sourcemap,
 		sourcemapPathTransform(p, mapPath) {
-			let url = pathToPosix(relative(cwd, resolve(dirname(mapPath), p)));
+			let url = normalizePath(relative(cwd, resolve(dirname(mapPath), p)));
 			// strip leading relative path
 			url = url.replace(/^\.\//g, '');
 			// replace internal npm prefix

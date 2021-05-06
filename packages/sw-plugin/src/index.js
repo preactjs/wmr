@@ -1,7 +1,6 @@
 import path from 'path';
 import { request } from 'http';
-
-const pathToPosix = p => p.split(path.sep).join(path.posix.sep);
+import { normalizePath } from 'wmr';
 
 /**
  * Service Worker plugin for WMR.
@@ -19,7 +18,7 @@ export default function swPlugin(options) {
 
 	const wmrProxyPlugin = {
 		resolveId(id) {
-			const normalizedId = id[1] + id[2] === ':\\' ? pathToPosix(id.slice(2)) : id;
+			const normalizedId = id[1] + id[2] === ':\\' ? normalizePath(id.slice(2)) : id;
 			if (id.startsWith('/@npm/')) return id;
 			if (!/^\.*\//.test(normalizedId)) return '/@npm/' + id;
 		},
@@ -49,7 +48,7 @@ export default function swPlugin(options) {
 		async resolveId(id, importer) {
 			if (!id.startsWith('sw:')) return;
 			const resolved = await this.resolve(id.slice(3), importer);
-			if (resolved) return `\0sw:${pathToPosix(resolved.id)}`;
+			if (resolved) return `\0sw:${normalizePath(resolved.id)}`;
 		},
 		async load(id) {
 			if (!id.startsWith('\0sw:')) return;

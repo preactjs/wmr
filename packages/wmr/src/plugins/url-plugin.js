@@ -1,5 +1,6 @@
-import { relative, basename, sep, posix } from 'path';
+import { relative, basename } from 'path';
 import { promises as fs } from 'fs';
+import { normalizePath } from '../../index.js';
 
 export const IMPLICIT_URL = /\.(?:png|jpe?g|gif|webp|svg|mp4|webm|ogg|mp3|wav|flac|aac|woff2?|eot|ttf|otf)$/i;
 
@@ -27,7 +28,7 @@ export default function urlPlugin({ inline, cwd } = {}) {
 
 			// In dev mode, we turn the import into an inline module that avoids a network request:
 			if (inline) {
-				const url = '/' + relative(cwd, resolved.id).replace(/^\./, '').split(sep).join(posix.sep) + '?asset';
+				const url = '/' + normalizePath(relative(cwd, resolved.id).replace(/^\./, '')) + '?asset';
 				return {
 					id: escapeUrl(`data:text/javascript,export default${JSON.stringify(url)}`),
 					external: true
