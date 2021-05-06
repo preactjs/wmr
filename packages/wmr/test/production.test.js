@@ -451,10 +451,8 @@ describe('production', () => {
 			expect(instance.output.join('\n')).toMatch(/Prerendered 1 page/i);
 			expect(code).toBe(0);
 
-			const indexHtml = await fs.readFile(path.join(env.tmp.path, 'dist', 'index.html'), 'utf8');
-			expect(indexHtml).toMatch('<script type="isodata">{"hello":"world"}</script>');
-			const indexJson = await fs.readFile(path.join(env.tmp.path, 'dist', 'index.json'), 'utf8');
-			expect(indexJson).toMatch('{"hello":"world"}');
+			const index = await fs.readFile(path.join(env.tmp.path, 'dist', 'index.html'), 'utf8');
+			expect(index).toMatch('<script type="isodata">{"hello":"world"}</script>');
 		});
 
 		it('should support prerendered HTML, title & meta tags', async () => {
