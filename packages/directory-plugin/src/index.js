@@ -1,37 +1,42 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 
-const pathToPosix = p => p.split(path.sep).join(path.posix.sep);
-
 /**
- * @param {object} [options]
- * @param {string} [options.cwd]
+ * @param {import("wmr").Options} options
+ * @param {string} options.cwd
  * @returns {import('rollup').Plugin}
  */
 function directoryPlugin(options) {
+	const PREFIX = 'dir:';
+	const INTERNAL = '\0dir:';
+
 	options.plugins.push({
 		name: 'directory',
 		async resolveId(id, importer) {
-			if (!id.startsWith('dir:')) return;
+			if (!id.startsWith(PREFIX)) return;
 
-			const resolved = await this.resolve(id.slice(4) + '\0', importer, { skipSelf: true });
-
-			if (resolved) {
-				return '\0dir:' + pathToPosix(resolved.id).replace(/\0$/, '');
-			}
+			id = id.slice(PREFIX.length);
+			const resolved = await this.resolve(id, importer, { skipSelf: true });
+			return INTERNAL + (resolved ? resolved.id : id);
 		},
 		async load(id) {
-			if (!id.startsWith('\0dir:')) return;
+			if (!id.startsWith(INTERNAL)) return;
 
 			// remove the "\dir:" prefix and convert to an absolute path:
-			id = path.resolve(options.cwd || '.', id.slice(5));
+			id = id.slice(INTERNAL.length);
+			let dir = id.split(path.posix.sep).join(path.sep);
+			if (!path.isAbsolute(dir)) {
+				dir = path.join(options.cwd, dir);
+			}
+
+			const stats = await fs.stat(dir);
+			if (!stats.isDirectory()) throw Error(`Not a directory.`);
 
 			// watch the directory for changes:
-			this.addWatchFile(id);
+			this.addWatchFile(dir);
 
 			// generate a module that exports the directory contents as an Array:
-			const files = (await fs.readdir(id)).filter(d => d[0] != '.');
-
+			const files = (await fs.readdir(dir)).filter(d => d[0] != '.');
 			return `export default ${JSON.stringify(files)}`;
 		}
 	});
