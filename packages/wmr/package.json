@@ -143,6 +143,7 @@
 		"rollup-plugin-preserve-shebang": "^1.0.1",
 		"rollup-plugin-visualizer": "^4.2.2",
 		"sade": "^1.7.3",
+		"sass": "^1.32.12",
 		"semver": "^7.3.2",
 		"simple-code-frame": "^1.1.1",
 		"sirv": "^1.0.6",

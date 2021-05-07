@@ -25,28 +25,28 @@ const config = {
 		externalLiveBindings: false,
 		preferConst: true,
 		plugins: [
-			{
-				name: 'minify',
-				renderChunk(code) {
-					const result = terser.minify(code, {
-						ecma: 2019,
-						module: true,
-						compress: {
-							toplevel: true
-						},
-						mangle: {
-							eval: true
-						},
-						sourceMap: false,
-						output: {
-							comments: false,
-							inline_script: false,
-							ecma: 2019
-						}
-					});
-					return result.code || null;
-				}
-			}
+			// {
+			// 	name: 'minify',
+			// 	renderChunk(code) {
+			// 		const result = terser.minify(code, {
+			// 			ecma: 2019,
+			// 			module: true,
+			// 			compress: {
+			// 				toplevel: true
+			// 			},
+			// 			mangle: {
+			// 				eval: true
+			// 			},
+			// 			sourceMap: false,
+			// 			output: {
+			// 				comments: false,
+			// 				inline_script: false,
+			// 				ecma: 2019
+			// 			}
+			// 		});
+			// 		return result.code || null;
+			// 	}
+			// }
 		]
 	},
 	external: [...builtins],

@@ -57,6 +57,9 @@ async function renderSass(opts) {
 export default function sassPlugin({ production = false, sourcemap = false } = {}) {
 	return {
 		name: 'sass',
+		resolveId(id, importer) {
+			console.log(id, importer);
+		},
 		async transform(code, id) {
 			if (id[0] === '\0') return;
 			if (!/\.s[ac]ss$/.test(id)) return;
