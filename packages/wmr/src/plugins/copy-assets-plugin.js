@@ -3,6 +3,7 @@ import { promises as fs } from 'fs';
 
 const IGNORE_FILES = [
 	'.',
+	'.d.ts',
 	'node_modules',
 	'package.json',
 	'package-lock.json',
@@ -72,12 +73,19 @@ export default function copyAssetsPlugin({ cwd = '.' } = {}) {
 async function readdirRecursive(rootDir, ignore = []) {
 	const files = [];
 	const noDotFiles = ignore.includes('.');
+	const noDeclarationFiles = ignore.includes('.d.ts');
 	const r = async dir => {
 		const p = [];
 		const wdir = join(rootDir, dir);
 		for (const f of await fs.readdir(wdir, { withFileTypes: true })) {
 			const name = join(dir, f.name);
-			if ((noDotFiles && f.name[0] === '.') || ignore.includes(f.name) || ignore.includes('/' + name)) continue;
+			if (
+				(noDotFiles && f.name[0] === '.') ||
+				(noDeclarationFiles && /\.d\.ts$/.test(f.name)) ||
+				ignore.includes(f.name) ||
+				ignore.includes('/' + name)
+			)
+				continue;
 			if (f.isFile()) files.push(name);
 			else if (f.isDirectory()) p.push(r(name));
 		}
