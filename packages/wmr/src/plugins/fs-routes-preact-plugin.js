@@ -16,9 +16,8 @@ export default function fsRoutesPreactPlugin() {
 			if (id !== INTERNAL) return;
 
 			return `import { routes as rawRoutes } from 'builtins:fs-routes';
-import lazy from 'preact-iso/lazy';
+import { lazy, Route } from 'preact-iso';
 import { h } from 'preact';
-import { Route } from 'preact-iso/router';
 
 export const routes = rawRoutes.map(route => {
 	return h(Route,  { path: route.route, component: lazy(route.load) });

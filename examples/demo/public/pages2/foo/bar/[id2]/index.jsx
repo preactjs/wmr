@@ -1,4 +1,4 @@
-import { useRoute } from 'preact-iso/router';
+import { useRoute } from 'preact-iso';
 
 export default function Page() {
 	const route = useRoute();
