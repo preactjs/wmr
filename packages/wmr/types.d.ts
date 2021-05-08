@@ -35,7 +35,7 @@ declare module 'wmr' {
 		host: string;
 		port: number;
 		root: string;
-		pagesDir: string;
+		routesDir: string;
 		out: string;
 		overlayDir: string;
 		sourcemap: boolean;

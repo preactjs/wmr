@@ -3,6 +3,6 @@ export default function () {
 		alias: {
 			'src/*': 'src'
 		},
-		pagesDir: 'public/pages2'
+		routesDir: 'public/pages2'
 	};
 }

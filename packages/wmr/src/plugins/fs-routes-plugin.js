@@ -38,13 +38,13 @@ async function readRecursive(root, dir = root) {
 /**
  * Convert JSX to HTM
  * @param {object} options
- * @param {string} options.pagesDir Controls whether files are processed to transform JSX.
+ * @param {string} options.routesDir Controls whether files are processed to transform JSX.
  * @param {string} options.cwd
  * @param {string} options.root
  * @param {string} options.publicPath
  * @returns {import('wmr').Plugin}
  */
-export default function fsRoutesPlugin({ pagesDir, publicPath, root, cwd }) {
+export default function fsRoutesPlugin({ routesDir, publicPath, root, cwd }) {
 	const PUBLIC = 'wmr:fs-routes';
 	const INTERNAL = '\0wmr:fs-routes';
 	return {
@@ -57,8 +57,8 @@ export default function fsRoutesPlugin({ pagesDir, publicPath, root, cwd }) {
 		async load(id) {
 			if (id !== INTERNAL) return;
 
-			const routes = await readRecursive(pagesDir);
-			const base = toPosix(path.relative(cwd, path.join(root, pagesDir)));
+			const routes = await readRecursive(routesDir);
+			const base = toPosix(path.relative(cwd, path.join(root, routesDir)));
 
 			const routesStr = routes
 				.map(route => {

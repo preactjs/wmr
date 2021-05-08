@@ -46,7 +46,7 @@ export function getPlugins(options) {
 		jsonPlugin({ cwd }),
 		bundlePlugin({ inline: !production, cwd }),
 		aliasPlugin({ alias, cwd: root }),
-		fsRoutesPlugin({ pagesDir: options.pagesDir, cwd, root, publicPath: options.publicPath }),
+		fsRoutesPlugin({ routesDir: options.routesDir, cwd, root, publicPath: options.publicPath }),
 		fsRoutesPreactPlugin(),
 		sucrasePlugin({
 			typescript: true,
