@@ -5,7 +5,7 @@ import NotFound from './pages/_404.js';
 import Header from './header.tsx';
 import { PageRoutes } from './pages/page-routes.js';
 // import './style.css';
-import { routes as pageRoutes } from 'builtins:fs-routes-preact';
+import { routes as pageRoutes } from 'wmr:fs-routes-preact';
 
 const sleep = t => new Promise(r => setTimeout(r, t));
 

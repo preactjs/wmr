@@ -1,4 +1,4 @@
-import { routes } from 'builtins:fs-routes';
+import { routes } from 'wmr:fs-routes';
 
 export function PageRoutes() {
 	return (

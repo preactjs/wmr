@@ -45,8 +45,8 @@ async function readRecursive(root, dir = root) {
  * @returns {import('wmr').Plugin}
  */
 export default function fsRoutesPlugin({ pagesDir, publicPath, root, cwd }) {
-	const PUBLIC = 'builtins:fs-routes';
-	const INTERNAL = '\0builtins:fs-routes';
+	const PUBLIC = 'wmr:fs-routes';
+	const INTERNAL = '\0wmr:fs-routes';
 	return {
 		name: 'fs-routes',
 		resolveId(id) {

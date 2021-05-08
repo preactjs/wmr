@@ -91,6 +91,14 @@ declare interface NodeModule {
 }
 declare var module: NodeModule;
 
+// Models exposed by internal wmr plugins
+declare module 'wmr:fs-routes' {
+	export const routes: Array<{ route: string; url: string }>;
+}
+declare module 'wmr:fs-routes-preact' {
+	export const routes: any[];
+}
+
 /** Maps authored classNames to their CSS Modules -suffixed generated classNames. */
 type Mapping = Record<string, string>;
 declare module '*.module.css' {
