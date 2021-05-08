@@ -338,6 +338,28 @@ describe('production', () => {
 			const index = await readfile('dist/' + dist.find(f => f.match(/^index\.\w+\.js$/)));
 			expect(index).toContain(`("/assets/${assets[0]}")`);
 		});
+
+		it('should hoist entry CSS into HTML <link> tag', async () => {
+			await loadFixture('css-entry', env);
+			instance = await runWmr(env.tmp.path, 'build');
+			const code = await instance.done;
+
+			await withLog(instance.output, async () => {
+				expect(code).toBe(0);
+
+				const files = (await fs.readdir(path.join(env.tmp.path, 'dist', 'assets'))).filter(f => f[0] !== '.');
+				const css = files.find(f => f.endsWith('.css'));
+
+				const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+				cleanup.push(stop);
+
+				await env.page.goto(address, {
+					waitUntil: ['networkidle0', 'load']
+				});
+
+				expect(await env.page.content()).toContain(`<link rel="stylesheet" href="/assets/${css}">`);
+			});
+		});
 	});
 
 	describe('config.publicPath', () => {

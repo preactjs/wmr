@@ -1,5 +1,6 @@
 import { posix } from 'path';
 import { hasDebugFlag } from '../lib/output-utils.js';
+import { injectHead } from '../lib/transform-html.js';
 
 /** @typedef {import('rollup').OutputBundle} Bundle */
 /** @typedef {import('rollup').OutputChunk} Chunk */
@@ -29,7 +30,7 @@ export default function optimizeGraphPlugin({ publicPath = '', cssMinSize = 1000
 			const graph = new ChunkGraph(bundle, { publicPath });
 			mergeAdjacentCss(graph);
 			hoistCascadedCss(graph, { cssMinSize });
-			hoistEntryCss(graph);
+			await hoistEntryCss(graph);
 			hoistTransitiveImports(graph);
 		}
 	};
@@ -249,14 +250,35 @@ function mergeAdjacentCss(graph) {
  * Extract CSS imports from entry modules into the HTML files that reference them.
  * @param {ChunkGraph} graph
  */
-function hoistEntryCss(graph) {
+async function hoistEntryCss(graph) {
 	for (const fileName in graph.bundle) {
 		/** @type {ExtendedAsset | Chunk} */
 		const asset = graph.bundle[fileName];
 		if (asset.type !== 'asset' || !/\.html$/.test(fileName)) continue;
 
-		const cssImport = asset.referencedFiles && asset.referencedFiles.find(f => f.endsWith('.css'));
-		if (!cssImport || !asset.importedIds) continue;
+		let cssImport = null;
+		if (asset.referencedFiles) {
+			// Check if the HTML file has direct CSS imports
+			cssImport = asset.referencedFiles.find(f => f.endsWith('.css'));
+
+			// If it's not: Check for entry js css files
+			if (!cssImport && asset.importedIds) {
+				const jsEntry = asset.importedIds.find(f => f.endsWith('.js'));
+				if (jsEntry) {
+					const entry = graph.bundle[jsEntry];
+					if (entry.isEntry) {
+						const cssFile = entry.referencedFiles.find(f => f.endsWith('.css'));
+						asset.referencedFiles.push(cssFile);
+
+						asset.source = await injectHead(asset.source, {
+							tag: 'link',
+							attrs: { rel: 'stylesheet', href: '/' + cssFile }
+						});
+						continue;
+					}
+				}
+			}
+		}
 
 		const cssAsset = /** @type {Asset} */ (graph.bundle[cssImport]);
 		for (const id of asset.importedIds) {
