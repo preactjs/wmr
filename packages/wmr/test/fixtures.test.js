@@ -243,6 +243,22 @@ describe('fixtures', () => {
 				expect(color).toBe('rgb(255, 218, 185)');
 			});
 		});
+
+		it('should watch aliased directories', async () => {
+			await loadFixture('alias-src', env);
+			instance = await runWmrFast(env.tmp.path);
+			await withLog(instance.output, async () => {
+				let output = await getOutput(env, instance);
+				expect(output).toMatch(/it works/);
+
+				updateFile(env.tmp.path, 'src/works.js', () => {
+					return `export const works = 'works 2';`;
+				});
+
+				output = await getOutput(env, instance);
+				expect(output).toMatch(/it works 2/);
+			});
+		});
 	});
 
 	describe('rmwc', () => {

@@ -16,6 +16,8 @@ import { matchAlias, resolveAlias } from './lib/aliasing.js';
 const NOOP = () => {};
 
 const log = debug('wmr:middleware');
+const logWatcher = debug('wmr:watcher');
+const logWriteCache = debug('wmr:write-cache');
 
 /**
  * In-memory cache of files that have been generated and written to .cache/
@@ -30,7 +32,7 @@ export const moduleGraph = new Map();
  * @returns {import('polka').Middleware}
  */
 export default function wmrMiddleware(options) {
-	let { cwd, root, out, distDir = 'dist', onError, onChange = NOOP } = options;
+	let { cwd, root, out, distDir = 'dist', onError, onChange = NOOP, aliases } = options;
 
 	distDir = resolve(dirname(out), distDir);
 
@@ -47,7 +49,14 @@ export default function wmrMiddleware(options) {
 
 	NonRollup.buildStart();
 
-	const watcher = watch([cwd, resolve(root, 'package.json')], {
+	// Make watcher aware of aliased directories
+	const pathAliases = Object.keys(aliases)
+		.filter(key => key.endsWith('/*'))
+		.map(key => aliases[key]);
+	const watchDirs = [cwd, resolve(root, 'package.json'), ...pathAliases];
+	logWatcher(`watching:\n${watchDirs.map(d => kl.dim('- ' + d)).join('\n')}`);
+
+	const watcher = watch(watchDirs, {
 		cwd,
 		disableGlobbing: true,
 		ignored: [/(^|[/\\])(node_modules|\.git|\.DS_Store)([/\\]|$)/, resolve(cwd, out), resolve(cwd, distDir)]
@@ -95,9 +104,14 @@ export default function wmrMiddleware(options) {
 	}
 
 	watcher.on('change', filename => {
-		NonRollup.watchChange(resolve(cwd, filename));
-		// normalize paths to 'nix:
-		filename = filename.split(sep).join(posix.sep);
+		const absolute = resolve(cwd, filename);
+		NonRollup.watchChange(absolute);
+
+		// Resolve potentially aliased paths and normalize to 'nix:
+		const aliased = matchAlias(aliases, absolute.split(sep).join(posix.sep));
+		filename = aliased || filename.split(sep).join(posix.sep);
+
+		logWatcher(`${kl.cyan(absolute)} -> ${kl.dim(filename)} [change]`);
 
 		// Delete any generated CSS Modules mapping modules:
 		const suffix = /\.module\.(css|s[ac]ss)$/.test(filename) ? '.js' : '';
@@ -145,6 +159,9 @@ export default function wmrMiddleware(options) {
 		let file = '';
 		let id = path;
 
+		// Cache key for write cache. Preserves `@id` and `@alias` prefixes
+		let cacheKey = id.slice(1); // Strip "/" at the beginning
+
 		// Path for virtual modules that refer to an unprefixed id.
 		if (path.startsWith('/@id/')) {
 			// Virtual paths have no exact file match, so we don't set `file`
@@ -173,6 +190,9 @@ export default function wmrMiddleware(options) {
 			// add back any prefix if there was one:
 			file = prefix + file;
 			id = prefix + id;
+
+			// TODO: Vefify prefix mappings in write cache
+			cacheKey = id;
 		}
 
 		let type = getMimeType(file);
@@ -212,7 +232,8 @@ export default function wmrMiddleware(options) {
 				cwd,
 				out,
 				NonRollup,
-				aliases: options.aliases
+				aliases: options.aliases,
+				cacheKey
 			});
 
 			// return false to skip handling:
@@ -305,6 +326,7 @@ function resolveFile(file, cwd, aliases) {
  * @property {string} cwd working directory, including ./public if detected
  * @property {string} out output directory
  * @property {Record<string, string>} aliases
+ * @property {string} cacheKey Key for write cache
  * @property {InstanceType<import('http')['IncomingMessage']>} req HTTP Request object
  * @property {InstanceType<import('http')['ServerResponse']>} res HTTP Response object
  */
@@ -347,7 +369,7 @@ export const TRANSFORMS = {
 	},
 
 	// Handle individual JavaScript modules
-	async js({ id, file, prefix, res, cwd, out, NonRollup, req, aliases }) {
+	async js({ id, file, prefix, res, cwd, out, NonRollup, req, aliases, cacheKey }) {
 		let code;
 		try {
 			res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
@@ -484,7 +506,7 @@ export const TRANSFORMS = {
 				}
 			});
 
-			writeCacheFile(out, id, code);
+			writeCacheFile(out, cacheKey, code);
 
 			return code;
 		} catch (e) {
@@ -496,7 +518,7 @@ export const TRANSFORMS = {
 		}
 	},
 	// Handles "CSS Modules" proxy modules (style.module.css.js)
-	async cssModule({ id, file, cwd, out, res, aliases }) {
+	async cssModule({ id, file, cwd, out, res, aliases, cacheKey }) {
 		res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
 
 		// Cache the generated mapping/proxy module with a .js extension (the CSS itself is also cached)
@@ -536,13 +558,13 @@ export const TRANSFORMS = {
 			}
 		});
 
-		writeCacheFile(out, id, code);
+		writeCacheFile(out, cacheKey, code);
 
 		return code;
 	},
 
 	// Handles CSS Modules (the actual CSS)
-	async css({ id, path, file, cwd, out, res, aliases }) {
+	async css({ id, path, file, cwd, out, res, aliases, cacheKey }) {
 		if (!/\.(css|s[ac]ss)$/.test(path)) throw null;
 
 		const isModular = /\.module\.(css|s[ac]ss)$/.test(path);
@@ -571,7 +593,7 @@ export const TRANSFORMS = {
 		// };
 		// await plugin.load.call(context, file);
 
-		writeCacheFile(out, id, code);
+		writeCacheFile(out, cacheKey, code);
 
 		return code;
 	},
@@ -619,6 +641,7 @@ async function writeCacheFile(rootDir, fileName, data) {
 
 	WRITE_CACHE.set(fileName, data);
 	const filePath = resolve(rootDir, fileName);
+	logWriteCache(`write ${kl.cyan(fileName)} -> ${kl.dim(filePath)}`);
 
 	// Safeguard to avoid accidentally overwriting user files. If we throw here
 	// we have very likely a bug in WMR.
