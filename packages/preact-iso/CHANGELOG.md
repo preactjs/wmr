@@ -1,5 +1,11 @@
 # preact-iso
 
+## 2.0.2
+
+### Patch Changes
+
+- [`c1f3f0e`](https://github.com/preactjs/wmr/commit/c1f3f0e42a053811fe894f91a7bd702247e550d5) [#608](https://github.com/preactjs/wmr/pull/608) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix `useRoute` missing in main entry exports
+
 ## 2.0.1
 
 ### Patch Changes

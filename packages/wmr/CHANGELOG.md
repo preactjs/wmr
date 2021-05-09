@@ -1,5 +1,15 @@
 # wmr
 
+## 2.0.2
+
+### Patch Changes
+
+- [`a0024d5`](https://github.com/preactjs/wmr/commit/a0024d5297f8ec126ebad038fd5b9beccf74a5ba) [#607](https://github.com/preactjs/wmr/pull/607) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix flash of unstyled content (=FLOUT) by hoisting entry js CSS files into the HTML via a `<link>`-tag
+
+* [`08d66e3`](https://github.com/preactjs/wmr/commit/08d66e3799644a626af48208098bfa96959d7409) [#604](https://github.com/preactjs/wmr/pull/604) Thanks [@rschristian](https://github.com/rschristian)! - Ensuring .d.ts files aren't copied to build output
+
+- [`ba40f5c`](https://github.com/preactjs/wmr/commit/ba40f5c6c2056867dbbc3eb3def5102103a031b5) [#610](https://github.com/preactjs/wmr/pull/610) Thanks [@rschristian](https://github.com/rschristian)! - Fixes some of WMR's CLI flags labelled as global when they're not
+
 ## 2.0.1
 
 ### Patch Changes

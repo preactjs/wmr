@@ -1,5 +1,11 @@
 # @wmr-plugins/directory-import
 
+## 0.2.1
+
+### Patch Changes
+
+- [`d61db25`](https://github.com/preactjs/wmr/commit/d61db257e8bf544a0e530db5d132774db16dca99) [#600](https://github.com/preactjs/wmr/pull/600) Thanks [@developit](https://github.com/developit)! - Fix directory plugin not resolving in prod builds
+
 ## 0.2.0
 
 ### Minor Changes
