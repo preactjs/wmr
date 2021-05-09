@@ -174,7 +174,7 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath, production, aliase
 			const ref = this.emitFile({
 				type: 'asset',
 				name: fullPath ? undefined : basename(id).replace(/\.s[ac]ss$/, '.css'),
-				fileName: fullPath ? idRelative : undefined,
+				fileName: fullPath ? (aliased ? `@alias/${idRelative}` : idRelative) : undefined,
 				source
 			});
 

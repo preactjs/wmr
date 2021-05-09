@@ -10,7 +10,8 @@ import {
 	waitForMessage,
 	waitForNotMessage,
 	waitFor,
-	withLog
+	withLog,
+	waitForPass
 } from './test-helpers.js';
 import { rollup } from 'rollup';
 import nodeBuiltinsPlugin from '../src/plugins/node-builtins-plugin.js';
@@ -257,6 +258,28 @@ describe('fixtures', () => {
 
 				output = await getOutput(env, instance);
 				expect(output).toMatch(/it works 2/);
+			});
+		});
+
+		it('should watch aliased parent directories', async () => {
+			await loadFixture('alias-parent', env);
+			instance = await runWmrFast(env.tmp.path);
+			await withLog(instance.output, async () => {
+				await getOutput(env, instance);
+
+				await await waitForPass(async () => {
+					const color = await env.page.$eval('h1', el => getComputedStyle(el).color);
+					expect(color).toBe('rgb(255, 218, 185)');
+				});
+
+				updateFile(env.tmp.path, 'foo/style.css', () => {
+					return `h1 { color: red; }`;
+				});
+
+				await await waitForPass(async () => {
+					const color = await env.page.$eval('h1', el => getComputedStyle(el).color);
+					expect(color).toBe('rgb(255, 0, 0)');
+				});
 			});
 		});
 	});

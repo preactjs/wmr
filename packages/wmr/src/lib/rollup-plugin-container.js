@@ -1,4 +1,4 @@
-import { resolve, relative, dirname, sep, posix } from 'path';
+import { resolve, relative, dirname, sep, posix, isAbsolute } from 'path';
 import { createHash } from 'crypto';
 import { promises as fs } from 'fs';
 import * as acorn from 'acorn';
@@ -307,7 +307,7 @@ export function createPluginContainer(plugins, opts = {}) {
 			const file = files.get(referenceId);
 			if (file == null) return null;
 			const out = resolve(opts.cwd || '.', ctx.outputOptions.dir || '.');
-			const fileName = relative(out, file.filename);
+			const fileName = isAbsolute(file.filename) ? relative(out, file.filename) : file.filename;
 			const assetInfo = {
 				referenceId,
 				fileName,

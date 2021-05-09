@@ -17,7 +17,7 @@ const NOOP = () => {};
 
 const log = debug('wmr:middleware');
 const logWatcher = debug('wmr:watcher');
-const logWriteCache = debug('wmr:write-cache');
+const logCache = debug('wmr:cache');
 
 /**
  * In-memory cache of files that have been generated and written to .cache/
@@ -109,12 +109,16 @@ export default function wmrMiddleware(options) {
 
 		// Resolve potentially aliased paths and normalize to 'nix:
 		const aliased = matchAlias(aliases, absolute.split(sep).join(posix.sep));
-		filename = aliased || filename.split(sep).join(posix.sep);
+		filename = aliased
+			? // Trim leading slash, we need a relative path for the cache
+			  aliased.slice(1)
+			: filename.split(sep).join(posix.sep);
 
 		logWatcher(`${kl.cyan(absolute)} -> ${kl.dim(filename)} [change]`);
 
 		// Delete any generated CSS Modules mapping modules:
 		const suffix = /\.module\.(css|s[ac]ss)$/.test(filename) ? '.js' : '';
+		logCache(`delete: ${kl.cyan(filename + suffix)}`);
 		WRITE_CACHE.delete(filename + suffix);
 
 		if (!pendingChanges.size) timeout = setTimeout(flushChanges, 60);
@@ -641,7 +645,7 @@ async function writeCacheFile(rootDir, fileName, data) {
 
 	WRITE_CACHE.set(fileName, data);
 	const filePath = resolve(rootDir, fileName);
-	logWriteCache(`write ${kl.cyan(fileName)} -> ${kl.dim(filePath)}`);
+	logCache(`write ${kl.cyan(fileName)} -> ${kl.dim(filePath)}`);
 
 	// Safeguard to avoid accidentally overwriting user files. If we throw here
 	// we have very likely a bug in WMR.
