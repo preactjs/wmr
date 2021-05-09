@@ -1,3 +1,4 @@
+import { resolveAlias } from '../lib/aliasing.js';
 import { debug, formatResolved } from '../lib/output-utils.js';
 
 /**
@@ -13,23 +14,7 @@ export default function aliasesPlugin({ aliases }) {
 		name: 'aliases',
 		async resolveId(id, importer) {
 			if (typeof id !== 'string' || id.match(/^(\0|\.\.?\/)/)) return;
-			let aliased;
-
-			// Exact alias matches like for npm modules
-			for (let i in aliases) {
-				if (id === i) {
-					aliased = aliases[i];
-					break;
-				}
-			}
-
-			for (let i in aliases) {
-				const k = i.endsWith('/') ? i : i + '/';
-				if (id.startsWith(k)) {
-					aliased = aliases[k] + id.substring(k.length - 1);
-					break;
-				}
-			}
+			const aliased = resolveAlias(aliases, id);
 			if (aliased == null || aliased === id) return;
 
 			// now allow other resolvers to handle the aliased version
