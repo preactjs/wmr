@@ -157,7 +157,9 @@ export async function getOutput(env, instance) {
 		addrs.set(instance, address);
 	}
 
-	await env.page.goto(address);
+	await waitForPass(async () => {
+		await env.page.goto(address);
+	}, 5000);
 	return await env.page.content();
 }
 
