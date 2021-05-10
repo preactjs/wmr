@@ -119,26 +119,23 @@ const config = {
 			// rather than bundleds as fs.readFile()
 			name: 'fix-visualizer',
 			transform(code, id) {
-				if (/rollup-plugin-visualizer[/\\]plugin[/\\]build-stats\.js$/.test(id)) {
-					code = code.replace(
-						/fs\.readFile\(path\.join\(__dirname,\s*(.+?)\)\s*,\s*"utf8"\s*\)/g,
-						(str, stringifiedJoin) => {
-							const path = require('path');
-							const fs = require('fs');
-							const filePathParts = stringifiedJoin
-								.replace(/['"`]+/g, '')
-								.replace(/\$\{template\}/g, 'treemap')
-								.split(', ');
-							const filepath = path.resolve(path.dirname(id), ...filePathParts);
-							try {
-								const text = fs.readFileSync(filepath, 'utf-8');
-								return `Promise.resolve(${JSON.stringify(text)})`;
-							} catch (err) {
-								this.warn(`Failed to inline ${filepath} into ${id}:\n${err.message}`);
-								return `Promise.reject(Error(${JSON.stringify(err.message)}))`;
-							}
+				if (/rollup-plugin-visualizer[/\\]dist[/\\]plugin[/\\]build-stats\.js$/.test(id)) {
+					code = code.replace(/fs.*readFile.*\(__dirname,\s*(.+?)\)\s*,\s*"utf8"\s*\)/g, (_str, stringifiedJoin) => {
+						const path = require('path');
+						const fs = require('fs');
+						const filePathParts = stringifiedJoin
+							.replace(/['"`]+/g, '')
+							.replace(/\$\{template\}/g, 'treemap')
+							.split(', ');
+						const filepath = path.resolve(path.dirname(id), ...filePathParts);
+						try {
+							const text = fs.readFileSync(filepath, 'utf-8');
+							return `Promise.resolve(${JSON.stringify(text)})`;
+						} catch (err) {
+							this.warn(`Failed to inline ${filepath} into ${id}:\n${err.message}`);
+							return `Promise.reject(Error(${JSON.stringify(err.message)}))`;
 						}
-					);
+					});
 					return { code, map: null };
 				}
 			}
