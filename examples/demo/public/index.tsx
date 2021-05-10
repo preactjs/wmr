@@ -7,10 +7,12 @@ import Header from './header.tsx';
 
 const sleep = t => new Promise(r => setTimeout(r, t));
 
+const IS_CLIENT = typeof window !== 'undefined';
+
 const About = lazy(() => import('./pages/about/index.js'));
-const LazyAndLate = lazy(async () => (await sleep(1500), import('./pages/about/index.js')));
+const LazyAndLate = lazy(async () => (IS_CLIENT && (await sleep(1500)), import('./pages/about/index.js')));
 const CompatPage = lazy(() => import('./pages/compat.js'));
-const ClassFields = lazy(async () => (await sleep(1500), import('./pages/class-fields.js')));
+const ClassFields = lazy(async () => (IS_CLIENT && (await sleep(1500)), import('./pages/class-fields.js')));
 const Files = lazy(() => import('./pages/files/index.js'));
 const Environment = lazy(async () => (await import('./pages/environment/index.js')).Environment);
 const JSONView = lazy(async () => (await import('./pages/json.js')).JSONView);
