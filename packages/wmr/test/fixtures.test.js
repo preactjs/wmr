@@ -9,7 +9,9 @@ import {
 	get,
 	waitForMessage,
 	waitForNotMessage,
-	waitFor
+	waitFor,
+	withLog,
+	waitForPass
 } from './test-helpers.js';
 import { rollup } from 'rollup';
 import nodeBuiltinsPlugin from '../src/plugins/node-builtins-plugin.js';
@@ -167,13 +169,15 @@ describe('fixtures', () => {
 		it('should return ?asset URLs in development', async () => {
 			await loadFixture('url-prefix', env);
 			instance = await runWmrFast(env.tmp.path);
-			const output = await getOutput(env, instance);
-			expect(output).toMatch(/<pre id="out">{.+}<\/pre>/);
-			const json = JSON.parse(await env.page.$eval('#out', el => el.textContent || ''));
-			expect(json).toHaveProperty('htmlUrl', '/index.html?asset');
-			expect(json).toHaveProperty('selfUrl', '/index.js?asset');
-			const out = await env.page.evaluate(async () => await (await fetch('/index.js?asset')).text());
-			expect(out).toEqual(await fs.readFile(path.resolve(__dirname, 'fixtures/url-prefix/index.js'), 'utf-8'));
+			await withLog(instance.output, async () => {
+				const output = await getOutput(env, instance);
+				expect(output).toMatch(/<pre id="out">{.+}<\/pre>/);
+				const json = JSON.parse(await env.page.$eval('#out', el => el.textContent || ''));
+				expect(json).toHaveProperty('htmlUrl', '/index.html?asset');
+				expect(json).toHaveProperty('selfUrl', '/index.js?asset');
+				const out = await env.page.evaluate(async () => await (await fetch('/index.js?asset')).text());
+				expect(out).toEqual(await fs.readFile(path.resolve(__dirname, 'fixtures/url-prefix/index.js'), 'utf-8'));
+			});
 		});
 	});
 
@@ -185,6 +189,98 @@ describe('fixtures', () => {
 			expect(output).toMatch(/preact was used to render/);
 			expect(await env.page.evaluate(`window.React === window.preactCompat`)).toBe(true);
 			expect(await env.page.evaluate(`window.ReactDOM === window.preactCompat`)).toBe(true);
+		});
+
+		it('should allow directory aliasing outside of cwd', async () => {
+			await loadFixture('alias-outside', env);
+			instance = await runWmrFast(env.tmp.path);
+			await withLog(instance.output, async () => {
+				const output = await getOutput(env, instance);
+				expect(output).toMatch(/it works/);
+
+				await page.evaluate(async () => {
+					try {
+						await import('./forbidden.js');
+						throw new Error('fail');
+					} catch (err) {
+						if (err.message === 'fail') {
+							throw err;
+						}
+					}
+				});
+
+				const status = await page.evaluate(async () => {
+					const res = await fetch('/@alias/forbidden/forbidden.js');
+					return res.status;
+				});
+				expect(status).toEqual(404);
+			});
+		});
+
+		it('should alias <project>/src/ by default', async () => {
+			await loadFixture('alias-src', env);
+			instance = await runWmrFast(env.tmp.path);
+			await withLog(instance.output, async () => {
+				const output = await getOutput(env, instance);
+				expect(output).toMatch(/it works/);
+			});
+		});
+
+		it('should alias assets', async () => {
+			await loadFixture('alias-src', env);
+			instance = await runWmrFast(env.tmp.path);
+			await withLog(instance.output, async () => {
+				const output = await getOutput(env, instance);
+				expect(output).toMatch(/it works/);
+			});
+		});
+
+		it('should alias CSS', async () => {
+			await loadFixture('alias-css', env);
+			instance = await runWmrFast(env.tmp.path);
+			await withLog(instance.output, async () => {
+				await getOutput(env, instance);
+				const color = await env.page.$eval('h1', el => getComputedStyle(el).color);
+				expect(color).toBe('rgb(255, 218, 185)');
+			});
+		});
+
+		it('should watch aliased directories', async () => {
+			await loadFixture('alias-src', env);
+			instance = await runWmrFast(env.tmp.path);
+			await withLog(instance.output, async () => {
+				let output = await getOutput(env, instance);
+				expect(output).toMatch(/it works/);
+
+				updateFile(env.tmp.path, 'src/works.js', () => {
+					return `export const works = 'works 2';`;
+				});
+
+				output = await getOutput(env, instance);
+				expect(output).toMatch(/it works 2/);
+			});
+		});
+
+		it('should watch aliased parent directories', async () => {
+			await loadFixture('alias-parent', env);
+			instance = await runWmrFast(env.tmp.path);
+			await withLog(instance.output, async () => {
+				await getOutput(env, instance);
+
+				await await waitForPass(async () => {
+					const color = await env.page.$eval('h1', el => getComputedStyle(el).color);
+					expect(color).toBe('rgb(255, 218, 185)');
+				});
+
+				updateFile(env.tmp.path, 'foo/style.css', () => {
+					return `h1 { color: red; }`;
+				});
+
+				await await waitForPass(async () => {
+					const color = await env.page.$eval('h1', el => getComputedStyle(el).color);
+					expect(color).toBe('rgb(255, 0, 0)');
+				});
+			});
 		});
 	});
 
@@ -241,6 +337,7 @@ describe('fixtures', () => {
 			await loadFixture('css-imports', env);
 			instance = await runWmrFast(env.tmp.path);
 			await getOutput(env, instance);
+			console.log(instance.output);
 			expect(await env.page.$eval('h1', el => getComputedStyle(el).color)).toBe('rgb(255, 0, 0)');
 		});
 

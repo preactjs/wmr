@@ -1,4 +1,4 @@
-import { resolve, dirname, relative, sep, posix } from 'path';
+import { resolve, dirname, relative, sep, posix, isAbsolute, normalize, basename } from 'path';
 import { promises as fs, createReadStream } from 'fs';
 import * as kl from 'kolorist';
 import wmrPlugin, { getWmrClient } from './plugins/wmr/plugin.js';
@@ -11,10 +11,13 @@ import { getMimeType } from './lib/mimetypes.js';
 import { debug, formatPath } from './lib/output-utils.js';
 import { getPlugins } from './lib/plugins.js';
 import { watch } from './lib/fs-watcher.js';
+import { matchAlias, resolveAlias } from './lib/aliasing.js';
 
 const NOOP = () => {};
 
 const log = debug('wmr:middleware');
+const logWatcher = debug('wmr:watcher');
+const logCache = debug('wmr:cache');
 
 /**
  * In-memory cache of files that have been generated and written to .cache/
@@ -29,7 +32,7 @@ export const moduleGraph = new Map();
  * @returns {import('polka').Middleware}
  */
 export default function wmrMiddleware(options) {
-	let { cwd, root, out, distDir = 'dist', onError, onChange = NOOP } = options;
+	let { cwd, root, out, distDir = 'dist', onError, onChange = NOOP, aliases } = options;
 
 	distDir = resolve(dirname(out), distDir);
 
@@ -46,7 +49,14 @@ export default function wmrMiddleware(options) {
 
 	NonRollup.buildStart();
 
-	const watcher = watch([cwd, resolve(root, 'package.json')], {
+	// Make watcher aware of aliased directories
+	const pathAliases = Object.keys(aliases)
+		.filter(key => key.endsWith('/*'))
+		.map(key => aliases[key]);
+	const watchDirs = [cwd, resolve(root, 'package.json'), ...pathAliases];
+	logWatcher(`watching:\n${watchDirs.map(d => kl.dim('- ' + d)).join('\n')}`);
+
+	const watcher = watch(watchDirs, {
 		cwd,
 		disableGlobbing: true,
 		ignored: [/(^|[/\\])(node_modules|\.git|\.DS_Store)([/\\]|$)/, resolve(cwd, out), resolve(cwd, distDir)]
@@ -94,12 +104,21 @@ export default function wmrMiddleware(options) {
 	}
 
 	watcher.on('change', filename => {
-		NonRollup.watchChange(resolve(cwd, filename));
-		// normalize paths to 'nix:
-		filename = filename.split(sep).join(posix.sep);
+		const absolute = resolve(cwd, filename);
+		NonRollup.watchChange(absolute);
+
+		// Resolve potentially aliased paths and normalize to 'nix:
+		const aliased = matchAlias(aliases, absolute.split(sep).join(posix.sep));
+		filename = aliased
+			? // Trim leading slash, we need a relative path for the cache
+			  aliased.slice(1)
+			: filename.split(sep).join(posix.sep);
+
+		logWatcher(`${kl.cyan(absolute)} -> ${kl.dim(filename)} [change]`);
 
 		// Delete any generated CSS Modules mapping modules:
 		const suffix = /\.module\.(css|s[ac]ss)$/.test(filename) ? '.js' : '';
+		logCache(`delete: ${kl.cyan(filename + suffix)}`);
 		WRITE_CACHE.delete(filename + suffix);
 
 		if (!pendingChanges.size) timeout = setTimeout(flushChanges, 60);
@@ -135,34 +154,50 @@ export default function wmrMiddleware(options) {
 			return next();
 		}
 
+		let prefix = '';
+
 		// Workaround for transform forcing extensionless ids to be
 		// non-js
 		let hasIdPrefix = false;
 
+		let file = '';
+		let id = path;
+
+		// Cache key for write cache. Preserves `@id` and `@alias` prefixes
+		let cacheKey = id.slice(1); // Strip "/" at the beginning
+
 		// Path for virtual modules that refer to an unprefixed id.
 		if (path.startsWith('/@id/')) {
+			// Virtual paths have no exact file match, so we don't set `file`
 			hasIdPrefix = true;
-			path = path.slice('/@id'.length);
+			id = path.slice('/@id/'.length);
+		} else if (path.startsWith('/@alias/')) {
+			id = posix.normalize(path.slice('/@alias/'.length));
+
+			// Resolve to a file here for non-js Transforms
+			file = resolveAlias(options.aliases, id);
+		} else {
+			const prefixMatches = path.match(/^\/?@([a-z-]+)(\/.+)$/);
+			if (prefixMatches) {
+				prefix = '\0' + prefixMatches[1] + ':';
+				path = prefixMatches[2];
+			}
+
+			// convert to OS path:
+			const osPath = path.slice(1).split(posix.sep).join(sep);
+
+			file = resolve(cwd, osPath);
+
+			// Rollup-style CWD-relative Unix-normalized path "id":
+			id = relative(cwd, file).replace(/^\.\//, '').replace(/^[\0]/, '').split(sep).join(posix.sep);
+
+			// add back any prefix if there was one:
+			file = prefix + file;
+			id = prefix + id;
+
+			// TODO: Vefify prefix mappings in write cache
+			cacheKey = id;
 		}
-
-		let prefix = '';
-		const prefixMatches = path.match(/^\/?@([a-z-]+)(\/.+)$/);
-		if (prefixMatches) {
-			prefix = '\0' + prefixMatches[1] + ':';
-			path = prefixMatches[2];
-		}
-
-		// convert to OS path:
-		const osPath = path.slice(1).split(posix.sep).join(sep);
-
-		let file = resolve(cwd, osPath);
-
-		// Rollup-style CWD-relative Unix-normalized path "id":
-		let id = relative(cwd, file).replace(/^\.\//, '').replace(/^[\0]/, '').split(sep).join(posix.sep);
-
-		// add back any prefix if there was one:
-		file = prefix + file;
-		id = prefix + id;
 
 		let type = getMimeType(file);
 		if (type) {
@@ -191,7 +226,19 @@ export default function wmrMiddleware(options) {
 
 		try {
 			const start = Date.now();
-			const result = await transform({ req, res, id, file, path, prefix, cwd, out, NonRollup });
+			const result = await transform({
+				req,
+				res,
+				id,
+				file,
+				path,
+				prefix,
+				cwd,
+				out,
+				NonRollup,
+				aliases: options.aliases,
+				cacheKey
+			});
 
 			// return false to skip handling:
 			if (result === false) return next();
@@ -223,6 +270,57 @@ export default function wmrMiddleware(options) {
 }
 
 /**
+ *
+ * @param {string} file Path to file to load
+ * @param {string} cwd
+ * @param {Record<string, string>} aliases
+ * @returns
+ */
+function resolveFile(file, cwd, aliases) {
+	// Probably an error if we ar enot called with an absolute path
+	if (!isAbsolute(file)) {
+		throw new Error(`Expected absolute path but got: ${file}`);
+	}
+
+	// Safety measures should always be as close as possible to the thing that
+	// they're trying to protect. Otherwise those meausures will be accidentally
+	// removed during a future refactoring.
+
+	// Normalize the result, collapses `/../` and stuff
+	file = normalize(file);
+
+	// No dotfiles, which usually contain sensitive stuff
+	if (basename(file).startsWith('.')) {
+		throw new Error(`Loading files starting with a dot is not allowed: ${file}`);
+	}
+
+	// Check if the file resolved to something we are actually allowed to load.
+	meup: if (relative(cwd, file).startsWith('..')) {
+		// TODO: Better to precompute this in normalizeOptions?
+		const includeDirs = [cwd];
+		// File is not in cwd, but might still be in an aliased directory
+		for (const alias in aliases) {
+			const value = aliases[alias];
+
+			if (isAbsolute(value)) {
+				includeDirs.push(value);
+
+				if (!relative(value, file).startsWith('..')) {
+					break meup;
+				}
+			}
+		}
+
+		const allowed = includeDirs.map(d => `- ${d}`).join('\n');
+		throw new Error(
+			`Not allowed to load file: ${file}.\nAdd an alias to a directory if you want to include load files outside of the web root. The current configured directories to load files from are:\n${allowed}`
+		);
+	}
+
+	return file;
+}
+
+/**
  * @typedef Context
  * @property {ReturnType<createPluginContainer>} NonRollup
  * @property {string} id rollup-style cwd-relative file identifier
@@ -231,6 +329,8 @@ export default function wmrMiddleware(options) {
  * @property {string} prefix a Rollup plugin -style path `\0prefix:`, if the URL was `/＠prefix/*`
  * @property {string} cwd working directory, including ./public if detected
  * @property {string} out output directory
+ * @property {Record<string, string>} aliases
+ * @property {string} cacheKey Key for write cache
  * @property {InstanceType<import('http')['IncomingMessage']>} req HTTP Request object
  * @property {InstanceType<import('http')['ServerResponse']>} res HTTP Response object
  */
@@ -273,7 +373,7 @@ export const TRANSFORMS = {
 	},
 
 	// Handle individual JavaScript modules
-	async js({ id, file, prefix, res, cwd, out, NonRollup, req }) {
+	async js({ id, file, prefix, res, cwd, out, NonRollup, req, aliases, cacheKey }) {
 		let code;
 		try {
 			res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
@@ -290,8 +390,12 @@ export const TRANSFORMS = {
 			code = typeof result == 'object' ? result && result.code : result;
 
 			if (code == null || code === false) {
+				// Always use the resolved id as the basis for our file
+				let file = resolvedId;
 				if (prefix) file = file.replace(prefix, '');
-				code = await fs.readFile(resolve(cwd, file), 'utf-8');
+				file = file.split(posix.sep).join(sep);
+				if (!isAbsolute(file)) file = resolve(cwd, file);
+				code = await fs.readFile(resolveFile(file, cwd, aliases), 'utf-8');
 			}
 
 			code = await NonRollup.transform(code, id);
@@ -348,29 +452,41 @@ export const TRANSFORMS = {
 					// foo.css --> foo.css.js (import of CSS Modules proxy module)
 					if (spec.match(/\.(css|s[ac]ss)$/)) spec += '.js';
 
-					// Bare specifiers are npm packages:
-					if (!/^\0?\.?\.?[/\\]/.test(spec)) {
-						// Check if this is a virtual module path from a plugin. If
-						// no plugin loads the id, then we know that the bare specifier
-						// must refer to an npm plugin.
-						// TODO: Cache the result to avoid having to load an id twice.
-						const res = await NonRollup.load(spec);
+					// If file resolves outside of root it may be an aliased path.
+					if (spec.startsWith('.')) {
+						const aliased = matchAlias(aliases, posix.resolve(posix.dirname(file), spec));
+						if (aliased) spec = aliased;
+					}
 
-						if (res === null) {
-							const meta = normalizeSpecifier(spec);
+					if (!spec.startsWith('/@alias/') && !/^\0?\.?\.?[/\\]/.test(spec)) {
+						// Check if the spec is an alias
+						const aliased = matchAlias(aliases, spec);
+						if (aliased) spec = aliased;
 
-							// // Option 1: resolve all package verions (note: adds non-trivial delay to imports)
-							// await resolvePackageVersion(meta);
-							// // Option 2: omit package versions that resolve to the root
-							// // if ((await resolvePackageVersion({ module: meta.module, version: '' })).version === meta.version) {
-							// // 	meta.version = '';
-							// // }
-							// spec = `/@npm/${meta.module}${meta.version ? '@' + meta.version : ''}${meta.path ? '/' + meta.path : ''}`;
+						if (!spec.startsWith('/@alias/')) {
+							// Check if this is a virtual module path from a plugin. If
+							// no plugin loads the id, then we know that the bare specifier
+							// must refer to an npm plugin.
+							// TODO: Cache the result to avoid having to load an id twice.
+							const res = await NonRollup.load(spec);
 
-							// Option 3: omit root package versions
-							spec = `/@npm/${meta.module}${meta.path ? '/' + meta.path : ''}`;
-						} else {
-							spec = `/@id/${spec}`;
+							if (res === null) {
+								// Bare specifiers are npm packages:
+								const meta = normalizeSpecifier(spec);
+
+								// // Option 1: resolve all package verions (note: adds non-trivial delay to imports)
+								// await resolvePackageVersion(meta);
+								// // Option 2: omit package versions that resolve to the root
+								// // if ((await resolvePackageVersion({ module: meta.module, version: '' })).version === meta.version) {
+								// // 	meta.version = '';
+								// // }
+								// spec = `/@npm/${meta.module}${meta.version ? '@' + meta.version : ''}${meta.path ? '/' + meta.path : ''}`;
+
+								// Option 3: omit root package versions
+								spec = `/@npm/${meta.module}${meta.path ? '/' + meta.path : ''}`;
+							} else {
+								spec = `/@id/${spec}`;
+							}
 						}
 					}
 
@@ -394,7 +510,7 @@ export const TRANSFORMS = {
 				}
 			});
 
-			writeCacheFile(out, id, code);
+			writeCacheFile(out, cacheKey, code);
 
 			return code;
 		} catch (e) {
@@ -406,7 +522,7 @@ export const TRANSFORMS = {
 		}
 	},
 	// Handles "CSS Modules" proxy modules (style.module.css.js)
-	async cssModule({ id, file, cwd, out, res }) {
+	async cssModule({ id, file, cwd, out, res, aliases, cacheKey }) {
 		res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
 
 		// Cache the generated mapping/proxy module with a .js extension (the CSS itself is also cached)
@@ -416,7 +532,7 @@ export const TRANSFORMS = {
 
 		// We create a plugin container for each request to prevent asset referenceId clashes
 		const container = createPluginContainer(
-			[wmrPlugin({ hot: true }), sassPlugin(), wmrStylesPlugin({ cwd, hot: true, fullPath: true })],
+			[wmrPlugin({ hot: true }), sassPlugin(), wmrStylesPlugin({ cwd, hot: true, fullPath: true, aliases })],
 			{
 				cwd,
 				output: {
@@ -429,7 +545,7 @@ export const TRANSFORMS = {
 			}
 		);
 
-		const result = (await container.load(file)) || (await fs.readFile(resolve(cwd, file), 'utf-8'));
+		const result = (await container.load(file)) || (await fs.readFile(resolveFile(file, cwd, aliases), 'utf-8'));
 
 		let code = typeof result === 'string' ? result : result && result.code;
 
@@ -446,13 +562,13 @@ export const TRANSFORMS = {
 			}
 		});
 
-		writeCacheFile(out, id, code);
+		writeCacheFile(out, cacheKey, code);
 
 		return code;
 	},
 
 	// Handles CSS Modules (the actual CSS)
-	async css({ id, path, file, cwd, out, res }) {
+	async css({ id, path, file, cwd, out, res, aliases, cacheKey }) {
 		if (!/\.(css|s[ac]ss)$/.test(path)) throw null;
 
 		const isModular = /\.module\.(css|s[ac]ss)$/.test(path);
@@ -463,7 +579,7 @@ export const TRANSFORMS = {
 
 		if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
 
-		const idAbsolute = resolve(cwd, file);
+		const idAbsolute = resolveFile(file, cwd, aliases);
 		let code = await fs.readFile(idAbsolute, 'utf-8');
 
 		if (isModular) {
@@ -481,7 +597,7 @@ export const TRANSFORMS = {
 		// };
 		// await plugin.load.call(context, file);
 
-		writeCacheFile(out, id, code);
+		writeCacheFile(out, cacheKey, code);
 
 		return code;
 	},
@@ -529,6 +645,14 @@ async function writeCacheFile(rootDir, fileName, data) {
 
 	WRITE_CACHE.set(fileName, data);
 	const filePath = resolve(rootDir, fileName);
+	logCache(`write ${kl.cyan(fileName)} -> ${kl.dim(filePath)}`);
+
+	// Safeguard to avoid accidentally overwriting user files. If we throw here
+	// we have very likely a bug in WMR.
+	if (!filePath.startsWith(rootDir)) {
+		throw new Error(`Attempting to write outside cache dir: ${filePath}`);
+	}
+
 	if (dirname(filePath) !== rootDir) {
 		await fs.mkdir(dirname(filePath), { recursive: true });
 	}

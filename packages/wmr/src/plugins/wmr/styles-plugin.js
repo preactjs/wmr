@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import { basename, dirname, relative, resolve, sep, posix } from 'path';
 import { transformCssImports } from '../../lib/transform-css-imports.js';
 import { transformCss } from '../../lib/transform-css.js';
+import { matchAlias } from '../../lib/aliasing.js';
 
 /**
  * @param {string} sass
@@ -92,14 +93,15 @@ export async function modularizeCss(css, id, mappings = [], idAbsolute) {
 
 /**
  * Implements hot-reloading for stylesheets imported by JS.
- * @param {object} [options]
+ * @param {object} options
  * @param {string} [options.cwd] Manually specify the cwd from which to resolve filenames (important for calculating hashes!)
  * @param {boolean} [options.hot] Indicates the plugin should inject a HMR-runtime
  * @param {boolean} [options.fullPath] Preserve the full original path when producing CSS assets
  * @param {boolean} [options.production]
+ * @param {Record<string, string>} options.aliases
  * @returns {import('rollup').Plugin}
  */
-export default function wmrStylesPlugin({ cwd, hot, fullPath, production } = {}) {
+export default function wmrStylesPlugin({ cwd, hot, fullPath, production, aliases }) {
 	const cwds = new Set();
 
 	let assetId = 0;
@@ -122,7 +124,14 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath, production } = {})
 			const isIcss = /(composes:|:global|:local)/.test(source);
 			const isModular = /\.module\.(css|s[ac]ss)$/.test(id);
 
-			let idRelative = cwd ? relative(cwd || '', resolve(cwd, id)) : multiRelative(cwds, id);
+			let idRelative = id;
+			let aliased = matchAlias(aliases, id);
+			if (aliased) {
+				idRelative = aliased.slice('/@alias/'.length);
+			} else {
+				idRelative = cwd ? relative(cwd || '', id) : multiRelative(cwds, id);
+			}
+
 			if (idRelative.match(/^[^/]*\\/)) idRelative = idRelative.split(sep).join(posix.sep);
 
 			const mappings = [];
@@ -165,7 +174,7 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath, production } = {})
 			const ref = this.emitFile({
 				type: 'asset',
 				name: fullPath ? undefined : basename(id).replace(/\.s[ac]ss$/, '.css'),
-				fileName: fullPath ? idRelative : undefined,
+				fileName: fullPath ? (aliased ? `@alias/${idRelative}` : idRelative) : undefined,
 				source
 			});
 

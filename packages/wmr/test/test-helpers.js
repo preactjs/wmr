@@ -50,6 +50,11 @@ export async function teardown(env) {
  */
 export async function loadFixture(name, env) {
 	const fixture = path.join(__dirname, 'fixtures', name);
+
+	// Ensure fixture name is included for parent alias tests
+	env.tmp.path = path.join(env.tmp.path, path.basename(name));
+	await fs.mkdir(env.tmp.path, { recursive: true });
+
 	await ncp(fixture, env.tmp.path);
 	try {
 		await fs.mkdir(path.join(env.tmp.path, 'node_modules', 'wmr'), { recursive: true });
@@ -152,7 +157,9 @@ export async function getOutput(env, instance) {
 		addrs.set(instance, address);
 	}
 
-	await env.page.goto(address);
+	await waitForPass(async () => {
+		await env.page.goto(address);
+	}, 5000);
 	return await env.page.content();
 }
 
@@ -199,6 +206,33 @@ export async function waitFor(fn, timeout = 2000) {
 	}
 
 	return false;
+}
+
+/**
+ * Wait until a function doesn't throw anymmore
+ * @param {() => any} fn
+ * @param {number} timeout
+ * @returns {Promise<void>}
+ */
+export async function waitForPass(fn, timeout = 2000) {
+	const start = Date.now();
+
+	let error;
+	while (start + timeout >= Date.now()) {
+		try {
+			await fn();
+			return;
+		} catch (err) {
+			if (!ignoreError(err)) {
+				error = err;
+			}
+		}
+
+		// Wait a little before the next iteration
+		await wait(10);
+	}
+
+	throw error ? error : new Error(`waitForPass timed out. Waited ${timeout}ms`);
 }
 
 /**
@@ -251,7 +285,7 @@ export async function withLog(haystack, fn) {
 	try {
 		await fn();
 	} catch (err) {
-		console.log(haystack);
+		console.log(haystack.join('\n'));
 		throw err;
 	}
 }
