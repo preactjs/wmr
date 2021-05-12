@@ -153,7 +153,7 @@ export default defineConfig({
 		// Aliasing an npm module, in this case `react` to `preact/compat`
 		react: 'preact/compat'
 		// Aliasing `~` to a directory called `foo/`
-		"~/*": './foo`
+		"~/*": './foo'`
 	}
 });
 ```
