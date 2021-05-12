@@ -9,7 +9,7 @@ import nodeResolve from '@rollup/plugin-node-resolve';
 import alias from '@rollup/plugin-alias';
 import json from '@rollup/plugin-json';
 import builtins from 'builtin-modules';
-import terser from 'terser';
+import { minify } from 'terser';
 
 /** @type {import('rollup').RollupOptions} */
 const config = {
@@ -27,8 +27,8 @@ const config = {
 		plugins: [
 			{
 				name: 'minify',
-				renderChunk(code) {
-					const result = terser.minify(code, {
+				async renderChunk(code) {
+					const result = await minify(code, {
 						ecma: 2019,
 						module: true,
 						compress: {
@@ -44,7 +44,8 @@ const config = {
 							ecma: 2019
 						}
 					});
-					return result.code || null;
+					if (typeof result.code === 'string') code = result.code;
+					return { code };
 				}
 			}
 		]
