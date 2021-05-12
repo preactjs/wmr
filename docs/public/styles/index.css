@@ -178,7 +178,7 @@ code {
 
 /* inline code blocks */
 code:not([class]) {
-	padding: 0.25rem 0.5rem;
+	padding: 0.125rem 0.25rem;
 	border-radius: 0.25rem;
 	background: var(--color-bg-code-inline);
 }
