@@ -24,7 +24,7 @@ import { parseStackTrace } from 'errorstacks';
 const deepCloneJSON = obj => JSON.parse(JSON.stringify(obj));
 
 /**
- * @param {Parameters<server>[0] & OtherOptions} options
+ * @param {Parameters<typeof server>[0] & OtherOptions} options
  */
 export default async function start(options = {}) {
 	// @todo remove this hack once registry.js is instantiable
