@@ -568,6 +568,7 @@ h5:hover .anchor {
 .md ul {
 	list-style: disc;
 	margin-left: 1.25rem;
+	margin-bottom: 0.5rem;
 }
 
 .md a {
