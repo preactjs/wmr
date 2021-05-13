@@ -476,7 +476,21 @@ const TYPES = {
 					let { value } = child;
 					if (value !== '') {
 						if (visitingCtx && visitingCtx.generatorOpts.compact) {
-							value = value.replace(/\s*\n+\s*/g, '');
+							// Newlines must be replaced with a space character, but only if
+							// we're inside a text node
+							//
+							// <p>hello
+							//    world</p>  -> <p>hello world</p>
+							//
+							// <p>
+							//    hello world  -> <p>hello world</p>
+							// </p>
+							//
+							// We can drop the whole matched string if it only contains
+							// whitespace characters, because that means we're at the
+							// beginning or at the end of the JSXText node
+							const replacement = /\w/.test(value) ? ' ' : '';
+							value = value.replace(/\s*\n+\s*/g, replacement);
 						}
 						children.push(TYPES.stringLiteral(value));
 					}
