@@ -191,6 +191,20 @@ describe('fixtures', () => {
 			expect(await env.page.evaluate(`window.ReactDOM === window.preactCompat`)).toBe(true);
 		});
 
+		it('should warn when .aliases instead of .alias is found in config', async () => {
+			await loadFixture('alias-deprecated', env);
+			instance = await runWmrFast(env.tmp.path);
+			const output = await getOutput(env, instance);
+
+			await withLog(instance.output, async () => {
+				expect(output).toMatch(/preact was used to render/);
+				expect(await env.page.evaluate(`window.React === window.preactCompat`)).toBe(true);
+				expect(await env.page.evaluate(`window.ReactDOM === window.preactCompat`)).toBe(true);
+
+				expect(instance.output.join('\n')).toMatch(/Please switch to "alias"/);
+			});
+		});
+
 		it('should allow directory aliasing outside of cwd', async () => {
 			await loadFixture('alias-outside', env);
 			instance = await runWmrFast(env.tmp.path);

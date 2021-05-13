@@ -9,7 +9,7 @@ Add support for importing files outside of the main public directory. This featu
 import { defineConfig } from 'wmr';
 
 export default defineConfig({
-	aliases: {
+	alias: {
 		// This will alias "~" to "<project>/src/components/"
 		'~/': './src/components/'
 	}

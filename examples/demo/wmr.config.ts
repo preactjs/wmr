@@ -1,6 +1,6 @@
 export default function () {
 	return {
-		aliases: {
+		alias: {
 			'src/*': 'src'
 		}
 	};

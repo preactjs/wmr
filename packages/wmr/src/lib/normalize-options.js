@@ -4,7 +4,7 @@ import url from 'url';
 import { isFile, isDirectory } from './fs-utils.js';
 import { readEnvFiles } from './environment.js';
 import { compileSingleModule } from './compile-single-module.js';
-import { debug, setDebugCliArg } from './output-utils.js';
+import { debug, deprecated, setDebugCliArg } from './output-utils.js';
 import { getPort, supportsSearchParams } from './net-utils.js';
 
 /**
@@ -27,7 +27,7 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 	options.output = [];
 	options.middleware = [];
 	options.features = { preact: true };
-	options.aliases = options.aliases || {};
+	options.alias = options.alias || options.aliases || {};
 
 	// `wmr` / `wmr start` is a development command.
 	// `wmr build` / `wmr serve` are production commands.
@@ -78,7 +78,7 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 	const pkgFile = resolve(options.root, 'package.json');
 	try {
 		const pkg = JSON.parse(await fs.readFile(pkgFile, 'utf-8'));
-		options.aliases = pkg.alias || {};
+		Object.assign(options.alias, pkg.alias || {});
 		configWatchFiles.push(pkgFile);
 	} catch (e) {
 		// ignore error, reading aliases from package.json is an optional feature
@@ -174,6 +174,13 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 		}
 	}
 
+	if (options.aliases && Object.keys(options.aliases).length > 0) {
+		deprecated(
+			'Found "aliases" property in WMR\'s configuration. It will be removed in a future version of WMR. Please switch to "alias" instead.'
+		);
+		Object.assign(options.alias, options.aliases);
+	}
+
 	// Sort plugins by "enforce" phase. Default is "normal".
 	// The execution order is: "pre" -> "normal" -> "post"
 	if (options.plugins) {
@@ -188,18 +195,18 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 	await runConfigHook('configResolved', options.plugins);
 
 	// Add src as a default alias if such a folder is present
-	if (!('src/*' in options.aliases)) {
+	if (!('src/*' in options.alias)) {
 		const maybeSrc = resolve(options.root, 'src');
 		if (await isDirectory(maybeSrc)) {
-			options.aliases['src/*'] = maybeSrc;
+			options.alias['src/*'] = maybeSrc;
 		}
 	}
 
-	// Resolve path-like aliases to absolute paths
-	for (const name in options.aliases) {
+	// Resolve path-like alias mapping to absolute paths
+	for (const name in options.alias) {
 		if (name.endsWith('/*')) {
-			const value = options.aliases[name];
-			options.aliases[name] = resolve(options.root, value);
+			const value = options.alias[name];
+			options.alias[name] = resolve(options.root, value);
 		}
 	}
 

@@ -12,10 +12,10 @@ const escapeUrl = url => url.replace(/#/g, '%23').replace(/'/g, "\\'").replace(/
  * @param {object} options
  * @param {object} [options.inline = false] Emit a Data URL module exporting the URL string.
  * @param {object} [options.cwd] Used to resolve the URL when `inline` is `true`.
- * @param {Record<string, string>} options.aliases
+ * @param {Record<string, string>} options.alias
  * @returns {import('rollup').Plugin}
  */
-export default function urlPlugin({ inline, cwd, aliases }) {
+export default function urlPlugin({ inline, cwd, alias }) {
 	const PREFIX = 'url:';
 	const INTERNAL_PREFIX = '\0url:';
 
@@ -33,7 +33,7 @@ export default function urlPlugin({ inline, cwd, aliases }) {
 
 			// In dev mode, we turn the import into an inline module that avoids a network request:
 			if (inline) {
-				const aliased = matchAlias(aliases, resolved.id);
+				const aliased = matchAlias(alias, resolved.id);
 				const url = (aliased || '/' + relative(cwd, resolved.id)) + '?asset';
 				log(`${kl.green('inline')} ${kl.dim(url)} <- ${kl.dim(resolved.id)}`);
 				return {

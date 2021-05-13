@@ -7,7 +7,7 @@ import npmPlugin from '../plugins/npm-plugin/index.js';
 import publicPathPlugin from '../plugins/public-path-plugin.js';
 import minifyCssPlugin from '../plugins/minify-css-plugin.js';
 import htmlEntriesPlugin from '../plugins/html-entries-plugin.js';
-import aliasesPlugin from '../plugins/aliases-plugin.js';
+import aliasPlugin from '../plugins/aliases-plugin.js';
 import processGlobalPlugin from '../plugins/process-global-plugin.js';
 import urlPlugin from '../plugins/url-plugin.js';
 import resolveExtensionsPlugin from '../plugins/resolve-extensions-plugin.js';
@@ -27,7 +27,7 @@ import { defaultLoaders } from './default-loaders.js';
  * @returns {import("wmr").Plugin[]}
  */
 export function getPlugins(options) {
-	const { plugins, cwd, publicPath, aliases, root, env, minify, mode, sourcemap, features, visualize } = options;
+	const { plugins, cwd, publicPath, alias, root, env, minify, mode, sourcemap, features, visualize } = options;
 
 	// Plugins are pre-sorted
 	let split = plugins.findIndex(p => p.enforce === 'post');
@@ -40,10 +40,10 @@ export function getPlugins(options) {
 		production && htmlEntriesPlugin({ cwd, publicPath }),
 		externalUrlsPlugin(),
 		nodeBuiltinsPlugin({ production }),
-		urlPlugin({ inline: !production, cwd, aliases }),
+		urlPlugin({ inline: !production, cwd, alias }),
 		jsonPlugin({ cwd }),
 		bundlePlugin({ inline: !production, cwd }),
-		aliasesPlugin({ aliases, cwd: root }),
+		aliasPlugin({ alias, cwd: root }),
 		sucrasePlugin({
 			typescript: true,
 			sourcemap,
@@ -56,7 +56,7 @@ export function getPlugins(options) {
 			}),
 		production && publicPathPlugin({ publicPath }),
 		sassPlugin({ production }),
-		production && wmrStylesPlugin({ hot: false, cwd, production, aliases }),
+		production && wmrStylesPlugin({ hot: false, cwd, production, alias }),
 		processGlobalPlugin({
 			env,
 			NODE_ENV: production ? 'production' : 'development'
