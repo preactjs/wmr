@@ -240,6 +240,15 @@ describe('fixtures', () => {
 			});
 		});
 
+		it('should not add <project>/src/ alias if that is our cwd', async () => {
+			await loadFixture('alias-src-public', env);
+			instance = await runWmrFast(env.tmp.path);
+			await withLog(instance.output, async () => {
+				const output = await getOutput(env, instance);
+				expect(output).toMatch(/it works/);
+			});
+		});
+
 		it('should alias assets', async () => {
 			await loadFixture('alias-src', env);
 			instance = await runWmrFast(env.tmp.path);

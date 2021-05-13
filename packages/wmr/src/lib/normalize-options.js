@@ -67,12 +67,6 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 		options.port = await getPort(options);
 	}
 
-	// If the CWD has a public/ directory, all files are assumed to be within it.
-	// From here, everything except node_modules and `out` are relative to public:
-	if (options.public !== '.' && (await isDirectory(join(options.cwd, options.public)))) {
-		options.cwd = join(options.cwd, options.public);
-	}
-
 	await ensureOutDirPromise;
 
 	const pkgFile = resolve(options.root, 'package.json');
@@ -194,10 +188,20 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 	await runConfigHook('config', options.plugins);
 	await runConfigHook('configResolved', options.plugins);
 
+	// If the CWD has a public/ directory, all files are assumed to be within it.
+	// From here, everything except node_modules and `out` are relative to public:
+	if (options.public !== '.' && (await isDirectory(join(options.cwd, options.public)))) {
+		options.cwd = join(options.cwd, options.public);
+	}
+
 	// Add src as a default alias if such a folder is present
 	if (!('src/*' in options.alias)) {
 		const maybeSrc = resolve(options.root, 'src');
-		if (await isDirectory(maybeSrc)) {
+		if (
+			// Don't add src alias if we are serving from that folder already
+			maybeSrc !== options.cwd &&
+			(await isDirectory(maybeSrc))
+		) {
 			options.alias['src/*'] = maybeSrc;
 		}
 	}
