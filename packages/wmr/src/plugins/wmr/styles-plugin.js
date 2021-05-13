@@ -98,10 +98,10 @@ export async function modularizeCss(css, id, mappings = [], idAbsolute) {
  * @param {boolean} [options.hot] Indicates the plugin should inject a HMR-runtime
  * @param {boolean} [options.fullPath] Preserve the full original path when producing CSS assets
  * @param {boolean} [options.production]
- * @param {Record<string, string>} options.aliases
+ * @param {Record<string, string>} options.alias
  * @returns {import('rollup').Plugin}
  */
-export default function wmrStylesPlugin({ cwd, hot, fullPath, production, aliases }) {
+export default function wmrStylesPlugin({ cwd, hot, fullPath, production, alias }) {
 	const cwds = new Set();
 
 	let assetId = 0;
@@ -125,7 +125,7 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath, production, aliase
 			const isModular = /\.module\.(css|s[ac]ss)$/.test(id);
 
 			let idRelative = id;
-			let aliased = matchAlias(aliases, id);
+			let aliased = matchAlias(alias, id);
 			if (aliased) {
 				idRelative = aliased.slice('/@alias/'.length);
 			} else {

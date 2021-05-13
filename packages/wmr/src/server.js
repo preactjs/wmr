@@ -26,9 +26,9 @@ import { hasDebugFlag } from './lib/output-utils.js';
  * @param {boolean} [options.http2 = false] Use HTTP/2
  * @param {boolean|number} [options.compress = true] Compress responses? Pass a `number` to set the size threshold.
  * @param {boolean} [options.optimize = true] Enable lazy dependency compression and optimization
- * @param {Record<string, string>} [options.aliases] module aliases
+ * @param {Record<string, string>} [options.alias] module or path alias mappings
  */
-export default async function server({ cwd, root, overlayDir, middleware, http2, compress = true, optimize, aliases }) {
+export default async function server({ cwd, root, overlayDir, middleware, http2, compress = true, optimize, alias }) {
 	try {
 		await fs.access(resolve(cwd, 'index.html'));
 	} catch (e) {
@@ -104,7 +104,7 @@ export default async function server({ cwd, root, overlayDir, middleware, http2,
 		app.use(compression({ threshold, level: 4 }));
 	}
 
-	app.use('/@npm', npmMiddleware({ aliases, optimize, cwd: root }));
+	app.use('/@npm', npmMiddleware({ alias, optimize, cwd: root }));
 
 	if (middleware) {
 		app.use(...middleware);

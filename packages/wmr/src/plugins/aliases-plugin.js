@@ -2,19 +2,19 @@ import { resolveAlias } from '../lib/aliasing.js';
 import { debug, formatResolved } from '../lib/output-utils.js';
 
 /**
- * Package.json "aliases" field: {"a":"b"}
+ * Package.json "alias" field: {"a":"b"}
  * @param {object} options
- * @param {Record<string,string>} options.aliases
+ * @param {Record<string,string>} options.alias
  * @returns {import('rollup').Plugin}
  */
-export default function aliasesPlugin({ aliases }) {
-	const log = debug('aliases');
+export default function aliasPlugin({ alias }) {
+	const log = debug('wmr:alias');
 
 	return {
-		name: 'aliases',
+		name: 'alias',
 		async resolveId(id, importer) {
 			if (typeof id !== 'string' || id.match(/^(\0|\.\.?\/)/)) return;
-			const aliased = resolveAlias(aliases, id);
+			const aliased = resolveAlias(alias, id);
 			if (aliased == null || aliased === id) return;
 
 			// now allow other resolvers to handle the aliased version

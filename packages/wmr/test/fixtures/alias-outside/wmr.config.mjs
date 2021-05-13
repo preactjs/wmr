@@ -1,5 +1,5 @@
 export default {
-	aliases: {
+	alias: {
 		'foo/*': './foo'
 	}
 };

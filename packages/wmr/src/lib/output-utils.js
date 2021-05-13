@@ -157,6 +157,14 @@ export function debug(namespace, color = selectColor(namespace)) {
 }
 
 /**
+ * Print a deprecation warning
+ * @param {string} message
+ */
+export function deprecated(message) {
+	console.log(kl.yellow(`Deprecated: ${message}`));
+}
+
+/**
  * Serialize path to display special characters such as
  * the null byte of necessary.
  * @param {string} path

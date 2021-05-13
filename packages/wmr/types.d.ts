@@ -38,7 +38,11 @@ declare module 'wmr' {
 		out: string;
 		overlayDir: string;
 		sourcemap: boolean;
+		/**
+		 * @deprecated Please use `alias` instead
+		 */
 		aliases: Record<string, string>;
+		alias: Record<string, string>;
 		env: Record<string, string>;
 		middleware: Middleware[];
 		plugins: Plugin[];

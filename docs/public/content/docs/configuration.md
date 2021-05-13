@@ -138,7 +138,7 @@ Render bundle size statistics into an interactive `stats.html` file after `wmr b
 
 Print debugging messages intended for plugin authors to the terminal.
 
-### Aliases
+### Aliasing and Path-Mappings
 
 - Type: `{ string: string }`
 - Default: `{}`
@@ -149,7 +149,7 @@ Alias npm modules to different ones or use path mappings to shorten import speci
 import { defineConfig } from 'wmr';
 
 export default defineConfig({
-	aliases: {
+	alias: {
 		// Aliasing an npm module, in this case `react` to `preact/compat`
 		react: 'preact/compat'
 		// Aliasing `~` to a directory called `foo/`
