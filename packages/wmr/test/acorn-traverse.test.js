@@ -151,6 +151,34 @@ describe('acorn-traverse', () => {
 			`);
 		});
 
+		it('should replace newlines with a space with compact option', () => {
+			const doTransform = code => transformWithPlugin(code, transformJsxToHtm);
+			const doTransformWithCompact = code =>
+				transformWithPlugin(code, transformJsxToHtm, { generatorOpts: { compact: true } });
+
+			const expression = dent`
+				(
+					<p>hello
+						world</p>
+				);
+			`;
+
+			// Should keep the newlines formatting
+			expect(doTransform(expression)).toMatchInlineSnapshot(`
+			"(
+				html\`<p>hello
+					world</p>\`
+			);"
+		`);
+
+			// Should remove the whitespaces between the HTM generated syntax
+			expect(doTransformWithCompact(expression)).toMatchInlineSnapshot(`
+			"(
+				html\`<p>hello world</p>\`
+			);"
+			`);
+		});
+
 		it('should handle root memberExpression component names', () => {
 			const doTransform = code => transformWithPlugin(code, transformJsxToHtm, { generatorOpts: { compact: true } });
 
