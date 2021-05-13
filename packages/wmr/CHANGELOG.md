@@ -1,5 +1,42 @@
 # wmr
 
+## 2.1.0
+
+### Minor Changes
+
+- [`10df8bb`](https://github.com/preactjs/wmr/commit/10df8bb7a3266f537f3e5742d2d8e85faa7962ac) [#619](https://github.com/preactjs/wmr/pull/619) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Deprecate "aliases" configuration in favor of "alias" to have a consistent name across various frontend tools. The "aliases" property will continue to work, but a deprecation warning will be printed to the console.
+
+  ```diff
+  export default {
+  -	aliases: {
+  +	alias: {
+  		react: 'preact/compat'
+  	}
+  };
+  ```
+
+* [`d907131`](https://github.com/preactjs/wmr/commit/d907131b43898e65872e3c4190456bc89b4fe58d) [#552](https://github.com/preactjs/wmr/pull/552) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Add support for importing files outside of the main public directory. This feature is based on aliases and `<project>/src` is added by default. To prevent unexpected file access only the directories defined in the aliases and the public directory are allowed to read files from. To alias a new path add the following to your WMR configuration file:
+
+  ```js
+  // File: wmr.config.mjs
+  import { defineConfig } from 'wmr';
+
+  export default defineConfig({
+  	alias: {
+  		// This will alias "~" to "<project>/src/components/"
+  		'~/': './src/components/'
+  	}
+  });
+  ```
+
+### Patch Changes
+
+- [`7e3c2a7`](https://github.com/preactjs/wmr/commit/7e3c2a743071d7a2f93a4a48e65f612758eedd5c) [#622](https://github.com/preactjs/wmr/pull/622) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix missing whitespace when JSXText spans multiple lines in prod
+
+* [`36b927f`](https://github.com/preactjs/wmr/commit/36b927f7900543cdd6602cde00f307cb91f7cd57) [#612](https://github.com/preactjs/wmr/pull/612) Thanks [@developit](https://github.com/developit)! - Upgrade to Terser 5
+
+- [`33a0fd7`](https://github.com/preactjs/wmr/commit/33a0fd7827d1197d9d32946360e73c6fd7fcf28d) [#620](https://github.com/preactjs/wmr/pull/620) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Don't add default `src/*` path mapping if we're using it as our public directory already.
+
 ## 2.0.2
 
 ### Patch Changes
