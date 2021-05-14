@@ -203,6 +203,32 @@ describe('production', () => {
 
 			expect(await env.page.content()).toMatch(/production/);
 		});
+
+		it('should contain all env variables starting with WMR_', async () => {
+			await loadFixture('env-vars', env);
+			instance = await runWmr(env.tmp.path, 'build', {
+				env: {
+					FOO: 'fail',
+					WMR_FOO: 'foo',
+					WMR_BAR: 'bar'
+				}
+			});
+
+			await withLog(instance.output, async () => {
+				expect(await instance.done).toEqual(0);
+
+				const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+				cleanup.push(stop);
+
+				await env.page.goto(address, {
+					waitUntil: ['networkidle0', 'load']
+				});
+
+				const output = await env.page.content();
+				expect(output).not.toMatch(/fail/i);
+				expect(output).toMatch(/foo bar/i);
+			});
+		});
 	});
 
 	describe('demo app', () => {

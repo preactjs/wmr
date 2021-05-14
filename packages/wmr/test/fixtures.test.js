@@ -669,6 +669,20 @@ describe('fixtures', () => {
 			const output = await getOutput(env, instance);
 			expect(output).toMatch(/development/i);
 		});
+
+		it('should contain all env variables starting with WMR_', async () => {
+			await loadFixture('env-vars', env);
+			instance = await runWmrFast(env.tmp.path, {
+				env: {
+					FOO: 'fail',
+					WMR_FOO: 'foo',
+					WMR_BAR: 'bar'
+				}
+			});
+			const output = await getOutput(env, instance);
+			expect(output).not.toMatch(/fail/i);
+			expect(output).toMatch(/foo bar/i);
+		});
 	});
 
 	describe('json', () => {

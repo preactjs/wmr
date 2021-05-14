@@ -66,3 +66,16 @@ export async function readEnvFiles(cwd, envFiles, configWatchFiles) {
 
 	return envs.reduce((acc, obj) => Object.assign(acc, obj), {});
 }
+
+/**
+ * Get all environment variables starting with `WMR_`
+ * @returns {Record<string, string>}
+ */
+export function getWmrEnvVars() {
+	return Object.keys(process.env).reduce((acc, name) => {
+		if (name.startsWith('WMR_')) {
+			acc[name] = process.env[name];
+		}
+		return acc;
+	}, {});
+}
