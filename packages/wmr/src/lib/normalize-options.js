@@ -98,7 +98,7 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 					out: resolve('.'),
 					hmr: false,
 					rewriteNodeImports: false,
-					format: pkg?.type === 'module' ? 'es' : 'commonjs'
+					format: pkg && pkg.type === 'module' ? 'es' : 'commonjs'
 				});
 			}
 
