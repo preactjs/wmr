@@ -71,6 +71,19 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 		options.port = await getPort(options);
 	}
 
+	// FIXME: We cannot support eagerly passing `options.public` into config AND
+	// allowing plugins to lazily change them at the same time. Otherwise they'll
+	// get out of sync. This is design issue of our current plugin system, not a
+	// mere bug. The following snippet is a hotfix to get our docs site working
+	// again.
+	//
+	// If the CWD has a public/ directory, all files are assumed to be within it.
+	// From here, everything except node_modules and `out` are relative to public:
+	if (options.public !== '.' && (await isDirectory(join(options.cwd, options.public)))) {
+		options.cwd = join(options.cwd, options.public);
+	}
+
+	let prevPublicFolder = options.public;
 	await ensureOutDirPromise;
 
 	const pkgFile = resolve(options.root, 'package.json');
@@ -199,10 +212,12 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 	await runConfigHook('config', options.plugins);
 	await runConfigHook('configResolved', options.plugins);
 
-	// If the CWD has a public/ directory, all files are assumed to be within it.
-	// From here, everything except node_modules and `out` are relative to public:
-	if (options.public !== '.' && (await isDirectory(join(options.cwd, options.public)))) {
-		options.cwd = join(options.cwd, options.public);
+	if (prevPublicFolder !== options.public) {
+		// If the CWD has a public/ directory, all files are assumed to be within it.
+		// From here, everything except node_modules and `out` are relative to public:
+		if (options.public !== '.' && (await isDirectory(join(options.cwd, options.public)))) {
+			options.cwd = join(options.cwd, options.public);
+		}
 	}
 
 	// Add src as a default alias if such a folder is present
