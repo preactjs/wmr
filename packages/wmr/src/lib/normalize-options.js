@@ -2,7 +2,7 @@ import { resolve, join } from 'path';
 import { promises as fs } from 'fs';
 import url from 'url';
 import { isFile, isDirectory } from './fs-utils.js';
-import { readEnvFiles } from './environment.js';
+import { getWmrEnvVars, readEnvFiles } from './environment.js';
 import { compileSingleModule } from './compile-single-module.js';
 import { debug, deprecated, setDebugCliArg } from './output-utils.js';
 import { getPort, supportsSearchParams } from './net-utils.js';
@@ -36,11 +36,15 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 	options.mode = mode;
 
 	const NODE_ENV = process.env.NODE_ENV || (prod ? 'production' : 'development');
-	options.env = await readEnvFiles(
+	const envFileVars = await readEnvFiles(
 		options.root,
 		['.env', '.env.local', `.env.${NODE_ENV}`, `.env.${NODE_ENV}.local`],
 		configWatchFiles
 	);
+	options.env = {
+		...getWmrEnvVars(),
+		...envFileVars
+	};
 
 	// Output directory is relative to CWD *before* ./public is detected + appended:
 	options.out = resolve(options.cwd, options.out || '.cache');

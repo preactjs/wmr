@@ -15,7 +15,16 @@ function acornEnvPlugin(env) {
 					const match = source.match(/^(?:import\.meta|process)\.env\.(.+)/);
 
 					if (match) {
-						path.replaceWithString(JSON.stringify(env[match[1]]));
+						const value = env[match[1]];
+						// Replace non-existing env variables with undefined
+						if (value === undefined) {
+							path.replaceWith({
+								type: 'Identifier',
+								name: 'undefined'
+							});
+						} else {
+							path.replaceWithString(JSON.stringify(value));
+						}
 					}
 				}
 			}

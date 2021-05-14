@@ -84,7 +84,7 @@ export async function loadFixture(name, env) {
 
 /**
  * @param {string} cwd
- * @param {...string} args
+ * @param {[...string[], string | Record<string, any>]} args
  * @returns {Promise<WmrInstance>}
  */
 export async function runWmr(cwd, ...args) {
