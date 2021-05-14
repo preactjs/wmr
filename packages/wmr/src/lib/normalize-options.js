@@ -78,7 +78,7 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 		// ignore error, reading aliases from package.json is an optional feature
 	}
 
-	const EXTENSIONS = ['.js', '.ts', '.mjs'];
+	const EXTENSIONS = ['.ts', '.js', '.mjs'];
 
 	let custom;
 	let initialError;
