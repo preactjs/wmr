@@ -29,6 +29,8 @@ let cache;
  * @param {boolean} [options.rewriteNodeImports]
  */
 export const compileSingleModule = withCache(async (input, { cwd, out, hmr = true, rewriteNodeImports = true }) => {
+	// The TS config file should be the only one that passes through here
+	const isConfigFile = input.endsWith('wmr.config.ts');
 	input = input.replace(/\.css\.js$/, '.css');
 	// console.log('compiling ' + input);
 	const bundle = await rollup.rollup({
@@ -47,7 +49,7 @@ export const compileSingleModule = withCache(async (input, { cwd, out, hmr = tru
 				resolveId(id) {
 					if (id == input) return null;
 					// hmr client
-					if (id === 'wmr') id = '/_wmr.js';
+					if (id === 'wmr' && !isConfigFile) id = '/_wmr.js';
 					// bare specifier = npm dep
 					else if (rewriteNodeImports && !/^\.?\.?(\/|$)/.test(id)) id = `/@npm/${id}`;
 					// relative imports (css)
