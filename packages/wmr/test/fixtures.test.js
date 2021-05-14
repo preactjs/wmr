@@ -864,6 +864,14 @@ describe('fixtures', () => {
 
 			expect(await env.page.content()).toMatch('foo 42');
 		});
+
+		it('should support TypeScript with CJS module type', async () => {
+			await loadFixture('config-typescript-cjs', env);
+			instance = await runWmrFast(env.tmp.path);
+
+			await waitForMessage(instance.output, /foo/);
+			expect(true).toEqual(true); // Silence linter
+		});
 	});
 
 	describe('plugins', () => {

@@ -70,8 +70,9 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 	await ensureOutDirPromise;
 
 	const pkgFile = resolve(options.root, 'package.json');
+	let pkg;
 	try {
-		const pkg = JSON.parse(await fs.readFile(pkgFile, 'utf-8'));
+		pkg = JSON.parse(await fs.readFile(pkgFile, 'utf-8'));
 		Object.assign(options.alias, pkg.alias || {});
 		configWatchFiles.push(pkgFile);
 	} catch (e) {
@@ -92,7 +93,13 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 				// Create a temporary file to write compiled output into
 				// TODO: Do this in memory
 				configFile = resolve(options.root, 'wmr.config.js');
-				await compileSingleModule(file, { cwd: options.cwd, out: resolve('.'), hmr: false, rewriteNodeImports: false });
+				await compileSingleModule(file, {
+					cwd: options.cwd,
+					out: resolve('.'),
+					hmr: false,
+					rewriteNodeImports: false,
+					format: pkg?.type === 'module' ? 'es' : 'commonjs'
+				});
 			}
 
 			const fileUrl = url.pathToFileURL(configFile);

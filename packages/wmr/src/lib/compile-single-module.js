@@ -27,55 +27,59 @@ let cache;
  * @param {string} options.out
  * @param {boolean} [options.hmr]
  * @param {boolean} [options.rewriteNodeImports]
+ * @param {import('rollup').ModuleFormat} [options.format]
  */
-export const compileSingleModule = withCache(async (input, { cwd, out, hmr = true, rewriteNodeImports = true }) => {
-	input = input.replace(/\.css\.js$/, '.css');
-	// console.log('compiling ' + input);
-	const bundle = await rollup.rollup({
-		input,
-		treeshake: false,
-		preserveModules: true,
-		// these should theroetically improve performance:
-		inlineDynamicImports: false,
-		preserveEntrySignatures: 'strict',
-		cache,
-		// perf: true,
-		// external: () => true,
-		plugins: [
-			{
-				name: 'wmr-single-file-resolver',
-				resolveId(id) {
-					if (id == input) return null;
-					// hmr client
-					if (id === 'wmr') id = '/_wmr.js';
-					// bare specifier = npm dep
-					else if (rewriteNodeImports && !/^\.?\.?(\/|$)/.test(id)) id = `/@npm/${id}`;
-					// relative imports (css)
-					else if (/\.css$/.test(id)) id += '.js';
-					return { id, external: true, moduleSideEffects: true };
-				}
-			},
-			sucrasePlugin({
-				typescript: true,
-				sourcemap: false,
-				production: false
-			}),
-			// localNpmPlugin(),
-			// wmrStylesPlugin({ cwd }),
-			hmr && wmrPlugin(),
-			htmPlugin()
-		].filter(Boolean)
-	});
-	cache = bundle.cache;
-	const result = await bundle.write({
-		...ROLLUP_FAST_OUTPUT,
-		dir: out,
-		assetFileNames: '[name].[ext]',
-		paths: str => str,
-		format: 'es'
-	});
-	return result.output[0].code;
-});
+export const compileSingleModule = withCache(
+	async (input, { cwd, out, hmr = true, rewriteNodeImports = true, format = 'es' }) => {
+		input = input.replace(/\.css\.js$/, '.css');
+		// console.log('compiling ' + input);
+		const bundle = await rollup.rollup({
+			input,
+			treeshake: false,
+			preserveModules: true,
+			// these should theroetically improve performance:
+			inlineDynamicImports: false,
+			preserveEntrySignatures: 'strict',
+			cache,
+			// perf: true,
+			// external: () => true,
+			plugins: [
+				{
+					name: 'wmr-single-file-resolver',
+					resolveId(id) {
+						if (id == input) return null;
+						// hmr client
+						if (id === 'wmr') id = '/_wmr.js';
+						// bare specifier = npm dep
+						else if (rewriteNodeImports && !/^\.?\.?(\/|$)/.test(id)) id = `/@npm/${id}`;
+						// relative imports (css)
+						else if (/\.css$/.test(id)) id += '.js';
+						return { id, external: true, moduleSideEffects: true };
+					}
+				},
+				sucrasePlugin({
+					typescript: true,
+					sourcemap: false,
+					production: false
+				}),
+				// localNpmPlugin(),
+				// wmrStylesPlugin({ cwd }),
+				hmr && wmrPlugin(),
+				htmPlugin()
+			].filter(Boolean)
+		});
+		cache = bundle.cache;
+		const result = await bundle.write({
+			...ROLLUP_FAST_OUTPUT,
+			dir: out,
+			assetFileNames: '[name].[ext]',
+			paths: str => str,
+			format,
+			exports: 'auto'
+		});
+		return result.output[0].code;
+	}
+);
 
 /*
 const PLUGINS = [
