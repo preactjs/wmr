@@ -125,6 +125,9 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 				// the URL.
 				const importSource = supportsSearchParams ? `(x => import(x + '?t=${Date.now()}'))` : `(x => import(x))`;
 				custom = await eval(importSource)(fileUrl.toString());
+
+				// We found our config file
+				break;
 			} catch (err) {
 				console.log(err);
 				initialError = err;
