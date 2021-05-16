@@ -8,9 +8,17 @@ import transformJsxToHtmLite from '../lib/transform-jsx-to-htm-lite.js';
  * @param {object} [options]
  * @param {RegExp | ((filename: string) => boolean)} [options.include] Controls whether files are processed to transform JSX.
  * @param {boolean} [options.production = true] If `false`, a simpler whitespace-preserving transform is used.
+ * @param {string} [options.jsxPragma] JSX factory function
+ * @param {string} [options.importSource] Module to import `jsxPragma` from
  * @returns {import('rollup').Plugin}
  */
-export default function htmPlugin({ include, production = true } = {}) {
+export default function htmPlugin({
+	include,
+	production = true,
+	jsxPragma = 'createElement',
+	importSource = 'preact'
+} = {}) {
+	const JSX_SPECIFIER = 'wmr-jsx';
 	return {
 		name: 'htm-plugin',
 
@@ -20,6 +28,21 @@ export default function htmPlugin({ include, production = true } = {}) {
 				opts.acornInjectPlugins || []
 			);
 			return opts;
+		},
+
+		resolveId(id) {
+			if (id === JSX_SPECIFIER) {
+				return id;
+			}
+		},
+		load(id) {
+			if (id === JSX_SPECIFIER) {
+				return `import htm from "htm";
+import { ${jsxPragma} } from "${importSource}";
+
+const html = htm.bind(${jsxPragma});
+export default html`;
+			}
 		},
 
 		transform(code, filename) {
@@ -48,7 +71,7 @@ export default function htmPlugin({ include, production = true } = {}) {
 						jsxTransform,
 						{
 							import: {
-								module: 'htm/preact',
+								module: JSX_SPECIFIER,
 								export: 'html'
 							},
 							// avoid a variable collisions:

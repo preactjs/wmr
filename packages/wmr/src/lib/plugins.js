@@ -61,7 +61,7 @@ export function getPlugins(options) {
 			env,
 			NODE_ENV: production ? 'production' : 'development'
 		}),
-		htmPlugin({ production }),
+		htmPlugin({ production, jsxPragma: 'createElement', importSource: 'preact' }),
 		wmrPlugin({ hot: !production, preact: features.preact }),
 		fastCjsPlugin({
 			// Only transpile CommonJS in node_modules and explicit .cjs files:
