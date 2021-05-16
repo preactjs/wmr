@@ -673,6 +673,15 @@ describe('fixtures', () => {
 		});
 	});
 
+	describe('import assertions', () => {
+		it('should support .json assertion', async () => {
+			await loadFixture('import-assertions', env);
+			instance = await runWmrFast(env.tmp.path);
+			const output = await getOutput(env, instance);
+			expect(output).toMatch(/{"foo":"bar"}/);
+		});
+	});
+
 	describe('json', () => {
 		it('should allow importing .json files', async () => {
 			await loadFixture('json', env);

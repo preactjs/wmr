@@ -4,6 +4,7 @@ import { promises as fs } from 'fs';
 import * as acorn from 'acorn';
 import * as kl from 'kolorist';
 import acornClassFields from 'acorn-class-fields';
+import { importAssertions } from 'acorn-import-assertions';
 import { debug, formatResolved, formatPath } from './output-utils.js';
 
 // Rollup respects "module", Node 14 doesn't.
@@ -177,7 +178,7 @@ export function createPluginContainer(plugins, opts = {}) {
 			}
 			if (options.acornInjectPlugins) {
 				// @ts-ignore-next
-				parser = Parser.extend(...[acornClassFields].concat(options.acornInjectPlugins));
+				parser = Parser.extend(...[acornClassFields, importAssertions].concat(options.acornInjectPlugins));
 			}
 			return options;
 		},
