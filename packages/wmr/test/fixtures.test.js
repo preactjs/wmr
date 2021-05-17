@@ -886,6 +886,14 @@ describe('fixtures', () => {
 			await waitForMessage(instance.output, /foo/);
 			expect(true).toEqual(true); // Silence linter
 		});
+
+		it('should only load TypeScript config', async () => {
+			await loadFixture('config-multiple', env);
+			instance = await runWmrFast(env.tmp.path);
+
+			await waitForMessage(instance.output, /plugin-ts/);
+			expect(true).toEqual(true); // Silence linter
+		});
 	});
 
 	describe('plugins', () => {
