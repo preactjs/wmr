@@ -159,7 +159,11 @@ describe('acorn-traverse', () => {
 			const expression = dent`
 				(
 					<p>hello
-						world</p>
+						world
+					<p>это
+
+						👩‍🚀</p>
+					</p>
 				);
 			`;
 
@@ -167,14 +171,18 @@ describe('acorn-traverse', () => {
 			expect(doTransform(expression)).toMatchInlineSnapshot(`
 			"(
 				html\`<p>hello
-					world</p>\`
+					world
+				<p>это
+
+					👩‍🚀</p>
+				</p>\`
 			);"
 		`);
 
 			// Should remove the whitespaces between the HTM generated syntax
 			expect(doTransformWithCompact(expression)).toMatchInlineSnapshot(`
 			"(
-				html\`<p>hello world</p>\`
+				html\`<p>hello world <p>это 👩‍🚀</p></p>\`
 			);"
 			`);
 		});
