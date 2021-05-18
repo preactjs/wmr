@@ -884,7 +884,9 @@ describe('fixtures', () => {
 			instance = await runWmrFast(env.tmp.path);
 
 			await waitForMessage(instance.output, /foo/);
-			expect(true).toEqual(true); // Silence linter
+
+			const files = await fs.readdir(env.tmp.path);
+			expect(files).not.toContain('wmr.config.js');
 		});
 
 		it('should only load TypeScript config', async () => {
