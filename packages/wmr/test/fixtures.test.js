@@ -899,6 +899,20 @@ describe('fixtures', () => {
 	});
 
 	describe('plugins', () => {
+		it("should preserve './' for relative specifiers", async () => {
+			await loadFixture('plugin-resolve', env);
+			instance = await runWmrFast(env.tmp.path);
+			const output = await getOutput(env, instance);
+			expect(output).toMatch(/Resolved: \.\/foo\.js/);
+		});
+
+		it("should preserve './' for relative specifiers with prefixes", async () => {
+			await loadFixture('plugin-resolve-prefix', env);
+			instance = await runWmrFast(env.tmp.path);
+			const output = await getOutput(env, instance);
+			expect(output).toMatch(/Resolved: url:\.\/foo\.js/);
+		});
+
 		it('should order by plugin.enforce value', async () => {
 			await loadFixture('plugin-enforce', env);
 			instance = await runWmrFast(env.tmp.path);

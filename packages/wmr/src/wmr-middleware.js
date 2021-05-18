@@ -183,6 +183,12 @@ export default function wmrMiddleware(options) {
 				path = prefixMatches[2];
 			}
 
+			if (path.startsWith('/@id/')) {
+				// Virtual paths have no exact file match, so we don't set `file`
+				hasIdPrefix = true;
+				path = path.slice('/@id'.length);
+			}
+
 			// convert to OS path:
 			const osPath = path.slice(1).split(posix.sep).join(sep);
 
@@ -191,12 +197,16 @@ export default function wmrMiddleware(options) {
 			// Rollup-style CWD-relative Unix-normalized path "id":
 			id = relative(cwd, file).replace(/^\.\//, '').replace(/^[\0]/, '').split(sep).join(posix.sep);
 
+			// TODO: Vefify prefix mappings in write cache
+			cacheKey = prefix + id;
+
+			if (!hasIdPrefix) {
+				id = `./${id}`;
+			}
+
 			// add back any prefix if there was one:
 			file = prefix + file;
 			id = prefix + id;
-
-			// TODO: Vefify prefix mappings in write cache
-			cacheKey = id;
 		}
 
 		let type = getMimeType(file);
@@ -410,8 +420,9 @@ export const TRANSFORMS = {
 						logJsTransform(`${kl.cyan(formatPath(spec))} [external]`);
 						return spec;
 					}
-					let graphId = importer.startsWith('/') ? importer.slice(1) : importer;
+					let graphId = importer.replace(/^\.?\.?\//, '');
 					if (!moduleGraph.has(graphId)) {
+						console.log('create', graphId);
 						moduleGraph.set(graphId, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
 					}
 					const mod = moduleGraph.get(graphId);
@@ -446,6 +457,11 @@ export const TRANSFORMS = {
 						if (spec[0] === '/' || spec[0] === sep) {
 							spec = relative(cwd, spec).split(sep).join(posix.sep);
 						}
+						// Retain bare specifiers when serializing to url
+						else if (!/^\.?\.\//.test(spec)) {
+							spec = `@id/${spec}`;
+						}
+
 						return '/@' + prefix + '/' + spec;
 					});
 
@@ -490,7 +506,7 @@ export const TRANSFORMS = {
 						}
 					}
 
-					const modSpec = spec.startsWith('../') ? spec.replace(/..\/g/, '') : spec.replace('./', '');
+					const modSpec = spec.replace(/^\.?\.\//, '');
 					mod.dependencies.add(modSpec);
 					if (!moduleGraph.has(modSpec)) {
 						moduleGraph.set(modSpec, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
@@ -583,7 +599,7 @@ export const TRANSFORMS = {
 		let code = await fs.readFile(idAbsolute, 'utf-8');
 
 		if (isModular) {
-			code = await modularizeCss(code, id, undefined, idAbsolute);
+			code = await modularizeCss(code, id.replace(/^\.\//, ''), undefined, idAbsolute);
 		} else if (isSass) {
 			code = processSass(code);
 		}
