@@ -138,11 +138,11 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 						throw Error(`Failed to load wmr.config${ext}\n${initialError}\n${err2}`);
 					}
 				}
-			}
-
-			// Remove temporary file
-			if (ext === '.ts') {
-				fs.unlink(configFile);
+			} finally {
+				// Remove temporary file
+				if (ext === '.ts') {
+					fs.unlink(configFile);
+				}
 			}
 		}
 	}
