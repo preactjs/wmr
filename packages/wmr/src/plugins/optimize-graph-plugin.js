@@ -7,7 +7,7 @@ import { injectHead } from '../lib/transform-html.js';
 /** @typedef {import('rollup').OutputAsset} Asset */
 /** @typedef {Asset & { referencedFiles?: string[], importedIds?: string[] }} ExtendedAsset */
 
-const DEBUG = hasDebugFlag();
+let DEBUG;
 
 const DEFAULT_STYLE_LOAD_FN = '$w_s$';
 const DEFAULT_STYLE_LOAD_IMPL = `function $w_s$(e,t){typeof document=='undefined'?wmr.ssr.head.elements.add({type:'link',props:{rel:'stylesheet',href:e}}):document.querySelector('link[rel=stylesheet][href="'+e+'"]')||((t=document.createElement("link")).rel="stylesheet",t.href=e,document.head.appendChild(t))}`;
@@ -24,6 +24,7 @@ const DEFAULT_STYLE_LOAD_IMPL = `function $w_s$(e,t){typeof document=='undefined
  * @returns {import('rollup').Plugin}
  */
 export default function optimizeGraphPlugin({ publicPath = '', cssMinSize = 1000 } = {}) {
+	DEBUG = hasDebugFlag();
 	return {
 		name: 'optimize-graph',
 		async generateBundle(_, bundle) {
