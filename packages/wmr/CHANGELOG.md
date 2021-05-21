@@ -1,5 +1,29 @@
 # wmr
 
+## 2.2.0
+
+### Minor Changes
+
+- [`9d5b381`](https://github.com/preactjs/wmr/commit/9d5b381aa2b161e82eb6bec1fc115a4fcc37c013) [#627](https://github.com/preactjs/wmr/pull/627) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Add support for loading environment variables starting with `WMR_` by default.
+
+### Patch Changes
+
+- [`c177752`](https://github.com/preactjs/wmr/commit/c1777522cbc677b2712e89d9d646690e07e1e19e) [#634](https://github.com/preactjs/wmr/pull/634) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix stray js config file when compiled with TypeScript
+
+* [`cf6e5ce`](https://github.com/preactjs/wmr/commit/cf6e5ce5edfcac0427ddeb8d3949b79eecc356d7) [#633](https://github.com/preactjs/wmr/pull/633) Thanks [@cristianbote](https://github.com/cristianbote)! - Adapt the newline regex rule to match any character range so unicode or other forms of chars chan be matched.
+
+- [`352a5ef`](https://github.com/preactjs/wmr/commit/352a5ef6ac27ee8203f7f294b3b4e3a5b3b15ffc) [#636](https://github.com/preactjs/wmr/pull/636) Thanks [@rschristian](https://github.com/rschristian)! - Fixes the debug flag/messages for optimize-graph-plugin
+
+* [`6d525e4`](https://github.com/preactjs/wmr/commit/6d525e4b3b5e558a8839fd3fe0076494422bdad4) [#631](https://github.com/preactjs/wmr/pull/631) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix unable to start when multiple config files in different formats are present.
+
+- [`f1d41fe`](https://github.com/preactjs/wmr/commit/f1d41fe68c364a0201361e91289fd8f65665e540) [#625](https://github.com/preactjs/wmr/pull/625) Thanks [@rschristian](https://github.com/rschristian)! - Ensures TS wmr.config files are handled first
+
+* [`93c93e9`](https://github.com/preactjs/wmr/commit/93c93e9b01eb7ebab2d7b4553a3f658e91872a3e) [#623](https://github.com/preactjs/wmr/pull/623) Thanks [@rschristian](https://github.com/rschristian)! - WMR now transpiles wmr.config.ts to the correct module type for the app
+
+- [`f9fcfe0`](https://github.com/preactjs/wmr/commit/f9fcfe0b725a5fddca2e5162eb408db01852768c) [#628](https://github.com/preactjs/wmr/pull/628) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Ensure options.cwd is correct after plugin passes
+
+* [`8bbf3d0`](https://github.com/preactjs/wmr/commit/8bbf3d01722c17dda2d239b6b4e9f300a37f7122) [#624](https://github.com/preactjs/wmr/pull/624) Thanks [@rschristian](https://github.com/rschristian)! - Fixes bad id reassignment in case of wmr.config.ts
+
 ## 2.1.0
 
 ### Minor Changes
