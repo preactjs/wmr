@@ -10,6 +10,9 @@ const IGNORE_FILES = [
 	'yarn.lock',
 	'tsconfig.json',
 	'babel.config.js',
+	'wmr.config.mjs',
+	'wmr.config.js',
+	'wmr.config.ts',
 	'/dist',
 	'/build'
 ];
