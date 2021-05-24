@@ -4,6 +4,9 @@ import { transformCssImports } from '../../lib/transform-css-imports.js';
 import { transformCss } from '../../lib/transform-css.js';
 import { matchAlias } from '../../lib/aliasing.js';
 
+// invalid object keys
+const RESERVED_WORDS = /^(abstract|async|boolean|break|byte|case|catch|char|class|const|continue|debugger|default|delete|do|double|else|enum|export|extends|false|final|finally|float|for|function|goto|if|implements|import|in|instanceof|int|interface|let|long|native|new|null|package|private|protected|public|return|short|static|super|switch|synchronized|this|throw|throws|transient|true|try|typeof|var|void|volatile|while|with|yield)$/;
+
 /**
  * @param {string} sass
  * @returns {string} css
@@ -182,6 +185,7 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath, production, alias 
 				.map(m => {
 					const matches = m.match(/^(['"]?)([^:'"]+?)\1:(.+)$/);
 					if (!matches) return;
+					if (RESERVED_WORDS.test(matches[2])) return;
 					let name = matches[2].replace(/-+([a-z])/gi, (s, c) => c.toUpperCase());
 					if (name.match(/^\d/)) name = '$' + name;
 					return name + '=' + matches[3];
