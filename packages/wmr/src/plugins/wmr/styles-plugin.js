@@ -186,7 +186,7 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath, production, alias 
 					const matches = m.match(/^(['"]?)([^:'"]+?)\1:(.+)$/);
 					if (!matches) return;
 					if (RESERVED_WORDS.test(matches[2])) return;
-					let name = matches[2].replace(/-+([a-z])/gi, (s, c) => c.toUpperCase());
+					let name = matches[2].replace(/-+([a-z0-9])/gi, (s, c) => c.toUpperCase());
 					if (name.match(/^\d/)) name = '$' + name;
 					return name + '=' + matches[3];
 				})
