@@ -1,5 +1,5 @@
-.sass {
-  .nesting {
+.sass1 {
+  .nesting1 {
     color: red;
   }
   
@@ -8,13 +8,13 @@
 
 $green: green;
 $purple: purple;
-.variable {
+.variable1 {
   color: $green;
 }
 
 @mixin mixin {
   color: $purple;
 }
-.mixin {
+.mixin1 {
   @include mixin;
 }

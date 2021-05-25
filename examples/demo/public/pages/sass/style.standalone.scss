@@ -1,0 +1,20 @@
+.sass {
+  .nesting {
+    color: red;
+  }
+  
+}
+
+
+$green: green;
+$purple: purple;
+.variable {
+  color: $green;
+}
+
+@mixin mixin {
+  color: $purple;
+}
+.mixin {
+  @include mixin;
+}
