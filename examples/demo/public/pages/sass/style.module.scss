@@ -1,0 +1,25 @@
+.sass {
+  .nesting {
+    color: red;
+  }
+  
+}
+
+.sass :global(.global) {
+  color: blue;
+}
+.sass :global(.global) :local(.local){
+    color: orange;
+}
+
+$green: green;
+.variable {
+  color: $green;
+}
+
+@mixin mixin {
+  color: $purple;
+}
+.mixin {
+  @include mixin;
+}
