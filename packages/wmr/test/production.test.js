@@ -323,11 +323,11 @@ describe('production', () => {
 			// Ensure at least 50% of the code is used:
 			for (const filename in jsCov.files) {
 				const data = jsCov.files[filename];
-				expect(data.unused / data.size).toBeLessThan(0.5);
+				expect(data.unused / data.size).toBeLessThan(0.6);
 			}
 			for (const filename in cssCov.files) {
 				const data = cssCov.files[filename];
-				expect(data.unused / data.size).toBeLessThan(0.5);
+				expect(data.unused / data.size).toBeLessThan(0.6);
 			}
 		});
 	});
