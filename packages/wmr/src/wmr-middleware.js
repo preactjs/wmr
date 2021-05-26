@@ -582,15 +582,15 @@ export const TRANSFORMS = {
 		const idAbsolute = resolveFile(file, cwd, alias);
 		let code = await fs.readFile(idAbsolute, 'utf-8');
 
-		if (isSass) {
-			code = (await sassPlugin().transform(code, file)).code;
-		}
 		if (isModular) {
 			code = await modularizeCss(code, id, undefined, idAbsolute);
 		} else if (isSass) {
 			code = processSass(code);
 		}
 
+		if (isSass) {
+			code = (await sassPlugin().transform(code, file)).code;
+		}
 		// const plugin = wmrStylesPlugin({ cwd, hot: false, fullPath: true });
 		// let code;
 		// const context = {
