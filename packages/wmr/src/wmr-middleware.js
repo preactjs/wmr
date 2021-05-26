@@ -117,7 +117,7 @@ export default function wmrMiddleware(options) {
 		logWatcher(`${kl.cyan(absolute)} -> ${kl.dim(filename)} [change]`);
 
 		// Delete any generated CSS Modules mapping modules:
-		const suffix = /(\.module)?\.(css|s[ac]ss)$/.test(filename) ? '.js' : '';
+		const suffix = /\.module\.(css|s[ac]ss)$/.test(filename) ? '.js' : '';
 		logCache(`delete: ${kl.cyan(filename + suffix)}`);
 		WRITE_CACHE.delete(filename + suffix);
 
