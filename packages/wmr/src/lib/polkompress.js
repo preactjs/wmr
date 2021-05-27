@@ -67,7 +67,7 @@ export default function compression({ threshold = 1024, level = -1, brotli = fal
 				listeners.forEach(p => on.apply(res, p));
 			}
 
-			if (pendingStatus) writeHead.call(res, pendingStatus);
+			writeHead.call(res, pendingStatus || res.statusCode);
 		}
 
 		const { end, write, on, writeHead } = res;
