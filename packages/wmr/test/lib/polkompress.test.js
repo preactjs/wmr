@@ -23,7 +23,7 @@ function setup(handler) {
 			return new Promise(res => {
 				server.listen(() => {
 					let info = server.address();
-					let port = /** @type {import('net').AddressInfo} */(info).port;
+					let port = /** @type {import('net').AddressInfo} */ (info).port;
 					return res(`http://localhost:${port}`);
 				});
 			});
@@ -34,7 +34,7 @@ function setup(handler) {
 	};
 }
 
-describe.only('polkompress', () => {
+describe('polkompress', () => {
 	it('should be a function', () => {
 		expect(typeof compression).toBe('function');
 	});
