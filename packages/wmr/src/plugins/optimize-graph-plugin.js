@@ -269,9 +269,10 @@ async function hoistEntryCss(graph) {
 					const entry = graph.bundle[jsEntry];
 					if (entry.isEntry) {
 						const cssFile = entry.referencedFiles.find(f => f.endsWith('.css'));
-						// Ignore if no entry css
+
+						// Ignore if no entry css:
 						if (!cssFile) continue;
-						
+
 						asset.referencedFiles.push(cssFile);
 
 						asset.source = await injectHead(asset.source, {
