@@ -69,7 +69,7 @@ export function getPlugins(options) {
 		}),
 		production && npmPlugin({ external: false }),
 		resolveExtensionsPlugin({
-			typescript: true,
+			extensions: ['.ts', '.tsx', '.js', '.cjs'],
 			index: true
 		}),
 
