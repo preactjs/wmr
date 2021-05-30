@@ -33,7 +33,6 @@ export default function fastMinifyPlugin({ sourcemap = false, warnThreshold = 50
 				return this.error(err);
 			}
 
-			// TODO: Check if tersers typings are wrong
 			if (!out.code) out.code = code;
 
 			if (duration > warnThreshold && hasDebugFlag()) {
