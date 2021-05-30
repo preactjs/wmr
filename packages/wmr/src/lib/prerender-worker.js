@@ -213,6 +213,7 @@ async function workerCode({ cwd, out, publicPath }) {
 		const result = await workerCode(workerData);
 		parentPort?.postMessage([1, result]);
 	} catch (err) {
-		parentPort?.postMessage([0, (err && err.stack) || err + '']);
+		console.log(err);
+		parentPort?.postMessage([0, err]);
 	}
 })();
