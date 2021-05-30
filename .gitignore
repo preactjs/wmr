@@ -3,6 +3,7 @@
 dist
 node_modules
 wmr.cjs
+prerender-worker.cjs
 package-lock.json
 !packages/wmr/test/fixtures/commonjs/node_modules
 !packages/wmr/test/fixtures/package-exports/node_modules

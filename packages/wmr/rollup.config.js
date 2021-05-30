@@ -174,4 +174,15 @@ const config = {
 	]
 };
 
-export default config;
+export default [
+	config,
+	{
+		...config,
+		input: 'src/lib/prerender-worker.js',
+		output: {
+			...config.output,
+			format: 'esm',
+			file: 'prerender-worker.js'
+		}
+	}
+];
