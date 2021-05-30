@@ -1,6 +1,7 @@
 import { Worker } from 'worker_threads';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { isFile } from './fs-utils.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -13,7 +14,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export async function prerender({ cwd = '.', out = '.cache', publicPath }) {
 	let w;
 	try {
-		w = new Worker(path.join(__dirname, `prerender-worker.js`), {
+		// Files will have different names when we build wmr itself
+		const filename = (await isFile(path.join(__dirname, 'prerender-worker.cjs')))
+			? path.join(__dirname, 'prerender-worker.cjs')
+			: path.join(__dirname, 'prerender-worker.js');
+
+		w = new Worker(filename, {
 			workerData: { cwd, out, publicPath },
 			// execArgv: ['--experimental-modules'],
 			stderr: true

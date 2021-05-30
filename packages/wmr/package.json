@@ -19,7 +19,7 @@
 	"repository": "preactjs/wmr",
 	"files": [
 		"wmr.cjs",
-		"prerender-worker.js",
+		"prerender-worker.cjs",
 		"index.js",
 		"types.d.ts",
 		"README.md"

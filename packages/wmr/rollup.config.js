@@ -181,8 +181,7 @@ export default [
 		input: 'src/lib/prerender-worker.js',
 		output: {
 			...config.output,
-			format: 'esm',
-			file: 'prerender-worker.js'
+			file: 'prerender-worker.cjs'
 		}
 	}
 ];
