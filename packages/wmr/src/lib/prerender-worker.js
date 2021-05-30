@@ -1,6 +1,8 @@
 import { parentPort, workerData } from 'worker_threads';
 import { promises as fs } from 'fs';
 import path from 'path';
+import posthtml from 'posthtml';
+import { walkHtmlNode } from './transform-html.js';
 
 /**
  * @param {string} str
@@ -148,30 +150,50 @@ async function workerCode({ cwd, out, publicPath }) {
 			body = result;
 		}
 
-		// TODO: Use a proper HTML parser here. We should definitely not parse HTML
-		// with regex :S
+		let html = tpl;
+
+		const transformer = posthtml([
+			tree => {
+				tree.walk(node => {
+					if (!node) return node;
+
+					// Add "lang" attribute to <html>
+					if (node.tag === 'html') {
+						if (!node.attrs) node.attrs = {};
+						node.attrs.lang = head.lang;
+					}
+
+					// Update or inject title tag
+					if (node.tag === 'head') {
+						let hasTitle = false;
+
+						walkHtmlNode(node, headNode => {
+							if (headNode.tag === 'title') {
+								hasTitle = true;
+								headNode.content = [head.title];
+							}
+							return headNode;
+						});
+
+						if (!hasTitle) {
+							// TODO: TS types of posthtml seem to be wrong
+							// @ts-ignore
+							node.content?.unshift({
+								tag: 'title',
+								attrs: {},
+								content: [head.title]
+							});
+						}
+					}
+
+					return node;
+				});
+			}
+		]);
+		html = (await transformer.process(html)).html;
 
 		// Inject HTML links at the end of <head> for any stylesheets injected during rendering of the page:
 		let headHtml = head.elements ? Array.from(new Set(Array.from(head.elements).map(serializeElement))).join('') : '';
-
-		let html = tpl;
-
-		if (head.title) {
-			const title = `<title>${enc(head.title)}</title>`;
-			const matchTitle = /<title>([^<>]*?)<\/title>/i;
-			if (matchTitle.test(html)) {
-				html = html.replace(matchTitle, title);
-			} else {
-				headHtml = title + headHtml;
-			}
-		}
-
-		if (head.lang) {
-			// TODO: This removes any existing attributes, but merging them without
-			// a proper HTML parser is way too error prone.
-			html = html.replace(/(<html(\s[^>]*?)?>)/, `<html lang="${enc(head.lang)}">`);
-		}
-
 		html = html.replace(/(<\/head>)/, headHtml + '$1');
 
 		// Inject pre-rendered HTML into the start of <body>:

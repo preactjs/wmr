@@ -609,6 +609,20 @@ describe('production', () => {
 			expect(instance.output.join('\n')).toMatch(/^\s+at\s\w+/gm);
 			expect(code).toBe(1);
 		});
+
+		it('should keep attributes on <html>', async () => {
+			await loadFixture('prerender-html-lang', env);
+			instance = await runWmr(env.tmp.path, 'build', '--prerender');
+			const code = await instance.done;
+
+			await withLog(instance.output, async () => {
+				expect(code).toBe(0);
+
+				const indexHtml = path.join(env.tmp.path, 'dist', 'index.html');
+				const index = await fs.readFile(indexHtml, 'utf8');
+				expect(index).toMatch(/lang="my-lang" class="foo" data-foo="bar"/);
+			});
+		});
 	});
 
 	describe('Code Splitting', () => {

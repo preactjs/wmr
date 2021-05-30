@@ -51,6 +51,24 @@ function transformUrls({ transformUrl }) {
 }
 
 /**
+ * @param {posthtml.Node} node
+ * @param {(node: posthtml.Node) => posthtml.Node | void} cb
+ */
+export function walkHtmlNode(node, cb) {
+	if (node.content && Array.isArray(node.content)) {
+		for (let i = 0; i < node.content.length; i++) {
+			const child = node.content[i];
+			if (child !== null && typeof child === 'object') {
+				const res = cb(child);
+				if (res) {
+					node.content[i] = res;
+				}
+			}
+		}
+	}
+}
+
+/**
  * @param {string} html
  * @param {object} options
  * @param {Transformer} options.transformUrl
