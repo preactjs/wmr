@@ -104,6 +104,14 @@ describe('fixtures', () => {
 		expect(text).toMatch('it works');
 	});
 
+	it('should prioritize extensionless import by extension array', async () => {
+		await loadFixture('import-priority', env);
+		instance = await runWmrFast(env.tmp.path);
+		const text = await getOutput(env, instance);
+
+		expect(text).toMatch('foo.ts');
+	});
+
 	describe('empty', () => {
 		it('should print warning for missing index.html file in public dir', async () => {
 			await loadFixture('empty', env);
