@@ -55,6 +55,11 @@ describe('acorn-traverse', () => {
 			str = generate(parse(`<A>{}</A>;`)).trim();
 			expect(str).toMatchInlineSnapshot('"<A></A>;"');
 		});
+
+		it('should serialize JSXMemberExpression', () => {
+			const str = generate(parse(`<a.b.c />`)).trim();
+			expect(str).toMatchInlineSnapshot('"<a.b.c/>;"');
+		});
 	});
 
 	describe('transform()', () => {
