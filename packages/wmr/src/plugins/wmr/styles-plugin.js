@@ -1,8 +1,12 @@
 import { promises as fs } from 'fs';
+import * as kl from 'kolorist';
 import { basename, dirname, relative, resolve, sep, posix } from 'path';
 import { transformCssImports } from '../../lib/transform-css-imports.js';
 import { transformCss } from '../../lib/transform-css.js';
 import { matchAlias } from '../../lib/aliasing.js';
+
+// invalid object keys
+const RESERVED_WORDS = /^(abstract|async|boolean|break|byte|case|catch|char|class|const|continue|debugger|default|delete|do|double|else|enum|export|extends|false|final|finally|float|for|function|goto|if|implements|import|in|instanceof|int|interface|let|long|native|new|null|package|private|protected|public|return|short|static|super|switch|synchronized|this|throw|throws|transient|true|try|typeof|var|void|volatile|while|with|yield)$/;
 
 /**
  * @param {string} sass
@@ -182,7 +186,14 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath, production, alias 
 				.map(m => {
 					const matches = m.match(/^(['"]?)([^:'"]+?)\1:(.+)$/);
 					if (!matches) return;
-					let name = matches[2].replace(/-+([a-z])/gi, (s, c) => c.toUpperCase());
+					if (RESERVED_WORDS.test(matches[2])) {
+						const reserved = kl.magenta(String(matches[2]));
+						const filePath = kl.cyan(idRelative);
+						return console.warn(
+							kl.yellow(`Cannot use reserved word "${reserved}" as classname; found in "${filePath}"`)
+						);
+					}
+					let name = matches[2].replace(/-+([a-z0-9])/gi, (s, c) => c.toUpperCase());
 					if (name.match(/^\d/)) name = '$' + name;
 					return name + '=' + matches[3];
 				})

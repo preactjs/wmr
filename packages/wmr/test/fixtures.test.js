@@ -378,6 +378,21 @@ describe('fixtures', () => {
 			await getOutput(env, instance);
 			expect(await env.page.$eval('body', el => getComputedStyle(el).background)).toMatch(/img\.jpg/);
 		});
+
+		it('should warn on CSS modules with reserved class names', async () => {
+			await loadFixture('css-module-reserved', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			await waitForPass(async () => {
+				expect(await env.page.$eval('.foo', el => getComputedStyle(el).backgroundColor)).toBe('rgb(255, 218, 185)');
+				expect(await env.page.$eval('.new', el => getComputedStyle(el).backgroundColor)).toBe('rgb(255, 255, 0)');
+				expect(await env.page.$eval('.debugger', el => getComputedStyle(el).backgroundColor)).toBe('rgb(255, 0, 0)');
+				expect(await env.page.$eval('.const', el => getComputedStyle(el).backgroundColor)).toBe('rgb(255, 218, 185)');
+			});
+
+			expect(instance.output.join('\n')).toMatch(/Cannot use reserved word/);
+		});
 	});
 
 	describe('hmr', () => {
