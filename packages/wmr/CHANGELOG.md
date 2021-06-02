@@ -1,5 +1,11 @@
 # wmr
 
+## 2.2.2
+
+### Patch Changes
+
+- [`8c05814`](https://github.com/preactjs/wmr/commit/8c0581495f2713c98a134bc168139a8562237d96) [#658](https://github.com/preactjs/wmr/pull/658) Thanks [@rschristian](https://github.com/rschristian)! - Removes debug log
+
 ## 2.2.1
 
 ### Patch Changes

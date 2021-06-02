@@ -1,5 +1,11 @@
 # create-wmr
 
+## 0.3.6
+
+### Patch Changes
+
+- [`eac7994`](https://github.com/preactjs/wmr/commit/eac7994804ee17e474ccaac4b9d16beb55068522) [#661](https://github.com/preactjs/wmr/pull/661) Thanks [@rschristian](https://github.com/rschristian)! - Marks newly created apps as private
+
 ## 0.3.5
 
 ### Patch Changes
