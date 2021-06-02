@@ -131,6 +131,9 @@ let codeGenerator = {
 		state.write('>');
 	},
 	JSXExpressionContainer(node, state) {
+		if (node.expression.type === 'JSXEmptyExpression') {
+			return;
+		}
 		state.write('{');
 		this[node.expression.type](node.expression, state);
 		state.write('}');
