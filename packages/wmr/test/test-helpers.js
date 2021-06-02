@@ -285,6 +285,7 @@ export async function withLog(haystack, fn) {
 	try {
 		await fn();
 	} catch (err) {
+		// eslint-disable-next-line no-console
 		console.log(haystack.join('\n'));
 		throw err;
 	}

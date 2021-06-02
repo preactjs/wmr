@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import path from 'path';
 import { promises as fs } from 'fs';
 import { setupTest, teardown, runWmr, loadFixture, serveStatic, withLog } from './test-helpers.js';

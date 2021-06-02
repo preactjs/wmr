@@ -44,6 +44,7 @@ export default async function start(options = {}) {
 	options.port = await instance.resolvePort;
 
 	if (!supportsSearchParams) {
+		// eslint-disable-next-line no-console
 		console.log(kl.yellow(`WMR: Automatic config reloading is not supported on Node <= 12.18.4`));
 	} else {
 		const logWatcher = debug('wmr:watcher');
@@ -55,6 +56,7 @@ export default async function start(options = {}) {
 		watcher.on('change', async () => {
 			await instance.close();
 
+			// eslint-disable-next-line no-console
 			console.log(kl.yellow(`WMR: `) + kl.green(`config or .env file changed, restarting server...\n`));
 
 			// Fire up new instance

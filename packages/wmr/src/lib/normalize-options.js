@@ -129,6 +129,7 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 				// We found our config file
 				break;
 			} catch (err) {
+				// eslint-disable-next-line no-console
 				console.log(err);
 				initialError = err;
 				try {

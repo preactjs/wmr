@@ -368,8 +368,10 @@ describe('fixtures', () => {
 			await loadFixture('css-imports', env);
 			instance = await runWmrFast(env.tmp.path);
 			await getOutput(env, instance);
-			console.log(instance.output);
-			expect(await env.page.$eval('h1', el => getComputedStyle(el).color)).toBe('rgb(255, 0, 0)');
+
+			await withLog(instance.output, async () => {
+				expect(await env.page.$eval('h1', el => getComputedStyle(el).color)).toBe('rgb(255, 0, 0)');
+			});
 		});
 
 		it('should load referenced files via url()', async () => {

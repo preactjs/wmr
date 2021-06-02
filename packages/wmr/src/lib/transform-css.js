@@ -37,6 +37,7 @@ function prefixClasses(element) {
 			if (child.props !== 'composes' && child.props !== 'composes-with') return true;
 			const m = child.children.match(/^\s*(.+?)(?:\s+from\s+(['"])(.*?)\2)?\s*$/);
 			if (!m) {
+				// eslint-disable-next-line no-console
 				console.log('failed to parse composes:\n' + child.children);
 				return;
 			}

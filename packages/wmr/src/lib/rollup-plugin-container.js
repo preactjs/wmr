@@ -153,6 +153,7 @@ export function createPluginContainer(plugins, opts = {}) {
 			watchFiles.add(id);
 		},
 		warn(...args) {
+			// eslint-disable-next-line no-console
 			console.log(`[${plugin.name}]`, ...args);
 		}
 	};

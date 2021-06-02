@@ -70,6 +70,7 @@ export default function npmMiddleware({ source = 'npm', alias, optimize, cwd } =
 
 			res.setHeader('content-type', 'application/javascript;charset=utf-8');
 			if (hasDebugFlag()) {
+				// eslint-disable-next-line no-console
 				console.log(`  ${kl.dim('middleware:') + kl.bold(kl.magenta('npm'))}  ${JSON.stringify(meta.specifier)}`);
 			}
 			// serve from memory and disk caches:
