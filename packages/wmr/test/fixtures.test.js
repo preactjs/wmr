@@ -395,6 +395,18 @@ describe('fixtures', () => {
 
 			expect(instance.output.join('\n')).toMatch(/Cannot use reserved word/);
 		});
+
+		describe('Sass', () => {
+			it('should transform sass files', async () => {
+				await loadFixture('css-sass', env);
+				instance = await runWmrFast(env.tmp.path);
+				await getOutput(env, instance);
+
+				await withLog(instance.output, async () => {
+					expect(await env.page.$eval('h1', el => getComputedStyle(el).color)).toMatch(/rgb\(255, 0, 0\)/);
+				});
+			});
+		});
 	});
 
 	describe('hmr', () => {

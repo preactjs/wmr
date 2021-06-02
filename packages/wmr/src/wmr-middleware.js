@@ -600,7 +600,7 @@ export const TRANSFORMS = {
 		if (isModular) {
 			code = await modularizeCss(code, id.replace(/^\.\//, ''), undefined, idAbsolute);
 		} else if (isSass) {
-			code = processSass(code);
+			code = await processSass(code, id);
 		}
 
 		// const plugin = wmrStylesPlugin({ cwd, hot: false, fullPath: true });

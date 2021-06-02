@@ -1,5 +1,10 @@
 import { resolve, dirname, relative } from 'path';
 import { promisify } from 'util';
+import * as kl from 'kolorist';
+import { promises as fs } from 'fs';
+import { hasDebugFlag } from '../lib/output-utils.js';
+import { isFile } from '../lib/fs-utils.js';
+import { resolveModule } from './npm-plugin/resolve.js';
 
 const cjsDefault = m => ('default' in m ? m.default : m);
 let sass;
@@ -16,7 +21,7 @@ async function renderSass(opts) {
 			} catch (e) {}
 		};
 		const locations = [
-			resolve('node_modules/node-sass'),
+			resolve('node_modules/sass'),
 			resolve('node_modules/node-sass'),
 			'sass',
 			'node-sass',
@@ -24,10 +29,16 @@ async function renderSass(opts) {
 		];
 		let sassLib;
 		for (const loc of locations) {
-			if ((sassLib = await req(loc))) {
-				if (process.env.DEBUG) {
+			const resolved = await resolveModule(loc, {
+				readFile: f => fs.readFile(f, 'utf-8'),
+				hasFile: isFile,
+				module: /node-sass/.test(loc) ? 'node-sass' : 'sass'
+			});
+
+			if ((sassLib = await req(resolved))) {
+				if (hasDebugFlag()) {
 					// eslint-disable-next-line no-console
-					console.log('Using sass from ' + relative('.', loc));
+					console.log('Using sass from ' + relative('.', resolved));
 				}
 				break;
 			}
@@ -36,7 +47,9 @@ async function renderSass(opts) {
 			sass = promisify(sassLib.render.bind(sass));
 		} else {
 			console.warn(
-				`Please install a sass implementation to use sass/scss:\n    npm i -D sass\n  or:\n    npm i -D node-sass`
+				kl.yellow(
+					`Please install a sass implementation to use sass/scss:\n    npm i -D sass\n  or:\n    npm i -D node-sass`
+				)
 			);
 			sass = ({ data }) => Promise.resolve({ css: data, map: null });
 		}
