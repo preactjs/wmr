@@ -406,6 +406,16 @@ describe('fixtures', () => {
 					expect(await env.page.$eval('h1', el => getComputedStyle(el).color)).toMatch(/rgb\(255, 0, 0\)/);
 				});
 			});
+
+			it('should transform sass modules', async () => {
+				await loadFixture('css-sass-module', env);
+				instance = await runWmrFast(env.tmp.path);
+				await getOutput(env, instance);
+
+				await withLog(instance.output, async () => {
+					expect(await env.page.$eval('h1', el => getComputedStyle(el).color)).toMatch(/rgb\(255, 0, 0\)/);
+				});
+			});
 		});
 	});
 

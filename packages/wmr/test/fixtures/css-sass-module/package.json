@@ -1,0 +1,6 @@
+{
+	"name": "css-sass",
+	"devDependencies": {
+		"sass": "^1.34.0"
+	}
+}
