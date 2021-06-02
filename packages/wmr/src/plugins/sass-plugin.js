@@ -29,11 +29,16 @@ async function renderSass(opts) {
 		];
 		let sassLib;
 		for (const loc of locations) {
-			const resolved = await resolveModule(loc, {
-				readFile: f => fs.readFile(f, 'utf-8'),
-				hasFile: isFile,
-				module: /node-sass/.test(loc) ? 'node-sass' : 'sass'
-			});
+			let resolved = loc;
+			try {
+				resolved = await resolveModule(loc, {
+					readFile: f => fs.readFile(f, 'utf-8'),
+					hasFile: isFile,
+					module: /node-sass/.test(loc) ? 'node-sass' : 'sass'
+				});
+			} catch (e) {
+				// Most likely the sass lib doesn't exist
+			}
 
 			if ((sassLib = await req(resolved))) {
 				if (hasDebugFlag()) {
