@@ -422,7 +422,6 @@ export const TRANSFORMS = {
 					}
 					let graphId = importer.replace(/^\.?\.?\//, '');
 					if (!moduleGraph.has(graphId)) {
-						console.log('create', graphId);
 						moduleGraph.set(graphId, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
 					}
 					const mod = moduleGraph.get(graphId);
