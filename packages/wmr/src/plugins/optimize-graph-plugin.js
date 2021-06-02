@@ -224,6 +224,7 @@ function mergeAdjacentCss(graph) {
 
 		if (DEBUG) {
 			const p = posix.relative(process.cwd(), chunk.facadeModuleId || chunk.fileName);
+			// eslint-disable-next-line no-console
 			console.log(`Merging ${toMerge.length} adjacent CSS assets imported by ${p}:\n  ${toMerge.join(', ')}`);
 		}
 
@@ -294,6 +295,7 @@ async function hoistEntryCss(graph) {
 				const f = chunk.referencedFiles[i];
 				if (!isCssFilename(f)) continue;
 				if (cssAsset) {
+					// eslint-disable-next-line no-console
 					if (DEBUG) console.log(`Hoisting CSS "${f}" imported by ${id} into parent HTML import "${cssImport}".`);
 					// @TODO: this needs to update the hash of the chunk into which CSS got merged.
 					cssAsset.source += '\n' + getAssetSource(graph.bundle[f]);
@@ -313,6 +315,7 @@ async function hoistEntryCss(graph) {
 					}
 				} else {
 					// @TODO: this branch is actually unreachable
+					// eslint-disable-next-line no-console
 					if (DEBUG) console.log(`Hoisting CSS "${f}" imported by ${id} into parent HTML.`);
 					const url = toImport(graph.publicPath, f);
 					asset.source = getAssetSource(asset).replace(/<\/head>/, `<link rel="stylesheet" href=${url}></head>`);
@@ -357,6 +360,7 @@ function hoistCascadedCss(graph, { cssMinSize }) {
 
 			if (ownCss) {
 				// TODO: here be dragons
+				// eslint-disable-next-line no-console
 				if (DEBUG) console.log(`Merging ${fileName} into ${ownCss} (${ownerFileName} → ${parentFileName})`);
 				const parentAsset = /** @type {Asset} */ (graph.bundle[ownCss]);
 				parentAsset.source += '\n' + asset.source;
@@ -368,6 +372,7 @@ function hoistCascadedCss(graph, { cssMinSize }) {
 				const i = ownerChunk.referencedFiles.indexOf(fileName);
 				if (i !== -1) ownerChunk.referencedFiles.splice(i, 1);
 			} else {
+				// eslint-disable-next-line no-console
 				if (DEBUG) console.log(`Hoisting ${fileName} from ${ownerFileName} into ${parentFileName}`);
 				const meta = graph.getMeta(parentFileName);
 				// inject the stylesheet loader: (and register it)
@@ -418,12 +423,14 @@ function hoistTransitiveImports(graph) {
 					meta.styleLoadFn = DEFAULT_STYLE_LOAD_FN;
 					appendCode += '\n' + DEFAULT_STYLE_LOAD_IMPL;
 				}
+				// eslint-disable-next-line no-console
 				if (DEBUG) console.log(`Preloading CSS for import(${spec}): ${css}`);
 				preloads.push(...css.map(f => `${meta.styleLoadFn}(${toImport(graph.publicPath, f)})`));
 			}
 
 			const js = deps.js.get(spec);
 			if (js && js.length) {
+				// eslint-disable-next-line no-console
 				if (DEBUG) console.log(`Preloading JS for import(${spec}): ${js}`);
 				preloads.push(
 					...js.map(f => {

@@ -151,6 +151,7 @@ export function debug(namespace, color = selectColor(namespace)) {
 					.map(line => ns + line)
 					.join('\n');
 			});
+			// eslint-disable-next-line no-console
 			console.log.apply(console, str);
 		}
 	};
@@ -161,6 +162,7 @@ export function debug(namespace, color = selectColor(namespace)) {
  * @param {string} message
  */
 export function deprecated(message) {
+	// eslint-disable-next-line no-console
 	console.log(kl.yellow(`Deprecated: ${message}`));
 }
 

@@ -19,6 +19,7 @@
 		"ci": "yarn wmr build && yarn --check-files && yarn demo build:prod"
 	},
 	"eslintConfig": {
+		"ignorePatterns": "packages/wmr/test/fixtures/**",
 		"extends": [
 			"developit",
 			"prettier",

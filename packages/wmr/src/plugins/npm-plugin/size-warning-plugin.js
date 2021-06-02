@@ -11,6 +11,7 @@ export default function sizeWarningPlugin({ threshold = DEFAULT_THRESHOLD, facto
 		transform(contents, filename) {
 			const approxSize = contents.length / factor;
 			if (approxSize > threshold) {
+				// eslint-disable-next-line no-console
 				console.log(`Warning: large file ${filename} (${Math.round(contents.length / 1000)}kb)`);
 			}
 		}

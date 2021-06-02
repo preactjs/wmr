@@ -26,6 +26,7 @@ async function renderSass(opts) {
 		for (const loc of locations) {
 			if ((sassLib = await req(loc))) {
 				if (process.env.DEBUG) {
+					// eslint-disable-next-line no-console
 					console.log('Using sass from ' + relative('.', loc));
 				}
 				break;
