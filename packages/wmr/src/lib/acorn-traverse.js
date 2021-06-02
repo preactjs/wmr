@@ -131,9 +131,17 @@ let codeGenerator = {
 		state.write('>');
 	},
 	JSXExpressionContainer(node, state) {
+		if (node.expression.type === 'JSXEmptyExpression') {
+			return;
+		}
 		state.write('{');
 		this[node.expression.type](node.expression, state);
 		state.write('}');
+	},
+	JSXMemberExpression(node, state) {
+		this[node.object.type](node.object, state);
+		state.write('.');
+		this[node.property.type](node.property, state);
 	},
 	JSXIdentifier(node, state) {
 		// eslint-disable-next-line new-cap

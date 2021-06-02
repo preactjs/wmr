@@ -47,6 +47,19 @@ describe('acorn-traverse', () => {
 			const generated = generate(ast);
 			expect(generated).toBe(source);
 		});
+
+		it('should remove JSXEmptyExpression', () => {
+			let str = generate(parse(`<A>{/* comment */}</A>;`)).trim();
+			expect(str).toMatchInlineSnapshot('"<A></A>;"');
+
+			str = generate(parse(`<A>{}</A>;`)).trim();
+			expect(str).toMatchInlineSnapshot('"<A></A>;"');
+		});
+
+		it('should serialize JSXMemberExpression', () => {
+			const str = generate(parse(`<a.b.c />`)).trim();
+			expect(str).toMatchInlineSnapshot('"<a.b.c/>;"');
+		});
 	});
 
 	describe('transform()', () => {
