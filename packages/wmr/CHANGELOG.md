@@ -1,5 +1,23 @@
 # wmr
 
+## 2.2.1
+
+### Patch Changes
+
+- [`95da598`](https://github.com/preactjs/wmr/commit/95da598ecdd8f8e673b12993b174877cf0b4e727) [#643](https://github.com/preactjs/wmr/pull/643) Thanks [@developit](https://github.com/developit)! - Never copy `wmr.config.js` to output directory
+
+* [`6a9869f`](https://github.com/preactjs/wmr/commit/6a9869f66e3444af419697e91b24a610435f3729) [#656](https://github.com/preactjs/wmr/pull/656) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix unable to code generate JSXMemberExpression and JSXEmptyExpression nodes
+
+- [`7345e89`](https://github.com/preactjs/wmr/commit/7345e893e21c318738549e7d1c5fe92b30321afe) [#648](https://github.com/preactjs/wmr/pull/648) Thanks [@lukeed](https://github.com/lukeed)! - fix(compression): ensure all responses write headers
+
+* [`df93873`](https://github.com/preactjs/wmr/commit/df93873b6c2036bdc120f47e22a69dbe139c0341) [#635](https://github.com/preactjs/wmr/pull/635) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix `./` not preserved during development for `resolveId()` plugin hook
+
+- [`c03abcc`](https://github.com/preactjs/wmr/commit/c03abcc36c26dc936af8701ab9031ddff44995a5) [#650](https://github.com/preactjs/wmr/pull/650) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Prioritize extension resolution for extensionless imports.
+
+* [`ccdc04d`](https://github.com/preactjs/wmr/commit/ccdc04d81272c764172453417c4291675459af62) [#641](https://github.com/preactjs/wmr/pull/641) Thanks [@developit](https://github.com/developit)! - Print warning when CSS Module mappings contain invalid identifiers
+
+- [`fe4b9cb`](https://github.com/preactjs/wmr/commit/fe4b9cbea62f88de74bb59472b349d2e4969a212) [#649](https://github.com/preactjs/wmr/pull/649) Thanks [@leader22](https://github.com/leader22)! - Do not inject `<link rel=stylesheet>` when there is no stylesheet.
+
 ## 2.2.0
 
 ### Minor Changes
