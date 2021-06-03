@@ -45,16 +45,16 @@ jobs:
         run: yarn --frozen-lockfile
       - name: Build
         if: ${{ needs.changes.outputs.wmr == 'true' }}
-        run: yarn workspace wmr build
+        run: yarn wmr build
       - name: Test wmr
         if: ${{ needs.changes.outputs.wmr == 'true' }}
-        run: yarn workspace wmr test
+        run: yarn eslint packages/wmr && yarn wmr test
       - name: Test wmr (production build)
         if: ${{ needs.changes.outputs.wmr == 'true' }}
-        run: yarn workspace wmr test-prod
+        run: yarn wmr test-prod
       - name: Test preact-iso
         if: ${{ needs.changes.outputs.preact-iso == 'true' }}
-        run: yarn workspace preact-iso test
+        run: yarn eslint packages/preact-iso && yarn iso test
 
   lhci:
     needs: changes
