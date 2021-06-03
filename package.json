@@ -83,9 +83,6 @@
 			"pre-commit": "lint-staged"
 		}
 	},
-	"jest": {
-		"preset": "jest-puppeteer"
-	},
 	"devDependencies": {
 		"@changesets/changelog-github": "^0.2.7",
 		"@changesets/cli": "^2.12.0",
