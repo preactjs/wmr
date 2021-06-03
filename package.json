@@ -19,7 +19,6 @@
 		"ci": "yarn wmr build && yarn --check-files && yarn demo build:prod"
 	},
 	"eslintConfig": {
-		"ignorePatterns": "packages/wmr/test/fixtures/**",
 		"extends": [
 			"developit",
 			"prettier",
@@ -30,7 +29,7 @@
 			"import"
 		],
 		"rules": {
-			"no-console": "off",
+			"no-console": "error",
 			"prefer-rest-params": "off",
 			"prefer-spread": "off",
 			"no-prototype-builtins": "off",
@@ -54,8 +53,8 @@
 		}
 	},
 	"eslintIgnore": [
-		"*.cjs",
-		"*.ts",
+		"**/*.ts",
+		"packages/wmr/wmr.cjs",
 		"packages/wmr/test/fixtures/**/*.expected.*",
 		"packages/wmr/test/fixtures/*/dist",
 		"packages/wmr/test/fixtures/*/.cache"

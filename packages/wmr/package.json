@@ -9,10 +9,9 @@
 		"prepublishOnly": "yarn build",
 		"prepack": "node --experimental-modules ./src/lib/~publish.js",
 		"postpack": "mv -f .package.json package.json",
-		"lint": "eslint src test",
 		"test-e2e": "cross-env JEST_PUPPETEER_CONFIG=jest-puppeteer.config.cjs jest",
 		"test-prod": "cross-env PRODUCTION_BUILD=true JEST_PUPPETEER_CONFIG=jest-puppeteer.config.cjs jest",
-		"test": "npm run lint && npm run test-e2e",
+		"test": "npm run test-e2e",
 		"fixture": "node tools/run-fixture.js"
 	},
 	"author": "The Preact Authors (https://preactjs.com)",
@@ -29,67 +28,6 @@
 		"plugins": [
 			"@babel/plugin-transform-modules-commonjs"
 		]
-	},
-	"eslintConfig": {
-		"extends": [
-			"developit",
-			"prettier",
-			"plugin:prettier/recommended"
-		],
-		"plugins": [
-			"prettier",
-			"import"
-		],
-		"rules": {
-			"no-console": 2,
-			"prefer-rest-params": "off",
-			"prefer-spread": "off",
-			"no-prototype-builtins": "off",
-			"function-call-argument-newline": [
-				"error",
-				"consistent"
-			],
-			"react/jsx-no-bind": "off",
-			"import/extensions": [
-				"error",
-				"always",
-				{
-					"ignorePackages": true
-				}
-			]
-		},
-		"globals": {
-			"jestPuppeteer": "readonly",
-			"browser": "readonly",
-			"page": "readonly"
-		}
-	},
-	"eslintIgnore": [
-		"wmr.cjs",
-		"test/fixtures/**/*.expected.*",
-		"test/fixtures/*/dist",
-		"test/fixtures/*/.cache"
-	],
-	"prettier": {
-		"singleQuote": true,
-		"trailingComma": "none",
-		"useTabs": true,
-		"printWidth": 120,
-		"arrowParens": "avoid"
-	},
-	"lint-staged": {
-		"{src,test}/**/*.js": [
-			"eslint --fix",
-			"prettier --write"
-		],
-		"*.md": [
-			"prettier --write"
-		]
-	},
-	"husky": {
-		"hooks": {
-			"pre-commit": "lint-staged"
-		}
 	},
 	"jest": {
 		"preset": "jest-puppeteer"
@@ -119,16 +57,9 @@
 		"devcert": "^1.1.2",
 		"errorstacks": "^2.3.2",
 		"es-module-lexer": "^0.4.1",
-		"eslint": "^7.4.0",
-		"eslint-config-developit": "^1.2.0",
-		"eslint-config-prettier": "^6.11.0",
-		"eslint-plugin-import": "^2.22.0",
-		"eslint-plugin-prettier": "^3.1.4",
-		"husky": "^4.2.5",
 		"jest": "^26.1.0",
 		"jest-puppeteer": "^4.4.0",
 		"kolorist": "^1.3.2",
-		"lint-staged": "^10.2.11",
 		"magic-string": "^0.25.7",
 		"ncp": "^2.0.0",
 		"node-fetch": "^2.6.1",
@@ -137,7 +68,6 @@
 		"postcss": "^7.0.32",
 		"postcss-es6": "github:postcss/postcss#7.0.32",
 		"posthtml": "0.13.1",
-		"prettier": "^2.0.5",
 		"puppeteer": "^3.3.0",
 		"resolve.exports": "^1.0.2",
 		"rollup": "^2.43.1",
