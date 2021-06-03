@@ -24,6 +24,7 @@
 	--color-bg-code: #1f2427;
 	--color-info: #d7f1ff;
 	--color-focus: #ff459c;
+	--color-btn-secondary-hover: rgba(0, 0, 0, 0.1);
 	--focus-width: 0.25rem;
 
 	--header-height: 3.5rem;
@@ -40,6 +41,7 @@
 		--color-bg-code-inline: #66676f;
 		--color-bg-code: #1f2427;
 		--color-info: #184c68;
+		--color-btn-secondary-hover: rgba(255, 255, 255, 0.1);
 
 		--header-accent-height: 0.1875rem;
 	}
@@ -59,6 +61,7 @@ html[theme='light'] {
 	--color-bg-code-inline: #dddddf;
 	--color-bg-code: #1f2427;
 	--color-info: #d7f1ff;
+	--color-btn-secondary-hover: rgba(0, 0, 0, 0.1);
 
 	--header-height: 3.5rem;
 	--header-accent-height: 0.125rem;
@@ -320,16 +323,24 @@ h5:hover .anchor {
 	letter-spacing: 0.5px;
 	white-space: nowrap;
 	line-height: 1;
+	transition: background .3s, transform .1s;
+}
+.btn:active {
+	transform: translate3d(0, .2rem, 0);
 }
 .btn-primary {
-	border: 0.1875rem solid var(--color-brand);
 	background: var(--color-brand);
 	color: #fff;
 }
+.btn-primary:hover {
+	background: rgba(51, 174, 241, .8)
+}
 .btn-secondary {
-	border: 0.125rem solid var(--color-text);
 	background: none;
 	color: var(--color-text);
+}
+.btn-secondary:hover  {
+	background: var(--color-btn-secondary-hover);
 }
 .btn-img-left {
 	display: block;
