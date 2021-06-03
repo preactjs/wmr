@@ -36,7 +36,7 @@
 		--color-bg: #181818;
 		--color-header-bg: rgba(37, 41, 49, 0.95);
 		--color-border: #525252;
-		--color-bg-code-inline: #66676f;
+		--color-bg-code-inline: #424348;
 		--color-bg-code: #1f2427;
 		--color-info: #184c68;
 		--color-btn-secondary-hover: rgba(255, 255, 255, 0.1);
@@ -74,7 +74,7 @@ html[theme='dark'] {
 	--color-header-bg: rgba(37, 41, 49, 0.95);
 	--color-border: #525252;
 	--color-bg-code-inline: #66676f;
-	--color-bg-code: #1f2427;
+	--color-bg-code: #424348;
 	--color-info: #184c68;
 
 	--header-accent-height: 0.1875rem;
