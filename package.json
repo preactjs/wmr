@@ -19,7 +19,6 @@
 		"ci": "yarn wmr build && yarn --check-files && yarn demo build:prod"
 	},
 	"eslintConfig": {
-		"ignorePatterns": "packages/wmr/test/fixtures/**",
 		"extends": [
 			"developit",
 			"prettier",
@@ -30,7 +29,7 @@
 			"import"
 		],
 		"rules": {
-			"no-console": "off",
+			"no-console": "error",
 			"prefer-rest-params": "off",
 			"prefer-spread": "off",
 			"no-prototype-builtins": "off",
@@ -54,11 +53,9 @@
 		}
 	},
 	"eslintIgnore": [
-		"*.cjs",
-		"*.ts",
-		"packages/wmr/test/fixtures/**/*.expected.*",
-		"packages/wmr/test/fixtures/*/dist",
-		"packages/wmr/test/fixtures/*/.cache"
+		"**/*.ts",
+		"packages/wmr/wmr.cjs",
+		"packages/wmr/test/fixtures/**"
 	],
 	"prettier": {
 		"singleQuote": true,
@@ -68,7 +65,7 @@
 		"arrowParens": "avoid"
 	},
 	"lint-staged": {
-		"packages/**/{src,test}/**/*.js": [
+		"packages/**/*.{js,ts}": [
 			"eslint --fix",
 			"prettier --write"
 		],
@@ -83,9 +80,6 @@
 		"hooks": {
 			"pre-commit": "lint-staged"
 		}
-	},
-	"jest": {
-		"preset": "jest-puppeteer"
 	},
 	"devDependencies": {
 		"@changesets/changelog-github": "^0.2.7",
