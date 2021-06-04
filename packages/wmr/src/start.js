@@ -11,6 +11,9 @@ import { watch } from './lib/fs-watcher.js';
 import { injectWmr } from './lib/transform-html.js';
 import { parseStackTrace } from 'errorstacks';
 
+// eslint-disable-next-line
+console.log('delete me');
+
 /**
  * @typedef OtherOptions
  * @property {string} [host]
