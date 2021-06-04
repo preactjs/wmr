@@ -55,9 +55,7 @@
 	"eslintIgnore": [
 		"**/*.ts",
 		"packages/wmr/wmr.cjs",
-		"packages/wmr/test/fixtures/**/*.expected.*",
-		"packages/wmr/test/fixtures/*/dist",
-		"packages/wmr/test/fixtures/*/.cache"
+		"packages/wmr/test/fixtures/**"
 	],
 	"prettier": {
 		"singleQuote": true,
