@@ -67,7 +67,7 @@
 		"arrowParens": "avoid"
 	},
 	"lint-staged": {
-		"packages/**/{src,test}/**/*.js": [
+		"packages/**/*.{js,ts}": [
 			"eslint --fix",
 			"prettier --write"
 		],
