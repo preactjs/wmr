@@ -23,3 +23,39 @@ for (const doc of content) {
 		slug
 	});
 }
+
+/**
+ * @param {string} name
+ * @returns {number | null}
+ */
+export function getPreviousPage(name) {
+	let idx = docStructure.findIndex(x => x.name === name) - 1;
+	if (idx < 0) return null;
+	if (docStructure[idx].type === 'heading') {
+		if (idx - 1 >= 0 && docStructure[idx - 1].type !== 'heading') {
+			idx--;
+		} else {
+			return null;
+		}
+	}
+
+	return docPages.get(docStructure[idx].name);
+}
+
+/**
+ * @param {string} name
+ * @returns {number | null}
+ */
+export function getNextPage(name) {
+	let idx = docStructure.findIndex(x => x.name === name) + 1;
+	if (idx > docStructure.length - 1) return null;
+	if (docStructure[idx].type === 'heading') {
+		if (idx + 1 < docStructure.length && docStructure[idx + 1].type !== 'heading') {
+			idx++;
+		} else {
+			return null;
+		}
+	}
+
+	return docPages.get(docStructure[idx].name);
+}

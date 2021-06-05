@@ -29,6 +29,8 @@
 
 	--header-height: 3.5rem;
 	--header-accent-height: 0.125rem;
+	--container-width-big: 120ch;
+	--container-width: 88ch;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -295,7 +297,7 @@ h5:hover .anchor {
 }
 
 .container {
-	max-width: 120ch;
+	max-width: var(--container-width);
 	margin-left: auto;
 	margin-right: auto;
 	padding-left: 1rem;
@@ -566,7 +568,7 @@ h5:hover .anchor {
 .md {
 	margin-left: auto;
 	margin-right: auto;
-	max-width: 88ch;
+	max-width: var(--container-width);
 }
 
 .md img {
@@ -596,6 +598,33 @@ h5:hover .anchor {
 }
 .md blockquote *:last-child {
 	margin-bottom: 0;
+}
+
+/**
+ * Pagination
+ */
+.pagination {
+	display: flex;
+	justify-content: space-between;
+	padding: 4rem 0;
+}
+
+.pagination-link {
+	display: flex;
+	align-items: center;
+	transition: color 0.3s;
+	font-size: 1.1rem;
+}
+.pagination-link:hover {
+	color: var(--color-brand);
+}
+.pagination-link img {
+	filter: none;
+}
+
+.pagination-text {
+	display: inline-block;
+	margin: 0 0.25rem;
 }
 
 /**
