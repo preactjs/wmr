@@ -21,8 +21,8 @@
 	--color-border: #e0e0e0;
 	--color-bg-code-inline: #dddddf;
 	--color-bg-code: #1f2427;
-	--color-info: #7fdf83;
-	--color-info-bg: #c7e9bc;
+	--color-info: var(--color-brand);
+	--color-info-bg: #e4f4ff;
 	--color-focus: #ff459c;
 	--color-btn-secondary-hover: rgba(0, 0, 0, 0.1);
 	--focus-width: 0.25rem;
@@ -39,8 +39,8 @@
 		--color-border: #525252;
 		--color-bg-code-inline: #424348;
 		--color-bg-code: #1f2427;
-		--color-info: #6a946c;
-		--color-info-bg: #44523a;
+		--color-info: var(--color-brand);
+		--color-info-bg: #1c2b4e;
 		--color-btn-secondary-hover: rgba(255, 255, 255, 0.1);
 
 		--header-accent-height: 0.1875rem;
@@ -59,8 +59,8 @@ html[theme='light'] {
 	--color-border: #e0e0e0;
 	--color-bg-code-inline: #dddddf;
 	--color-bg-code: #1f2427;
-	--color-info: #7fdf83;
-	--color-info-bg: #c7e9bc;
+	--color-info: var(--color-brand);
+	--color-info-bg: #e4f4ff;
 	--color-btn-secondary-hover: rgba(0, 0, 0, 0.1);
 
 	--header-height: 3.5rem;
@@ -78,8 +78,8 @@ html[theme='dark'] {
 	--color-border: #525252;
 	--color-bg-code-inline: #424348;
 	--color-bg-code: #1f2427;
-	--color-info: #6a946c;
-	--color-info-bg: #44523a;
+	--color-info: var(--color-brand);
+	--color-info-bg: #1c2b4e;
 	--color-btn-secondary-hover: rgba(255, 255, 255, 0.1);
 
 	--header-accent-height: 0.1875rem;
@@ -96,8 +96,8 @@ html[theme='teatime'] {
 	--color-border: #aaa;
 	--color-bg-code-inline: #dddddf;
 	--color-bg-code: #1f2427;
-	--color-info: #7fdf83;
-	--color-info-bg: #c7e9bc;
+	--color-info: var(--color-brand);
+	--color-info-bg: #e4f4ff;
 
 	--header-height: 3.5rem;
 	--header-accent-height: 0.125rem;
