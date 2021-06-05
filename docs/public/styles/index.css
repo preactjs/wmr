@@ -243,6 +243,7 @@ html[theme='teatime'] .icon {
 	justify-content: center;
 	background: var(--color-bg);
 	cursor: pointer;
+	transition: background 0.3s;
 }
 
 .theme-btn[data-next] {
