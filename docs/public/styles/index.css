@@ -381,8 +381,6 @@ h5:hover .anchor {
 	padding: 0 1rem;
 	font-size: 1rem;
 	font-weight: 500;
-	/* Prevent layout shift when item becomes active */
-	border-bottom: var(--header-accent-height) solid transparent;
 }
 .menu-item[data-active] .menu-item-inner {
 	border-bottom: var(--header-accent-height) solid var(--color-brand);
