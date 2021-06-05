@@ -738,3 +738,21 @@ h5:hover .anchor {
 	margin-top: 0;
 	margin-bottom: 0.5rem;
 }
+
+/**
+ * Footer
+ */
+.footer {
+	padding: 2rem 0;
+}
+
+.footer-text {
+	font-size: 0.8rem;
+	opacity: 0.6;
+	margin: 0;
+}
+
+.footer-inner {
+	display: flex;
+	justify-content: flex-end;
+}
