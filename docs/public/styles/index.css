@@ -118,6 +118,14 @@ body {
 	transition: background 0.3s;
 }
 
+/* Prevent fixed header from overlapping anchors */
+:target::before {
+	content: '';
+	display: block;
+	height: calc(1rem + var(--header-height));
+	margin: calc(-1 * calc(1rem + var(--header-height))) 0 0;
+}
+
 /** Wraps the content */
 #page {
 	outline: none;

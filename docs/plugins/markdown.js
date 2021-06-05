@@ -17,8 +17,8 @@ marked.use({
 				.replace(/[^\w]+/g, '-')
 				.replace(/[-]+$/g, '');
 
-			return `<h${level}>
-			<a id="${escapedText}" class="anchor" href="#${escapedText}">#</a>
+			return `<h${level} id="${escapedText}">
+			<a class="anchor" href="#${escapedText}">#</a>
 			${text}
 		</h${level}>`;
 		}
