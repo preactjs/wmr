@@ -516,12 +516,12 @@ h5:hover .anchor {
 
 .sidebar-nav-link {
 	display: block;
-	margin: 0 1rem 0 2rem;
+	margin: 0 0 0 2rem;
 	padding: 0.25rem 0;
 	color: var(--sidebar-fg);
 	position: relative;
-	transition: transform 0.3s, color 0.3s;
-	transform: translate3d(0, 0, 0);
+	transition: color 0.3s, border-color 0.5s;
+	border-right: 0.0625rem solid transparent;
 }
 .sidebar-nav-link:hover {
 	color: var(--color-brand);
@@ -531,20 +531,21 @@ h5:hover .anchor {
 	position: absolute;
 	left: 0;
 	top: 50%;
-	transform: translate3d(-1rem, -50%, 0);
+	transform: translate3d(-2rem, -50%, 0);
 	display: block;
 	width: 0.5rem;
 	height: 0.5rem;
 	border-radius: 50%;
 	background: var(--color-brand);
 	opacity: 0;
-	transition: opacity 0.3s;
+	transition: all 0.3s;
 }
 .sidebar-nav-link[data-active] {
 	color: var(--color-brand);
-	transform: translate3d(1rem, 0, 0);
+	border-right: 0.125rem solid var(--color-brand);
 }
 .sidebar-nav-link[data-active]::before {
+	transform: translate3d(-1.15rem, -50%, 0);
 	opacity: 1;
 }
 
