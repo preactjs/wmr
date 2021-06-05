@@ -1,7 +1,6 @@
 import Markup from '../components/markup.js';
 import Sidebar from '../components/sidebar.js';
 import Meta from '../components/meta.js';
-import { Footer } from '../components/footer.jsx';
 import { useContent } from '../lib/use-content.js';
 import { useRoute } from 'preact-iso';
 
@@ -20,14 +19,11 @@ function Doc() {
 	const { html, meta } = useContent(contentUrl);
 
 	return (
-		<>
-			<main class="main">
-				<Meta {...meta} />
-				<section class="md">
-					<Markup html={html} />
-				</section>
-			</main>
-			<Footer />
-		</>
+		<div class="main">
+			<Meta {...meta} />
+			<section class="md">
+				<Markup html={html} />
+			</section>
+		</div>
 	);
 }

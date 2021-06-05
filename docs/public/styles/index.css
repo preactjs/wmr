@@ -127,6 +127,8 @@ body {
 /** Wraps the content */
 #page {
 	outline: none;
+	/* TODO: Not sure where the 2rem is coming from */
+	min-height: calc(100% - calc(var(--header-height) + 2rem));
 }
 #page::before {
 	content: '';
@@ -742,6 +744,7 @@ h5:hover .anchor {
  */
 .footer {
 	padding: 2rem 0;
+	border-top: 0.0625rem solid var(--color-border);
 }
 
 .footer-text {

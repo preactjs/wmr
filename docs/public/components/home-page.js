@@ -3,7 +3,6 @@ import Meta from './meta.js';
 import Jumbotron from './jumbotron.js';
 import { useContent } from '../lib/use-content.js';
 import homeContent from 'markdown:../content/index.md';
-import { Footer } from './footer.jsx';
 
 /**
  *
@@ -20,12 +19,12 @@ function Feature(props) {
 }
 
 export default function Home() {
-	const { html, meta } = useContent(homeContent);
+	const { meta } = useContent(homeContent);
 
 	return (
 		<div>
 			<Meta {...meta} />
-			<main class="main">
+			<div class="main">
 				<Jumbotron />
 				<div class="feature-grid">
 					<Feature title="Instant startup">
@@ -49,14 +48,7 @@ export default function Home() {
 						WMR supports Rollup's plugin API, so you can bring your existing plugins and knowledge with you.
 					</Feature>
 				</div>
-				<div class="md">{/* <Markup html={html} /> */}</div>
-			</main>
-			<Footer />
-			{/* <div class="container">
-				<code>
-					npm init create-wmr my-project <button>clip</button>
-				</code>
-			</div> */}
+			</div>
 		</div>
 	);
 }
