@@ -318,23 +318,23 @@ h5:hover .anchor {
 	letter-spacing: 0.5px;
 	white-space: nowrap;
 	line-height: 1;
-	transition: background .3s, transform .1s;
+	transition: background 0.3s, transform 0.1s;
 }
 .btn:active {
-	transform: translate3d(0, .2rem, 0);
+	transform: translate3d(0, 0.2rem, 0);
 }
 .btn-primary {
 	background: var(--color-brand);
 	color: #fff;
 }
 .btn-primary:hover {
-	background: rgba(51, 174, 241, .8)
+	background: rgba(51, 174, 241, 0.8);
 }
 .btn-secondary {
 	background: none;
 	color: var(--color-text);
 }
-.btn-secondary:hover  {
+.btn-secondary:hover {
 	background: var(--color-btn-secondary-hover);
 }
 .btn-img-left {
@@ -361,7 +361,7 @@ h5:hover .anchor {
 	justify-content: space-between;
 	height: var(--header-height);
 	padding: 0 1rem;
-	border-bottom: .0625rem solid var(--color-border);
+	border-bottom: 0.0625rem solid var(--color-border);
 }
 
 .menu {
