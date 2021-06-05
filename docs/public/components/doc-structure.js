@@ -6,6 +6,7 @@ export const docStructure = [
 	{ type: 'page', name: 'cli' },
 	{ type: 'page', name: 'configuration' },
 	{ type: 'page', name: 'plugins' },
+	{ type: 'page', name: 'prerendering' },
 
 	{ type: 'heading', name: 'API' },
 	{ type: 'page', name: 'plugin-api' }
