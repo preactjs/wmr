@@ -76,10 +76,11 @@ html[theme='dark'] {
 	--color-bg: #181818;
 	--color-header-bg: rgba(37, 41, 49, 0.95);
 	--color-border: #525252;
-	--color-bg-code-inline: #66676f;
-	--color-bg-code: #424348;
+	--color-bg-code-inline: #424348;
+	--color-bg-code: #1f2427;
 	--color-info: #6a946c;
 	--color-info-bg: #44523a;
+	--color-btn-secondary-hover: rgba(255, 255, 255, 0.1);
 
 	--header-accent-height: 0.1875rem;
 }
