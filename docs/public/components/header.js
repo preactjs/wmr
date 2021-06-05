@@ -9,14 +9,10 @@ export default function Header() {
 			<header class="header">
 				<nav aria-label="primary" class="menu">
 					<a href="/" class="menu-item menu-logo" data-active={path === '/'}>
-						<span class="menu-item-inner">
-							WMR
-						</span>
+						<span class="menu-item-inner">WMR</span>
 					</a>
 					<a href="/docs" class="menu-item" data-active={path.startsWith('/docs')}>
-						<span class="menu-item-inner">
-							Docs
-						</span>
+						<span class="menu-item-inner">Docs</span>
 					</a>
 				</nav>
 				<nav aria-label="social" class="menu">
