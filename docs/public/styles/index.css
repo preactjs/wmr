@@ -370,6 +370,7 @@ h5:hover .anchor {
 	height: var(--header-height);
 	padding: 0 1rem;
 	border-bottom: 0.0625rem solid var(--color-border);
+	transition: background 0.3s;
 }
 
 .menu {
@@ -420,6 +421,7 @@ h5:hover .anchor {
 	overflow: auto;
 	z-index: 200;
 	outline: none;
+	transition: background 0.3s;
 }
 
 /** Mobile off-canvas sidebar layout */
