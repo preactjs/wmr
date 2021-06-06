@@ -283,6 +283,7 @@ export function createPluginContainer(plugins, opts = {}) {
 					code = result;
 				}
 			}
+			console.log(MODULES);
 			return code;
 		},
 

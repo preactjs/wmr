@@ -572,7 +572,7 @@ describe('fixtures', () => {
 		});
 	});
 
-	describe('hmr-scss', () => {
+	describe.only('hmr-scss', () => {
 		const timeout = n => new Promise(r => setTimeout(r, n));
 
 		it('should hot reload an scss-file imported from index.html', async () => {

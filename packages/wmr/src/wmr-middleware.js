@@ -118,8 +118,9 @@ export default function wmrMiddleware(options) {
 
 		// Delete any generated CSS Modules mapping modules:
 		const suffix = /\.module\.(css|s[ac]ss)$/.test(filename) ? '.js' : '';
-		logCache(`delete: ${kl.cyan(filename + suffix)}`);
-		WRITE_CACHE.delete(filename + suffix);
+		const cacheKey = filename + suffix;
+		logCache(`delete: ${kl.cyan(cacheKey)} [${!WRITE_CACHE.has(cacheKey) ? 'not found' : 'found'}]`);
+		WRITE_CACHE.delete(cacheKey);
 
 		if (!pendingChanges.size) timeout = setTimeout(flushChanges, 60);
 
@@ -216,6 +217,7 @@ export default function wmrMiddleware(options) {
 
 		log(`${kl.cyan(formatPath(path))} -> ${kl.dim(id)} file: ${kl.dim(file)}`);
 
+		console.log('ID', id);
 		/** @type {(ctx: Context) => Result | Promise<Result>} */
 		let transform;
 		if (path === '/_wmr.js') {
@@ -226,12 +228,16 @@ export default function wmrMiddleware(options) {
 			transform = TRANSFORMS.js;
 		} else if (/\.(css|s[ac]ss)\.js$/.test(file)) {
 			transform = TRANSFORMS.cssModule;
+			console.log('  css mod');
 		} else if (/\.([mc]js|[tj]sx?)$/.test(file)) {
 			transform = TRANSFORMS.js;
+			console.log('  js');
 		} else if (/\.(css|s[ac]ss)$/.test(file)) {
 			transform = TRANSFORMS.css;
+			console.log('  css');
 		} else {
 			transform = TRANSFORMS.generic;
+			console.log('  generic');
 		}
 
 		try {
@@ -249,6 +255,8 @@ export default function wmrMiddleware(options) {
 				alias: options.alias,
 				cacheKey
 			});
+
+			console.log(moduleGraph);
 
 			// return false to skip handling:
 			if (result === false) return next();

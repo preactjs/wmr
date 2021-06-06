@@ -1,13 +1,10 @@
-import { resolve, dirname, relative } from 'path';
 import { promisify } from 'util';
 import * as kl from 'kolorist';
-import { promises as fs } from 'fs';
-import { hasDebugFlag } from '../lib/output-utils.js';
-import { isFile } from '../lib/fs-utils.js';
-import { resolveModule } from './npm-plugin/resolve.js';
+import { debug } from '../lib/output-utils.js';
 
-const cjsDefault = m => ('default' in m ? m.default : m);
 let sass;
+
+const log = debug('sass');
 
 /**
  * @param {import('node-sass').Options} opts
@@ -15,42 +12,26 @@ let sass;
  */
 async function renderSass(opts) {
 	if (!sass) {
-		let req = async m => {
+		for (const lib of ['sass', 'node-sass']) {
 			try {
-				return cjsDefault(typeof require === 'function' ? eval(`require("${m}")`) : await import('' + m));
+				let mod = await import(lib);
+				mod = 'default' in mod ? mod.default : mod;
+				sass = promisify(mod.render);
+				sass = opts =>
+					new Promise((resolve, reject) => {
+						mod.render(opts, (err, result) => {
+							if (err) reject(err);
+							else {
+								console.log('RES', result, result.css.toString());
+								resolve(result);
+							}
+						});
+					});
+				log(`Using package ${kl.cyan(lib)} for sass compilation`);
 			} catch (e) {}
-		};
-		const locations = [
-			resolve('node_modules/sass'),
-			resolve('node_modules/node-sass'),
-			'sass',
-			'node-sass',
-			resolve('node_modules/node-sass/lib/index.js')
-		];
-		let sassLib;
-		for (const loc of locations) {
-			let resolved = loc;
-			try {
-				resolved = await resolveModule(loc, {
-					readFile: f => fs.readFile(f, 'utf-8'),
-					hasFile: isFile,
-					module: /node-sass/.test(loc) ? 'node-sass' : 'sass'
-				});
-			} catch (e) {
-				// Most likely the sass lib doesn't exist
-			}
-
-			if ((sassLib = await req(resolved))) {
-				if (hasDebugFlag()) {
-					// eslint-disable-next-line no-console
-					console.log('Using sass from ' + relative('.', resolved));
-				}
-				break;
-			}
 		}
-		if (sassLib) {
-			sass = promisify(sassLib.render.bind(sass));
-		} else {
+
+		if (!sass) {
 			console.warn(
 				kl.yellow(
 					`Please install a sass implementation to use sass/scss:\n    npm i -D sass\n  or:\n    npm i -D node-sass`
@@ -59,7 +40,8 @@ async function renderSass(opts) {
 			sass = ({ data }) => Promise.resolve({ css: data, map: null });
 		}
 	}
-	const result = await (await sass)(opts);
+
+	const result = await sass(opts);
 	return {
 		css: result.css.toString(),
 		map: result.map && result.map.toString()
@@ -80,10 +62,17 @@ export default function sassPlugin({ production = false, sourcemap = false } = {
 			if (id[0] === '\0') return;
 			if (!/\.s[ac]ss$/.test(id)) return;
 
+			console.log('compile sass', code);
 			const result = await renderSass({
 				data: code,
-				includePaths: [dirname(id)],
+				// includePaths: [dirname(id)],
 				file: id,
+				importer: [
+					(url, prev) => {
+						console.log('importer', url, prev);
+						return null;
+					}
+				],
 				outputStyle: production ? 'compressed' : undefined,
 				sourceMap: sourcemap !== false
 			});
