@@ -33,7 +33,7 @@ function Doc() {
 				<div>
 					{prevPage && (
 						<a href={prevPage.slug} class="pagination-link">
-							<img src="/assets/arrow-left.svg" alt="" class="icon" width="24" height="24" />
+							<img src="/assets/arrow.svg" alt="" class="icon" width="24" height="24" />
 							<span class="pagination-text">{prevPage.nav || prevPage.title}</span>
 						</a>
 					)}
@@ -42,7 +42,7 @@ function Doc() {
 					{nextPage && (
 						<a href={nextPage.slug} class="pagination-link">
 							<span class="pagination-text">{nextPage.nav || nextPage.title}</span>
-							<img src="/assets/arrow-right.svg" alt="" class="icon" width="24" height="24" />
+							<img src="/assets/arrow.svg" alt="" class="icon flip-y" width="24" height="24" />
 						</a>
 					)}
 				</div>

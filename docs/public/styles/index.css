@@ -304,6 +304,10 @@ h5:hover .anchor {
 	padding-right: 1rem;
 }
 
+.flip-y {
+	transform: scale(-1);
+}
+
 /* Accessibility */
 .is-hidden {
 	border: 0;
