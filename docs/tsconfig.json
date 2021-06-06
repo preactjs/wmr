@@ -1,0 +1,22 @@
+{
+	"compileOnSave": false,
+	"compilerOptions": {
+		"jsx": "preserve",
+		"jsxFactory": "preact.h",
+		"jsxFragmentFactory": "preact.Fragment",
+		"allowJs": true,
+		"checkJs": true,
+		// "strict": true,
+		"noEmit": true,
+		"moduleResolution": "node",
+		"target": "ESNext",
+		"module": "esnext",
+		"resolveJsonModule": true,
+		"allowSyntheticDefaultImports": true,
+		"downlevelIteration": true
+	},
+	"include": ["node_modules/wmr/types.d.ts", "**/*"],
+	"typeAcquisition": {
+		"enable": true
+	}
+}
