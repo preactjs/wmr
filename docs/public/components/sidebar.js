@@ -1,20 +1,22 @@
 import { useLocation } from 'preact-iso';
 import { SlotContent } from '../lib/slots.js';
+import { content } from './doc-structure.js';
 
-export default function Sidebar({ content }) {
+export default function Sidebar() {
 	const { path } = useLocation();
 
 	return (
 		<SlotContent name="sidebar">
-			<aside class="sidebar" tabIndex="0">
+			<aside class="sidebar" tabIndex={0}>
 				<nav aria-label="secondary">
-					<h3 class="sidebar-title">Prologue</h3>
-					{content.map(page => {
-						const url = `/docs/${page.name}`.replace(/(^|\/)index$/g, '');
-						const current = url === path;
+					{content.map(item => {
+						if (item.heading) {
+							return <h3 class="sidebar-title">{item.heading}</h3>;
+						}
+
 						return (
-							<a href={url} class="sidebar-nav-link" data-active={current}>
-								{page.nav || page.title}
+							<a key={item.name} href={item.slug} class="sidebar-nav-link" data-active={item.slug === path}>
+								{item.nav || item.title}
 							</a>
 						);
 					})}
