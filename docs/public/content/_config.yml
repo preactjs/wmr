@@ -1,0 +1,12 @@
+# https://jekyllrb.com/docs/collections/#manually-ordering-documents
+collections:
+  docs:
+    order:
+      - { heading: 'Prologue' }
+      - index
+      - cli
+      - configuration
+      - plugins
+      - prerendering
+      - { heading: 'API' }
+      - plugin-api

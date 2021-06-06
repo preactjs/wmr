@@ -1,61 +1,19 @@
 import content from 'content:../content/docs';
+export { content };
 
-export const docStructure = [
-	{ type: 'heading', name: 'Prologue' },
-	{ type: 'page', name: 'index' },
-	{ type: 'page', name: 'cli' },
-	{ type: 'page', name: 'configuration' },
-	{ type: 'page', name: 'plugins' },
-	{ type: 'page', name: 'prerendering' },
+const pages = new Map(
+	content.map((item, index) => {
+		if ('heading' in item) return ['', -1];
+		item.slug = `/docs/${item.name}`.replace(/\/index$/g, '');
+		return [item.name, index];
+	})
+);
 
-	{ type: 'heading', name: 'API' },
-	{ type: 'page', name: 'plugin-api' }
-];
+/** @param {string} name */
+export const getPage = name => content[pages.get(name)];
 
-/** @type {Map<string, {name: string, nav?: string, title?: string, slug: string}} */
-export const docPages = new Map();
-for (const doc of content) {
-	const route = doc.name.replace(/(^|\/)index$/g, '');
-	const slug = route ? `/docs/${route}` : '/docs';
+/** @param {string} name */
+export const getPreviousPage = name => pages[pages.get(name) - 1];
 
-	docPages.set(doc.name, {
-		...doc,
-		slug
-	});
-}
-
-/**
- * @param {string} name
- * @returns {number | null}
- */
-export function getPreviousPage(name) {
-	let idx = docStructure.findIndex(x => x.name === name) - 1;
-	if (idx < 0) return null;
-	if (docStructure[idx].type === 'heading') {
-		if (idx - 1 >= 0 && docStructure[idx - 1].type !== 'heading') {
-			idx--;
-		} else {
-			return null;
-		}
-	}
-
-	return docPages.get(docStructure[idx].name);
-}
-
-/**
- * @param {string} name
- * @returns {number | null}
- */
-export function getNextPage(name) {
-	let idx = docStructure.findIndex(x => x.name === name) + 1;
-	if (idx > docStructure.length - 1) return null;
-	if (docStructure[idx].type === 'heading') {
-		if (idx + 1 < docStructure.length && docStructure[idx + 1].type !== 'heading') {
-			idx++;
-		} else {
-			return null;
-		}
-	}
-
-	return docPages.get(docStructure[idx].name);
-}
+/** @param {string} name */
+export const getNextPage = name => pages[pages.get(name) + 1];

@@ -95,19 +95,65 @@ function contentRollupPlugin({ cwd, prod, ...opts }) {
 			if (!id.startsWith('\0content:')) return;
 			id = path.resolve(cwd || '.', id.slice(9));
 			const files = (await tree(id)).filter(file => file.endsWith('.md'));
-			const data = await Promise.all(
+			const dirs = path.relative(cwd, id).split(path.sep);
+			const config = (
+				await Promise.all(
+					dirs.map(async (d, i, dirs) => {
+						try {
+							return yaml.parse(await fs.readFile(path.resolve(cwd, ...dirs.slice(0, i), '_config.yml'), 'utf-8'));
+						} catch (e) {}
+					})
+				)
+			).reduce(merge, {});
+			function merge(obj, props) {
+				if (props == null) return obj;
+				if (typeof props === 'object') {
+					for (let i in props) {
+						obj[i] = obj[i] ? merge(obj[i], props[i]) : props[i];
+					}
+					return obj;
+				}
+				return props;
+			}
+			const byName = new Map();
+			let data = await Promise.all(
 				files.map(async file => {
 					const { slug, ...meta } = await getMeta(path.resolve(id, file));
-					return { name: slug || file.replace(/\.md$/, ''), ...meta };
+					const item = { name: slug || file.replace(/\.md$/, ''), ...meta };
+					byName.set(item.name, item);
+					return item;
 				})
 			);
-			data.sort((a, b) => +new Date(b.published) - +new Date(a.published));
+			const collection = path.basename(id);
+			const cfg = config.collections[collection];
+			let sortBy = 'published';
+			if (cfg) {
+				if (cfg.order) {
+					data = cfg.order.map(item => {
+						if (typeof item === 'string') return byName.get(item);
+						return item;
+					});
+				} else if (cfg.sort_by) {
+					sortBy = cfg.sort_by;
+				}
+			}
+			// detect and convert string dates and numbers to Date and Number for sorting
+			const parse = field => {
+				let d = Date.parse(field);
+				if (!isNaN(d)) return d;
+				d = Number(field);
+				if (d == field) return d;
+				return field;
+			};
+			data.sort((a, b) => parse(b[sortBy]) - parse(a[sortBy]));
 
 			let imports = '';
 
 			const serializeItem = item => {
-				const url = 'markdown:./' + path.posix.relative(path.dirname(id), path.resolve(id, item.name)) + '.md';
-				imports += `import ${JSON.stringify(url)};\n`;
+				if (item.name) {
+					const url = 'markdown:./' + path.posix.relative(path.dirname(id), path.resolve(id, item.name)) + '.md';
+					imports += `import ${JSON.stringify(url)};\n`;
+				}
 
 				let str = '{ ';
 				for (let i in item) if (item[i] != null) str += `${i}: ${JSON.stringify(item[i])}, `;
