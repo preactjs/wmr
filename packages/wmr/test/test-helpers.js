@@ -7,7 +7,6 @@ import { promisify } from 'util';
 import { get as httpGet } from 'http';
 import polka from 'polka';
 import sirv from 'sirv';
-import { isFile } from '../src/lib/fs-utils.js';
 
 export function dent(str) {
 	str = String(str);
@@ -57,12 +56,6 @@ export async function loadFixture(name, env) {
 	await fs.mkdir(env.tmp.path, { recursive: true });
 
 	await ncp(fixture, env.tmp.path);
-
-	// Install necessary dependencies if any
-	const pkgJson = path.join(env.tmp.path, 'package.json');
-	if (await isFile(pkgJson)) {
-		childProcess.spawnSync('npm', ['install', '--silent'], { cwd: env.tmp.path, stdio: 'inherit' });
-	}
 
 	try {
 		await fs.mkdir(path.join(env.tmp.path, 'node_modules', 'wmr'), { recursive: true });
