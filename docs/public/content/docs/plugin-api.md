@@ -26,7 +26,7 @@ The `resolveId` function is called whenever an import specifier is encountered. 
   resolveId(id) {
     if (id === "virtual-module") {
       // Rewrite `virtual-module` to `my-other-virtual-module`
-      return "my-other-virtual-module`;
+      return "my-other-virtual-module";
     }
   }
 }
