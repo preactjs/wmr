@@ -4,7 +4,7 @@ export { content };
 const pages = new Map(
 	content.map((item, index) => {
 		if ('heading' in item) return ['', -1];
-		item.slug = `/docs/${item.name}`.replace(/\/index$/g, '');
+		item.slug = `/docs/${item.name.replace(/^index$/, '')}`;
 		return [item.name, index];
 	})
 );
