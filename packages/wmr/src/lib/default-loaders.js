@@ -10,6 +10,8 @@ export function defaultLoaders() {
 	return {
 		name: 'default-loaders',
 		async transform(code, id) {
+			if (!/\.[tj]sx?$/.test(id)) return;
+
 			return await transformImports(code, id, {
 				resolveId(specifier) {
 					const hasPrefix = /^[-\w]+:/.test(specifier);
