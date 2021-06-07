@@ -13,7 +13,7 @@ const pages = new Map(
 export const getPage = name => content[pages.get(name)];
 
 /** @param {string} name */
-export const getPreviousPage = name => pages[pages.get(name) - 1];
+export const getPreviousPage = name => content[pages.get(name) - 1];
 
 /** @param {string} name */
-export const getNextPage = name => pages[pages.get(name) + 1];
+export const getNextPage = name => content[pages.get(name) + 1];
