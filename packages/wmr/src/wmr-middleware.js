@@ -606,7 +606,7 @@ export const TRANSFORMS = {
 		let code = (await NonRollup.load(idAbsolute)) || (await fs.readFile(idAbsolute, 'utf-8'));
 
 		const result = await NonRollup.transform(code, id);
-		code = result.code;
+		code = result.code || code;
 
 		if (isModular) {
 			code = await modularizeCss(code, id.replace(/^\.\//, ''), undefined, idAbsolute);
