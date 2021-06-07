@@ -193,13 +193,24 @@ export function createPluginContainer(plugins, opts = {}) {
 			);
 		},
 
-		/** @param {string} id */
+		/**
+		 * @param {string} id
+		 * @returns {Set<string> | undefined} Files that should be invalidated.
+		 * The return value is WMR specific
+		 */
 		watchChange(id) {
 			if (watchFiles.has(id)) {
+				const invalidated = new Set();
 				for (plugin of plugins) {
 					if (!plugin.watchChange) continue;
-					plugin.watchChange.call(ctx, id);
+					const res = plugin.watchChange.call(ctx, id);
+					if (typeof res === 'string') {
+						invalidated.add(res);
+					} else if (Array.isArray(res) || res instanceof Set) {
+						res.forEach(s => invalidated.add(s));
+					}
 				}
+				return invalidated;
 			}
 		},
 
@@ -283,7 +294,6 @@ export function createPluginContainer(plugins, opts = {}) {
 					code = result;
 				}
 			}
-			console.log(MODULES);
 			return code;
 		},
 

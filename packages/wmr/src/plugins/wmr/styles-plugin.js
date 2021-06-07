@@ -4,22 +4,9 @@ import { basename, dirname, relative, resolve, sep, posix } from 'path';
 import { transformCssImports } from '../../lib/transform-css-imports.js';
 import { transformCss } from '../../lib/transform-css.js';
 import { matchAlias } from '../../lib/aliasing.js';
-import sassPlugin from '../sass-plugin.js';
-import { createPluginContainer } from '../../lib/rollup-plugin-container.js';
 
 // invalid object keys
 const RESERVED_WORDS = /^(abstract|async|boolean|break|byte|case|catch|char|class|const|continue|debugger|default|delete|do|double|else|enum|export|extends|false|final|finally|float|for|function|goto|if|implements|import|in|instanceof|int|interface|let|long|native|new|null|package|private|protected|public|return|short|static|super|switch|synchronized|this|throw|throws|transient|true|try|typeof|var|void|volatile|while|with|yield)$/;
-
-/**
- * @param {string} sass
- * @param {string} id
- * @returns {Promise<string>} Transpiled css
- */
-export async function processSass(sass, id) {
-	const container = createPluginContainer([sassPlugin()]);
-	const css = await container.transform(sass, id);
-	return transformCss(css);
-}
 
 /**
  * @param {string} css

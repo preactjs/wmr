@@ -2,7 +2,7 @@ import { resolve, dirname, relative, sep, posix, isAbsolute, normalize, basename
 import { promises as fs, createReadStream } from 'fs';
 import * as kl from 'kolorist';
 import wmrPlugin, { getWmrClient } from './plugins/wmr/plugin.js';
-import wmrStylesPlugin, { modularizeCss, processSass } from './plugins/wmr/styles-plugin.js';
+import wmrStylesPlugin, { modularizeCss } from './plugins/wmr/styles-plugin.js';
 import { createPluginContainer } from './lib/rollup-plugin-container.js';
 import { transformImports } from './lib/transform-imports.js';
 import { normalizeSpecifier } from './plugins/npm-plugin/index.js';
@@ -105,43 +105,52 @@ export default function wmrMiddleware(options) {
 
 	watcher.on('change', filename => {
 		const absolute = resolve(cwd, filename);
-		NonRollup.watchChange(absolute);
 
-		// Resolve potentially aliased paths and normalize to 'nix:
-		const aliased = matchAlias(alias, absolute.split(sep).join(posix.sep));
-		filename = aliased
-			? // Trim leading slash, we need a relative path for the cache
-			  aliased.slice(1)
-			: filename.split(sep).join(posix.sep);
+		// A change in one file can lead to multiple bundles needing to be
+		// invalidated. Especially for plugins which do their own bundling.
+		const pendingFiles = [absolute];
+		const invalidated = NonRollup.watchChange(absolute);
+		if (invalidated) {
+			pendingFiles.push(...invalidated);
+		}
 
-		logWatcher(`${kl.cyan(absolute)} -> ${kl.dim(filename)} [change]`);
+		for (const file of pendingFiles) {
+			// Resolve potentially aliased paths and normalize to 'nix:
+			const aliased = matchAlias(alias, file.split(sep).join(posix.sep));
+			filename = aliased
+				? // Trim leading slash, we need a relative path for the cache
+				  aliased.slice(1)
+				: relative(file, cwd).split(sep).join(posix.sep);
 
-		// Delete any generated CSS Modules mapping modules:
-		const suffix = /\.module\.(css|s[ac]ss)$/.test(filename) ? '.js' : '';
-		const cacheKey = filename + suffix;
-		logCache(`delete: ${kl.cyan(cacheKey)} [${!WRITE_CACHE.has(cacheKey) ? 'not found' : 'found'}]`);
-		WRITE_CACHE.delete(cacheKey);
+			logWatcher(`${kl.cyan(file)} -> ${kl.dim(filename)} [change]`);
 
-		if (!pendingChanges.size) timeout = setTimeout(flushChanges, 60);
+			// Delete any generated CSS Modules mapping modules:
+			const suffix = /\.module\.(css|s[ac]ss)$/.test(filename) ? '.js' : '';
+			const cacheKey = filename + suffix;
+			logCache(`delete: ${kl.cyan(cacheKey)} [${!WRITE_CACHE.has(cacheKey) ? 'not found' : 'found'}]`);
+			WRITE_CACHE.delete(cacheKey);
 
-		if (/\.(css|s[ac]ss)$/.test(filename)) {
-			pendingChanges.add('/' + filename);
-		} else if (/\.(mjs|[tj]sx?)$/.test(filename)) {
-			if (!moduleGraph.has(filename)) {
-				onChange({ reload: true });
-				clearTimeout(timeout);
-				return;
-			}
+			if (!pendingChanges.size) timeout = setTimeout(flushChanges, 60);
 
-			if (!bubbleUpdates(filename)) {
+			if (/\.(css|s[ac]ss)$/.test(filename)) {
+				pendingChanges.add('/' + filename);
+			} else if (/\.(mjs|[tj]sx?)$/.test(filename)) {
+				if (!moduleGraph.has(filename)) {
+					onChange({ reload: true });
+					clearTimeout(timeout);
+					return;
+				}
+
+				if (!bubbleUpdates(filename)) {
+					pendingChanges.clear();
+					clearTimeout(timeout);
+					onChange({ reload: true });
+				}
+			} else {
 				pendingChanges.clear();
 				clearTimeout(timeout);
 				onChange({ reload: true });
 			}
-		} else {
-			pendingChanges.clear();
-			clearTimeout(timeout);
-			onChange({ reload: true });
 		}
 	});
 
@@ -217,27 +226,22 @@ export default function wmrMiddleware(options) {
 
 		log(`${kl.cyan(formatPath(path))} -> ${kl.dim(id)} file: ${kl.dim(file)}`);
 
-		console.log('ID', id);
 		/** @type {(ctx: Context) => Result | Promise<Result>} */
 		let transform;
 		if (path === '/_wmr.js') {
 			transform = getWmrClient.bind(null);
 		} else if (queryParams.has('asset')) {
 			transform = TRANSFORMS.asset;
-		} else if (prefix || hasIdPrefix) {
+		} else if (prefix || hasIdPrefix || /\.(s[ac]ss)\.js$/.test(file)) {
 			transform = TRANSFORMS.js;
 		} else if (/\.(css|s[ac]ss)\.js$/.test(file)) {
 			transform = TRANSFORMS.cssModule;
-			console.log('  css mod');
 		} else if (/\.([mc]js|[tj]sx?)$/.test(file)) {
 			transform = TRANSFORMS.js;
-			console.log('  js');
 		} else if (/\.(css|s[ac]ss)$/.test(file)) {
 			transform = TRANSFORMS.css;
-			console.log('  css');
 		} else {
 			transform = TRANSFORMS.generic;
-			console.log('  generic');
 		}
 
 		try {
@@ -255,8 +259,6 @@ export default function wmrMiddleware(options) {
 				alias: options.alias,
 				cacheKey
 			});
-
-			console.log(moduleGraph);
 
 			// return false to skip handling:
 			if (result === false) return next();
@@ -591,36 +593,24 @@ export const TRANSFORMS = {
 	},
 
 	// Handles CSS Modules (the actual CSS)
-	async css({ id, path, file, cwd, out, res, alias, cacheKey }) {
+	async css({ id, path, file, cwd, out, res, alias, cacheKey, NonRollup }) {
 		if (!/\.(css|s[ac]ss)$/.test(path)) throw null;
 
 		const isModular = /\.module\.(css|s[ac]ss)$/.test(path);
-
-		const isSass = /\.(s[ac]ss)$/.test(path);
 
 		res.setHeader('Content-Type', 'text/css;charset=utf-8');
 
 		if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
 
 		const idAbsolute = resolveFile(file, cwd, alias);
-		let code = await fs.readFile(idAbsolute, 'utf-8');
+		let code = (await NonRollup.load(idAbsolute)) || (await fs.readFile(idAbsolute, 'utf-8'));
 
-		if (isSass) {
-			code = await processSass(code, id);
-		}
+		const result = await NonRollup.transform(code, id);
+		code = result.code;
 
 		if (isModular) {
 			code = await modularizeCss(code, id.replace(/^\.\//, ''), undefined, idAbsolute);
 		}
-
-		// const plugin = wmrStylesPlugin({ cwd, hot: false, fullPath: true });
-		// let code;
-		// const context = {
-		// 	emitFile(asset) {
-		// 		code = asset.source;
-		// 	}
-		// };
-		// await plugin.load.call(context, file);
 
 		writeCacheFile(out, cacheKey, code);
 
