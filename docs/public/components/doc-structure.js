@@ -1,19 +1,27 @@
 import content from 'content:../content/docs';
 export { content };
 
+/** @type {(item: any) => item is ContentItem} */
+const isContentItem = item => !('heading' in item);
+
+// Filter out headings so that we can access previous and next page
+// by index later
+const pageOrder = content.filter(isContentItem).map(item => {
+	item.slug = `/docs/${item.name}`.replace(/\/index$/g, '');
+	return item;
+});
+
 const pages = new Map(
-	content.map((item, index) => {
-		if ('heading' in item) return ['', -1];
-		item.slug = `/docs/${item.name}`.replace(/\/index$/g, '');
+	pageOrder.map((item, index) => {
 		return [item.name, index];
 	})
 );
 
 /** @param {string} name */
-export const getPage = name => content[pages.get(name)];
+export const getPage = name => pageOrder[pages.get(name)];
 
 /** @param {string} name */
-export const getPreviousPage = name => content[pages.get(name) - 1];
+export const getPreviousPage = name => pageOrder[pages.get(name) - 1];
 
 /** @param {string} name */
-export const getNextPage = name => content[pages.get(name) + 1];
+export const getNextPage = name => pageOrder[pages.get(name) + 1];
