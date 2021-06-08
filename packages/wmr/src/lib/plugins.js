@@ -21,6 +21,8 @@ import nodeBuiltinsPlugin from '../plugins/node-builtins-plugin.js';
 import dynamicImportVars from '@rollup/plugin-dynamic-import-vars';
 import visualizer from 'rollup-plugin-visualizer';
 import { defaultLoaders } from './default-loaders.js';
+import fsRoutesPlugin from '../plugins/fs-routes-plugin.js';
+import fsRoutesPreactPlugin from '../plugins/fs-routes-preact-plugin.js';
 
 /**
  * @param {import("wmr").Options} options
@@ -44,6 +46,8 @@ export function getPlugins(options) {
 		jsonPlugin({ cwd }),
 		bundlePlugin({ inline: !production, cwd }),
 		aliasPlugin({ alias, cwd: root }),
+		fsRoutesPlugin({ routesDir: options.routesDir, cwd, root, publicPath: options.publicPath }),
+		fsRoutesPreactPlugin(),
 		sucrasePlugin({
 			typescript: true,
 			sourcemap,

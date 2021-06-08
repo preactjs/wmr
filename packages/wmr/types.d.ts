@@ -35,6 +35,7 @@ declare module 'wmr' {
 		host: string;
 		port: number;
 		root: string;
+		routesDir: string;
 		out: string;
 		overlayDir: string;
 		sourcemap: boolean;
@@ -89,6 +90,14 @@ declare interface NodeModule {
 	hot?: ImportMeta['hot'] | void;
 }
 declare var module: NodeModule;
+
+// Models exposed by internal wmr plugins
+declare module 'wmr:fs-routes' {
+	export const routes: Array<{ route: string; url: string }>;
+}
+declare module 'wmr:fs-routes-preact' {
+	export const routes: any[];
+}
 
 /** Maps authored classNames to their CSS Modules -suffixed generated classNames. */
 type Mapping = Record<string, string>;

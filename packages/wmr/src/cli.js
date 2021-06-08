@@ -16,6 +16,7 @@ function bool(v) {
 // global options
 prog
 	.option('--cwd', 'The working directory - equivalent to "(cd FOO && wmr)"')
+	.option('--routesDir', 'Directory for filesystem-based routes(default: <cwd>/routes)')
 	// Setting env variables isn't common knowledege for many windows users. Much
 	// easier to pass a flag to our binary instead.
 	.option('--debug', 'Print internal debugging messages to the console. Same as setting DEBUG=true');
