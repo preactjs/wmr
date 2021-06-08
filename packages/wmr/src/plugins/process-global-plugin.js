@@ -53,7 +53,7 @@ export default function processGlobalPlugin({ NODE_ENV = 'development', env = {}
 			if (id === `${PREFIX}process.js`) return `export default ${processObj};`;
 		},
 		transform(code, id) {
-			if (!/\.[tj]sx?$/.test(id)) return;
+			if (!/\.([tj]sx?|mjs)/.test(id)) return;
 			const orig = code;
 
 			const result = transform(code, {
