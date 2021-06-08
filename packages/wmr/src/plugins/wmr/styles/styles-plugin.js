@@ -29,18 +29,15 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath, production, alias 
 			if (!id.match(/\.(css|s[ac]ss)$/)) return;
 			if (id[0] === '\0') return;
 
-			const isIcss = /(composes:|:global|:local)/.test(source);
-			const isModular = /\.module\.(css|s[ac]ss)$/.test(id);
-
 			let idRelative = id;
 			let aliased = matchAlias(alias, id);
 			idRelative = aliased ? aliased.slice('/@alias/'.length) : relative(cwd, id);
 
 			const mappings = [];
-			if (isModular) {
+			if (/\.module\.(css|s[ac]ss)$/.test(id)) {
 				source = await modularizeCss(source, idRelative, mappings, id);
 			} else {
-				if (isIcss) {
+				if (/(composes:|:global|:local)/.test(source)) {
 					console.warn(`Warning: ICSS ("composes:") is only supported in CSS Modules.`);
 				}
 				source = transformCss(source);
