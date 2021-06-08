@@ -10,7 +10,7 @@ export function defaultLoaders() {
 	return {
 		name: 'default-loaders',
 		async transform(code, id) {
-			if (!/\.[tj]sx?$/.test(id)) return;
+			if (!/\.([tj]sx?|mjs)$/.test(id)) return;
 
 			return await transformImports(code, id, {
 				resolveId(specifier) {
