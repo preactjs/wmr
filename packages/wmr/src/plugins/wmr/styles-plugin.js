@@ -98,7 +98,7 @@ export async function modularizeCss(css, id, mappings = [], idAbsolute) {
 /**
  * Implements hot-reloading for stylesheets imported by JS.
  * @param {object} options
- * @param {string} [options.cwd] Manually specify the cwd from which to resolve filenames (important for calculating hashes!)
+ * @param {string} options.cwd Manually specify the cwd from which to resolve filenames (important for calculating hashes!)
  * @param {boolean} [options.hot] Indicates the plugin should inject a HMR-runtime
  * @param {boolean} [options.fullPath] Preserve the full original path when producing CSS assets
  * @param {boolean} [options.production]
@@ -106,21 +106,11 @@ export async function modularizeCss(css, id, mappings = [], idAbsolute) {
  * @returns {import('rollup').Plugin}
  */
 export default function wmrStylesPlugin({ cwd, hot, fullPath, production, alias }) {
-	const cwds = new Set();
-
 	let assetId = 0;
 	const assetMap = new Map();
 
 	return {
 		name: 'wmr-styles',
-		options(opts) {
-			cwds.clear();
-			forEachInput(opts.input, input => {
-				const entry = resolve('.', input);
-				cwds.add(dirname(entry));
-			});
-			return opts;
-		},
 		async transform(source, id) {
 			if (!id.match(/\.(css|s[ac]ss)$/)) return;
 			if (id[0] === '\0') return;
@@ -130,13 +120,7 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath, production, alias 
 
 			let idRelative = id;
 			let aliased = matchAlias(alias, id);
-			if (aliased) {
-				idRelative = aliased.slice('/@alias/'.length);
-			} else {
-				idRelative = cwd ? relative(cwd || '', id) : multiRelative(cwds, id);
-			}
-
-			if (idRelative.match(/^[^/]*\\/)) idRelative = idRelative.split(sep).join(posix.sep);
+			idRelative = aliased ? aliased.slice('/@alias/'.length) : relative(cwd, id);
 
 			const mappings = [];
 			if (isModular) {
@@ -209,10 +193,6 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath, production, alias 
 			`;
 
 			if (hot) {
-				// import.meta.hot.accept((m) => {
-				// 	for (let i in m.default) styles[i] = m.default[i];
-				// 	for (let i in styles) if (!(i in m.default)) delete[i];
-				// });
 				code += `
 					import { createHotContext } from 'wmr';
 					createHotContext(import.meta.url).accept(({ module: { default: s } }) => {
@@ -249,27 +229,6 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath, production, alias 
 			}
 		}
 	};
-}
-
-function multiRelative(cwds, filename) {
-	let p;
-	cwds.forEach(cwd => {
-		const f = relative(cwd, filename);
-		if (!p || f.length < p.length) p = f;
-	});
-	return p;
-}
-
-function forEachInput(input, callback) {
-	if (typeof input === 'object') {
-		if (Array.isArray(input)) {
-			for (let i = 0; i < input.length; i++) {
-				forEachInput(input[i], callback);
-			}
-		} else {
-			for (let i in input) forEachInput(input[i], callback);
-		}
-	} else if (typeof input === 'string') callback(input);
 }
 
 export function hash(str) {
