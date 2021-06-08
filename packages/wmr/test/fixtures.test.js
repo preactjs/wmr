@@ -551,8 +551,6 @@ describe('fixtures', () => {
 	});
 
 	describe('hmr-scss', () => {
-		const timeout = n => new Promise(r => setTimeout(r, n));
-
 		it('should hot reload an scss-file imported from index.html', async () => {
 			await loadFixture('hmr-scss', env);
 			instance = await runWmrFast(env.tmp.path);
@@ -562,9 +560,9 @@ describe('fixtures', () => {
 
 			await updateFile(env.tmp.path, 'index.scss', content => content.replace('color: #333;', 'color: #000;'));
 
-			await timeout(1000);
-
-			expect(await page.$eval('body', e => getComputedStyle(e).color)).toBe('rgb(0, 0, 0)');
+			await waitForPass(async () => {
+				expect(await page.$eval('body', e => getComputedStyle(e).color)).toBe('rgb(0, 0, 0)');
+			});
 		});
 
 		it('should hot reload an imported scss-file from another scss-file', async () => {
@@ -576,9 +574,9 @@ describe('fixtures', () => {
 
 			await updateFile(env.tmp.path, 'home.scss', content => content.replace('color: #333;', 'color: #000;'));
 
-			await timeout(1000);
-
-			expect(await page.$eval('main', e => getComputedStyle(e).color)).toBe('rgb(0, 0, 0)');
+			await waitForPass(async () => {
+				expect(await page.$eval('main', e => getComputedStyle(e).color)).toBe('rgb(0, 0, 0)');
+			});
 		});
 	});
 
