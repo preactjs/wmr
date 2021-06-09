@@ -1,99 +1,13 @@
 import { promises as fs } from 'fs';
 import * as kl from 'kolorist';
 import { basename, dirname, relative, resolve, sep, posix } from 'path';
-import { transformCssImports } from '../../lib/transform-css-imports.js';
-import { transformCss } from '../../lib/transform-css.js';
-import { matchAlias } from '../../lib/aliasing.js';
+import { transformCssImports } from '../../../lib/transform-css-imports.js';
+import { transformCss } from '../../../lib/transform-css.js';
+import { matchAlias } from '../../../lib/aliasing.js';
+import { modularizeCss } from './css-modules.js';
 
 // invalid object keys
 const RESERVED_WORDS = /^(abstract|async|boolean|break|byte|case|catch|char|class|const|continue|debugger|default|delete|do|double|else|enum|export|extends|false|final|finally|float|for|function|goto|if|implements|import|in|instanceof|int|interface|let|long|native|new|null|package|private|protected|public|return|short|static|super|switch|synchronized|this|throw|throws|transient|true|try|typeof|var|void|volatile|while|with|yield)$/;
-
-/**
- * @param {string} sass
- * @returns {string} css
- */
-export function processSass(sass) {
-	return transformCss(sass);
-}
-
-/**
- * @param {string} css
- * @param {string} id cwd-relative path to the stylesheet, no leading `./`
- * @param {string[]} [mappings] an array to populate with object property code
- * @param {string} [idAbsolute] absolute filepath to the CSS file
- * @returns {Promise<string>}
- */
-export async function modularizeCss(css, id, mappings = [], idAbsolute) {
-	// normalize to posix id for consistent hashing
-	if (id.match(/^[^/]*\\/)) id = id.split(sep).join(posix.sep);
-
-	const suffix = '_' + hash(id);
-
-	let currentMappings = new Map();
-	const toCompose = new Map();
-
-	let result = transformCss(css, (className, additionalClasses, specifier) => {
-		let currentSuffix = suffix;
-		// Inline external composed styles (composes: foo from './other.css')
-		if (specifier) {
-			const relativeImportee = posix.join(posix.dirname(id), specifier);
-			currentSuffix = '_' + hash(relativeImportee);
-			// addComposedCss(posix.join(posix.dirname(idAbsolute || id), specifier), relativeImportee, className);
-			const filename = posix.join(posix.dirname(idAbsolute || id), specifier);
-			let entry = toCompose.get(filename);
-			if (!entry) {
-				entry = { filename, classNames: new Set(), id: relativeImportee, suffix: currentSuffix };
-				toCompose.set(filename, entry);
-			}
-			entry.classNames.add(className);
-		}
-		const mapped = className + currentSuffix;
-		let m = currentMappings.get(className);
-		if (!m) {
-			m = new Set([mapped]);
-			currentMappings.set(className, m);
-		}
-		// {button:"button_abcde another-composed-class_12345"}
-		if (additionalClasses) {
-			for (const c of additionalClasses.trim().split(' ')) {
-				m.add(c);
-			}
-		}
-		return mapped;
-	});
-
-	result += (
-		await Promise.all(
-			Array.from(toCompose.values()).map(async entry => {
-				let css = await fs.readFile(entry.filename, 'utf-8');
-				return transformCss(
-					css,
-					(c, additionalClasses, specifier) => {
-						if (specifier || additionalClasses) {
-							console.error(`Recursive/nested ICSS "composes:" is not currently supported.`);
-						}
-						return c + entry.suffix;
-					},
-					rule => {
-						// only include rules that were composed
-						for (const c of entry.classNames) {
-							if (rule.value.split(/[: ()[\],>&+*]/).indexOf('.' + c)) return true;
-						}
-					}
-				);
-			})
-		)
-	).join('');
-
-	currentMappings.forEach((value, key) => {
-		// quote keys only if necessary:
-		const q = /^\d|[^a-z0-9_$]/gi.test(key) ? `'` : ``;
-		const mapped = Array.from(value).join(' ');
-		mappings.push(`${q + key + q}:'${mapped}'`);
-	});
-
-	return result;
-}
 
 /**
  * Implements hot-reloading for stylesheets imported by JS.
@@ -115,18 +29,15 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath, production, alias 
 			if (!id.match(/\.(css|s[ac]ss)$/)) return;
 			if (id[0] === '\0') return;
 
-			const isIcss = /(composes:|:global|:local)/.test(source);
-			const isModular = /\.module\.(css|s[ac]ss)$/.test(id);
-
 			let idRelative = id;
 			let aliased = matchAlias(alias, id);
 			idRelative = aliased ? aliased.slice('/@alias/'.length) : relative(cwd, id);
 
 			const mappings = [];
-			if (isModular) {
+			if (/\.module\.(css|s[ac]ss)$/.test(id)) {
 				source = await modularizeCss(source, idRelative, mappings, id);
 			} else {
-				if (isIcss) {
+				if (/(composes:|:global|:local)/.test(source)) {
 					console.warn(`Warning: ICSS ("composes:") is only supported in CSS Modules.`);
 				}
 				source = transformCss(source);
@@ -229,11 +140,4 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath, production, alias 
 			}
 		}
 	};
-}
-
-export function hash(str) {
-	let hash = 5381,
-		i = str.length;
-	while (i) hash = (hash * 33) ^ str.charCodeAt(--i);
-	return (hash >>> 0).toString(36);
 }
