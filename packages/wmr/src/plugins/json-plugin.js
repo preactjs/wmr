@@ -10,10 +10,10 @@ import { promises as fs } from 'fs';
  *   import foo from 'json:./foo.json';
  *
  * @param {object} options
- * @param {string} options.cwd
+ * @param {string} options.root
  * @returns {import('rollup').Plugin}
  */
-export default function jsonPlugin({ cwd }) {
+export default function jsonPlugin({ root }) {
 	const IMPORT_PREFIX = 'json:';
 	const INTERNAL_PREFIX = '\0json:';
 
@@ -37,9 +37,9 @@ export default function jsonPlugin({ cwd }) {
 
 			// TODO: Add a global helper function to normalize paths
 			// and check that we're allowed to load a file.
-			const file = path.resolve(cwd, id);
-			if (!file.startsWith(cwd)) {
-				throw new Error(`JSON file must be placed inside ${cwd}`);
+			const file = path.resolve(root, id);
+			if (!file.startsWith(root)) {
+				throw new Error(`JSON file must be placed inside ${root}`);
 			}
 
 			return await fs.readFile(file, 'utf-8');

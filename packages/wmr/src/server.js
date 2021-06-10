@@ -30,9 +30,9 @@ import { hasDebugFlag } from './lib/output-utils.js';
  */
 export default async function server({ cwd, root, overlayDir, middleware, http2, compress = true, optimize, alias }) {
 	try {
-		await fs.access(resolve(cwd, 'index.html'));
+		await fs.access(resolve(root, 'index.html'));
 	} catch (e) {
-		process.stderr.write(kl.yellow(`Warning: missing "index.html" file ${kl.dim(`(in ${cwd})`)}`) + '\n');
+		process.stderr.write(kl.yellow(`Warning: missing "index.html" file ${kl.dim(`(in ${root})`)}`) + '\n');
 	}
 
 	/** @type {CustomServer} */
@@ -67,7 +67,7 @@ export default async function server({ cwd, root, overlayDir, middleware, http2,
 			// We can log the fully detailed error to the CLI
 			const displayPath = fullPath.startsWith('/@')
 				? fullPath
-				: './' + join(relative(root, cwd), fullPath.replace(/^\//, ''));
+				: './' + join(relative(cwd, root), fullPath.replace(/^\//, ''));
 
 			const codeFrame = err.codeFrame ? `\n${err.codeFrame}` : '';
 			const prettyStack = errorstacks
@@ -104,19 +104,19 @@ export default async function server({ cwd, root, overlayDir, middleware, http2,
 		app.use(compression({ threshold, level: 4 }));
 	}
 
-	app.use('/@npm', npmMiddleware({ alias, optimize, cwd: root }));
+	app.use('/@npm', npmMiddleware({ alias, optimize, cwd }));
 
 	if (middleware) {
 		app.use(...middleware);
 	}
 
 	if (overlayDir) {
-		app.use(sirv(resolve(cwd || '', overlayDir), { dev: true }));
+		app.use(sirv(resolve(root || '', overlayDir), { dev: true }));
 	}
 
 	// SPA nav fallback
 	app.use(
-		sirv(cwd || '', {
+		sirv(root || '', {
 			ignores: ['@npm'],
 			single: true,
 			etag: true,

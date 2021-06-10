@@ -27,7 +27,7 @@ import { defaultLoaders } from './default-loaders.js';
  * @returns {import("wmr").Plugin[]}
  */
 export function getPlugins(options) {
-	const { plugins, cwd, publicPath, alias, root, env, minify, mode, sourcemap, features, visualize } = options;
+	const { plugins, publicPath, alias, root, env, minify, mode, sourcemap, features, visualize } = options;
 
 	// Plugins are pre-sorted
 	let split = plugins.findIndex(p => p.enforce === 'post');
@@ -37,13 +37,13 @@ export function getPlugins(options) {
 
 	return [
 		...plugins.slice(0, split),
-		production && htmlEntriesPlugin({ cwd, publicPath }),
+		production && htmlEntriesPlugin({ root, publicPath }),
 		externalUrlsPlugin(),
 		nodeBuiltinsPlugin({ production }),
-		urlPlugin({ inline: !production, cwd, alias }),
-		jsonPlugin({ cwd }),
-		bundlePlugin({ inline: !production, cwd }),
-		aliasPlugin({ alias, cwd: root }),
+		urlPlugin({ inline: !production, root, alias }),
+		jsonPlugin({ root }),
+		bundlePlugin({ inline: !production, cwd: root }),
+		aliasPlugin({ alias }),
 		sucrasePlugin({
 			typescript: true,
 			sourcemap,
@@ -56,7 +56,7 @@ export function getPlugins(options) {
 			}),
 		production && publicPathPlugin({ publicPath }),
 		sassPlugin({ production }),
-		production && wmrStylesPlugin({ hot: false, cwd, production, alias }),
+		production && wmrStylesPlugin({ hot: false, root, production, alias }),
 		processGlobalPlugin({
 			env,
 			NODE_ENV: production ? 'production' : 'development'
@@ -80,7 +80,7 @@ export function getPlugins(options) {
 
 		production && optimizeGraphPlugin({ publicPath }),
 		minify && minifyCssPlugin({ sourcemap }),
-		production && copyAssetsPlugin({ cwd }),
+		production && copyAssetsPlugin({ root }),
 		production && visualize && visualizer({ open: true, gzipSize: true, brotliSize: true })
 	].filter(Boolean);
 }

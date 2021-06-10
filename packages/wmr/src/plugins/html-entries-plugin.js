@@ -22,13 +22,11 @@ const toSystemPath = p => p.split(posix.sep).join(sep);
  * Notably, <scripts> become *user-defined entries*, so they correctly use `output.entryFileNames`.
  *
  * @param {object} options
- * @param {string} [options.cwd]
- * @param {string} [options.publicDir]
+ * @param {string} options.root
  * @param {string} [options.publicPath] Prepend to generated filenames
  * @returns {import('rollup').Plugin}
  */
-export default function htmlEntriesPlugin({ cwd, publicDir, publicPath } = {}) {
-	const root = publicDir || cwd || '.';
+export default function htmlEntriesPlugin({ root, publicPath }) {
 	const ENTRIES = [];
 	const META = new Map();
 
@@ -150,7 +148,7 @@ export default function htmlEntriesPlugin({ cwd, publicDir, publicPath } = {}) {
 					this.error(
 						`\n${bgRed(white(bold(`ERROR`)))} File not found: ${cyan(script)}` +
 							`\n> ${white(
-								`Is the extension correct? ${dim('<script src="')}${magenta(relative(cwd, script))}${dim('">')} ?`
+								`Is the extension correct? ${dim('<script src="')}${magenta(relative(root, script))}${dim('">')} ?`
 							)}\n`
 					);
 				}
