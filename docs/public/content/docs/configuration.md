@@ -92,16 +92,16 @@ The mode WMR was started in.
 ### cwd
 
 - Type: `string`
-- Default: `process.cwd()/public/`
+- Default: `process.cwd()`
 
-The main directory to serve files from.
+The path to where WMR was launched from. Used to look up `package.json`.
 
 ### root
 
 - Type: `string`
-- Default: `process.cwd()`
+- Default: `process.cwd()/public`
 
-The path to where WMR was launched from. Used to look up `package.json`.
+The main directory to serve files from
 
 ### out
 
