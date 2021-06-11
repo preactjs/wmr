@@ -12,14 +12,14 @@ const RESERVED_WORDS = /^(abstract|async|boolean|break|byte|case|catch|char|clas
 /**
  * Implements hot-reloading for stylesheets imported by JS.
  * @param {object} options
- * @param {string} options.cwd Manually specify the cwd from which to resolve filenames (important for calculating hashes!)
+ * @param {string} options.root Manually specify the cwd from which to resolve filenames (important for calculating hashes!)
  * @param {boolean} [options.hot] Indicates the plugin should inject a HMR-runtime
  * @param {boolean} [options.fullPath] Preserve the full original path when producing CSS assets
  * @param {boolean} [options.production]
  * @param {Record<string, string>} options.alias
  * @returns {import('rollup').Plugin}
  */
-export default function wmrStylesPlugin({ cwd, hot, fullPath, production, alias }) {
+export default function wmrStylesPlugin({ root, hot, fullPath, production, alias }) {
 	let assetId = 0;
 	const assetMap = new Map();
 
@@ -31,7 +31,7 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath, production, alias 
 
 			let idRelative = id;
 			let aliased = matchAlias(alias, id);
-			idRelative = aliased ? aliased.slice('/@alias/'.length) : relative(cwd, id);
+			idRelative = aliased ? aliased.slice('/@alias/'.length) : relative(root, id);
 
 			const mappings = [];
 			if (/\.module\.(css|s[ac]ss)$/.test(id)) {
@@ -57,7 +57,7 @@ export default function wmrStylesPlugin({ cwd, hot, fullPath, production, alias 
 						if (spec.indexOf(':') === -1) {
 							const absolute = resolve(dirname(idRelative), spec.split(posix.sep).join(sep));
 
-							if (!absolute.startsWith(cwd)) return;
+							if (!absolute.startsWith(root)) return;
 
 							const ref = `__WMR_ASSET_ID_${assetId++}`;
 							assetMap.set(ref, {

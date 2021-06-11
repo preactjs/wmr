@@ -3,7 +3,7 @@ import path from 'path';
 
 /**
  * @param {import("wmr").Options} options
- * @param {string} options.cwd
+ * @param {string} options.root
  * @returns {import('rollup').Plugin}
  */
 function directoryPlugin(options) {
@@ -26,7 +26,7 @@ function directoryPlugin(options) {
 			id = id.slice(INTERNAL.length);
 			let dir = id.split(path.posix.sep).join(path.sep);
 			if (!path.isAbsolute(dir)) {
-				dir = path.join(options.cwd, dir);
+				dir = path.join(options.root, dir);
 			}
 
 			const stats = await fs.stat(dir);

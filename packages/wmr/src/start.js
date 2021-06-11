@@ -49,7 +49,7 @@ export default async function start(options = {}) {
 	} else {
 		const logWatcher = debug('wmr:watcher');
 		const watcher = watch(configWatchFiles, {
-			cwd: cloned.root,
+			cwd: cloned.cwd,
 			disableGlobbing: true
 		});
 		watcher.on('ready', () => logWatcher(' watching for config changes'));
@@ -149,7 +149,7 @@ async function bootServer(options, configWatchFiles) {
 	};
 }
 
-const injectWmrMiddleware = ({ cwd }) => {
+const injectWmrMiddleware = ({ root }) => {
 	return async (req, res, next) => {
 		// If we haven't intercepted the request it's safe to assume we need to inject wmr.
 		const path = posix.normalize(req.path);
@@ -159,7 +159,7 @@ const injectWmrMiddleware = ({ cwd }) => {
 
 		try {
 			const start = Date.now();
-			const index = resolve(cwd, 'index.html');
+			const index = resolve(root, 'index.html');
 			const html = await fs.readFile(index, 'utf-8');
 			const result = await injectWmr(html);
 			const time = Date.now() - start;

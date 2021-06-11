@@ -23,14 +23,13 @@ let cache;
 /**
  * @param {string} input
  * @param {object} options
- * @param {string} options.cwd
  * @param {string} options.out
  * @param {boolean} [options.hmr]
  * @param {boolean} [options.rewriteNodeImports]
  * @param {import('rollup').ModuleFormat} [options.format]
  */
 export const compileSingleModule = withCache(
-	async (input, { cwd, out, hmr = true, rewriteNodeImports = true, format = 'es' }) => {
+	async (input, { out, hmr = true, rewriteNodeImports = true, format = 'es' }) => {
 		// The TS config file should be the only one that passes through here
 		const isConfigFile = input.endsWith('wmr.config.ts');
 		input = input.replace(/\.css\.js$/, '.css');
@@ -64,8 +63,6 @@ export const compileSingleModule = withCache(
 					sourcemap: false,
 					production: false
 				}),
-				// localNpmPlugin(),
-				// wmrStylesPlugin({ cwd }),
 				hmr && wmrPlugin(),
 				htmPlugin()
 			].filter(Boolean)

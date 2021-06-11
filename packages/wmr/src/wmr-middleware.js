@@ -39,7 +39,7 @@ export default function wmrMiddleware(options) {
 	distDir = resolve(dirname(out), distDir);
 
 	const NonRollup = createPluginContainer(getPlugins(options), {
-		cwd,
+		cwd: root,
 		writeFile: (filename, source) => writeCacheFile(out, filename, source),
 		output: {
 			// assetFileNames: '@asset/[name][extname]',
@@ -55,7 +55,7 @@ export default function wmrMiddleware(options) {
 	const pathAliases = Object.keys(alias)
 		.filter(key => key.endsWith('/*'))
 		.map(key => alias[key]);
-	const watchDirs = [cwd, resolve(root, 'package.json'), ...pathAliases];
+	const watchDirs = [root, resolve(cwd, 'package.json'), ...pathAliases];
 	logWatcher(`watching:\n${watchDirs.map(d => kl.dim('- ' + d)).join('\n')}`);
 
 	const watcher = watch(watchDirs, {
@@ -194,10 +194,10 @@ export default function wmrMiddleware(options) {
 			// convert to OS path:
 			const osPath = path.slice(1).split(posix.sep).join(sep);
 
-			file = resolve(cwd, osPath);
+			file = resolve(root, osPath);
 
 			// Rollup-style CWD-relative Unix-normalized path "id":
-			id = relative(cwd, file).replace(/^\.\//, '').replace(/^[\0]/, '').split(sep).join(posix.sep);
+			id = relative(root, file).replace(/^\.\//, '').replace(/^[\0]/, '').split(sep).join(posix.sep);
 
 			// TODO: Vefify prefix mappings in write cache
 			cacheKey = prefix + id;
@@ -245,7 +245,7 @@ export default function wmrMiddleware(options) {
 				file,
 				path,
 				prefix,
-				cwd,
+				root,
 				out,
 				NonRollup,
 				alias: options.alias,
@@ -339,7 +339,7 @@ function resolveFile(file, cwd, alias) {
  * @property {string} file absolute file path
  * @property {string} path request path
  * @property {string} prefix a Rollup plugin -style path `\0prefix:`, if the URL was `/＠prefix/*`
- * @property {string} cwd working directory, including ./public if detected
+ * @property {string} root public directory, including ./public if detected
  * @property {string} out output directory
  * @property {Record<string, string>} alias
  * @property {string} cacheKey Key for write cache
@@ -354,8 +354,8 @@ const logJsTransform = debug('wmr:transform.js');
 /** @type {{ [key: string]: (ctx: Context) => Result|Promise<Result> }} */
 export const TRANSFORMS = {
 	// Handle direct asset requests (/foo?asset)
-	async asset({ file, cwd, req, res }) {
-		const filename = resolve(cwd, file);
+	async asset({ file, root, req, res }) {
+		const filename = resolve(root, file);
 		let stats;
 		try {
 			stats = await fs.stat(filename);
@@ -385,7 +385,7 @@ export const TRANSFORMS = {
 	},
 
 	// Handle individual JavaScript modules
-	async js({ id, file, prefix, res, cwd, out, NonRollup, req, alias, cacheKey }) {
+	async js({ id, file, prefix, res, root, out, NonRollup, req, alias, cacheKey }) {
 		let code;
 		try {
 			res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
@@ -406,8 +406,8 @@ export const TRANSFORMS = {
 				let file = resolvedId;
 				if (prefix) file = file.replace(prefix, '');
 				file = file.split(posix.sep).join(sep);
-				if (!isAbsolute(file)) file = resolve(cwd, file);
-				code = await fs.readFile(resolveFile(file, cwd, alias), 'utf-8');
+				if (!isAbsolute(file)) file = resolve(root, file);
+				code = await fs.readFile(resolveFile(file, root, alias), 'utf-8');
 			}
 
 			code = await NonRollup.transform(code, id);
@@ -446,7 +446,7 @@ export const TRANSFORMS = {
 								return spec;
 							}
 
-							spec = relative(cwd, spec).split(sep).join(posix.sep);
+							spec = relative(root, spec).split(sep).join(posix.sep);
 							if (!/^(\/|[\w-]+:)/.test(spec)) spec = `/${spec}`;
 							return spec;
 						}
@@ -456,7 +456,7 @@ export const TRANSFORMS = {
 					spec = spec.replace(/^\0?([a-z-]+):(.+)$/, (s, prefix, spec) => {
 						// \0abc:/abs/disk/path --> /@abc/cwd-relative-path
 						if (spec[0] === '/' || spec[0] === sep) {
-							spec = relative(cwd, spec).split(sep).join(posix.sep);
+							spec = relative(root, spec).split(sep).join(posix.sep);
 						}
 						// Retain bare specifiers when serializing to url
 						else if (!/^\.?\.\//.test(spec)) {
@@ -539,7 +539,7 @@ export const TRANSFORMS = {
 		}
 	},
 	// Handles "CSS Modules" proxy modules (style.module.css.js)
-	async cssModule({ id, file, cwd, out, res, alias, cacheKey }) {
+	async cssModule({ id, file, root, out, res, alias, cacheKey }) {
 		res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
 
 		// Cache the generated mapping/proxy module with a .js extension (the CSS itself is also cached)
@@ -549,9 +549,9 @@ export const TRANSFORMS = {
 
 		// We create a plugin container for each request to prevent asset referenceId clashes
 		const container = createPluginContainer(
-			[wmrPlugin({ hot: true }), sassPlugin(), wmrStylesPlugin({ cwd, hot: true, fullPath: true, alias })],
+			[wmrPlugin({ hot: true }), sassPlugin(), wmrStylesPlugin({ root, hot: true, fullPath: true, alias })],
 			{
-				cwd,
+				cwd: root,
 				output: {
 					dir: out,
 					assetFileNames: '[name][extname]'
@@ -562,7 +562,7 @@ export const TRANSFORMS = {
 			}
 		);
 
-		const result = (await container.load(file)) || (await fs.readFile(resolveFile(file, cwd, alias), 'utf-8'));
+		const result = (await container.load(file)) || (await fs.readFile(resolveFile(file, root, alias), 'utf-8'));
 
 		let code = typeof result === 'string' ? result : result && result.code;
 
@@ -585,7 +585,7 @@ export const TRANSFORMS = {
 	},
 
 	// Handles CSS Modules (the actual CSS)
-	async css({ id, path, file, cwd, out, res, alias, cacheKey }) {
+	async css({ id, path, file, root, out, res, alias, cacheKey }) {
 		if (!/\.(css|s[ac]ss)$/.test(path)) throw null;
 
 		const isModular = /\.module\.(css|s[ac]ss)$/.test(path);
@@ -596,7 +596,7 @@ export const TRANSFORMS = {
 
 		if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
 
-		const idAbsolute = resolveFile(file, cwd, alias);
+		const idAbsolute = resolveFile(file, root, alias);
 		let code = await fs.readFile(idAbsolute, 'utf-8');
 
 		if (isModular) {
@@ -623,7 +623,7 @@ export const TRANSFORMS = {
 	async generic(ctx) {
 		// Serve ~/200.html fallback for requests with no extension
 		if (!/\.[a-z]+$/gi.test(ctx.path)) {
-			const fallback = resolve(ctx.cwd, '200.html');
+			const fallback = resolve(ctx.root, '200.html');
 			let use200 = false;
 			try {
 				const hasFile = await fs.lstat(ctx.file).catch(() => false);

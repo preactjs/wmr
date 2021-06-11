@@ -25,7 +25,7 @@ export default async function build(options) {
 
 	const bundleOutput = await bundleProd(options);
 
-	const stats = bundleStats(bundleOutput, path.relative(options.root, options.out));
+	const stats = bundleStats(bundleOutput, path.relative(options.cwd, options.out));
 	process.stdout.write(kl.bold(`\nWrote ${stats.totalText} to disk:`) + stats.assetsText + '\n');
 
 	if (!options.prerender) return;
