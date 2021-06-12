@@ -45,20 +45,25 @@ export default function wmrStylesPlugin({ root, hot, fullPath, production, alias
 
 			// Note: `plugin.generateBundle` is only called during prod builds for
 			// CSS files. So we need to guard the url replacement code.
-			if (production) {
-				source = await transformCssImports(source, idRelative, {
-					async resolveId(spec) {
-						// Rollup doesn't allow assets to depend on other assets. This is a
-						// pretty common case for CSS files referencing images or fonts. To
-						// work around that we'll rewrite every file reference to
-						// `__WMR_ASSET_ID_##`, similar to `import.meta.ROLLUP_FILE_URL_##`.
-						// We'll resolve those in the `generateBundle` phase.
-						// See: https://github.com/rollup/rollup/issues/2872
-						if (spec.indexOf(':') === -1) {
-							const absolute = resolve(dirname(idRelative), spec.split(posix.sep).join(sep));
+			const _self = this;
+			source = await transformCssImports(source, idRelative, {
+				async resolveId(spec) {
+					// Rollup doesn't allow assets to depend on other assets. This is a
+					// pretty common case for CSS files referencing images or fonts.
+					// TODO: Reference ids need to be resolved to support virtual modules
+					// TODO: Should we just inline CSS here to avoid having
+					// to workaround rollup limitations?
 
-							if (!absolute.startsWith(root)) return;
+					if (spec.indexOf(':') === -1) {
+						const absolute = resolve(dirname(idRelative), spec.split(posix.sep).join(sep));
 
+						if (!absolute.startsWith(root)) return;
+
+						if (production) {
+							// Rewrite every file reference to
+							// `__WMR_ASSET_ID_##`, similar to `import.meta.ROLLUP_FILE_URL_##`.
+							// We'll resolve those in the `generateBundle` phase.
+							// See: https://github.com/rollup/rollup/issues/2872
 							const ref = `__WMR_ASSET_ID_${assetId++}`;
 							assetMap.set(ref, {
 								filePath: absolute,
@@ -66,9 +71,20 @@ export default function wmrStylesPlugin({ root, hot, fullPath, production, alias
 							});
 							return ref;
 						}
+
+						// This is only viable for development mode, which
+						// doesn't call generateBundle()
+						const ref = _self.emitFile({
+							type: 'asset',
+							name: basename(absolute),
+							source: absolute.endsWith('.css') ? await fs.readFile(absolute, 'utf-8') : await fs.readFile(absolute)
+						});
+
+						// Use JSON.parse to remove quotes.
+						return JSON.parse(_self.getFileName(ref));
 					}
-				});
-			}
+				}
+			});
 
 			const ref = this.emitFile({
 				type: 'asset',

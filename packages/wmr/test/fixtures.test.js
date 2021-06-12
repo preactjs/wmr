@@ -91,7 +91,8 @@ describe('fixtures', () => {
 		instance = await runWmrFast(env.tmp.path);
 		const text = await getOutput(env, instance);
 
-		expect(text).toMatch(/my-url: \/foo\.svg\?asset/);
+		// TODO: Investigate hashed aliasing vs aliases
+		expect(text).toMatch(/my-url: \/foo-.+\.svg\?asset/);
 		expect(text).toMatch(/url: \/foo\.svg\?asset/);
 		expect(text).toMatch(/fallback: \/foo\.svg\?asset/);
 	});

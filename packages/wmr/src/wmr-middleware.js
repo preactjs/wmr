@@ -1,12 +1,10 @@
-import { resolve, dirname, relative, sep, posix, isAbsolute, normalize, basename } from 'path';
+import path, { resolve, dirname, relative, sep, posix, isAbsolute, normalize, basename } from 'path';
 import { promises as fs, createReadStream } from 'fs';
 import * as kl from 'kolorist';
-import wmrPlugin, { getWmrClient } from './plugins/wmr/plugin.js';
-import wmrStylesPlugin from './plugins/wmr/styles/styles-plugin.js';
+import { getWmrClient } from './plugins/wmr/plugin.js';
 import { createPluginContainer } from './lib/rollup-plugin-container.js';
 import { transformImports } from './lib/transform-imports.js';
 import { normalizeSpecifier } from './plugins/npm-plugin/index.js';
-import sassPlugin from './plugins/sass-plugin.js';
 import { getMimeType } from './lib/mimetypes.js';
 import { debug, formatPath } from './lib/output-utils.js';
 import { getPlugins } from './lib/plugins.js';
@@ -40,11 +38,23 @@ export default function wmrMiddleware(options) {
 
 	const NonRollup = createPluginContainer(getPlugins(options), {
 		cwd: root,
-		writeFile: (filename, source) => writeCacheFile(out, filename, source),
+		writeFile: (filename, source) => {
+			// Remove .cache folder from filename if present. The cache
+			// works with relative keys only.
+			if (path.isAbsolute(filename)) {
+				const relative = path.relative(out, filename);
+				if (!relative.startsWith('..')) {
+					filename = relative;
+				}
+			}
+			writeCacheFile(out, filename, source);
+		},
 		output: {
 			// assetFileNames: '@asset/[name][extname]',
 			// chunkFileNames: '[name][extname]',
-			assetFileNames: '[name][extname]?asset',
+			// Use a hash to prevent collisions between assets with the
+			// same basename.
+			assetFileNames: '[name]-[hash][extname]?asset',
 			dir: out
 		}
 	});
@@ -118,10 +128,8 @@ export default function wmrMiddleware(options) {
 
 		logWatcher(`${kl.cyan(absolute)} -> ${kl.dim(filename)} [change]`);
 
-		// Delete any generated CSS Modules mapping modules:
-		const suffix = /\.module\.(css|s[ac]ss)$/.test(filename) ? '.js' : '';
-		logCache(`delete: ${kl.cyan(filename + suffix)}`);
-		WRITE_CACHE.delete(filename + suffix);
+		logCache(`delete: ${kl.cyan(filename)}`);
+		WRITE_CACHE.delete(filename);
 
 		if (!pendingChanges.size) timeout = setTimeout(flushChanges, 60);
 
@@ -211,7 +219,11 @@ export default function wmrMiddleware(options) {
 			id = prefix + id;
 		}
 
-		let type = getMimeType(file);
+		// Force serving as a js module for proxy modules. Main use
+		// case is CSS-Modules.
+		const isModule = queryParams.has('module');
+
+		let type = isModule ? 'application/javascript;charset=utf-8' : getMimeType(file);
 		if (type) {
 			res.setHeader('Content-Type', type);
 		}
@@ -223,12 +235,9 @@ export default function wmrMiddleware(options) {
 		if (path === '/_wmr.js') {
 			transform = getWmrClient.bind(null);
 		} else if (queryParams.has('asset')) {
+			cacheKey += '?asset';
 			transform = TRANSFORMS.asset;
-		} else if (prefix || hasIdPrefix) {
-			transform = TRANSFORMS.js;
-		} else if (/\.(css|s[ac]ss)\.js$/.test(file)) {
-			transform = TRANSFORMS.cssModule;
-		} else if (/\.([mc]js|[tj]sx?)$/.test(file)) {
+		} else if (prefix || hasIdPrefix || isModule || /\.([mc]js|[tj]sx?)$/.test(file)) {
 			transform = TRANSFORMS.js;
 		} else if (/\.(css|s[ac]ss)$/.test(file)) {
 			transform = TRANSFORMS.css;
@@ -348,13 +357,19 @@ function resolveFile(file, cwd, alias) {
  */
 
 const logJsTransform = debug('wmr:transform.js');
+const logAssetTransform = debug('wmr:transform.asset');
 
 /** @typedef {string|false|Buffer|Uint8Array|null|void} Result */
 
 /** @type {{ [key: string]: (ctx: Context) => Result|Promise<Result> }} */
 export const TRANSFORMS = {
 	// Handle direct asset requests (/foo?asset)
-	async asset({ file, root, req, res }) {
+	async asset({ file, root, req, res, id, cacheKey }) {
+		if (WRITE_CACHE.has(cacheKey)) {
+			logAssetTransform(`<-- ${kl.cyan(formatPath(id))} [cached]`);
+			return WRITE_CACHE.get(cacheKey);
+		}
+
 		const filename = resolve(root, file);
 		let stats;
 		try {
@@ -466,8 +481,8 @@ export const TRANSFORMS = {
 						return '/@' + prefix + '/' + spec;
 					});
 
-					// foo.css --> foo.css.js (import of CSS Modules proxy module)
-					if (spec.match(/\.(css|s[ac]ss)$/)) spec += '.js';
+					// foo.css --> foo.css?module (import of CSS Modules proxy module)
+					if (spec.match(/\.(css|s[ac]ss)$/)) spec += '?module';
 
 					// If file resolves outside of root it may be an aliased path.
 					if (spec.startsWith('.')) {
@@ -537,51 +552,6 @@ export const TRANSFORMS = {
 			}
 			throw e;
 		}
-	},
-	// Handles "CSS Modules" proxy modules (style.module.css.js)
-	async cssModule({ id, file, root, out, res, alias, cacheKey }) {
-		res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
-
-		// Cache the generated mapping/proxy module with a .js extension (the CSS itself is also cached)
-		if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
-
-		file = file.replace(/\.js$/, '');
-
-		// We create a plugin container for each request to prevent asset referenceId clashes
-		const container = createPluginContainer(
-			[wmrPlugin({ hot: true }), sassPlugin(), wmrStylesPlugin({ root, hot: true, fullPath: true, alias })],
-			{
-				cwd: root,
-				output: {
-					dir: out,
-					assetFileNames: '[name][extname]'
-				},
-				writeFile(filename, source) {
-					writeCacheFile(out, filename, source);
-				}
-			}
-		);
-
-		const result = (await container.load(file)) || (await fs.readFile(resolveFile(file, root, alias), 'utf-8'));
-
-		let code = typeof result === 'string' ? result : result && result.code;
-
-		code = await container.transform(code, file);
-
-		code = await transformImports(code, id, {
-			resolveImportMeta(property) {
-				return container.resolveImportMeta(property);
-			},
-			resolveId(spec) {
-				if (spec === 'wmr') return '/_wmr.js';
-				console.warn('unresolved specifier: ', spec);
-				return null;
-			}
-		});
-
-		writeCacheFile(out, cacheKey, code);
-
-		return code;
 	},
 
 	// Handles CSS Modules (the actual CSS)

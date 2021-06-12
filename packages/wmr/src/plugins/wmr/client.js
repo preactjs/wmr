@@ -54,8 +54,8 @@ function handleMessage(e) {
 				url = resolve(url);
 				if (!mods.get(url)) {
 					if (/\.(css|s[ac]ss)$/.test(url)) {
-						if (mods.has(url + '.js')) {
-							url += '.js';
+						if (mods.has(url + '?module')) {
+							url += '?module';
 						} else {
 							updateStyleSheet(url);
 							return;
