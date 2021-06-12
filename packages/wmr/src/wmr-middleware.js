@@ -1,4 +1,4 @@
-import path, { resolve, dirname, relative, sep, posix, isAbsolute, normalize, basename } from 'path';
+import { resolve, dirname, relative, sep, posix, isAbsolute, normalize, basename } from 'path';
 import { promises as fs, createReadStream } from 'fs';
 import * as kl from 'kolorist';
 import { getWmrClient } from './plugins/wmr/plugin.js';
@@ -39,10 +39,10 @@ export default function wmrMiddleware(options) {
 		writeFile: (filename, source) => {
 			// Remove .cache folder from filename if present. The cache
 			// works with relative keys only.
-			if (path.isAbsolute(filename)) {
-				const relative = path.relative(out, filename);
-				if (!relative.startsWith('..')) {
-					filename = relative;
+			if (isAbsolute(filename)) {
+				const relativeFile = relative(out, filename);
+				if (!relativeFile.startsWith('..')) {
+					filename = relativeFile;
 				}
 			}
 			writeCacheFile(out, filename, source);
