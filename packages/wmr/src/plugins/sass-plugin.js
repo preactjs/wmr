@@ -1,7 +1,10 @@
-import { resolve, dirname, relative } from 'path';
+import { dirname } from 'path';
 import { promisify } from 'util';
+import { debug } from '../lib/output-utils.js';
+import * as kl from 'kolorist';
 
-const cjsDefault = m => ('default' in m ? m.default : m);
+const log = debug('sass');
+
 let sass;
 
 /**
@@ -10,38 +13,25 @@ let sass;
  */
 async function renderSass(opts) {
 	if (!sass) {
-		let req = async m => {
+		for (const loc of ['sass', 'node-sass']) {
 			try {
-				return cjsDefault(typeof require === 'function' ? eval(`require("${m}")`) : await import('' + m));
-			} catch (e) {}
-		};
-		const locations = [
-			resolve('node_modules/node-sass'),
-			resolve('node_modules/node-sass'),
-			'sass',
-			'node-sass',
-			resolve('node_modules/node-sass/lib/index.js')
-		];
-		let sassLib;
-		for (const loc of locations) {
-			if ((sassLib = await req(loc))) {
-				if (process.env.DEBUG) {
-					// eslint-disable-next-line no-console
-					console.log('Using sass from ' + relative('.', loc));
-				}
+				const sassLib = await import(loc);
+				log(`-> Using sass from ${kl.green(loc)}`);
+
+				sass = promisify(sassLib.render.bind(sass));
 				break;
-			}
+			} catch (e) {}
 		}
-		if (sassLib) {
-			sass = promisify(sassLib.render.bind(sass));
-		} else {
+
+		if (!sass) {
 			console.warn(
 				`Please install a sass implementation to use sass/scss:\n    npm i -D sass\n  or:\n    npm i -D node-sass`
 			);
-			sass = ({ data }) => Promise.resolve({ css: data, map: null });
+			sass = ({ data }) => ({ css: data, map: null });
 		}
 	}
-	const result = await (await sass)(opts);
+
+	const result = await sass(opts);
 	return {
 		css: result.css.toString(),
 		map: result.map && result.map.toString()
