@@ -10,8 +10,6 @@ import { debug, formatPath } from './lib/output-utils.js';
 import { getPlugins } from './lib/plugins.js';
 import { watch } from './lib/fs-watcher.js';
 import { matchAlias, resolveAlias } from './lib/aliasing.js';
-import { modularizeCss } from './plugins/wmr/styles/css-modules.js';
-import { processSass } from './plugins/wmr/styles/sass.js';
 
 const NOOP = () => {};
 
@@ -237,17 +235,15 @@ export default function wmrMiddleware(options) {
 		} else if (queryParams.has('asset')) {
 			cacheKey += '?asset';
 			transform = TRANSFORMS.asset;
-		} else if (prefix || hasIdPrefix || isModule || /\.([mc]js|[tj]sx?)$/.test(file)) {
+		} else if (prefix || hasIdPrefix || isModule || /\.([mc]js|[tj]sx?)$/.test(file) || /\.(css|s[ac]ss)$/.test(file)) {
 			transform = TRANSFORMS.js;
-		} else if (/\.(css|s[ac]ss)$/.test(file)) {
-			transform = TRANSFORMS.css;
 		} else {
 			transform = TRANSFORMS.generic;
 		}
 
 		try {
 			const start = Date.now();
-			const result = await transform({
+			let result = await transform({
 				req,
 				res,
 				id,
@@ -266,6 +262,20 @@ export default function wmrMiddleware(options) {
 
 			// return a value to use it as the response:
 			if (result != null) {
+				// Grab the asset id out of the compiled js
+				// TODO: Wire this up into Style-Plugin by passing the
+				// import type through resolution somehow
+				if (!isModule && /\.(css|s[ac]ss)$/.test(file) && typeof result === 'string') {
+					const match = result.match(/style\(["']\/([^"']+?)["'].*?\);/m);
+
+					if (match) {
+						if (WRITE_CACHE.has(match[1])) {
+							result = /** @type {string} */ WRITE_CACHE.get(match[1]);
+							res.setHeader('Content-Type', 'text/css;charset=utf-8');
+						}
+					}
+				}
+
 				log(`<-- ${kl.cyan(formatPath(id))} as ${kl.dim('' + res.getHeader('Content-Type'))}`);
 				const time = Date.now() - start;
 				res.writeHead(200, {
@@ -552,41 +562,6 @@ export const TRANSFORMS = {
 			}
 			throw e;
 		}
-	},
-
-	// Handles CSS Modules (the actual CSS)
-	async css({ id, path, file, root, out, res, alias, cacheKey }) {
-		if (!/\.(css|s[ac]ss)$/.test(path)) throw null;
-
-		const isModular = /\.module\.(css|s[ac]ss)$/.test(path);
-
-		const isSass = /\.(s[ac]ss)$/.test(path);
-
-		res.setHeader('Content-Type', 'text/css;charset=utf-8');
-
-		if (WRITE_CACHE.has(id)) return WRITE_CACHE.get(id);
-
-		const idAbsolute = resolveFile(file, root, alias);
-		let code = await fs.readFile(idAbsolute, 'utf-8');
-
-		if (isModular) {
-			code = await modularizeCss(code, id.replace(/^\.\//, ''), undefined, idAbsolute);
-		} else if (isSass) {
-			code = processSass(code);
-		}
-
-		// const plugin = wmrStylesPlugin({ cwd, hot: false, fullPath: true });
-		// let code;
-		// const context = {
-		// 	emitFile(asset) {
-		// 		code = asset.source;
-		// 	}
-		// };
-		// await plugin.load.call(context, file);
-
-		writeCacheFile(out, cacheKey, code);
-
-		return code;
 	},
 
 	// Falls through to sirv
