@@ -62,7 +62,7 @@ export default function sassPlugin({ production = false, sourcemap = false } = {
 
 			return {
 				code: result.css,
-				map: (sourcemap && result.map) || null
+				map: result.map || null
 			};
 		}
 	};
