@@ -24,10 +24,9 @@ async function renderSass(opts) {
 		}
 
 		if (!sass) {
-			console.warn(
+			throw new Error(
 				`Please install a sass implementation to use sass/scss:\n    npm i -D sass\n  or:\n    npm i -D node-sass`
 			);
-			sass = ({ data }) => ({ css: data, map: null });
 		}
 	}
 
