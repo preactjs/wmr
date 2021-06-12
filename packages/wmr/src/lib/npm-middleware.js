@@ -16,14 +16,18 @@ import { hasDebugFlag } from './output-utils.js';
  * Serve a "proxy module" that uses the WMR runtime to load CSS.
  * @param {ReturnType<normalizeSpecifier>} meta
  * @param {import('http').ServerResponse} res
+ * @param {boolean} [isModule]
  */
-async function handleAsset(meta, res) {
-	let code = '',
-		type = getMimeType(meta.path);
-	if (/\.css\.js$/.test(meta.path)) {
-		const specifier = JSON.stringify('/@npm/' + meta.specifier.replace(/\.js$/, ''));
+async function handleAsset(meta, res, isModule) {
+	let code = '';
+	let type = null;
+
+	if (isModule) {
+		type = 'application/javascript;charset=utf-8';
+		const specifier = JSON.stringify('/@npm/' + meta.specifier + '?asset');
 		code = `import{style}from '/_wmr.js';\nstyle(${specifier});`;
 	} else {
+		type = getMimeType(meta.path);
 		code = await loadPackageFile(meta);
 	}
 	res.writeHead(200, {
@@ -43,8 +47,9 @@ async function handleAsset(meta, res) {
  */
 export default function npmMiddleware({ source = 'npm', alias, optimize, cwd } = {}) {
 	return async (req, res, next) => {
+		const url = new URL(req.url, 'https://localhost');
 		// @ts-ignore
-		const mod = req.path.replace(/^\//, '');
+		const mod = url.pathname.replace(/^\//, '');
 
 		const meta = normalizeSpecifier(mod);
 
@@ -64,8 +69,8 @@ export default function npmMiddleware({ source = 'npm', alias, optimize, cwd } =
 			res.setHeader('etag', etag);
 
 			// CSS files and proxy modules don't use Rollup.
-			if (/\.((css|s[ac]ss)(\.js)?|wasm|txt|json)$/.test(meta.path)) {
-				return handleAsset(meta, res);
+			if (/\.((css|s[ac]ss)|wasm|txt|json)$/.test(meta.path)) {
+				return handleAsset(meta, res, url.searchParams.has('module'));
 			}
 
 			res.setHeader('content-type', 'application/javascript;charset=utf-8');
