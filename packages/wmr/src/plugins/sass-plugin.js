@@ -15,10 +15,11 @@ async function renderSass(opts) {
 	if (!sass) {
 		for (const loc of ['sass', 'node-sass']) {
 			try {
+				log(kl.dim(`Attempting to load compiler from `) + kl.cyan(loc));
 				const sassLib = await import(loc);
-				log(`-> Using sass from ${kl.green(loc)}`);
+				log(kl.dim(`Loaded compiler from `) + kl.green(loc));
 
-				sass = promisify(sassLib.render.bind(sass));
+				sass = promisify((sassLib.default || sassLib).render.bind(sass));
 				break;
 			} catch (e) {}
 		}
