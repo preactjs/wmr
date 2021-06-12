@@ -379,7 +379,7 @@ describe('fixtures', () => {
 			await loadFixture('css-imports', env);
 			instance = await runWmrFast(env.tmp.path);
 			await getOutput(env, instance);
-			expect(await env.page.$eval('body', el => getComputedStyle(el).background)).toMatch(/img\.jpg/);
+			expect(await env.page.$eval('body', el => getComputedStyle(el).backgroundImage)).toMatch(/img-.+\.jpg/);
 		});
 
 		it('should warn on CSS modules with reserved class names', async () => {
