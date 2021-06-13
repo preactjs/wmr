@@ -115,40 +115,62 @@ export default function wmrMiddleware(options) {
 
 	watcher.on('change', filename => {
 		const absolute = resolve(cwd, filename);
-		NonRollup.watchChange(absolute);
 
-		// Resolve potentially aliased paths and normalize to 'nix:
-		const aliased = matchAlias(alias, absolute.split(sep).join(posix.sep));
-		filename = aliased
-			? // Trim leading slash, we need a relative path for the cache
-			  aliased.slice(1)
-			: filename.split(sep).join(posix.sep);
+		const seen = new Set();
+		const items = [absolute];
+		/** @type {string | undefined} */
+		let item;
+		while ((item = items.pop()) !== undefined) {
+			if (seen.has(item)) continue;
+			const res = NonRollup.watchChange(item);
+			if (Array.isArray(res)) items.push(...res);
+			seen.add(item);
+		}
 
-		logWatcher(`${kl.cyan(absolute)} -> ${kl.dim(filename)} [change]`);
+		const changed = Array.from(seen);
+		for (let file of changed) {
+			const originalFile = file;
+			file = normalize(file);
 
-		logCache(`delete: ${kl.cyan(filename)}`);
-		WRITE_CACHE.delete(filename);
+			// Resolve potentially aliased paths and normalize to 'nix:
+			const aliased = matchAlias(alias, file.split(sep).join(posix.sep));
+			if (aliased) {
+				// Trim leading slash, we need a relative path for the cache
+				file = aliased.slice(1);
+			} else {
+				if (isAbsolute(file)) {
+					file = relative(cwd, file);
+				}
 
-		if (!pendingChanges.size) timeout = setTimeout(flushChanges, 60);
-
-		if (/\.(css|s[ac]ss)$/.test(filename)) {
-			pendingChanges.add('/' + filename);
-		} else if (/\.(mjs|[tj]sx?)$/.test(filename)) {
-			if (!moduleGraph.has(filename)) {
-				onChange({ reload: true });
-				clearTimeout(timeout);
-				return;
+				file = file.split(sep).join(posix.sep);
 			}
 
-			if (!bubbleUpdates(filename)) {
+			logWatcher(`${kl.cyan(originalFile)} -> ${kl.dim(file)} [change]`);
+
+			logCache(`delete: ${kl.cyan(file)}`);
+			WRITE_CACHE.delete(file);
+
+			if (!pendingChanges.size) timeout = setTimeout(flushChanges, 60);
+
+			if (/\.(css|s[ac]ss)$/.test(file)) {
+				pendingChanges.add('/' + file);
+			} else if (/\.(mjs|[tj]sx?)$/.test(file)) {
+				if (!moduleGraph.has(file)) {
+					onChange({ reload: true });
+					clearTimeout(timeout);
+					return;
+				}
+
+				if (!bubbleUpdates(file)) {
+					pendingChanges.clear();
+					clearTimeout(timeout);
+					onChange({ reload: true });
+				}
+			} else {
 				pendingChanges.clear();
 				clearTimeout(timeout);
 				onChange({ reload: true });
 			}
-		} else {
-			pendingChanges.clear();
-			clearTimeout(timeout);
-			onChange({ reload: true });
 		}
 	});
 

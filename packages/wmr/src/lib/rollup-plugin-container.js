@@ -193,14 +193,23 @@ export function createPluginContainer(plugins, opts = {}) {
 			);
 		},
 
-		/** @param {string} id */
+		/**
+		 * @param {string} id
+		 * @returns {string[]} WMR specific
+		 */
 		watchChange(id) {
+			const pending = [];
 			if (watchFiles.has(id)) {
 				for (plugin of plugins) {
 					if (!plugin.watchChange) continue;
-					plugin.watchChange.call(ctx, id);
+					// Note return value is WMR specific
+					const res = plugin.watchChange.call(ctx, id);
+					if (Array.isArray(res)) {
+						pending.push(...res);
+					}
 				}
 			}
+			return pending;
 		},
 
 		/** @param {string} property */
