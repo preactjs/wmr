@@ -55,7 +55,7 @@ export function getPlugins(options) {
 				exclude: /\/node_modules\//
 			}),
 		production && publicPathPlugin({ publicPath }),
-		sassPlugin({ production }),
+		sassPlugin({ production, sourcemap, root }),
 		wmrStylesPlugin({ hot: !production, root, production, alias }),
 		processGlobalPlugin({
 			env,

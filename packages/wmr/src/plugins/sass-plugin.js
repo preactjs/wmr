@@ -1,7 +1,8 @@
-import { dirname } from 'path';
+import path from 'path';
 import { promisify } from 'util';
 import { debug } from '../lib/output-utils.js';
 import * as kl from 'kolorist';
+import { promises as fs } from 'fs';
 
 const log = debug('sass');
 
@@ -9,10 +10,10 @@ const log = debug('sass');
 let sass;
 
 /**
- * @param {import('sass').Options} opts
+ * @param {import('sass').Options & {id:string}} options
  * @returns {Promise<{ css: string, map?: string, includedFiles: string[] }>}
  */
-async function renderSass(opts) {
+async function renderSass({ id, ...opts }) {
 	if (!sass) {
 		for (const loc of ['sass', 'node-sass']) {
 			try {
@@ -35,7 +36,7 @@ async function renderSass(opts) {
 	}
 
 	const result = await sass(opts);
-	log(kl.cyan(opts.file || '') + kl.dim(' compiled in ') + kl.lightMagenta(`+${result.stats.duration}ms`));
+	log(kl.cyan(id) + kl.dim(' compiled in ') + kl.lightMagenta(`+${result.stats.duration}ms`));
 
 	return {
 		css: result.css.toString(),
@@ -46,14 +47,36 @@ async function renderSass(opts) {
 
 /**
  * Transform SASS files with node-sass.
- * @param {object} [opts]
- * @param {boolean} [opts.production]
- * @param {boolean} [opts.sourcemap]
+ * @param {object} opts
+ * @param {boolean} opts.production
+ * @param {boolean} opts.sourcemap
+ * @param {string} opts.root
  * @returns {import('rollup').Plugin}
  */
-export default function sassPlugin({ production = false, sourcemap = false } = {}) {
+export default function sassPlugin({ production, sourcemap, root }) {
 	/** @type {Map<string, Set<string>>} */
 	const fileToBundles = new Map();
+
+	async function sassResolver(url, prev, done, pluginResolve) {
+		// TODO: Rollup only supports top to bottom compilation, but we
+		// need a way to do the opposite here to support loading virtual
+		// sass modules. This is a limitation in Rollup. So for now we only
+		// do resolution here.
+		const resolved = await pluginResolve(url);
+		let file = resolved ? resolved.id : url;
+
+		// Bail out if nothing changed.
+		if (file === url) {
+			done(null);
+			return;
+		}
+
+		if (!path.isAbsolute(file)) {
+			file = path.join(root, file);
+		}
+		const contents = await fs.readFile(file, 'utf-8');
+		done({ file, contents });
+	}
 
 	return {
 		name: 'sass',
@@ -62,9 +85,19 @@ export default function sassPlugin({ production = false, sourcemap = false } = {
 			if (!/\.s[ac]ss$/.test(id)) return;
 
 			const result = await renderSass({
+				// Custom options for logging
+				id,
+				// Must have either "data" or "file" option. If both are set importers
+				// will cease to function for some reason.
 				data: code,
-				includePaths: [dirname(id)],
-				file: id,
+				includePaths: [path.dirname(id)],
+				importer: [
+					// Note: Async importers MUST return `undefined`, otherwise they
+					// don't work!!!
+					(url, prev, done) => {
+						sassResolver(url, prev, done, this.resolve.bind(this));
+					}
+				],
 				outputStyle: production ? 'compressed' : undefined,
 				sourceMap: sourcemap !== false
 			});
