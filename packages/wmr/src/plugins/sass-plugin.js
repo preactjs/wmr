@@ -75,7 +75,8 @@ export default function sassPlugin({ production = false, sourcemap = false } = {
 				if (!fileToBundles.has(file)) {
 					fileToBundles.set(file, new Set());
 				}
-				fileToBundles.get(file)?.add(id);
+				// @ts-ignore
+				fileToBundles.get(file).add(id);
 			}
 
 			return {
