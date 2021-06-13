@@ -59,7 +59,7 @@ const myPlugin = {
 
 - `config`: WMR's current configuration object
 
-This hook is called right after [`config()`](#config-config). Use this hook to query the final WMR configuration in your plugin. A typical scenarios where this is needed is different plugin logic based on the build mode.
+This hook is called right after [`config()`](#config). Use this hook to query the final WMR configuration in your plugin. A typical scenarios where this is needed is different plugin logic based on the build mode.
 
 ```js
 function MyPlugin() {

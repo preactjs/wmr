@@ -14,6 +14,8 @@ marked.use({
 			const escapedText = text
 				.toLowerCase()
 				.replace(/<[^>]*>/g, '')
+				// Turn `resolveId(id, importer)` into just `resolveId`
+				.replace(/\(.+\)/g, '')
 				.replace(/[^\w]+/g, '-')
 				.replace(/[-]+$/g, '');
 
