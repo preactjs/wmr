@@ -13,6 +13,74 @@ This document describes the methods of plugins in WMR. If you're unsure how plug
 
 The name of your plugin, that will be shown in logs, warnings and errors.
 
+### enforce
+
+- Type: `"pre" | "post" | "normal"`
+- Default: `"normal"`
+
+Defines the order of execution for plugins. Plugins with an `enforce: "pre"` property are executed first before all others. Next up are plugins with `enforce: "normal"` or no enforce property present. This is followed by WMR's internal plugins and lastly plugins with `enforce: "post"` are called.
+
+1. Plugins with `enforce: "pre"`
+2. Plugins with `enforce: "normal"` or no enforce property
+3. WMR internal plugins
+4. Plugins with `enforce: "post"`
+
+Example:
+
+```js
+const myPlugin = {
+	name: 'my-plugin',
+	enforce: 'pre'
+	// ...
+};
+```
+
+### config(config)
+
+- `config`: WMR's current configuration object
+
+Use this hook if your plugin needs to change some configuration like setting up additional aliases for example. The return value will be merged into the config object.
+
+```js
+const myPlugin = {
+	name: 'my-plugin',
+	config(config) {
+		return {
+			alias: {
+				'my-foo/*', 'my-plugin-folder'
+			}
+		}
+	}
+	// ...
+};
+```
+
+### configResolved(config)
+
+- `config`: WMR's current configuration object
+
+This hook is called right after [`config()`](#config). Use this hook to query the final WMR configuration in your plugin. A typical scenarios where this is needed is different plugin logic based on the build mode.
+
+```js
+function MyPlugin() {
+	let options;
+
+	return {
+		name: 'my-plugin',
+		configResolved(config) {
+			options = config;
+		},
+		load(id) {
+			if (options.mode === 'build') {
+				// Apply logic only on production builds
+			} else {
+				// Apply logic only on development builds
+			}
+		}
+	};
+}
+```
+
 ### resolveId(id, importer)
 
 - `id`: Requested import specifier like `../foo.js`

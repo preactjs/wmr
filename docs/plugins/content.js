@@ -76,7 +76,7 @@ function decodeHtmlEntities(html) {
 /**
  *  markdown blog/content plugin for Rollup / WMR
  */
-function contentRollupPlugin({ cwd, prod, ...opts }) {
+function contentRollupPlugin({ root }) {
 	return {
 		name: 'content',
 		async resolveId(id, importer) {
@@ -93,14 +93,14 @@ function contentRollupPlugin({ cwd, prod, ...opts }) {
 		},
 		async load(id) {
 			if (!id.startsWith('\0content:')) return;
-			id = path.resolve(cwd || '.', id.slice(9));
+			id = path.resolve(root, id.slice(9));
 			const files = (await tree(id)).filter(file => file.endsWith('.md'));
-			const dirs = path.relative(cwd, id).split(path.sep);
+			const dirs = path.relative(root, id).split(path.sep);
 			const config = (
 				await Promise.all(
 					dirs.map(async (d, i, dirs) => {
 						try {
-							return yaml.parse(await fs.readFile(path.resolve(cwd, ...dirs.slice(0, i), '_config.yml'), 'utf-8'));
+							return yaml.parse(await fs.readFile(path.resolve(root, ...dirs.slice(0, i), '_config.yml'), 'utf-8'));
 						} catch (e) {}
 					})
 				)
