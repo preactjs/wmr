@@ -54,8 +54,8 @@ function handleMessage(e) {
 				url = resolve(url);
 				if (!mods.get(url)) {
 					if (/\.(css|s[ac]ss)$/.test(url)) {
-						if (mods.has(url + '.js')) {
-							url += '.js';
+						if (mods.has(url + '?module')) {
+							url += '?module';
 						} else {
 							updateStyleSheet(url);
 							return;
@@ -140,7 +140,7 @@ function update(url, date) {
 	const mod = getMod(url);
 	const dispose = Array.from(mod.dispose);
 	const accept = Array.from(mod.accept);
-	const newUrl = url + '?t=' + date;
+	const newUrl = url + (/\?/.test(url) ? '&' : '?') + 't=' + date;
 	const p = mod.import ? mod.import(newUrl) : import(newUrl);
 
 	return p
@@ -193,7 +193,7 @@ export function style(filename, id) {
 	id = resolve(id || filename);
 	let node = styles.get(id);
 	if (node) {
-		node.href = filename + '?t=' + Date.now();
+		node.href = filename + (/\?/.test(filename) ? '&' : '?') + 't=' + Date.now();
 	} else {
 		const node = document.createElement('link');
 		node.rel = 'stylesheet';

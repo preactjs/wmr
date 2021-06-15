@@ -378,7 +378,7 @@ describe('fixtures', () => {
 			await loadFixture('css-imports', env);
 			instance = await runWmrFast(env.tmp.path);
 			await getOutput(env, instance);
-			expect(await env.page.$eval('body', el => getComputedStyle(el).background)).toMatch(/img\.jpg/);
+			expect(await env.page.$eval('body', el => getComputedStyle(el).backgroundImage)).toMatch(/img\.jpg/);
 		});
 
 		it('should warn on CSS modules with reserved class names', async () => {
@@ -394,6 +394,28 @@ describe('fixtures', () => {
 			});
 
 			expect(instance.output.join('\n')).toMatch(/Cannot use reserved word/);
+		});
+	});
+
+	describe('Sass', () => {
+		it('should transform sass files', async () => {
+			await loadFixture('css-sass', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			await withLog(instance.output, async () => {
+				expect(await env.page.$eval('h1', el => getComputedStyle(el).color)).toMatch(/rgb\(255, 0, 0\)/);
+			});
+		});
+
+		it('should transform sass modules', async () => {
+			await loadFixture('css-sass-module', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			await withLog(instance.output, async () => {
+				expect(await env.page.$eval('h1', el => getComputedStyle(el).color)).toMatch(/rgb\(255, 0, 0\)/);
+			});
 		});
 	});
 
@@ -430,10 +452,10 @@ describe('fixtures', () => {
 				content.replace('<p class="home">Home</p>', '<p class="home">Away</p>')
 			);
 
-			await timeout(1000);
-
-			text = home ? await home.evaluate(el => el.textContent) : null;
-			expect(text).toEqual('Away');
+			await waitForPass(async () => {
+				text = home ? await home.evaluate(el => el.textContent) : null;
+				expect(text).toEqual('Away');
+			});
 		});
 
 		it('should bubble up updates in non-accepted files', async () => {
@@ -530,9 +552,9 @@ describe('fixtures', () => {
 
 			await updateFile(env.tmp.path, 'index.css', content => content.replace('color: #333;', 'color: #000;'));
 
-			await timeout(1000);
-
-			expect(await page.$eval('body', e => getComputedStyle(e).color)).toBe('rgb(0, 0, 0)');
+			await waitForPass(async () => {
+				expect(await page.$eval('body', e => getComputedStyle(e).color)).toBe('rgb(0, 0, 0)');
+			});
 		});
 
 		it('should hot reload a module css-file', async () => {
@@ -544,9 +566,9 @@ describe('fixtures', () => {
 
 			await updateFile(env.tmp.path, 'style.module.css', content => content.replace('color: #333;', 'color: #000;'));
 
-			await timeout(1000);
-
-			expect(await page.$eval('main', e => getComputedStyle(e).color)).toBe('rgb(0, 0, 0)');
+			await waitForPass(async () => {
+				expect(await page.$eval('main', e => getComputedStyle(e).color)).toBe('rgb(0, 0, 0)');
+			});
 		});
 	});
 
