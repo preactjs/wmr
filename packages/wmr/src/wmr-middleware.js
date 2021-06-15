@@ -52,7 +52,7 @@ export default function wmrMiddleware(options) {
 			// chunkFileNames: '[name][extname]',
 			// Use a hash to prevent collisions between assets with the
 			// same basename.
-			assetFileNames: '[name]-[hash][extname]?asset',
+			assetFileNames: '[name][extname]?asset',
 			dir: out
 		}
 	});
