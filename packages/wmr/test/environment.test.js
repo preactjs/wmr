@@ -59,5 +59,19 @@ describe('.env files', () => {
 				expect(await getOutput(env, instance)).toContain(expected);
 			});
 		});
+
+		it('should give env variables precedence over env files', async () => {
+			await loadFixture('env-precedence', env);
+			instance = await runWmrFast(env.tmp.path, { env: { WMR_FOO: 'it works' } });
+			await getOutput(env, instance);
+
+			await withLog(instance.output, async () => {
+				const foo = await page.$eval('#foo', el => el.textContent);
+				const bar = await page.$eval('#bar', el => el.textContent);
+
+				expect(foo).toEqual('it works');
+				expect(bar).toEqual('it works');
+			});
+		});
 	});
 });
