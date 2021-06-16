@@ -616,6 +616,22 @@ describe('fixtures', () => {
 				});
 			});
 		});
+
+		it('should hot reload a nested css-file with no public folder', async () => {
+			await loadFixture('hmr-css-no-public', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			await withLog(instance.output, async () => {
+				expect(await page.$eval('h1', e => getComputedStyle(e).color)).toBe('rgb(51, 51, 51)');
+
+				await updateFile(env.tmp.path, 'home.css', content => content.replace('color: #333;', 'color: red;'));
+
+				await waitForPass(async () => {
+					expect(await page.$eval('h1', e => getComputedStyle(e).color)).toBe('rgb(255, 0, 0)');
+				});
+			});
+		});
 	});
 
 	describe('hmr-scss', () => {
