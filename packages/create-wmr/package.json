@@ -1,6 +1,6 @@
 {
 	"name": "create-wmr",
-	"version": "0.3.6",
+	"version": "0.3.7",
 	"description": "",
 	"main": "./dist/index.js",
 	"bin": "./dist/index.js",

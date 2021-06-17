@@ -1,6 +1,6 @@
 {
 	"name": "@wmrjs/directory-import",
-	"version": "0.2.1",
+	"version": "0.3.0",
 	"type": "module",
 	"main": "./directory-plugin.cjs",
 	"module": "./src/index.js",
@@ -29,7 +29,7 @@
 		"@rollup/plugin-commonjs": "^14.0.0",
 		"@rollup/plugin-node-resolve": "^11.2.0",
 		"rollup": "^2.41.0",
-		"wmr": "^2.0.2"
+		"wmr": "^3.0.0"
 	},
 	"peerDependencies": {
 		"wmr": ">=1.0.0"
