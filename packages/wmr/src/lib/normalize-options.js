@@ -42,8 +42,8 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 		configWatchFiles
 	);
 	options.env = {
-		...getWmrEnvVars(),
-		...envFileVars
+		...envFileVars,
+		...getWmrEnvVars()
 	};
 
 	// Output directory is relative to CWD *before* ./public is detected + appended:
