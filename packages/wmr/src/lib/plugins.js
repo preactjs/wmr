@@ -21,13 +21,14 @@ import nodeBuiltinsPlugin from '../plugins/node-builtins-plugin.js';
 import dynamicImportVars from '@rollup/plugin-dynamic-import-vars';
 import visualizer from 'rollup-plugin-visualizer';
 import { defaultLoaders } from './default-loaders.js';
+import { npmPluginV2 } from '../plugins/npm-plugin/npm-plugin-v2.js';
 
 /**
  * @param {import("wmr").Options} options
  * @returns {import("wmr").Plugin[]}
  */
 export function getPlugins(options) {
-	const { plugins, publicPath, alias, root, env, minify, mode, sourcemap, features, visualize } = options;
+	const { plugins, publicPath, alias, cwd, root, env, minify, mode, sourcemap, features, visualize } = options;
 
 	// Plugins are pre-sorted
 	let split = plugins.findIndex(p => p.enforce === 'post');
@@ -67,6 +68,7 @@ export function getPlugins(options) {
 			// Only transpile CommonJS in node_modules and explicit .cjs files:
 			include: /(^npm\/|[/\\]node_modules[/\\]|\.cjs$)/
 		}),
+		npmPluginV2({ cwd }),
 		production && npmPlugin({ external: false }),
 		resolveExtensionsPlugin({
 			extensions: ['.ts', '.tsx', '.js', '.cjs'],

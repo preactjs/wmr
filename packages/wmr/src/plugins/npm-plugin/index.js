@@ -148,7 +148,7 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = 'npm/', exter
 	};
 }
 
-const PACKAGE_SPECIFIER = /^((?:@[\w.-]{1,200}\/)?[\w.-]{1,200})(?:@([a-z0-9^.~>=<-]{1,50}))?(?:\/(.*))?$/i;
+export const PACKAGE_SPECIFIER = /^((?:@[\w.-]{1,200}\/)?[\w.-]{1,200})(?:@([a-z0-9^.~>=<-]{1,50}))?(?:\/(.*))?$/i;
 
 export const normalizeSpecifier = memo(spec => {
 	let [, module = '', version = '', path = ''] = spec.match(PACKAGE_SPECIFIER) || [];
