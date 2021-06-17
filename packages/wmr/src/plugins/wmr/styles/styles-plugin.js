@@ -22,6 +22,8 @@ const RESERVED_WORDS = /^(abstract|async|boolean|break|byte|case|catch|char|clas
 export default function wmrStylesPlugin({ root, hot, fullPath, production, alias }) {
 	let assetId = 0;
 	const assetMap = new Map();
+	/** @type {Map<string, Set<string>>} */
+	const moduleMap = new Map();
 
 	return {
 		name: 'wmr-styles',
@@ -58,6 +60,14 @@ export default function wmrStylesPlugin({ root, hot, fullPath, production, alias
 						const absolute = resolve(dirname(idRelative), spec.split(posix.sep).join(sep));
 
 						if (!absolute.startsWith(root)) return;
+
+						_self.addWatchFile(absolute);
+
+						if (!moduleMap.has(absolute)) {
+							moduleMap.set(absolute, new Set());
+						}
+						// @ts-ignore
+						moduleMap.get(absolute).add(id);
 
 						if (production) {
 							// Rewrite every file reference to
@@ -154,6 +164,10 @@ export default function wmrStylesPlugin({ root, hot, fullPath, production, alias
 					});
 				}
 			}
+		},
+		watchChange(id) {
+			const importer = moduleMap.get(id);
+			if (importer) return Array.from(importer);
 		}
 	};
 }

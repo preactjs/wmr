@@ -139,7 +139,10 @@ export default function wmrMiddleware(options) {
 				file = aliased.slice(1);
 			} else {
 				if (isAbsolute(file)) {
-					file = relative(cwd, file);
+					const relativeFile = relative(root, file);
+					if (!relativeFile.startsWith('..')) {
+						file = relativeFile;
+					}
 				}
 
 				file = file.split(sep).join(posix.sep);
@@ -149,6 +152,13 @@ export default function wmrMiddleware(options) {
 
 			logCache(`delete: ${kl.cyan(file)}`);
 			WRITE_CACHE.delete(file);
+
+			// We could be dealing with an asset
+			if (WRITE_CACHE.has(file + '?asset')) {
+				const cacheKey = file + '?asset';
+				logCache(`delete: ${kl.cyan(cacheKey)}`);
+				WRITE_CACHE.delete(cacheKey);
+			}
 
 			if (!pendingChanges.size) timeout = setTimeout(flushChanges, 60);
 

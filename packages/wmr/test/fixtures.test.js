@@ -580,6 +580,58 @@ describe('fixtures', () => {
 				expect(await page.$eval('main', e => getComputedStyle(e).color)).toBe('rgb(0, 0, 0)');
 			});
 		});
+
+		it('should hot reload a css-file', async () => {
+			await loadFixture('hmr-css', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			await withLog(instance.output, async () => {
+				expect(await page.$eval('h1', e => getComputedStyle(e).color)).toBe('rgb(51, 51, 51)');
+
+				await updateFile(env.tmp.path, path.join('public', 'index.css'), content =>
+					content.replace('background: white;', 'background: red;')
+				);
+
+				await waitForPass(async () => {
+					expect(await page.$eval('body', e => getComputedStyle(e).backgroundColor)).toBe('rgb(255, 0, 0)');
+				});
+			});
+		});
+
+		it('should hot reload a nested css-file', async () => {
+			await loadFixture('hmr-css', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			await withLog(instance.output, async () => {
+				expect(await page.$eval('h1', e => getComputedStyle(e).color)).toBe('rgb(51, 51, 51)');
+
+				await updateFile(env.tmp.path, path.join('public', 'home.css'), content =>
+					content.replace('color: #333;', 'color: red;')
+				);
+
+				await waitForPass(async () => {
+					expect(await page.$eval('h1', e => getComputedStyle(e).color)).toBe('rgb(255, 0, 0)');
+				});
+			});
+		});
+
+		it('should hot reload a nested css-file with no public folder', async () => {
+			await loadFixture('hmr-css-no-public', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			await withLog(instance.output, async () => {
+				expect(await page.$eval('h1', e => getComputedStyle(e).color)).toBe('rgb(51, 51, 51)');
+
+				await updateFile(env.tmp.path, 'home.css', content => content.replace('color: #333;', 'color: red;'));
+
+				await waitForPass(async () => {
+					expect(await page.$eval('h1', e => getComputedStyle(e).color)).toBe('rgb(255, 0, 0)');
+				});
+			});
+		});
 	});
 
 	describe('hmr-scss', () => {
