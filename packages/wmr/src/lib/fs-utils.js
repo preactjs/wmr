@@ -27,3 +27,11 @@ export function isFile(path) {
 		.then(s => s.isFile())
 		.catch(() => false);
 }
+
+/**
+ * @param {string} filename
+ * @returns {Promise<Record<string, any>>}
+ */
+export async function readJSON(filename) {
+	return JSON.parse(await fs.readFile(filename, 'utf-8'));
+}
