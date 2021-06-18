@@ -292,6 +292,19 @@ export async function withLog(haystack, fn) {
 }
 
 /**
+ * Update the contents of a file. Useful for HMR or watch tests
+ * @param {string} tempDir Path to the temporary fixture directory
+ * @param {string} file filename or fiel path
+ * @param {(content: string) => string} replacer callback to replace content
+ * @returns {Promise<void>}
+ */
+export async function updateFile(tempDir, file, replacer) {
+	const compPath = path.join(tempDir, file);
+	const content = await fs.readFile(compPath, 'utf-8');
+	await fs.writeFile(compPath, replacer(content));
+}
+
+/**
  * @param {WmrInstance} instance
  * @param {string} urlPath
  * @returns {Promise<{status?: number, body: string, res: import('http').IncomingMessage }>}
