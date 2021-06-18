@@ -637,6 +637,7 @@ export const TRANSFORMS = {
 async function writeCacheFile(rootDir, fileName, data) {
 	if (fileName.includes('\0')) return;
 
+	fileName = normalize(fileName);
 	WRITE_CACHE.set(fileName, data);
 	const filePath = resolve(rootDir, fileName);
 	logCache(`write ${kl.cyan(fileName)} -> ${kl.dim(filePath)}`);
