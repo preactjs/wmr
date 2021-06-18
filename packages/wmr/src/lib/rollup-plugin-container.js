@@ -331,7 +331,7 @@ export function createPluginContainer(plugins, opts = {}) {
 					return result;
 				}
 			}
-			return JSON.stringify('/' + fileName.split(sep).join(posix.sep));
+			return JSON.stringify(posix.normalize('/' + fileName.split(sep).join(posix.sep)));
 		}
 	};
 
