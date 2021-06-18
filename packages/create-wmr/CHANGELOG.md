@@ -1,5 +1,11 @@
 # create-wmr
 
+## 0.3.7
+
+### Patch Changes
+
+- [`5e57376`](https://github.com/preactjs/wmr/commit/5e573761fe5abbc880a8447b452b727d993fe61d) [#683](https://github.com/preactjs/wmr/pull/683) Thanks [@developit](https://github.com/developit)! - Use <link rel=modulepreload>
+
 ## 0.3.6
 
 ### Patch Changes

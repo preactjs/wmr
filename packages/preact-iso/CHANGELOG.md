@@ -1,5 +1,11 @@
 # preact-iso
 
+## 2.0.3
+
+### Patch Changes
+
+- [`62840d8`](https://github.com/preactjs/wmr/commit/62840d82eddf1bda9447c08750fe6886751edee7) [#665](https://github.com/preactjs/wmr/pull/665) Thanks [@rschristian](https://github.com/rschristian)! - Removing unused imports (and associated console warnings) in preact-iso
+
 ## 2.0.2
 
 ### Patch Changes

@@ -1,5 +1,37 @@
 # wmr
 
+## 3.0.0
+
+### Major Changes
+
+- [`22150b3`](https://github.com/preactjs/wmr/commit/22150b3d1e35ba272930e9506744d6bcc0a40500) [#680](https://github.com/preactjs/wmr/pull/680) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix swapped usage of `cwd` vs `root`. Now, `cwd` always refers to the current working directory and `root` the web root to serve from (= usually cwd+/public).
+
+  This change was done to reduce the amount of extra knowledge to be aware of when using WMR. It was a frequent source of confusion.
+
+  #### Migration guide:
+
+  If you used `options.cwd` or `options.root` in one of your plugins you need to swap them.
+
+* [`0f91e7f`](https://github.com/preactjs/wmr/commit/0f91e7f879f503e857100259202d5aedfa3db150) [#684](https://github.com/preactjs/wmr/pull/684) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Completely rewrite our stylesheet pipeline. All CSS files can now be intercepted from plugins allowing us to leverage the same pipeline that we use for production during development.
+
+  - Fixes `.scss/.sass` not compiled on watch
+  - Fixes nested `.scss/.sass` files not compiled with sass
+  - Fixes `.scss/.sass` files not compiled when directly referenced in HTML
+  - Fixes asset caching overwriting each others entries
+  - Adds groundwork for intercepting urls inside css for aliasing or resolving from `node_modules`
+
+### Minor Changes
+
+- [`97c3ab5`](https://github.com/preactjs/wmr/commit/97c3ab557c053472bf7c81446db0c81a8da3473b) [#685](https://github.com/preactjs/wmr/pull/685) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Sass: Include imported urls and file path into plugin resolution. This allows sass to load aliased files for example.
+
+### Patch Changes
+
+- [`8c3993f`](https://github.com/preactjs/wmr/commit/8c3993f85f5ae3cf48bf8d5336e1cc01bc9a1d68) [#676](https://github.com/preactjs/wmr/pull/676) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Ensure that built-in plugins only work on files they can handle
+
+* [`cdf5179`](https://github.com/preactjs/wmr/commit/cdf5179af941551b6c2da0d910cf9ba2afd91e96) [#690](https://github.com/preactjs/wmr/pull/690) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix nested CSS HMR not working
+
+- [`ea6606f`](https://github.com/preactjs/wmr/commit/ea6606fa14f1f0c0b5ab9f0f070333046371e87e) [#691](https://github.com/preactjs/wmr/pull/691) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix CLI environment variables overwritten by `.env` files
+
 ## 2.2.2
 
 ### Patch Changes
