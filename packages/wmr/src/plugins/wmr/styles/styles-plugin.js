@@ -14,12 +14,11 @@ const RESERVED_WORDS = /^(abstract|async|boolean|break|byte|case|catch|char|clas
  * @param {object} options
  * @param {string} options.root Manually specify the cwd from which to resolve filenames (important for calculating hashes!)
  * @param {boolean} [options.hot] Indicates the plugin should inject a HMR-runtime
- * @param {boolean} [options.fullPath] Preserve the full original path when producing CSS assets
  * @param {boolean} [options.production]
  * @param {Record<string, string>} options.alias
  * @returns {import('rollup').Plugin}
  */
-export default function wmrStylesPlugin({ root, hot, fullPath, production, alias }) {
+export default function wmrStylesPlugin({ root, hot, production, alias }) {
 	let assetId = 0;
 	const assetMap = new Map();
 	/** @type {Map<string, Set<string>>} */
@@ -98,8 +97,8 @@ export default function wmrStylesPlugin({ root, hot, fullPath, production, alias
 
 			const ref = this.emitFile({
 				type: 'asset',
-				name: fullPath ? undefined : basename(id).replace(/\.s[ac]ss$/, '.css'),
-				fileName: fullPath ? (aliased ? `@alias/${idRelative}` : idRelative) : undefined,
+				name: basename(id).replace(/\.s[ac]ss$/, '.css'),
+				fileName: undefined,
 				source
 			});
 
