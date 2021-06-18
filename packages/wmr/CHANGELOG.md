@@ -1,5 +1,11 @@
 # wmr
 
+## 3.0.1
+
+### Patch Changes
+
+- [`b134646`](https://github.com/preactjs/wmr/commit/b1346460da8485f0767911bbb3a88e9731bd8cfb) [#694](https://github.com/preactjs/wmr/pull/694) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix potential issue during development, where different CSS assets would share the same URL
+
 ## 3.0.0
 
 ### Major Changes
