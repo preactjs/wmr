@@ -73,6 +73,19 @@ describe('CSS', () => {
 
 			expect(instance.output.join('\n')).toMatch(/Cannot use reserved word/);
 		});
+
+		it('should not overwrite style files', async () => {
+			await loadFixture('css-module-clash', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			await withLog(instance.output, async () => {
+				await waitForPass(async () => {
+					expect(await env.page.$eval('#foo', el => getComputedStyle(el).color)).toBe('rgb(0, 0, 255)');
+					expect(await env.page.$eval('#bar', el => getComputedStyle(el).color)).toBe('rgb(255, 0, 0)');
+				});
+			});
+		});
 	});
 
 	describe('HMR', () => {
@@ -120,6 +133,28 @@ describe('CSS', () => {
 
 				await waitForPass(async () => {
 					expect(await page.$eval('h1', e => getComputedStyle(e).color)).toBe('rgb(255, 0, 0)');
+				});
+			});
+		});
+
+		it('should not overwrite style files on HMR', async () => {
+			await loadFixture('css-module-clash', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			await withLog(instance.output, async () => {
+				await waitForPass(async () => {
+					expect(await env.page.$eval('#foo', el => getComputedStyle(el).color)).toBe('rgb(0, 0, 255)');
+					expect(await env.page.$eval('#bar', el => getComputedStyle(el).color)).toBe('rgb(255, 0, 0)');
+				});
+
+				await updateFile(env.tmp.path, path.join('public', 'foo', 'styles.module.css'), content =>
+					content.replace('color: blue;', 'color: peachpuff;')
+				);
+
+				await waitForPass(async () => {
+					expect(await env.page.$eval('#foo', el => getComputedStyle(el).color)).toBe('rgb(255, 218, 185)');
+					expect(await env.page.$eval('#bar', el => getComputedStyle(el).color)).toBe('rgb(255, 0, 0)');
 				});
 			});
 		});
