@@ -98,7 +98,13 @@ export default function wmrStylesPlugin({ root, hot, production, alias }) {
 			const ref = this.emitFile({
 				type: 'asset',
 				name: basename(id).replace(/\.s[ac]ss$/, '.css'),
-				fileName: undefined,
+				// Preserve asset path to avoid file clashes:
+				//   foo/styles.module.css
+				//   bar/styles.module.css
+				// Both files above should not overwrite each other.
+				// We don't have that problem in production, because
+				// assets are hashed
+				fileName: !production ? id + '?asset' : undefined,
 				source
 			});
 
