@@ -1,3 +1,4 @@
+import { importAssertions } from 'acorn-import-assertions';
 import { transform } from '../lib/acorn-traverse.js';
 
 /**
@@ -14,9 +15,14 @@ import { transform } from '../lib/acorn-traverse.js';
  *
  * @returns {import("rollup").Plugin}
  */
-export function importAssertion() {
+export function importAssertionPlugin() {
 	return {
 		name: 'import-assertion',
+		options(opts) {
+			// @ts-ignore
+			opts.acornInjectPlugins = [importAssertions, ...(opts.acornInjectPlugins || [])];
+			return opts;
+		},
 		transform(code, id) {
 			if (!/\.[tj]sx?$/.test(id)) return;
 
