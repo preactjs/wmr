@@ -3,6 +3,8 @@ import * as rollup from 'rollup';
 import terser from './plugins/fast-minify.js';
 import totalist from 'totalist';
 import { getPlugins } from './lib/plugins.js';
+import acornClassFields from 'acorn-class-fields';
+import { importAssertions } from 'acorn-import-assertions';
 
 /** @param {string} p */
 const pathToPosix = p => p.split(sep).join(posix.sep);
@@ -26,7 +28,8 @@ export async function bundleProd(options) {
 		perf: !!profile,
 		preserveEntrySignatures: 'allow-extension',
 		manualChunks: npmChunks ? extractNpmChunks : undefined,
-		plugins: getPlugins(options)
+		plugins: getPlugins(options),
+		acornInjectPlugins: [importAssertions, acornClassFields]
 	});
 
 	/** @type {import('rollup').OutputOptions} */

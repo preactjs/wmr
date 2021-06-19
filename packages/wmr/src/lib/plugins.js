@@ -21,6 +21,7 @@ import nodeBuiltinsPlugin from '../plugins/node-builtins-plugin.js';
 import dynamicImportVars from '@rollup/plugin-dynamic-import-vars';
 import visualizer from 'rollup-plugin-visualizer';
 import { defaultLoaders } from './default-loaders.js';
+import { importAssertion } from '../plugins/import-assertion.js';
 
 /**
  * @param {import("wmr").Options} options
@@ -75,6 +76,8 @@ export function getPlugins(options) {
 
 		...plugins.slice(split),
 
+		// Transpile import assertion syntax to WMR prefixes
+		importAssertion(),
 		// Apply default loaders to unprefixed paths
 		defaultLoaders(),
 

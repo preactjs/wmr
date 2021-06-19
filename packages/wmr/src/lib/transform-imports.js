@@ -108,7 +108,13 @@ export async function transformImports(code, id, { resolveImportMeta, resolveId,
 				}
 				out += spec + after;
 				continue;
+			} else {
+				// Trim any import assertions if present so that we just have the
+				// import specifier itself.
+				const closingQuoteIdx = spec.indexOf(quote, 1);
+				spec = spec.slice(0, closingQuoteIdx + 1);
 			}
+
 			spec = spec.replace(/^\s*(['"`])(.*)\1\s*$/g, '$2');
 
 			if (resolveDynamicImport) {

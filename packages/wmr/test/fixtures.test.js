@@ -680,6 +680,13 @@ describe('fixtures', () => {
 			const output = await getOutput(env, instance);
 			expect(output).toMatch(/{"foo":"bar"}/);
 		});
+
+		it('should support dynamic .json assertion', async () => {
+			await loadFixture('import-assertions-dynamic', env);
+			instance = await runWmrFast(env.tmp.path);
+			const output = await getOutput(env, instance);
+			expect(output).toMatch(/{"default":{"foo":"bar"}}/);
+		});
 	});
 
 	describe('json', () => {
