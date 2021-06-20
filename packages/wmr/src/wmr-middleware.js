@@ -639,7 +639,7 @@ async function writeCacheFile(rootDir, fileName, data) {
 
 	fileName = normalize(fileName);
 	WRITE_CACHE.set(fileName, data);
-	const filePath = resolve(rootDir, fileName);
+	const filePath = resolve(rootDir, fileName.replace(/[?&]/g, '__'));
 	logCache(`write ${kl.cyan(fileName)} -> ${kl.dim(filePath)}`);
 
 	// Safeguard to avoid accidentally overwriting user files. If we throw here
