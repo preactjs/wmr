@@ -45,7 +45,7 @@ export default function wmrMiddleware(options) {
 					filename = relativeFile;
 				}
 			}
-			writeCacheFile(out, filename, source);
+			writeCacheFile(filename, source);
 		},
 		output: {
 			// assetFileNames: '@asset/[name][extname]',
@@ -584,7 +584,7 @@ export const TRANSFORMS = {
 				}
 			});
 
-			writeCacheFile(out, cacheKey, code);
+			writeCacheFile(cacheKey, code);
 
 			return code;
 		} catch (e) {
@@ -629,27 +629,14 @@ export const TRANSFORMS = {
 };
 
 /**
- * Write a file to a directory, ensuring any nested paths exist
- * @param {string} rootDir
+ * Write data to an in-memory cache
  * @param {string} fileName
  * @param {string|Buffer|Uint8Array} data
  */
-async function writeCacheFile(rootDir, fileName, data) {
+async function writeCacheFile(fileName, data) {
 	if (fileName.includes('\0')) return;
 
 	fileName = normalize(fileName);
 	WRITE_CACHE.set(fileName, data);
-	const filePath = resolve(rootDir, fileName.replace(/[?&]/g, '__'));
-	logCache(`write ${kl.cyan(fileName)} -> ${kl.dim(filePath)}`);
-
-	// Safeguard to avoid accidentally overwriting user files. If we throw here
-	// we have very likely a bug in WMR.
-	if (!filePath.startsWith(rootDir)) {
-		throw new Error(`Attempting to write outside cache dir: ${filePath}`);
-	}
-
-	if (dirname(filePath) !== rootDir) {
-		await fs.mkdir(dirname(filePath), { recursive: true });
-	}
-	await fs.writeFile(filePath, data);
+	logCache(`write ${kl.cyan(fileName)}`);
 }
