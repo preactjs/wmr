@@ -1,5 +1,13 @@
 # wmr
 
+## 3.0.2
+
+### Patch Changes
+
+- [`94c9a58`](https://github.com/preactjs/wmr/commit/94c9a5869d624188293829dc370c45a1bf6d3253) [#696](https://github.com/preactjs/wmr/pull/696) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix missing terminal colors in CI environments
+
+* [`5ba6edc`](https://github.com/preactjs/wmr/commit/5ba6edc232f28aaf788a50b43cf8cf7d62a4a6e5) [#698](https://github.com/preactjs/wmr/pull/698) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix crash on Windows due to invalid cache file paths
+
 ## 3.0.1
 
 ### Patch Changes
