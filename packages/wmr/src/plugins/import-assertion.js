@@ -53,7 +53,7 @@ function transformImportAssertions({ types: t }) {
 						if (t.isImportAttribute(node) && t.isIdentifier(node.key) && node.key.name === 'type') {
 							const type = node.value.value;
 							path.replaceWith(
-								t.importDeclaration(path.node.specifiers, t.stringLiteral(`${type}:${path.node.source?.value}`))
+								t.importDeclaration(path.node.specifiers, t.stringLiteral(`${type}:${path.node.source.value}`))
 							);
 						}
 					}
