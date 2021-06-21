@@ -3,6 +3,7 @@ import { promisify } from 'util';
 import { debug } from '../lib/output-utils.js';
 import * as kl from 'kolorist';
 import { promises as fs } from 'fs';
+import { createCodeFrame } from 'simple-code-frame';
 
 const log = debug('sass');
 
@@ -62,7 +63,14 @@ export default function sassPlugin({ production, sourcemap, root }) {
 		// need a way to do the opposite here to support loading virtual
 		// sass modules. This is a limitation in Rollup. So for now we only
 		// do resolution here.
-		const resolved = await pluginResolve(url);
+		let resolved;
+		try {
+			resolved = await pluginResolve(url);
+		} catch (err) {
+			done(err);
+			return;
+		}
+
 		let file = resolved ? resolved.id : url;
 
 		// Bail out if nothing changed.
@@ -74,8 +82,8 @@ export default function sassPlugin({ production, sourcemap, root }) {
 		if (!path.isAbsolute(file)) {
 			file = path.join(root, file);
 		}
-		const contents = await fs.readFile(file, 'utf-8');
-		done({ file, contents });
+
+		done({ file });
 	}
 
 	return {
@@ -84,38 +92,61 @@ export default function sassPlugin({ production, sourcemap, root }) {
 			if (id[0] === '\0') return;
 			if (!/\.s[ac]ss$/.test(id)) return;
 
-			const result = await renderSass({
-				// Custom options for logging
-				id,
-				// Must have either "data" or "file" option. If both are set importers
-				// will cease to function for some reason.
-				data: code,
-				includePaths: [path.dirname(id)],
-				importer: [
-					// Note: Async importers MUST return `undefined`, otherwise they
-					// don't work!!!
-					(url, prev, done) => {
-						sassResolver(url, prev, done, this.resolve.bind(this));
-					}
-				],
-				outputStyle: production ? 'compressed' : undefined,
-				sourceMap: sourcemap !== false
-			});
-
-			for (const file of result.includedFiles) {
-				this.addWatchFile(file);
-
-				if (!fileToBundles.has(file)) {
-					fileToBundles.set(file, new Set());
-				}
-				// @ts-ignore
-				fileToBundles.get(file).add(id);
+			let file = id;
+			// Sass needs absolute paths to be able to resolve modules in
+			// their error output.
+			if (/\.\.?\//.test(id)) {
+				file = path.join(root, id.split(path.posix.sep).join(path.sep));
 			}
 
-			return {
-				code: result.css,
-				map: result.map || null
-			};
+			try {
+				const result = await renderSass({
+					// Custom options for logging
+					id,
+					file,
+					data: code,
+					includePaths: [path.dirname(id)],
+					importer: [
+						// Note: Async importers MUST return `undefined`, otherwise they
+						// don't work!!!
+						(url, prev, done) => {
+							sassResolver(url, prev, done, this.resolve.bind(this));
+						}
+					],
+					outputStyle: production ? 'compressed' : undefined,
+					sourceMap: sourcemap !== false
+				});
+
+				for (const file of result.includedFiles) {
+					this.addWatchFile(file);
+
+					if (!fileToBundles.has(file)) {
+						fileToBundles.set(file, new Set());
+					}
+					// @ts-ignore
+					fileToBundles.get(file).add(id);
+				}
+
+				return {
+					code: result.css,
+					map: result.map || null
+				};
+			} catch (err) {
+				const code = await fs.readFile(err.file, 'utf-8');
+				err.codeFrame = createCodeFrame(code, err.line - 1, err.column);
+				// Sass mixes stack in message, therefore we need to extract
+				// just the message
+				let messageArr = [];
+				err.message.split('\n').some(line => {
+					if (/^\s*(?:\d+\s*)?[│╷]\s*/.test(line)) {
+						return true;
+					}
+					messageArr.push(line);
+				});
+
+				err.message = messageArr.join('\n');
+				throw err;
+			}
 		},
 		watchChange(id) {
 			const bundle = fileToBundles.get(id);

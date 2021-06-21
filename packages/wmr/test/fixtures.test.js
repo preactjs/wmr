@@ -388,6 +388,18 @@ describe('fixtures', () => {
 				expect(await env.page.$eval('h1', el => getComputedStyle(el).color)).toMatch(/rgb\(255, 0, 0\)/);
 			});
 		});
+
+		it('should not crash on non-existing files', async () => {
+			await loadFixture('css-sass-file-error', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			await withLog(instance.output, async () => {
+				await waitForPass(async () => {
+					expect(instance.output.join('\n')).toMatch(/Can't find stylesheet to import/);
+				});
+			});
+		});
 	});
 
 	describe('hmr', () => {
