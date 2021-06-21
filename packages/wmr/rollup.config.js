@@ -174,4 +174,14 @@ const config = {
 	]
 };
 
-export default config;
+export default [
+	config,
+	{
+		...config,
+		input: 'src/lib/prerender-worker.js',
+		output: {
+			...config.output,
+			file: 'prerender-worker.cjs'
+		}
+	}
+];
