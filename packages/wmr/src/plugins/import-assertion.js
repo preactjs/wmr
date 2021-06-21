@@ -1,9 +1,5 @@
-import acornImportAssertions from 'acorn-import-assertions';
+import { importAssertions } from 'acorn-import-assertions';
 import { transform } from '../lib/acorn-traverse.js';
-
-// TODO: WOrkaround for node 12 not allowing to destructure
-// CJS imports. PR an esm target for `acorn-import-assertions`.
-const { importAssertions } = acornImportAssertions;
 
 /**
  * Rewrite import assertions to url prefixes. This is done because
