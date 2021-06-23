@@ -43,6 +43,7 @@
 		"@rollup/plugin-virtual": "^2.0.3",
 		"@types/jest": "^26.0.4",
 		"acorn-class-fields": "^1.0.0",
+		"acorn-import-assertions": "^1.6.0",
 		"acorn-jsx": "^5.3.1",
 		"acorn-jsx-walk": "^2.0.0",
 		"acorn-walk": "^8.0.0",

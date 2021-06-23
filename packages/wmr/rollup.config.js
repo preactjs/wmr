@@ -158,7 +158,8 @@ const config = {
 				// only pull in fsevents when its exports are accessed (avoids exceptions):
 				{ find: /^fsevents$/, replacement: require.resolve('./src/lib/~fsevents.js') },
 				// avoid pulling in 50kb of "editions" dependencies to resolve one file:
-				{ find: /^istextorbinary$/, replacement: 'istextorbinary/edition-node-0.12/index.js' } // 2.6.0
+				{ find: /^istextorbinary$/, replacement: 'istextorbinary/edition-node-0.12/index.js' }, // 2.6.0
+				{ find: /^acorn-import-assertions$/, replacement: require.resolve('acorn-import-assertions') }
 			]
 		}),
 		commonjs({

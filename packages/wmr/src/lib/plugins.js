@@ -21,6 +21,7 @@ import nodeBuiltinsPlugin from '../plugins/node-builtins-plugin.js';
 import dynamicImportVars from '@rollup/plugin-dynamic-import-vars';
 import visualizer from 'rollup-plugin-visualizer';
 import { defaultLoaders } from './default-loaders.js';
+import { importAssertionPlugin } from '../plugins/import-assertion.js';
 
 /**
  * @param {import("wmr").Options} options
@@ -49,6 +50,8 @@ export function getPlugins(options) {
 			sourcemap,
 			production
 		}),
+		// Transpile import assertion syntax to WMR prefixes
+		importAssertionPlugin(),
 		production &&
 			(dynamicImportVars.default || dynamicImportVars)({
 				include: /\.(m?jsx?|tsx?)$/,

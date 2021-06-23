@@ -148,6 +148,48 @@ describe('production', () => {
 		});
 	});
 
+	describe('import assertions', () => {
+		it('should support .json assertion', async () => {
+			await loadFixture('import-assertions', env);
+			instance = await runWmr(env.tmp.path, 'build');
+
+			await withLog(instance.output, async () => {
+				const code = await instance.done;
+				expect(code).toEqual(0);
+
+				const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+				cleanup.push(stop);
+
+				await env.page.goto(address, {
+					waitUntil: ['networkidle0', 'load']
+				});
+
+				const output = await env.page.content();
+				expect(output).toMatch(/{"foo":"bar"}/);
+			});
+		});
+
+		it('should support dynamic .json assertion', async () => {
+			await loadFixture('import-assertions-dynamic', env);
+			instance = await runWmr(env.tmp.path, 'build');
+
+			await withLog(instance.output, async () => {
+				const code = await instance.done;
+				expect(code).toEqual(0);
+
+				const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+				cleanup.push(stop);
+
+				await env.page.goto(address, {
+					waitUntil: ['networkidle0', 'load']
+				});
+
+				const output = await env.page.content();
+				expect(output).toMatch(/{"default":{"foo":"bar"}}/);
+			});
+		});
+	});
+
 	describe('alias', () => {
 		it('should alias directories', async () => {
 			await loadFixture('alias-outside', env);
