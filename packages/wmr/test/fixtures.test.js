@@ -400,6 +400,18 @@ describe('fixtures', () => {
 				});
 			});
 		});
+
+		it('should catch resolve error', async () => {
+			await loadFixture('css-sass-resolve-error', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			await withLog(instance.output, async () => {
+				await waitForPass(async () => {
+					expect(instance.output.join('\n')).toMatch(/500 \.\/public\/style.scss - fail/);
+				});
+			});
+		});
 	});
 
 	describe('hmr', () => {
