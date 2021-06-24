@@ -1,5 +1,13 @@
 # wmr
 
+## 3.1.1
+
+### Patch Changes
+
+- [`01fca1c`](https://github.com/preactjs/wmr/commit/01fca1cbe058b8b93f24293d8d51b30926db1455) [#704](https://github.com/preactjs/wmr/pull/704) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Sass: Fix HMR not working on windows due to `node-sass` returning unix-style paths
+
+* [`ae087f7`](https://github.com/preactjs/wmr/commit/ae087f773d6c43305e9353b8adc6eb902f1c5a96) [#706](https://github.com/preactjs/wmr/pull/706) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Sass: Fix relative import specifiers in the form of `./foo.scss` being resolved against the wrong directory
+
 ## 3.1.0
 
 ### Minor Changes
