@@ -1,5 +1,21 @@
 # wmr
 
+## 3.1.0
+
+### Minor Changes
+
+- [`22f3ac9`](https://github.com/preactjs/wmr/commit/22f3ac90c8ded4be03a1ae131389d275e12cc1d8) [#630](https://github.com/preactjs/wmr/pull/630) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Add support for [import assertions](https://github.com/tc39/proposal-import-assertions) syntax that is very likely to come in an upcoming version of JavaScript. Import Assertions are a native way to load non-js files in ESM environments.
+
+  ```js
+  import foo from './foo.json' assert { type: 'json' };
+  ```
+
+  At the time of this writing this is only supported in Chrome, so we'll downtranspile import assertions to leverage loaders. This allows the code to run all browsers WMR supports.
+
+### Patch Changes
+
+- [`f12ffe3`](https://github.com/preactjs/wmr/commit/f12ffe348551850985e20463422bb2dadfbcf8de) [#701](https://github.com/preactjs/wmr/pull/701) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix sass crashing when an imported file is not found
+
 ## 3.0.2
 
 ### Patch Changes
