@@ -65,7 +65,8 @@ export default function sassPlugin({ production, sourcemap, root }) {
 		// do resolution here.
 		let resolved;
 		try {
-			resolved = await pluginResolve(url);
+			const importer = prev !== 'stdin' ? prev : null;
+			resolved = await pluginResolve(url, importer);
 		} catch (err) {
 			done(err);
 			return;
