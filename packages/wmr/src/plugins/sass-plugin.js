@@ -117,7 +117,10 @@ export default function sassPlugin({ production, sourcemap, root }) {
 					sourceMap: sourcemap !== false
 				});
 
-				for (const file of result.includedFiles) {
+				for (let file of result.includedFiles) {
+					// `node-sass` always returns unix style paths,
+					// even on windows
+					file = path.normalize(file);
 					this.addWatchFile(file);
 
 					if (!fileToBundles.has(file)) {
