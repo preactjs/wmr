@@ -407,7 +407,7 @@ describe('production', () => {
 			await cdp.send('Emulation.setCPUThrottlingRate', { rate: 6 });
 
 			// Nexus 5 viewport + mobile, disable caching:
-			await env.page.emulate(require('puppeteer/DeviceDescriptors').devicesMap['Nexus 5']);
+			await env.page.emulate(require('puppeteer/lib/cjs/puppeteer/common/DeviceDescriptors').devicesMap['Nexus 5']);
 			await env.page.setCacheEnabled(false);
 
 			await page.coverage.startJSCoverage();
