@@ -56,7 +56,10 @@ export default function wmrStylesPlugin({ root, hot, production, alias }) {
 					// to workaround rollup limitations?
 
 					if (spec.indexOf(':') === -1) {
-						const absolute = resolve(dirname(idRelative), spec.split(posix.sep).join(sep));
+						const specPath = spec.split(posix.sep).join(sep);
+						const absolute = spec.startsWith('/')
+							? resolve(root, specPath.slice(1))
+							: resolve(dirname(idRelative), specPath);
 
 						if (!absolute.startsWith(root)) return;
 
@@ -85,6 +88,7 @@ export default function wmrStylesPlugin({ root, hot, production, alias }) {
 						// doesn't call generateBundle()
 						const ref = _self.emitFile({
 							type: 'asset',
+							// TODO: Unnecessary path rewrite
 							name: basename(absolute),
 							source: absolute.endsWith('.css') ? await fs.readFile(absolute, 'utf-8') : await fs.readFile(absolute)
 						});

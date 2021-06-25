@@ -5,6 +5,7 @@ import {
 	setupTest,
 	teardown,
 	updateFile,
+	wait,
 	waitForPass,
 	withLog
 } from './test-helpers.js';
@@ -42,6 +43,22 @@ describe('CSS', () => {
 		instance = await runWmrFast(env.tmp.path);
 		await getOutput(env, instance);
 		expect(await env.page.$eval('body', el => getComputedStyle(el).backgroundImage)).toMatch(/img\.jpg/);
+	});
+
+	it('should load referenced files via font-face src', async () => {
+		await loadFixture('css-font-face', env);
+		instance = await runWmrFast(env.tmp.path);
+		const logs = [];
+		env.page.on('console', msg => logs.push(msg.text()));
+
+		await withLog(instance.output, async () => {
+			await getOutput(env, instance);
+
+			// Wait for potential faultry font fetches to occur.
+			await wait(1000);
+
+			expect(logs.join('\n')).not.toMatch(/Failed to decode downloaded font/);
+		});
 	});
 
 	describe('CSS Modules', () => {

@@ -1,0 +1,14 @@
+@font-face {
+	/* Use a name that's likely not present locally */
+	font-family: 'WMR-FONT';
+	src: url(/assets/karla-regular.woff2) format('woff2'), url(/assets/karla-regular.woff) format('woff');
+	font-weight: 400;
+}
+
+body {
+	/**
+	 * Use serif to make it more prominent visually
+	 * that the wrong font was loaded
+	 */
+	font-family: 'WMR-FONT', serif;
+}
