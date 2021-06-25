@@ -46,6 +46,7 @@
 		"acorn-import-assertions": "^1.6.0",
 		"acorn-jsx": "^5.3.1",
 		"acorn-jsx-walk": "^2.0.0",
+		"acorn-private-methods": "^1.0.0",
 		"acorn-walk": "^8.0.0",
 		"astring": "^1.7.0",
 		"async-disk-cache": "^2.1.0",

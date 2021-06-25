@@ -53,6 +53,12 @@ describe('fixtures', () => {
 		expect(await getOutput(env, instance)).toMatch(`class fields work`);
 	});
 
+	it('should support private class-fields', async () => {
+		await loadFixture('class-fields-private', env);
+		instance = await runWmrFast(env.tmp.path);
+		expect(await getOutput(env, instance)).toMatch(`class fields work`);
+	});
+
 	it('should not if sub-import is not in export map', async () => {
 		await loadFixture('empty', env);
 		instance = await runWmrFast(env.tmp.path);

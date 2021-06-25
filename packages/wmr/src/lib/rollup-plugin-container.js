@@ -3,7 +3,6 @@ import { createHash } from 'crypto';
 import { promises as fs } from 'fs';
 import * as acorn from 'acorn';
 import * as kl from 'kolorist';
-import acornClassFields from 'acorn-class-fields';
 import { debug, formatResolved, formatPath } from './output-utils.js';
 
 // Rollup respects "module", Node 14 doesn't.
@@ -177,7 +176,7 @@ export function createPluginContainer(plugins, opts = {}) {
 			}
 			if (options.acornInjectPlugins) {
 				// @ts-ignore-next
-				parser = Parser.extend(...[acornClassFields].concat(options.acornInjectPlugins));
+				parser = Parser.extend(...options.acornInjectPlugins);
 			}
 			return options;
 		},

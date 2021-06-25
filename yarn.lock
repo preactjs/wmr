@@ -1292,6 +1292,13 @@ acorn-private-class-elements@^1.0.0:
   resolved "https://registry.yarnpkg.com/acorn-private-class-elements/-/acorn-private-class-elements-1.0.0.tgz#c5805bf8a46cd065dc9b3513bfebb504c88cd706"
   integrity sha512-zYNcZtxKgVCg1brS39BEou86mIao1EV7eeREG+6WMwKbuYTeivRRs6S2XdWnboRde6G9wKh2w+WBydEyJsJ6mg==
 
+acorn-private-methods@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/acorn-private-methods/-/acorn-private-methods-1.0.0.tgz#b48f4c03a151cc8262f6f5ca8f57f7c5ac245184"
+  integrity sha512-Jou2L3nfwfPpFdmmHObI3yUpVPM1bPohTUAZCyVDw5Efyn9LSS6E36neRLCRfIr8QjskAfdxRdABOrvP4c/gwQ==
+  dependencies:
+    acorn-private-class-elements "^1.0.0"
+
 acorn-walk@^7.1.1:
   version "7.2.0"
   resolved "https://registry.yarnpkg.com/acorn-walk/-/acorn-walk-7.2.0.tgz#0de889a601203909b0fbe07b8938dc21d2e967bc"
