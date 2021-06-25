@@ -59,6 +59,12 @@ describe('fixtures', () => {
 		expect(await getOutput(env, instance)).toMatch(`class fields work`);
 	});
 
+	it('should support logical assignments', async () => {
+		await loadFixture('logical-assignment', env);
+		instance = await runWmrFast(env.tmp.path);
+		expect(await getOutput(env, instance)).toMatch(`{"foo":"foo","baz":"qux"}`);
+	});
+
 	it('should not if sub-import is not in export map', async () => {
 		await loadFixture('empty', env);
 		instance = await runWmrFast(env.tmp.path);
