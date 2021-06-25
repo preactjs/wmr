@@ -9,6 +9,9 @@ import * as kl from 'kolorist';
 
 const prog = sade('wmr');
 
+// This variable will be replaced during build
+prog.version(process.env.VERSION);
+
 function bool(v) {
 	return v !== false && !/false|0/.test(v);
 }
