@@ -8,6 +8,7 @@ import commonjs from '@rollup/plugin-commonjs';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import alias from '@rollup/plugin-alias';
 import json from '@rollup/plugin-json';
+import replace from '@rollup/plugin-replace';
 import builtins from 'builtin-modules';
 import { minify } from 'terser';
 
@@ -65,6 +66,9 @@ const config = {
 	// },
 	plugins: [
 		shebangPlugin(),
+		replace({
+			'process.env.VERSION': JSON.stringify(require('./package.json').version)
+		}),
 		{
 			// This inlines some fs.promises.readFile() calls, while allowing them to run unbundled in Node.
 			name: 'inline-fs-readfile',
