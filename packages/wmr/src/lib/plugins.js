@@ -22,6 +22,7 @@ import dynamicImportVars from '@rollup/plugin-dynamic-import-vars';
 import visualizer from 'rollup-plugin-visualizer';
 import { defaultLoaders } from './default-loaders.js';
 import { importAssertionPlugin } from '../plugins/import-assertion.js';
+import { acornDefaultPlugins } from './acorn-default-plugins.js';
 
 /**
  * @param {import("wmr").Options} options
@@ -37,6 +38,7 @@ export function getPlugins(options) {
 	const production = mode === 'build';
 
 	return [
+		acornDefaultPlugins(),
 		...plugins.slice(0, split),
 		production && htmlEntriesPlugin({ root, publicPath }),
 		externalUrlsPlugin(),
