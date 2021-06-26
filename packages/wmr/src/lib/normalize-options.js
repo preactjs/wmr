@@ -21,7 +21,7 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 
 	options.root = options.cwd;
 
-	options.sourcemap = false;
+	options.sourcemap = options.sourcemap || false;
 	options.minify = mode === 'build';
 	options.plugins = [];
 	options.output = [];

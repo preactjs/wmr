@@ -34,12 +34,13 @@ function acornEnvPlugin(env) {
 
 /**
  * Inject process globals and inline process.env.NODE_ENV.
- * @param {object} [options]
+ * @param {object} options
  * @param {string} [options.NODE_ENV] constant to inline for `process.env.NODE_ENV`
  * @param {Record<string, string>} [options.env]
+ * @param {boolean} [options.sourcemap]
  * @returns {import('rollup').Plugin}
  */
-export default function processGlobalPlugin({ NODE_ENV = 'development', env = {} } = {}) {
+export default function processGlobalPlugin({ NODE_ENV = 'development', env = {}, sourcemap }) {
 	const processObj = JSON.stringify({ browser: true, env: { ...env, NODE_ENV } });
 
 	const PREFIX = `\0builtins:`;
@@ -58,7 +59,8 @@ export default function processGlobalPlugin({ NODE_ENV = 'development', env = {}
 
 			const result = transform(code, {
 				plugins: [acornEnvPlugin({ ...env, NODE_ENV })],
-				parse: this.parse
+				parse: this.parse,
+				sourceMaps: sourcemap
 			});
 
 			code = result.code;
@@ -76,7 +78,7 @@ export default function processGlobalPlugin({ NODE_ENV = 'development', env = {}
 			code = code.replace(/typeof(\s+|\s*\(+\s*)process([^a-zA-Z$_])/g, 'typeof$1undefined$2');
 
 			if (code !== orig) {
-				return { code, map: null };
+				return { code, map: sourcemap ? result.map : null };
 			}
 		}
 	};

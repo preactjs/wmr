@@ -56,6 +56,8 @@ export default function sucrasePlugin(opts = {}) {
 						: undefined
 				});
 
+				console.log(result);
+
 				return {
 					code: result.code,
 					map: opts.sourcemap ? result.sourceMap : null

@@ -160,6 +160,12 @@ export default function wmrMiddleware(options) {
 				WRITE_CACHE.delete(cacheKey);
 			}
 
+			const sourceKey = file + '.map';
+			if (options.sourcemap && WRITE_CACHE.has(sourceKey)) {
+				logCache(`delete: ${kl.cyan(sourceKey)}`);
+				WRITE_CACHE.delete(sourceKey);
+			}
+
 			if (!pendingChanges.size) timeout = setTimeout(flushChanges, 60);
 
 			if (/\.(css|s[ac]ss)$/.test(file)) {
@@ -255,6 +261,7 @@ export default function wmrMiddleware(options) {
 
 		let type = isModule ? 'application/javascript;charset=utf-8' : getMimeType(file);
 		if (type) {
+			console.log(id, type);
 			res.setHeader('Content-Type', type);
 		}
 
@@ -266,6 +273,8 @@ export default function wmrMiddleware(options) {
 			transform = getWmrClient.bind(null);
 		} else if (queryParams.has('asset')) {
 			cacheKey += '?asset';
+			transform = TRANSFORMS.asset;
+		} else if (/\.map$/.test(path)) {
 			transform = TRANSFORMS.asset;
 		} else if (prefix || hasIdPrefix || isModule || /\.([mc]js|[tj]sx?)$/.test(file) || /\.(css|s[ac]ss)$/.test(file)) {
 			transform = TRANSFORMS.js;
@@ -467,8 +476,11 @@ export const TRANSFORMS = {
 				code = await fs.readFile(resolveFile(file, root, alias), 'utf-8');
 			}
 
-			code = await NonRollup.transform(code, id);
+			const transformResult = await NonRollup.transform(code, id);
+			const map = transformResult.map;
+			code = transformResult.code;
 
+			// TODO: Sourcemapping
 			code = await transformImports(code, id, {
 				resolveImportMeta(property) {
 					return NonRollup.resolveImportMeta(property);
@@ -584,7 +596,17 @@ export const TRANSFORMS = {
 				}
 			});
 
+			if (map) {
+				map.sources = map.sources.filter(source => typeof source === 'string');
+				// map.sourcesContent = map.sourcesContent.filter(source => typeof source === 'string');
+				console.log('FINAL', map);
+				writeCacheFile(cacheKey + '.map', JSON.stringify(map));
+				// code = `${code}\n//# sourceMappingURL=${posix.basename(id)}.map`;
+				code = `${code}\n//# sourceMappingURL=/${id.slice(2)}.map`;
+			}
 			writeCacheFile(cacheKey, code);
+
+			// console.log(WRITE._CACHE);
 
 			return code;
 		} catch (e) {

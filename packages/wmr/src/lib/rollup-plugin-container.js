@@ -4,6 +4,7 @@ import { promises as fs } from 'fs';
 import * as acorn from 'acorn';
 import * as kl from 'kolorist';
 import { debug, formatResolved, formatPath } from './output-utils.js';
+import { mergeSourceMaps } from './sourcemap.js';
 
 // Rollup respects "module", Node 14 doesn't.
 const cjsDefault = m => ('default' in m ? m.default : m);
@@ -277,8 +278,12 @@ export function createPluginContainer(plugins, opts = {}) {
 		/**
 		 * @param {string} code
 		 * @param {string} id
+		 * @returns {Promise<{ code: string, map: import('rollup').ExistingRawSourceMap | null}>}
 		 */
 		async transform(code, id) {
+			/** @type {import('rollup').ExistingRawSourceMap[]} */
+			const sourceMaps = [];
+
 			for (plugin of plugins) {
 				if (!plugin.transform) continue;
 				const result = await plugin.transform.call(ctx, code, id);
@@ -287,11 +292,18 @@ export function createPluginContainer(plugins, opts = {}) {
 				logTransform(`${kl.dim(formatPath(id))} [${plugin.name}]`);
 				if (typeof result === 'object') {
 					code = result.code;
+
+					if (result.map !== null) {
+						sourceMaps.push(result.map);
+					}
 				} else {
 					code = result;
+					if (sourceMaps.length > 0) {
+						logTransform(kl.yellow(`Missing sourcemap result in transform() method of `) + kl.magenta(plugin.name));
+					}
 				}
 			}
-			return code;
+			return { code, map: sourceMaps.length > 0 ? mergeSourceMaps(sourceMaps) : null };
 		},
 
 		/**

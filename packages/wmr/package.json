@@ -82,6 +82,7 @@
 		"semver": "^7.3.2",
 		"simple-code-frame": "^1.1.1",
 		"sirv": "^1.0.6",
+		"sourcemap-codec": "^1.4.8",
 		"stylis": "^4.0.10",
 		"sucrase": "^3.17.0",
 		"tar-stream": "^2.1.3",

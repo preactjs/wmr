@@ -745,9 +745,15 @@ export function transform(
 	function getSourceMap() {
 		if (!map) {
 			map = out.generateMap({
-				includeContent: false,
-				source: sourceFileName
+				includeContent: true,
+				// Must be set for most source map verifiers to work
+				source: sourceFileName || filename,
+				file: filename
 			});
+
+			map.sources = map.sources.filter(source => typeof source === 'string');
+			// map.sourcesContent = map.sourcesContent.filter(source => typeof source === 'string');
+			console.log('ACORN', map, sourceFileName, filename);
 		}
 		return map;
 	}

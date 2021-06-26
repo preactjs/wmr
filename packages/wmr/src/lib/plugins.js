@@ -64,7 +64,8 @@ export function getPlugins(options) {
 		wmrStylesPlugin({ hot: !production, root, production, alias }),
 		processGlobalPlugin({
 			env,
-			NODE_ENV: production ? 'production' : 'development'
+			NODE_ENV: production ? 'production' : 'development',
+			sourcemap
 		}),
 		htmPlugin({ production }),
 		wmrPlugin({ hot: !production, preact: features.preact }),
