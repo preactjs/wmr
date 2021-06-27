@@ -231,22 +231,44 @@ export function encodeVLQ(value) {
 export function encodeMappings(mappings) {
 	let result = '';
 	let currentLine = 0;
+	let lastLineIdx = 0;
+	let lastColumn = 0;
+	let lastSourceLine = 0;
+	let lastSourceColumn = 0;
+
 	for (let i = 0; i < mappings.length; i += 6) {
 		const line = mappings[i];
 
 		if (line > currentLine) {
 			result += ';';
 			currentLine++;
+			lastColumn = 0;
+			lastLineIdx = i;
+		} else if (i > lastLineIdx) {
+			result += ',';
 		}
 
-		result += encodeVLQ(mappings[i + 1]); // mapped column
+		const column = mappings[i + 1];
+		const columnDelta = i > 0 ? column - lastColumn : column;
+		lastColumn += columnDelta;
+		result += encodeVLQ(columnDelta); // mapped column
 
 		const sourceIdx = mappings[i + 2];
 		if (sourceIdx === -1) continue;
 
 		result += encodeVLQ(sourceIdx); // sourceIdx
-		result += encodeVLQ(mappings[i + 3]); // source line
-		result += encodeVLQ(mappings[i + 4]); // source column
+
+		// Numbers must be relative
+		const sourceLine = mappings[i + 3];
+		const sourceLineDelta = i > 0 ? sourceLine - lastSourceLine : sourceLine;
+		lastSourceLine += sourceLineDelta;
+		result += encodeVLQ(sourceLineDelta);
+
+		// Relative again
+		const sourceColumn = mappings[i + 4];
+		const sourceColumnDelta = i > 0 ? sourceColumn - lastSourceColumn : sourceColumn;
+		lastSourceColumn += sourceColumnDelta;
+		result += encodeVLQ(sourceColumnDelta);
 
 		const name = mappings[i + 5];
 		if (name !== -1) {

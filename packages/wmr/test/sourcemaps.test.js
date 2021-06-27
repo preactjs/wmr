@@ -527,8 +527,27 @@ describe('Source Maps', () => {
 	});
 
 	describe('encodeMappings', () => {
+		/**
+		 * @param {number[]} mappings
+		 * @returns {number[][]}
+		 */
+		function splitMappings(mappings) {
+			const out = [];
+
+			for (let i = 0; i < mappings.length; i += 6) {
+				out.push(mappings.slice(i, i + 6));
+			}
+
+			return out;
+		}
+
+		/** @type {(mappings: number[]) => number[][]} */
+		const testEncodeDecode = mappings => {
+			return splitMappings(decodeMappings(encodeMappings(mappings), 1));
+		};
+
 		it('should encode mappings', () => {
-			expect(encodeMappings([0, 6, 1, 4, 6, -1])).toEqual('MCIM');
+			expect(encodeMappings([0, 6, 1, 4, 6, -1])).toEqual('MCJN');
 			expect(
 				encodeMappings(
 					[
@@ -536,7 +555,29 @@ describe('Source Maps', () => {
 						[1, 0, 1, 4, 8, -1]
 					].flat()
 				)
-			).toEqual('MCIM;ACIQ');
+			).toEqual('MCJN;ACRd');
+		});
+
+		it('should encode and decode mappings', () => {
+			const mappings = [
+				[0, 0, 0, 4, 0, -1],
+				[0, 7, 0, 4, 7, -1],
+				[0, 15, 0, 4, 15, -1],
+				[0, 16, 0, 4, 16, -1],
+				[0, 18, 0, 4, 18, -1],
+				[0, 19, 0, 4, 19, -1],
+				[0, 20, 0, 4, 20, -1],
+				[0, 23, 0, 4, 28, -1],
+				[1, 2, 0, 5, 2, -1],
+				[1, 9, 0, 5, 9, -1],
+				[1, 12, 0, 5, 12, -1],
+				[1, 13, 0, 5, 13, -1],
+				[1, 16, 0, 5, 16, -1],
+				[1, 17, 0, 5, 17, -1],
+				[2, 0, 0, 6, 0, -1]
+			];
+
+			expect(testEncodeDecode(mappings.flat())).toEqual(mappings);
 		});
 	});
 
