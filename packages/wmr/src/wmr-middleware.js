@@ -261,7 +261,6 @@ export default function wmrMiddleware(options) {
 
 		let type = isModule ? 'application/javascript;charset=utf-8' : getMimeType(file);
 		if (type) {
-			console.log(id, type);
 			res.setHeader('Content-Type', type);
 		}
 

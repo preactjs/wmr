@@ -56,11 +56,18 @@ export default function sucrasePlugin(opts = {}) {
 						: undefined
 				});
 
-				console.log(result);
+				if (!result) return;
+				const map = { ...(result.sourceMap || {}) };
+				map.sourcesContent = [code];
+
+				console.log('MAP', map);
+
+				console.log('SUCRASE', result.code, JSON.stringify(map));
 
 				return {
 					code: result.code,
-					map: opts.sourcemap ? result.sourceMap : null
+					// map: opts.sourcemap ? result.sourceMap : null
+					map
 				};
 			} catch (err) {
 				// Enhance error with code frame

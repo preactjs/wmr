@@ -68,7 +68,7 @@ export function getPlugins(options) {
 			sourcemap
 		}),
 		htmPlugin({ production }),
-		wmrPlugin({ hot: !production, preact: features.preact }),
+		wmrPlugin({ hot: !production, preact: features.preact, sourcemap }),
 		fastCjsPlugin({
 			// Only transpile CommonJS in node_modules and explicit .cjs files:
 			include: /(^npm\/|[/\\]node_modules[/\\]|\.cjs$)/

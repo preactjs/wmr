@@ -4,7 +4,7 @@ import { promises as fs } from 'fs';
 import * as acorn from 'acorn';
 import * as kl from 'kolorist';
 import { debug, formatResolved, formatPath } from './output-utils.js';
-import { mergeSourceMaps } from './sourcemap.js';
+import { mergeAllSourceMaps } from './sourcemaps/merge-sourcemap.js';
 
 // Rollup respects "module", Node 14 doesn't.
 const cjsDefault = m => ('default' in m ? m.default : m);
@@ -303,7 +303,7 @@ export function createPluginContainer(plugins, opts = {}) {
 					}
 				}
 			}
-			return { code, map: sourceMaps.length > 0 ? mergeSourceMaps(sourceMaps) : null };
+			return { code, map: sourceMaps.length > 0 ? mergeAllSourceMaps(sourceMaps) : null };
 		},
 
 		/**

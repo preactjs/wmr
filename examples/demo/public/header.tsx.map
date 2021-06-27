@@ -1,0 +1,12 @@
+{
+	"version": 3,
+	"file": "./header.tsx",
+	"sources": [
+		"./header.tsx"
+	],
+	"mappings": "AAAA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA",
+	"names": [],
+	"sourcesContent": [
+		"import { useLocation } from 'preact-iso';\n\nexport type Foobar = any;\n\nexport default function Header(): Foo {\n\tconst { url }: { url: string } = useLocation();\n\treturn (\n\t\t<header>\n\t\t\t<nav>\n\t\t\t\t<a href=\"/\">Home</a>\n\t\t\t\t<a href=\"/about\">About</a>\n\t\t\t\t<a href=\"/lazy-and-late\">Lazy and Late</a>\n\t\t\t\t<a href=\"/compat\">Compat</a>\n\t\t\t\t<a href=\"/class-fields\">Class-Fields</a>\n\t\t\t\t<a href=\"/files\">Files</a>\n\t\t\t\t<a href=\"/env\">Env</a>\n\t\t\t\t<a href=\"/json\">JSON</a>\n\t\t\t\t<a href=\"/alias-outside\">Alias outside</a>\n\t\t\t\t<a href=\"/error\">Error</a>\n\t\t\t\t<a href=\"/meta-tags\">Meta-Tags</a>\n\t\t\t</nav>\n\t\t\t<label>\n\t\t\t\tURL:\n\t\t\t\t<input readonly value={url} ref={c => c && (c.size = c.value.length)} />\n\t\t\t</label>\n\t\t</header>\n\t);\n}\n"
+	]
+}
