@@ -1,3 +1,4 @@
+import { traceSourceLocation } from '../src/lib/sourcemaps/trace-sourcemap.js';
 import { decodeMappings, decodeVLQ, encodeVLQ } from '../src/lib/sourcemaps/vlq.js';
 
 describe('Source Maps', () => {
@@ -570,7 +571,7 @@ describe('Source Maps', () => {
 			return out;
 		}
 
-		it('should decode example mappings #3', () => {
+		it('should decode example mappings', () => {
 			/**
 			 * INPUT:
 			 * ```ts
@@ -629,6 +630,15 @@ describe('Source Maps', () => {
 				// ``
 				{ line: 6, column: 18, sourceIdx: 0, sourceLine: 6, sourceColumn: 1, sourceName: -1 }
 			]);
+		});
+	});
+
+	describe('traceSourceLocation', () => {
+		it('should decode example mappings', () => {
+			//
+			let result = { line: -1, column: -1 };
+			traceSourceLocation(mappings, 1, 2, result);
+			expect(result).toEqual({ line: 3, column: 5 });
 		});
 	});
 });
