@@ -222,3 +222,37 @@ export function encodeVLQ(value) {
 
 	return encoded;
 }
+
+/**
+ * Encode a decoded mappings array to Base64 VLQ source mappings.
+ * @param {number[]} mappings
+ * @returns {string}
+ */
+export function encodeMappings(mappings) {
+	let result = '';
+	let currentLine = 0;
+	for (let i = 0; i < mappings.length; i += 6) {
+		const line = mappings[i];
+
+		if (line > currentLine) {
+			result += ';';
+			currentLine++;
+		}
+
+		result += encodeVLQ(mappings[i + 1]); // mapped column
+
+		const sourceIdx = mappings[i + 2];
+		if (sourceIdx === -1) continue;
+
+		result += encodeVLQ(sourceIdx); // sourceIdx
+		result += encodeVLQ(mappings[i + 3]); // source line
+		result += encodeVLQ(mappings[i + 4]); // source column
+
+		const name = mappings[i + 5];
+		if (name !== -1) {
+			result += encodeVLQ(mappings[i + 5]); // name idx
+		}
+	}
+
+	return result;
+}

@@ -1,5 +1,4 @@
-import { traceSourceLocation } from '../src/lib/sourcemaps/trace-sourcemap.js';
-import { decodeMappings, decodeVLQ, encodeVLQ } from '../src/lib/sourcemaps/vlq.js';
+import { decodeMappings, decodeVLQ, encodeMappings, encodeVLQ } from '../src/lib/sourcemaps/vlq.js';
 
 describe('Source Maps', () => {
 	describe('encodeVLQ', () => {
@@ -527,6 +526,20 @@ describe('Source Maps', () => {
 		});
 	});
 
+	describe('encodeMappings', () => {
+		it('should encode mappings', () => {
+			expect(encodeMappings([0, 6, 1, 4, 6, -1])).toEqual('MCIM');
+			expect(
+				encodeMappings(
+					[
+						[0, 6, 1, 4, 6, -1],
+						[1, 0, 1, 4, 8, -1]
+					].flat()
+				)
+			).toEqual('MCIM;ACIQ');
+		});
+	});
+
 	describe('decodeVLQ', () => {
 		it('should decode VLQ', () => {
 			const result = { i: 0 };
@@ -630,15 +643,6 @@ describe('Source Maps', () => {
 				// ``
 				{ line: 6, column: 18, sourceIdx: 0, sourceLine: 6, sourceColumn: 1, sourceName: -1 }
 			]);
-		});
-	});
-
-	describe('traceSourceLocation', () => {
-		it('should decode example mappings', () => {
-			//
-			let result = { line: -1, column: -1 };
-			traceSourceLocation(mappings, 1, 2, result);
-			expect(result).toEqual({ line: 3, column: 5 });
 		});
 	});
 });
