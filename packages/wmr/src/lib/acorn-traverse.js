@@ -745,7 +745,7 @@ export function transform(
 	function getSourceMap() {
 		if (!map) {
 			map = out.generateMap({
-				includeContent: false,
+				includeContent: true,
 				// Must be set for most source map verifiers to work
 				source: sourceFileName || filename,
 				file: filename

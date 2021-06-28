@@ -105,7 +105,7 @@ export default function wmrPlugin({ hot = true, preact, sourcemap } = {}) {
 
 			return {
 				code: s.toString(),
-				map: sourcemap ? s.generateMap({ source: id, file: id, includeContent: false }) : null
+				map: sourcemap ? s.generateMap({ source: id, file: id, includeContent: true }) : null
 			};
 		}
 	};
