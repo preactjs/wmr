@@ -59,7 +59,9 @@ export default function htmPlugin({ include, production = true, sourcemap } = {}
 					]
 				],
 				filename,
-				sourceMaps: sourcemap,
+				// Default is to generate sourcemaps, needs an explicit
+				// boolean
+				sourceMaps: !!sourcemap,
 				generatorOpts: {
 					compact: production
 				},

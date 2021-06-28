@@ -290,7 +290,7 @@ export function createPluginContainer(plugins, opts = {}) {
 				logTransform(`${kl.dim(formatPath(id))} [${plugin.name}]`);
 				if (typeof result === 'object') {
 					code = result.code;
-					if (result.map !== null) {
+					if (result.map) {
 						// FIXME: To properly support source maps we need to
 						// collect the maps from each transformation step and
 						// merge them on top of each other.
