@@ -1,6 +1,6 @@
-import { decode, encode } from 'sourcemap-codec';
 import * as kl from 'kolorist';
 import { debug } from '../output-utils.js';
+import { decodeMappings, encodeMappings } from './vlq.js';
 
 const log = debug('sourcemap');
 
@@ -22,15 +22,13 @@ export function mergeAllSourceMaps(sourceMaps) {
 	/** @type {string | undefined} */
 	let file;
 
-	/** @type {import('sourcemap-codec').SourceMapMappings} */
+	/** @type {number[]} */
 	let mappings = [];
 
-	// TODO: Trace from top to bottom all the way through. There is no need to
-	// merge each map individually.
 	for (let i = 0; i < sourceMaps.length; i++) {
 		const map = sourceMaps[i];
 		if (!file && map.file) {
-			file = map.file.replace(/^\.\//, '');
+			file = map.file;
 		}
 
 		// Nobody seems to use this field
@@ -63,44 +61,12 @@ export function mergeAllSourceMaps(sourceMaps) {
 			}
 		});
 
-		const lines = decode(map.mappings);
-		if (mappings.length === 0) {
-			mappings = lines;
+		const parsedMappings = decodeMappings(map.mappings, map.sources.length);
+
+		if (i === 0) {
+			mappings = parsedMappings;
 		} else {
-			// TODO: Nesting all these loops seems pretty inefficient.
-			// Investigate a different data structure to hold mappings
-			// that is less allocation heavy.
-
-			// Merge mappings
-			for (let j = 0; j < lines.length; j++) {
-				const line = lines[j];
-
-				for (let s = 0; s < line.length; s++) {
-					const segment = line[s];
-					if (segment.length !== 4) {
-						debug(kl.yellow(`WARNING: Only segments with 4 entries are supported`));
-						continue;
-					}
-
-					const genCodeColumn = segment[0];
-					let sourceFileIndex = segment[1];
-					const sourceLine = segment[2];
-					const sourceColumn = segment[3];
-
-					// Correct source file index in merged file
-					const source = map.sources[sourceFileIndex];
-					sourceFileIndex = seenSources.get(source) || 0;
-					const oldLine = mappings[sourceLine];
-					if (oldLine.length) {
-					}
-
-					const prevLine = mappings[j];
-					console.log('  tracing', segment, prevLine);
-
-					const traced = null;
-					if (!traced) continue;
-				}
-			}
+			// Merge and rewrite sources
 		}
 	}
 
@@ -109,7 +75,7 @@ export function mergeAllSourceMaps(sourceMaps) {
 		version: 3,
 		// @ts-ignore
 		file,
-		mappings: encode(mappings),
+		mappings: encodeMappings(mappings),
 		names: Array.from(names),
 		sources,
 		sourceRoot: undefined,

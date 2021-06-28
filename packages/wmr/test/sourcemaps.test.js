@@ -1,3 +1,4 @@
+import { mergeAllSourceMaps } from '../src/lib/sourcemaps/merge-sourcemap.js';
 import { decodeMappings, decodeVLQ, encodeMappings, encodeVLQ } from '../src/lib/sourcemaps/vlq.js';
 
 describe('Source Maps', () => {
@@ -684,6 +685,108 @@ describe('Source Maps', () => {
 				// ``
 				{ line: 6, column: 18, sourceIdx: 0, sourceLine: 6, sourceColumn: 1, sourceName: -1 }
 			]);
+		});
+	});
+
+	describe('mergeAllSourceMaps', () => {
+		it('should merge source maps', () => {
+			/** @type {import("rollup").ExistingRawSourceMap} */
+			const step1 = {
+				version: 3,
+				file: 'foo.js',
+				mappings: encodeMappings(
+					[
+						[0, 0, 0, 4, 0, -1],
+						[0, 7, 0, 4, 7, -1],
+						[0, 15, 0, 4, 15, -1],
+						[0, 16, 0, 4, 16, -1],
+						[0, 18, 0, 4, 18, -1],
+						[0, 19, 0, 4, 19, -1],
+						[0, 20, 0, 4, 20, -1],
+						[0, 23, 0, 4, 28, -1],
+						[1, 2, 0, 5, 2, -1],
+						[1, 9, 0, 5, 9, -1],
+						[1, 12, 0, 5, 12, -1],
+						[1, 13, 0, 5, 13, -1],
+						[1, 16, 0, 5, 16, -1],
+						[1, 17, 0, 5, 17, -1],
+						[2, 0, 0, 6, 0, -1]
+					].flat()
+				),
+				names: [],
+				sources: ['foo.js'],
+				sourcesContent: [
+					[
+						'export interface Foo {',
+						'  foo: number;',
+						'}',
+						'',
+						'export function foo(foo: Foo) {',
+						'  return foo.foo;',
+						'}'
+					].join('\n')
+				]
+			};
+
+			/** @type {import("rollup").ExistingRawSourceMap} */
+			const step2 = {
+				version: 3,
+				file: 'foo.js',
+				mappings: '',
+				names: [],
+				sources: ['foo.js'],
+				sourcesContent: [
+					// prettier-ignore
+					[
+            "export function foo(foo) {",
+            "  return foo.foo;",
+            "}"
+          ].join("\n")
+				]
+			};
+
+			/** @type {import("rollup").ExistingRawSourceMap} */
+			const step3 = {
+				version: 3,
+				file: 'foo.js',
+				mappings: '',
+				names: [],
+				sources: ['foo.js'],
+				sourcesContent: [
+					// prettier-ignore
+					[
+            '"use strict";',
+            "exports.__esModule = true;",
+            "exports.foo = void 0;",
+            "",
+            " function foo(foo) {",
+            "  return foo.foo;",
+            "}",
+            "exports.foo = foo"
+          ].join("\n")
+				]
+			};
+
+			expect(mergeAllSourceMaps([step1, step2, step3])).toEqual({
+				version: 3,
+				file: 'foo.js',
+				names: [],
+				sources: ['foo.js'],
+				sourceRoot: undefined,
+				mappings: '',
+				sourcesContent: [
+					[
+						'export interface Foo {',
+						'  foo: number;',
+						'}',
+						'',
+						'export function foo(foo: Foo) {',
+						'  return foo.foo;',
+						'}'
+					].join('\n')
+				]
+			});
+			//
 		});
 	});
 });
