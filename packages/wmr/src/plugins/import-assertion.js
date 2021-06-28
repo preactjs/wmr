@@ -30,6 +30,9 @@ export function importAssertionPlugin() {
 				parse: this.parse,
 				plugins: [transformImportAssertions]
 			});
+
+			if (res.code === code) return;
+
 			return {
 				code: res.code,
 				map: res.map
