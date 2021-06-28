@@ -155,6 +155,16 @@ export default function wmrMiddleware(options) {
 			logCache(`delete: ${kl.cyan(file)}`);
 			WRITE_CACHE.delete(file);
 
+			// Delete source file if there is any
+			if (options.sourcemap) {
+				const sourceKey = file + '.map';
+
+				if (WRITE_CACHE.has(sourceKey)) {
+					logCache(`delete: ${kl.cyan(sourceKey)}`);
+					WRITE_CACHE.delete(sourceKey);
+				}
+			}
+
 			// We could be dealing with an asset
 			if (WRITE_CACHE.has(file + '?asset')) {
 				const cacheKey = file + '?asset';
@@ -281,6 +291,8 @@ export default function wmrMiddleware(options) {
 		let transform;
 		if (path === '/_wmr.js') {
 			transform = getWmrClient.bind(null);
+		} else if (/\.map$/.test(path)) {
+			transform = TRANSFORMS.asset;
 		} else if (queryParams.has('asset')) {
 			cacheKey += '?asset';
 			transform = TRANSFORMS.asset;
@@ -477,6 +489,8 @@ export const TRANSFORMS = {
 
 			const transformed = await NonRollup.transform(code, id);
 			code = transformed.code;
+			/** @type {import('rollup').ExistingRawSourceMap | null} */
+			let sourceMap = transformed.map;
 
 			code = await transformImports(code, id, {
 				resolveImportMeta(property) {
@@ -599,6 +613,10 @@ export const TRANSFORMS = {
 				}
 			});
 
+			if (sourceMap !== null) {
+				writeCacheFile(cacheKey + '.map', JSON.stringify(sourceMap));
+				code = `${code}\n//# sourceMappingURL=/${id.slice(2)}.map`;
+			}
 			writeCacheFile(cacheKey, code);
 
 			return code;
