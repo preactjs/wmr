@@ -475,7 +475,8 @@ export const TRANSFORMS = {
 				code = await fs.readFile(resolveFile(file, root, alias), 'utf-8');
 			}
 
-			code = await NonRollup.transform(code, id);
+			const transformed = await NonRollup.transform(code, id);
+			code = transformed.code;
 
 			code = await transformImports(code, id, {
 				resolveImportMeta(property) {

@@ -3,7 +3,7 @@ import { createHash } from 'crypto';
 import { promises as fs } from 'fs';
 import * as acorn from 'acorn';
 import * as kl from 'kolorist';
-import { debug, formatResolved, formatPath } from './output-utils.js';
+import { debug, formatResolved, formatPath, hasDebugFlag } from './output-utils.js';
 
 // Rollup respects "module", Node 14 doesn't.
 const cjsDefault = m => ('default' in m ? m.default : m);
@@ -279,6 +279,9 @@ export function createPluginContainer(plugins, opts = {}) {
 		 * @param {string} id
 		 */
 		async transform(code, id) {
+			/** @type {import('rollup').ExistingRawSourceMap | null} */
+			let sourceMap = null;
+
 			for (plugin of plugins) {
 				if (!plugin.transform) continue;
 				const result = await plugin.transform.call(ctx, code, id);
@@ -287,11 +290,26 @@ export function createPluginContainer(plugins, opts = {}) {
 				logTransform(`${kl.dim(formatPath(id))} [${plugin.name}]`);
 				if (typeof result === 'object') {
 					code = result.code;
+					if (result.map !== null) {
+						// FIXME: To properly support source maps we need to
+						// collect the maps from each transformation step and
+						// merge them on top of each other.
+						sourceMap = result.map;
+
+						if (hasDebugFlag()) {
+							if (sourceMap.sources.some(s => typeof s !== 'string')) {
+								logTransform(kl.yellow(`Invalid source map returned by plugin `) + kl.magenta(plugin.name));
+							}
+						}
+					}
 				} else {
+					if (code !== result) {
+						logTransform(kl.yellow(`Missing sourcemap result in transform() method of `) + kl.magenta(plugin.name));
+					}
 					code = result;
 				}
 			}
-			return code;
+			return { code, map: sourceMap };
 		},
 
 		/**
