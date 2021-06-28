@@ -8,9 +8,10 @@ import transformJsxToHtmLite from '../lib/transform-jsx-to-htm-lite.js';
  * @param {object} [options]
  * @param {RegExp | ((filename: string) => boolean)} [options.include] Controls whether files are processed to transform JSX.
  * @param {boolean} [options.production = true] If `false`, a simpler whitespace-preserving transform is used.
+ * @param {boolean} [options.sourcemap]
  * @returns {import('rollup').Plugin}
  */
-export default function htmPlugin({ include, production = true } = {}) {
+export default function htmPlugin({ include, production = true, sourcemap } = {}) {
 	return {
 		name: 'htm-plugin',
 
@@ -58,7 +59,7 @@ export default function htmPlugin({ include, production = true } = {}) {
 					]
 				],
 				filename,
-				sourceMaps: true,
+				sourceMaps: sourcemap,
 				generatorOpts: {
 					compact: production
 				},
