@@ -113,3 +113,12 @@ export function getServerAddresses(addr, { host, https }) {
  */
 const nodeSemver = process.versions.node.split('.');
 export const supportsSearchParams = +nodeSemver[0] > 12 || (+nodeSemver[0] === 12 && +nodeSemver[1] >= 19);
+
+/**
+ * Add a timestamp search parameter to an URL. This is usually done
+ * for cache busting.
+ * @param {string} url
+ * @param {number} time
+ * @returns {string}
+ */
+export const addTimestamp = (url, time) => url + (/\?/.test(url) ? '&' : '?') + 't=' + time;

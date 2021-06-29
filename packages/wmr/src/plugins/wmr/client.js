@@ -3,7 +3,8 @@ function log(...args) {
 	console.info('[wmr] ', ...args);
 }
 
-const strip = url => url.replace(/\?t=\d+/g, '');
+const strip = url => url.replace(/[?&]t=\d+/g, '');
+const addTimestamp = (url, time) => url + (/\?/.test(url) ? '&' : '?') + 't=' + time;
 
 const resolve = url => new URL(url, location.origin).href;
 let ws;
@@ -66,7 +67,7 @@ function handleMessage(e) {
 						for (const el of document.querySelectorAll('[src],[href]')) {
 							// @ts-ignore-next
 							const p = el.src ? 'src' : 'href';
-							if (el[p] && strip(resolve(el[p])) === url) el[p] = strip(el[p]) + '?t=' + Date.now();
+							if (el[p] && strip(resolve(el[p])) === url) el[p] = addTimestamp(strip(el[p]), Date.now());
 						}
 						return;
 					}
@@ -140,7 +141,7 @@ function update(url, date) {
 	const mod = getMod(url);
 	const dispose = Array.from(mod.dispose);
 	const accept = Array.from(mod.accept);
-	const newUrl = url + (/\?/.test(url) ? '&' : '?') + 't=' + date;
+	const newUrl = addTimestamp(url, date);
 	const p = mod.import ? mod.import(newUrl) : import(newUrl);
 
 	return p
@@ -193,7 +194,7 @@ export function style(filename, id) {
 	id = resolve(id || filename);
 	let node = styles.get(id);
 	if (node) {
-		node.href = filename + (/\?/.test(filename) ? '&' : '?') + 't=' + Date.now();
+		node.href = addTimestamp(filename, Date.now());
 	} else {
 		const node = document.createElement('link');
 		node.rel = 'stylesheet';
@@ -220,14 +221,14 @@ function updateStyleSheet(url) {
 	for (let i = 0; i < sheets.length; i++) {
 		if (sheets[i].href && strip(sheets[i].href) === url) {
 			// @ts-ignore
-			sheets[i].ownerNode.href = strip(url) + '?t=' + Date.now();
+			sheets[i].ownerNode.href = addTimestamp(strip(url), Date.now());
 			return true;
 		}
 
 		const found = traverseSheet(sheets[i], url);
 		if (found) {
 			const index = [].indexOf.call(found.parentStyleSheet.rules, found);
-			const urlStr = JSON.stringify(strip(url) + '?t=' + Date.now());
+			const urlStr = JSON.stringify(addTimestamp(strip(url), Date.now()));
 			const css = found.cssText.replace(/^(@import|@use)\s*(?:url\([^)]*\)|(['"]).*?\2)/, '$1 ' + urlStr);
 			found.parentStyleSheet.insertRule(css, index);
 			found.parentStyleSheet.deleteRule(index + 1);
