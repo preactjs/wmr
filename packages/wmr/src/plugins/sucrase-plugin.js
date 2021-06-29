@@ -56,9 +56,15 @@ export default function sucrasePlugin(opts = {}) {
 						: undefined
 				});
 
+				let sourceMap = null;
+				if (opts.sourcemap && result.sourceMap) {
+					result.sourceMap.sourcesContent = [code];
+					sourceMap = result.sourceMap;
+				}
+
 				return {
 					code: result.code,
-					map: opts.sourcemap ? result.sourceMap : null
+					map: sourceMap
 				};
 			} catch (err) {
 				// Enhance error with code frame
