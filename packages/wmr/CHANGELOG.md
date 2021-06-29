@@ -1,5 +1,56 @@
 # wmr
 
+## 3.2.0
+
+### Minor Changes
+
+- [`8aff0a1`](https://github.com/preactjs/wmr/commit/8aff0a157fe25597701809aa4cadcf37dd336a46) [#712](https://github.com/preactjs/wmr/pull/712) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Add support for logical assignment operators.
+
+  ```js
+  // "Or Or Equals" (or, the Mallet operator :wink:)
+  a ||= b;
+  a || (a = b);
+
+  // "And And Equals"
+  a &&= b;
+  a && (a = b);
+
+  // "QQ Equals"
+  a ??= b;
+  a ?? (a = b);
+  ```
+
+* [`71ef3aa`](https://github.com/preactjs/wmr/commit/71ef3aae680230d39f7391e576659ce2af576518) [#710](https://github.com/preactjs/wmr/pull/710) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Add support for private class fields which is a recent addition to JavaScript (currently Stage 3). We're adding it because it's supported in all major browsers natively.
+
+  ```js
+  class Foo {
+  	#hi() {
+  		console.log('hellow');
+  	}
+  	greet() {
+  		this.#hi();
+  	}
+  }
+  new Foo().greet();
+  ```
+
+- [`d49c674`](https://github.com/preactjs/wmr/commit/d49c67464dfc5fccd3f6df6b6bcb98806e744009) [#717](https://github.com/preactjs/wmr/pull/717) Thanks [@rschristian](https://github.com/rschristian)! - Adds new config option for specifying additional links to prerender in your WMR configuration file.
+
+  ```js
+  // wmr config
+  import { defineConfig } from 'wmr';
+
+  export default defineConfig({
+  	customRoutes: ['/foo/bar', '/my-other-route', '/rss.xml']
+  });
+  ```
+
+### Patch Changes
+
+- [`21b467e`](https://github.com/preactjs/wmr/commit/21b467e8be17ca044dbf92009e603bf9256bf7df) [#719](https://github.com/preactjs/wmr/pull/719) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix HMR updates not bubbled through proxy modules. This resolves an issue where the page was not updated when a new CSS class was added to a CSS-Module or Sass-Module.
+
+* [`34ce488`](https://github.com/preactjs/wmr/commit/34ce488a05e5530e05879a928568320f18d76b57) [#713](https://github.com/preactjs/wmr/pull/713) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix missing version on `--version` argument
+
 ## 3.1.1
 
 ### Patch Changes
