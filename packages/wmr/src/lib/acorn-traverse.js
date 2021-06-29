@@ -3,6 +3,7 @@ import * as jsxWalk from 'acorn-jsx-walk';
 import MagicString from 'magic-string';
 import * as astringLib from 'astring';
 import { codeFrame } from './output-utils.js';
+import { posix } from 'path';
 
 /**
  * @fileoverview
@@ -748,7 +749,7 @@ export function transform(
 				includeContent: true,
 				// Must be set for most source map verifiers to work
 				source: sourceFileName || filename,
-				file: filename
+				file: posix.basename(sourceFileName || filename || '')
 			});
 		}
 		return map;
