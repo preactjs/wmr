@@ -27,7 +27,18 @@ describe('sourcemaps', () => {
 				file: './index.ts',
 				mappings: 'AAAA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA',
 				names: [],
-				sources: ['./index.ts'],
+				sources: ['/index.ts'],
+				sourcesContent: [
+					`export interface Foo {
+	foo: string;
+}
+
+function getFoo(foo: Foo) {
+	return foo.foo;
+}
+
+document.getElementById('out').textContent = getFoo({ foo: 'it works' });\n`
+				],
 				version: 3
 			});
 		});
@@ -45,7 +56,7 @@ describe('sourcemaps', () => {
 				file: 'index.jsx',
 				mappings: 'AAAA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;',
 				names: [],
-				sources: ['index.jsx'],
+				sources: ['/index.jsx'],
 				sourcesContent: [
 					`import { html as $$html } from 'htm/preact';
 import { render } from 'preact';
