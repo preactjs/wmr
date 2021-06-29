@@ -296,11 +296,16 @@ export function createPluginContainer(plugins, opts = {}) {
 						// merge them on top of each other.
 						sourceMap = result.map;
 
-						if (hasDebugFlag()) {
-							if (sourceMap.sources.some(s => typeof s !== 'string')) {
+						// Normalize source map sources URLs for the browser
+						sourceMap.sources = sourceMap.sources.map(s => {
+							if (typeof s === 'string') {
+								return `/${posix.normalize(s)}`;
+							} else if (hasDebugFlag()) {
 								logTransform(kl.yellow(`Invalid source map returned by plugin `) + kl.magenta(plugin.name));
 							}
-						}
+
+							return s;
+						});
 					}
 				} else {
 					if (code !== result) {
