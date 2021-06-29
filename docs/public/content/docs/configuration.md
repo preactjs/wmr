@@ -124,6 +124,22 @@ The host to use when launching WMR in development mode (`start`) or as a file se
 
 The host to use when launching WMR in development mode (`start`) or as a file server (`serve`).
 
+### customRoutes
+
+- Type: `string[]`
+- Default: `[]`
+
+Add additional routes to prerender manually that cannot be discovered through the automatic [prerendering](./prerendering) link discovery process.
+
+```js
+// wmr config
+import { defineConfig } from 'wmr';
+
+export default defineConfig({
+	customRoutes: ['/foo/bar', '/my-other-route', '/rss.xml']
+});
+```
+
 ### visualize
 
 - Type: `boolean`

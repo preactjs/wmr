@@ -1,3 +1,3 @@
 export default {
-	prerenderLinks: ['/non-existent-link']
+	customRoutes: ['/non-existent-link']
 };
