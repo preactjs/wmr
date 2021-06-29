@@ -732,6 +732,17 @@ describe('production', () => {
 			expect(instance.output.join('\n')).toMatch(/^\s+at\s\w+/gm);
 			expect(code).toBe(1);
 		});
+
+		it('config should support supplying additional links to prerender', async () => {
+			await loadFixture('prerender-additional-links', env);
+			instance = await runWmr(env.tmp.path, 'build', '--prerender');
+			const code = await instance.done;
+			console.info(instance.output.join('\n'));
+			expect(instance.output.join('\n')).toMatch(/Prerendered 2 pages/i);
+			expect(code).toBe(0);
+
+			expect(await fs.access(path.join(env.tmp.path, 'dist', 'non-existent-link', 'index.html'))).toBeUndefined();
+		});
 	});
 
 	describe('Code Splitting', () => {

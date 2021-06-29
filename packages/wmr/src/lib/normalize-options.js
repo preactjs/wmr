@@ -28,6 +28,7 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 	options.middleware = [];
 	options.features = { preact: true };
 	options.alias = options.alias || options.aliases || {};
+	options.prerenderLinks = options.prerenderLinks || [];
 
 	// `wmr` / `wmr start` is a development command.
 	// `wmr build` / `wmr serve` are production commands.
