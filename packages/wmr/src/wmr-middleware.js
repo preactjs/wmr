@@ -10,6 +10,7 @@ import { debug, formatPath } from './lib/output-utils.js';
 import { getPlugins } from './lib/plugins.js';
 import { watch } from './lib/fs-watcher.js';
 import { matchAlias, resolveAlias } from './lib/aliasing.js';
+import { addTimestamp } from './lib/net-utils.js';
 
 const NOOP = () => {};
 
@@ -577,7 +578,7 @@ export const TRANSFORMS = {
 					const specModule = moduleGraph.get(modSpec);
 					specModule.dependents.add(graphId);
 					if (specModule.stale) {
-						return spec + `?t=${Date.now()}`;
+						return addTimestamp(spec, Date.now());
 					}
 
 					if (originalSpec !== spec) {
