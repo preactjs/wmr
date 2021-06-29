@@ -615,7 +615,7 @@ export const TRANSFORMS = {
 
 			if (sourceMap !== null) {
 				writeCacheFile(cacheKey + '.map', JSON.stringify(sourceMap));
-				code = `${code}\n//# sourceMappingURL=/${id.slice(2)}.map`;
+				code = `${code}\n//# sourceMappingURL=${basename(id)}.map`;
 			}
 			writeCacheFile(cacheKey, code);
 

@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import MagicString from 'magic-string';
+import path from 'path';
 import { ESM_KEYWORDS } from '../fast-cjs-plugin.js';
 
 const BYPASS_HMR = process.env.BYPASS_HMR === 'true';
@@ -105,7 +106,7 @@ export default function wmrPlugin({ hot = true, preact, sourcemap } = {}) {
 
 			return {
 				code: s.toString(),
-				map: sourcemap ? s.generateMap({ source: id, file: id, includeContent: true }) : null
+				map: sourcemap ? s.generateMap({ source: id, file: path.posix.basename(id), includeContent: true }) : null
 			};
 		}
 	};
