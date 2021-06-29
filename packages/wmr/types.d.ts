@@ -50,6 +50,7 @@ declare module 'wmr' {
 		features: Features;
 		visualize: boolean;
 		debug: boolean;
+		prerenderLinks: string[];
 	}
 
 	export type BuildError = RollupError & { clientMessage?: string };

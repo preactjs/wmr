@@ -6,7 +6,7 @@ import { Worker } from 'worker_threads';
  * @property {string} [out = '.cache']
  * @property {string} publicPath
  */
-export function prerender({ cwd = '.', out = '.cache', publicPath }) {
+export function prerender({ cwd = '.', out = '.cache', publicPath, prerenderLinks }) {
 	let w;
 	try {
 		w = new Worker(
@@ -15,7 +15,7 @@ export function prerender({ cwd = '.', out = '.cache', publicPath }) {
 				.catch(err => require('worker_threads').parentPort.postMessage([0,err && err.stack || err+'']))`,
 			{
 				eval: true,
-				workerData: { cwd, out, publicPath },
+				workerData: { cwd, out, publicPath, prerenderLinks },
 				// execArgv: ['--experimental-modules'],
 				stderr: true
 			}
@@ -45,7 +45,7 @@ export function prerender({ cwd = '.', out = '.cache', publicPath }) {
 	});
 }
 
-async function workerCode({ cwd, out, publicPath }) {
+async function workerCode({ cwd, out, publicPath, prerenderLinks }) {
 	/*global globalThis*/
 
 	const path = require('path');
@@ -129,8 +129,8 @@ async function workerCode({ cwd, out, publicPath }) {
 	}
 	// We start by pre-rendering the homepage.
 	// Links discovered during pre-rendering get pushed into the list of routes.
-	const seen = new Set(['/']);
-	let routes = [{ url: '/' }];
+	const seen = new Set(['/', ...prerenderLinks]);
+	let routes = [...seen].map(link => ({ url: link }));
 
 	for (const route of routes) {
 		if (!route.url) continue;
