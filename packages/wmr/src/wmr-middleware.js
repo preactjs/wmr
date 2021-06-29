@@ -564,7 +564,11 @@ export const TRANSFORMS = {
 						}
 					}
 
-					const modSpec = spec.replace(/^\.?\.\//, '');
+					// Ensure files are POSIX-style relative for watcher to pick up.
+					const modSpec =
+						/^\.\//.test(spec) && importer
+							? posix.join(posix.dirname(importer), posix.basename(spec))
+							: spec.replace(/^\.?\.\//, '');
 					mod.dependencies.add(modSpec);
 					if (!moduleGraph.has(modSpec)) {
 						moduleGraph.set(modSpec, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
