@@ -59,6 +59,23 @@ describe('CSS', () => {
 			});
 		});
 
+		it('should hot reload a module css-file when new class is added', async () => {
+			await loadFixture('css-module-hmr', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			await withLog(instance.output, async () => {
+				const h1 = await page.$('h1');
+				expect(await env.page.evaluate(e => getComputedStyle(e).color, h1)).toBe('rgb(0, 0, 0)');
+
+				await updateFile(env.tmp.path, 'styles/foo.module.css', () => `.foo { color: red; }`);
+
+				await waitForPass(async () => {
+					expect(await env.page.evaluate(e => getComputedStyle(e).color, h1)).toBe('rgb(255, 0, 0)');
+				});
+			});
+		});
+
 		it('should warn on CSS modules with reserved class names', async () => {
 			await loadFixture('css-module-reserved', env);
 			instance = await runWmrFast(env.tmp.path);

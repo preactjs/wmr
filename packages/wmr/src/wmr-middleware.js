@@ -24,6 +24,7 @@ const logCache = debug('wmr:cache');
  */
 const WRITE_CACHE = new Map();
 
+/** @type {Map<string, {dependencies: Set<string>, dependents: Set<string>, acceptingUpdates: boolean, stale?: boolean}>} */
 export const moduleGraph = new Map();
 
 /**
@@ -161,7 +162,22 @@ export default function wmrMiddleware(options) {
 				WRITE_CACHE.delete(cacheKey);
 			}
 
+			// ...or a proxy module
+			if (WRITE_CACHE.has(file + '?module')) {
+				const cacheKey = file + '?module';
+				logCache(`delete: ${kl.cyan(cacheKey)}`);
+				WRITE_CACHE.delete(cacheKey);
+			}
+
 			if (!pendingChanges.size) timeout = setTimeout(flushChanges, 60);
+
+			if (moduleGraph.has(file + '?module')) {
+				pendingChanges.add('/' + file + '?module');
+
+				// Update files relying on the proxy module so that they
+				// re-evaluate CSS module class names.
+				bubbleUpdates(file + '?module');
+			}
 
 			if (/\.(css|s[ac]ss)$/.test(file)) {
 				pendingChanges.add('/' + file);
@@ -567,9 +583,7 @@ export const TRANSFORMS = {
 
 					// Ensure files are POSIX-style relative for watcher to pick up.
 					const modSpec =
-						/^\.\//.test(spec) && importer
-							? posix.join(posix.dirname(importer), posix.basename(spec))
-							: spec.replace(/^\.?\.\//, '');
+						/^\.\//.test(spec) && importer ? posix.join(posix.dirname(importer), spec) : spec.replace(/^\.?\.\//, '');
 					mod.dependencies.add(modSpec);
 					if (!moduleGraph.has(modSpec)) {
 						moduleGraph.set(modSpec, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
