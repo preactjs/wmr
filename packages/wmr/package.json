@@ -8,7 +8,7 @@
 		"build": "rollup -c",
 		"prepublishOnly": "yarn build",
 		"prepack": "node --experimental-modules ./src/lib/~publish.js",
-		"postpack": "mv -f .package.json package.json",
+		"postpack": "mv -f .package.json package.json && mv -f .types.d.ts types.d.ts",
 		"test-e2e": "cross-env JEST_PUPPETEER_CONFIG=jest-puppeteer.config.cjs jest",
 		"test-prod": "cross-env PRODUCTION_BUILD=true JEST_PUPPETEER_CONFIG=jest-puppeteer.config.cjs jest",
 		"test": "npm run test-e2e",

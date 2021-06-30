@@ -1,12 +1,14 @@
+/// <reference types="preact" />
+
 // Declarations used by plugins and WMR itself
 
 declare module 'wmr' {
 	import { Plugin as RollupPlugin, OutputOptions, RollupError, RollupWatcherEvent } from 'rollup';
-	import { Middleware } from 'polka';
+	import { Middleware as PolkaMiddleware } from 'polka';
 
 	export type Mode = 'start' | 'serve' | 'build';
 
-	export { Middleware };
+	export type Middleware = PolkaMiddleware;
 
 	export type OutputOption = OutputOptions | ((opts: OutputOptions) => OutputOptions);
 
