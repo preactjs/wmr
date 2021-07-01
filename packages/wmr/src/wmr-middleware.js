@@ -430,17 +430,8 @@ export const TRANSFORMS = {
 		}
 
 		const filename = resolve(root, file);
-		let stats;
-		try {
-			stats = await fs.stat(filename);
-		} catch (e) {
-			if (e.code === 'ENOENT') {
-				res.writeHead(404);
-				res.end();
-				return;
-			}
-			throw e;
-		}
+		const stats = await fs.stat(filename);
+
 		if (stats.isDirectory()) {
 			res.writeHead(403);
 			res.end();
