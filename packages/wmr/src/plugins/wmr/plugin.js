@@ -28,7 +28,9 @@ const wmrProdClientPromise = fs.readFile(new URL('./client-prod.js', __filename)
 
 export function getWmrClient({ hot = true } = {}) {
 	if (BYPASS_HMR) hot = false;
-	return hot ? wmrClientPromise : wmrProdClientPromise;
+	return (hot ? wmrClientPromise : wmrProdClientPromise).then(r => {
+		return { id: './_wmr.js', data: r };
+	});
 }
 
 /**

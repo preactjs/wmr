@@ -270,11 +270,6 @@ export default function wmrMiddleware(options) {
 		// case is CSS-Modules.
 		const isModule = queryParams.has('module');
 
-		let type = isModule ? 'application/javascript;charset=utf-8' : getMimeType(file);
-		if (type) {
-			res.setHeader('Content-Type', type);
-		}
-
 		log(`${kl.cyan(formatPath(path))} -> ${kl.dim(id)} file: ${kl.dim(file)}`);
 
 		/** @type {(ctx: Context) => Result | Promise<Result>} */
@@ -284,10 +279,8 @@ export default function wmrMiddleware(options) {
 		} else if (queryParams.has('asset')) {
 			cacheKey += '?asset';
 			transform = TRANSFORMS.asset;
-		} else if (prefix || hasIdPrefix || isModule || /\.([mc]js|[tj]sx?)$/.test(file) || /\.(css|s[ac]ss)$/.test(file)) {
-			transform = TRANSFORMS.js;
 		} else {
-			transform = TRANSFORMS.generic;
+			transform = TRANSFORMS.js;
 		}
 
 		try {
@@ -296,6 +289,7 @@ export default function wmrMiddleware(options) {
 				req,
 				res,
 				id,
+				isModule,
 				file,
 				path,
 				prefix,
@@ -310,28 +304,43 @@ export default function wmrMiddleware(options) {
 			if (result === false) return next();
 
 			// return a value to use it as the response:
-			if (result != null) {
+			if (result != null && result.data != null) {
+				let type =
+					isModule || /(\.[tj]sx?|\.json)$/.test(result.id)
+						? 'application/javascript;charset=utf-8'
+						: getMimeType(result.id) || 'text/plain';
+				res.setHeader('Content-Type', type);
+
+				let data = result.data;
+
 				// Grab the asset id out of the compiled js
 				// TODO: Wire this up into Style-Plugin by passing the
 				// import type through resolution somehow
-				if (!isModule && /\.(css|s[ac]ss)$/.test(file) && typeof result === 'string') {
-					const match = result.match(/style\(["']\/([^"']+?)["'].*?\);/m);
+				if (!isModule && /\.(css|s[ac]ss)$/.test(file) && typeof data === 'string') {
+					const match = data.match(/style\(["']\/([^"']+?)["'].*?\);/m);
 
-					if (match) {
-						if (WRITE_CACHE.has(match[1])) {
-							result = /** @type {string} */ WRITE_CACHE.get(match[1]);
-							res.setHeader('Content-Type', 'text/css;charset=utf-8');
-						}
+					let cacheKey = '';
+					if (match) cacheKey = match[1];
+					// When it was requested from an HTML file the ROLLUP
+					// asset URLs are not processed for some reason.
+					if (/style\(import\.meta\.ROLLUP_FILE_URL/.test(data)) {
+						const relativeId = posix.normalize(result.id);
+						cacheKey = relativeId + '?asset';
+					}
+
+					if (cacheKey !== '' && WRITE_CACHE.has(cacheKey)) {
+						data = /** @type {string} */ WRITE_CACHE.get(cacheKey);
+						res.setHeader('Content-Type', 'text/css;charset=utf-8');
 					}
 				}
 
 				log(`<-- ${kl.cyan(formatPath(id))} as ${kl.dim('' + res.getHeader('Content-Type'))}`);
 				const time = Date.now() - start;
 				res.writeHead(200, {
-					'Content-Length': Buffer.byteLength(result, 'utf-8'),
+					'Content-Length': Buffer.byteLength(data, 'utf-8'),
 					'Server-Timing': `${transform.name};dur=${time}`
 				});
-				res.end(result);
+				res.end(data);
 			}
 		} catch (e) {
 			// `throw null` also skips handling
@@ -410,6 +419,7 @@ function resolveFile(file, cwd, alias) {
  * @property {string} root public directory, including ./public if detected
  * @property {string} out output directory
  * @property {Record<string, string>} alias
+ * @property {boolean} isModule
  * @property {string} cacheKey Key for write cache
  * @property {InstanceType<import('http')['IncomingMessage']>} req HTTP Request object
  * @property {InstanceType<import('http')['ServerResponse']>} res HTTP Response object
@@ -418,7 +428,7 @@ function resolveFile(file, cwd, alias) {
 const logJsTransform = debug('wmr:transform.js');
 const logAssetTransform = debug('wmr:transform.asset');
 
-/** @typedef {string|false|Buffer|Uint8Array|null|void} Result */
+/** @typedef {{id: string, data: string|false|Buffer|Uint8Array|null|void} | void | false} Result */
 
 /** @type {{ [key: string]: (ctx: Context) => Result|Promise<Result> }} */
 export const TRANSFORMS = {
@@ -426,7 +436,7 @@ export const TRANSFORMS = {
 	async asset({ file, root, req, res, id, cacheKey }) {
 		if (WRITE_CACHE.has(cacheKey)) {
 			logAssetTransform(`<-- ${kl.cyan(formatPath(id))} [cached]`);
-			return WRITE_CACHE.get(cacheKey);
+			return { id, data: WRITE_CACHE.get(cacheKey) };
 		}
 
 		const filename = resolve(root, file);
@@ -459,14 +469,12 @@ export const TRANSFORMS = {
 	},
 
 	// Handle individual JavaScript modules
-	async js({ id, file, prefix, res, root, out, NonRollup, req, alias, cacheKey }) {
+	async js({ id, file, prefix, root, NonRollup, alias, cacheKey, isModule }) {
 		let code;
 		try {
-			res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
-
 			if (WRITE_CACHE.has(id)) {
 				logJsTransform(`<-- ${kl.cyan(formatPath(id))} [cached]`);
-				return WRITE_CACHE.get(id);
+				return { id, data: WRITE_CACHE.get(id) };
 			}
 
 			const resolved = await NonRollup.resolveId(id);
@@ -486,126 +494,132 @@ export const TRANSFORMS = {
 
 			code = await NonRollup.transform(code, id);
 
-			code = await transformImports(code, id, {
-				resolveImportMeta(property) {
-					return NonRollup.resolveImportMeta(property);
-				},
-				async resolveId(spec, importer) {
-					if (spec === 'wmr') return '/_wmr.js';
-					if (/^(data:|https?:|\/\/)/.test(spec)) {
-						logJsTransform(`${kl.cyan(formatPath(spec))} [external]`);
-						return spec;
-					}
-					let graphId = importer.replace(/^\.?\.?\//, '');
-					if (!moduleGraph.has(graphId)) {
-						moduleGraph.set(graphId, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
-					}
-					const mod = moduleGraph.get(graphId);
-					if (mod.hasErrored) mod.hasErrored = false;
+			// Post transformation phase where we'll search the module
+			// for dependencies and update our module graph.
 
-					// const resolved = await NonRollup.resolveId(spec, importer);
-					let originalSpec = spec;
-					const resolved = await NonRollup.resolveId(spec, file);
-					if (resolved) {
-						spec = typeof resolved == 'object' ? resolved.id : resolved;
-						if (/^(\/|\\|[a-z]:\\)/i.test(spec)) {
-							spec = relative(dirname(file), spec).split(sep).join(posix.sep);
-							if (!/^\.?\.?\//.test(spec)) {
-								spec = './' + spec;
-							}
-						}
-						if (typeof resolved == 'object' && resolved.external) {
-							if (/^(data|https?):/.test(spec)) {
-								logJsTransform(`${kl.cyan(formatPath(spec))} [external]`);
-								return spec;
-							}
-
-							spec = relative(root, spec).split(sep).join(posix.sep);
-							if (!/^(\/|[\w-]+:)/.test(spec)) spec = `/${spec}`;
+			// JavaScript post transform
+			if (/\.[tj]sx?$/.test(id) || isModule) {
+				code = await transformImports(code, id, {
+					resolveImportMeta(property) {
+						return NonRollup.resolveImportMeta(property);
+					},
+					async resolveId(spec, importer) {
+						if (spec === 'wmr') return '/_wmr.js';
+						if (/^(data:|https?:|\/\/)/.test(spec)) {
+							logJsTransform(`${kl.cyan(formatPath(spec))} [external]`);
 							return spec;
 						}
-					}
-
-					// \0abc:foo --> /@abcF/foo
-					spec = spec.replace(/^\0?([a-z-]+):(.+)$/, (s, prefix, spec) => {
-						// \0abc:/abs/disk/path --> /@abc/cwd-relative-path
-						if (spec[0] === '/' || spec[0] === sep) {
-							spec = relative(root, spec).split(sep).join(posix.sep);
+						let graphId = importer.replace(/^\.?\.?\//, '');
+						if (!moduleGraph.has(graphId)) {
+							moduleGraph.set(graphId, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
 						}
-						// Retain bare specifiers when serializing to url
-						else if (!/^\.?\.\//.test(spec)) {
-							spec = `@id/${spec}`;
-						}
+						const mod = moduleGraph.get(graphId);
+						if (mod.hasErrored) mod.hasErrored = false;
 
-						return '/@' + prefix + '/' + spec;
-					});
+						// const resolved = await NonRollup.resolveId(spec, importer);
+						let originalSpec = spec;
+						const resolved = await NonRollup.resolveId(spec, file);
+						if (resolved) {
+							spec = typeof resolved == 'object' ? resolved.id : resolved;
+							if (/^(\/|\\|[a-z]:\\)/i.test(spec)) {
+								spec = relative(dirname(file), spec).split(sep).join(posix.sep);
+								if (!/^\.?\.?\//.test(spec)) {
+									spec = './' + spec;
+								}
+							}
+							if (typeof resolved == 'object' && resolved.external) {
+								if (/^(data|https?):/.test(spec)) {
+									logJsTransform(`${kl.cyan(formatPath(spec))} [external]`);
+									return spec;
+								}
 
-					// foo.css --> foo.css?module (import of CSS Modules proxy module)
-					if (spec.match(/\.(css|s[ac]ss)$/)) spec += '?module';
-
-					// If file resolves outside of root it may be an aliased path.
-					if (spec.startsWith('.')) {
-						const aliased = matchAlias(alias, posix.resolve(posix.dirname(file), spec));
-						if (aliased) spec = aliased;
-					}
-
-					if (!spec.startsWith('/@alias/') && !/^\0?\.?\.?[/\\]/.test(spec)) {
-						// Check if the spec is an alias
-						const aliased = matchAlias(alias, spec);
-						if (aliased) spec = aliased;
-
-						if (!spec.startsWith('/@alias/')) {
-							// Check if this is a virtual module path from a plugin. If
-							// no plugin loads the id, then we know that the bare specifier
-							// must refer to an npm plugin.
-							// TODO: Cache the result to avoid having to load an id twice.
-							const res = await NonRollup.load(spec);
-
-							if (res === null) {
-								// Bare specifiers are npm packages:
-								const meta = normalizeSpecifier(spec);
-
-								// // Option 1: resolve all package verions (note: adds non-trivial delay to imports)
-								// await resolvePackageVersion(meta);
-								// // Option 2: omit package versions that resolve to the root
-								// // if ((await resolvePackageVersion({ module: meta.module, version: '' })).version === meta.version) {
-								// // 	meta.version = '';
-								// // }
-								// spec = `/@npm/${meta.module}${meta.version ? '@' + meta.version : ''}${meta.path ? '/' + meta.path : ''}`;
-
-								// Option 3: omit root package versions
-								spec = `/@npm/${meta.module}${meta.path ? '/' + meta.path : ''}`;
-							} else {
-								spec = `/@id/${spec}`;
+								spec = relative(root, spec).split(sep).join(posix.sep);
+								if (!/^(\/|[\w-]+:)/.test(spec)) spec = `/${spec}`;
+								return spec;
 							}
 						}
-					}
 
-					// Ensure files are POSIX-style relative for watcher to pick up.
-					const modSpec =
-						/^\.\//.test(spec) && importer ? posix.join(posix.dirname(importer), spec) : spec.replace(/^\.?\.\//, '');
-					mod.dependencies.add(modSpec);
-					if (!moduleGraph.has(modSpec)) {
-						moduleGraph.set(modSpec, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
-					}
+						// \0abc:foo --> /@abcF/foo
+						spec = spec.replace(/^\0?([a-z-]+):(.+)$/, (s, prefix, spec) => {
+							// \0abc:/abs/disk/path --> /@abc/cwd-relative-path
+							if (spec[0] === '/' || spec[0] === sep) {
+								spec = relative(root, spec).split(sep).join(posix.sep);
+							}
+							// Retain bare specifiers when serializing to url
+							else if (!/^\.?\.\//.test(spec)) {
+								spec = `@id/${spec}`;
+							}
 
-					const specModule = moduleGraph.get(modSpec);
-					specModule.dependents.add(graphId);
-					if (specModule.stale) {
-						return addTimestamp(spec, Date.now());
-					}
+							return '/@' + prefix + '/' + spec;
+						});
 
-					if (originalSpec !== spec) {
-						logJsTransform(`${kl.cyan(formatPath(originalSpec))} -> ${kl.dim(formatPath(spec))}`);
-					}
+						// foo.css --> foo.css?module (import of CSS Modules proxy module)
+						if (spec.match(/\.(css|s[ac]ss)$/)) spec += '?module';
 
-					return spec;
-				}
-			});
+						// If file resolves outside of root it may be an aliased path.
+						if (spec.startsWith('.')) {
+							const aliased = matchAlias(alias, posix.resolve(posix.dirname(file), spec));
+							if (aliased) spec = aliased;
+						}
+
+						if (!spec.startsWith('/@alias/') && !/^\0?\.?\.?[/\\]/.test(spec)) {
+							// Check if the spec is an alias
+							const aliased = matchAlias(alias, spec);
+							if (aliased) spec = aliased;
+
+							if (!spec.startsWith('/@alias/')) {
+								// Check if this is a virtual module path from a plugin. If
+								// no plugin loads the id, then we know that the bare specifier
+								// must refer to an npm plugin.
+								// TODO: Cache the result to avoid having to load an id twice.
+								const res = await NonRollup.load(spec);
+
+								if (res === null) {
+									// Bare specifiers are npm packages:
+									const meta = normalizeSpecifier(spec);
+
+									// // Option 1: resolve all package verions (note: adds non-trivial delay to imports)
+									// await resolvePackageVersion(meta);
+									// // Option 2: omit package versions that resolve to the root
+									// // if ((await resolvePackageVersion({ module: meta.module, version: '' })).version === meta.version) {
+									// // 	meta.version = '';
+									// // }
+									// spec = `/@npm/${meta.module}${meta.version ? '@' + meta.version : ''}${meta.path ? '/' + meta.path : ''}`;
+
+									// Option 3: omit root package versions
+									spec = `/@npm/${meta.module}${meta.path ? '/' + meta.path : ''}`;
+								} else {
+									spec = `/@id/${spec}`;
+								}
+							}
+						}
+
+						// Ensure files are POSIX-style relative for watcher to pick up.
+						const modSpec =
+							/^\.\//.test(spec) && importer ? posix.join(posix.dirname(importer), spec) : spec.replace(/^\.?\.\//, '');
+						mod.dependencies.add(modSpec);
+						if (!moduleGraph.has(modSpec)) {
+							moduleGraph.set(modSpec, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
+						}
+
+						const specModule = moduleGraph.get(modSpec);
+						specModule.dependents.add(graphId);
+						if (specModule.stale) {
+							return addTimestamp(spec, Date.now());
+						}
+
+						if (originalSpec !== spec) {
+							logJsTransform(`${kl.cyan(formatPath(originalSpec))} -> ${kl.dim(formatPath(spec))}`);
+						}
+
+						return spec;
+					}
+				});
+			}
 
 			writeCacheFile(cacheKey, code);
 
-			return code;
+			return { id: resolvedId, data: code };
 		} catch (e) {
 			const mod = moduleGraph.get(id);
 			if (mod) {
@@ -613,37 +627,6 @@ export const TRANSFORMS = {
 			}
 			throw e;
 		}
-	},
-
-	// Falls through to sirv
-	async generic(ctx) {
-		// Serve ~/200.html fallback for requests with no extension
-		if (!/\.[a-z]+$/gi.test(ctx.path)) {
-			const fallback = resolve(ctx.root, '200.html');
-			let use200 = false;
-			try {
-				const hasFile = await fs.lstat(ctx.file).catch(() => false);
-				use200 = !hasFile && !!(await fs.lstat(fallback));
-			} catch (e) {}
-			if (use200) {
-				ctx.file = fallback;
-				const mime = getMimeType(ctx.file) || 'text/html;charset=utf-8';
-				ctx.res.setHeader('Content-Type', mime);
-				return TRANSFORMS.asset(ctx);
-			}
-		}
-
-		return false;
-		// return new Promise((resolve, reject) => {
-		// 	if (file.endsWith('/') || !file.match(/[^/]\.[a-z0-9]+$/gi)) {
-		// 		file = file.replace(/\/$/, '') + '/index.html';
-		// 	}
-		// 	const fr = createReadStream(file);
-		// 	// fr.once('data', () => res.writeHead(200));
-		// 	fr.once('data', () => resolve());
-		// 	fr.on('error', reject);
-		// 	fr.pipe(res);
-		// });
 	}
 };
 

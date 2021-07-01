@@ -23,6 +23,7 @@ import visualizer from 'rollup-plugin-visualizer';
 import { defaultLoaders } from './default-loaders.js';
 import { importAssertionPlugin } from '../plugins/import-assertion.js';
 import { acornDefaultPlugins } from './acorn-default-plugins.js';
+import { htmlResolvePlugin } from '../plugins/html-resolve-plugin.js';
 
 /**
  * @param {import("wmr").Options} options
@@ -40,6 +41,7 @@ export function getPlugins(options) {
 	return [
 		acornDefaultPlugins(),
 		...plugins.slice(0, split),
+		htmlResolvePlugin({ root }),
 		production && htmlEntriesPlugin({ root, publicPath }),
 		externalUrlsPlugin(),
 		nodeBuiltinsPlugin({ production }),
