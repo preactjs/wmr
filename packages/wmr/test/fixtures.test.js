@@ -123,8 +123,10 @@ describe('fixtures', () => {
 		it('should print warning for missing index.html file in public dir', async () => {
 			await loadFixture('empty', env);
 			instance = await runWmrFast(env.tmp.path);
-			await waitForMessage(instance.output, 'missing "index.html" file');
-			expect(await getOutput(env, instance)).toMatch(`Not Found`);
+			await withLog(instance.output, async () => {
+				await waitForMessage(instance.output, 'missing "index.html" file');
+				expect(await getOutput(env, instance)).toMatch(`Not Found`);
+			});
 		});
 
 		it('should print warning for missing index.html file (no public dir)', async () => {
@@ -171,12 +173,15 @@ describe('fixtures', () => {
 			instance = await runWmrFast(env.tmp.path);
 
 			await getOutput(env, instance);
-			expect(await env.page.$eval('h1', el => el.textContent)).toBe('/');
-			expect(await env.page.title()).toBe('index.html');
 
-			await env.page.goto(`${await instance.address}/foo`, { waitUntil: 'networkidle0' });
-			expect(await env.page.$eval('h1', el => el.textContent)).toBe('/foo');
-			expect(await env.page.title()).toBe('200.html');
+			await withLog(instance.output, async () => {
+				expect(await env.page.$eval('h1', el => el.textContent)).toBe('/');
+				expect(await env.page.title()).toBe('index.html');
+
+				await env.page.goto(`${await instance.address}/foo`, { waitUntil: 'networkidle0' });
+				expect(await env.page.$eval('h1', el => el.textContent)).toBe('/foo');
+				expect(await env.page.title()).toBe('200.html');
+			});
 		});
 	});
 

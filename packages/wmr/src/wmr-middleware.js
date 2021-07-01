@@ -306,7 +306,7 @@ export default function wmrMiddleware(options) {
 			// return a value to use it as the response:
 			if (result != null && result.data != null) {
 				let type =
-					isModule || /(\.[tj]sx?|\.json)$/.test(result.id)
+					isModule || /\.([tj]sx?|[cm]js|json)$/.test(result.id)
 						? 'application/javascript;charset=utf-8'
 						: getMimeType(result.id) || 'text/plain';
 				res.setHeader('Content-Type', type);
@@ -347,7 +347,13 @@ export default function wmrMiddleware(options) {
 			if (e == null) return next();
 
 			if (e.code === 'ENOENT') {
-				// e.message = `not found (.${sep}${relative(root, e.path)})`;
+				// TODO: Does this break sirv pass through?
+				// Ignore missing `favicon.ico` requests
+				if (path == '/favicon.ico') {
+					res.writeHead(200, { 'content-type': 'image/x-icon', 'content-length': '0' });
+					return res.end('');
+				}
+
 				e.message = `File not found`;
 				e.code = 404;
 			}

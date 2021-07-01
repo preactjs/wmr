@@ -92,6 +92,7 @@ async function bootServer(options, configWatchFiles) {
 
 	// eslint-disable-next-line
 	function sendError(err) {
+		console.trace();
 		if (app.ws.clients.size > 0) {
 			app.ws.broadcast({
 				type: 'error',
