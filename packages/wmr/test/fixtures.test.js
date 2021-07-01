@@ -119,6 +119,14 @@ describe('fixtures', () => {
 		expect(text).toMatch('foo.ts');
 	});
 
+	it('should pass any file', async () => {
+		await loadFixture('markdown', env);
+		instance = await runWmrFast(env.tmp.path);
+		const text = await getOutput(env, instance);
+
+		expect(text).toMatch('it works');
+	});
+
 	describe('empty', () => {
 		it('should print warning for missing index.html file in public dir', async () => {
 			await loadFixture('empty', env);

@@ -1,4 +1,4 @@
-import { resolve, dirname, relative, sep, posix, isAbsolute, normalize, basename } from 'path';
+import { resolve, dirname, relative, sep, posix, isAbsolute, normalize, basename, extname } from 'path';
 import { promises as fs, createReadStream } from 'fs';
 import * as kl from 'kolorist';
 import { getWmrClient } from './plugins/wmr/plugin.js';
@@ -284,7 +284,14 @@ export default function wmrMiddleware(options) {
 		} else if (queryParams.has('asset')) {
 			cacheKey += '?asset';
 			transform = TRANSFORMS.asset;
-		} else if (prefix || hasIdPrefix || isModule || /\.([mc]js|[tj]sx?)$/.test(file) || /\.(css|s[ac]ss)$/.test(file)) {
+		} else if (
+			prefix ||
+			hasIdPrefix ||
+			isModule ||
+			/\.([mc]js|[tj]sx?)$/.test(file) ||
+			/\.(css|s[ac]ss)$/.test(file) ||
+			(extname(file) !== '' && extname(file) !== 'html' && !/favicon\.ico$/.test(file))
+		) {
 			transform = TRANSFORMS.js;
 		} else {
 			transform = TRANSFORMS.generic;
