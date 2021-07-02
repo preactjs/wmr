@@ -535,7 +535,8 @@ export const TRANSFORMS = {
 					});
 
 					// foo.css --> foo.css?module (import of CSS Modules proxy module)
-					if (!hasPrefix && /\.(?![tj]sx?)$/.test(spec)) spec += '?module';
+					const ext = posix.extname(spec);
+					if (!hasPrefix && ext !== '' && !/[tj]sx?$/.test(ext)) spec += '?module';
 
 					// If file resolves outside of root it may be an aliased path.
 					if (spec.startsWith('.')) {
