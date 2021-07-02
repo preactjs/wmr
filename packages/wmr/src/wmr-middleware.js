@@ -1,4 +1,4 @@
-import { resolve, dirname, relative, sep, posix, isAbsolute, normalize, basename, extname } from 'path';
+import { resolve, dirname, relative, sep, posix, isAbsolute, normalize, basename } from 'path';
 import { promises as fs, createReadStream } from 'fs';
 import * as kl from 'kolorist';
 import { getWmrClient } from './plugins/wmr/plugin.js';
@@ -284,14 +284,7 @@ export default function wmrMiddleware(options) {
 		} else if (queryParams.has('asset')) {
 			cacheKey += '?asset';
 			transform = TRANSFORMS.asset;
-		} else if (
-			prefix ||
-			hasIdPrefix ||
-			isModule ||
-			/\.([mc]js|[tj]sx?)$/.test(file) ||
-			/\.(css|s[ac]ss)$/.test(file) ||
-			(extname(file) !== '' && extname(file) !== 'html' && !/favicon\.ico$/.test(file))
-		) {
+		} else if (prefix || hasIdPrefix || isModule || /\.([mc]js|[tj]sx?)$/.test(file) || /\.(css|s[ac]ss)$/.test(file)) {
 			transform = TRANSFORMS.js;
 		} else {
 			transform = TRANSFORMS.generic;
@@ -524,8 +517,11 @@ export const TRANSFORMS = {
 						}
 					}
 
+					let hasPrefix = false;
 					// \0abc:foo --> /@abcF/foo
 					spec = spec.replace(/^\0?([a-z-]+):(.+)$/, (s, prefix, spec) => {
+						hasPrefix = true;
+
 						// \0abc:/abs/disk/path --> /@abc/cwd-relative-path
 						if (spec[0] === '/' || spec[0] === sep) {
 							spec = relative(root, spec).split(sep).join(posix.sep);
@@ -539,7 +535,7 @@ export const TRANSFORMS = {
 					});
 
 					// foo.css --> foo.css?module (import of CSS Modules proxy module)
-					if (spec.match(/\.(css|s[ac]ss)$/)) spec += '?module';
+					if (!hasPrefix && /\.(?![tj]sx?)$/.test(spec)) spec += '?module';
 
 					// If file resolves outside of root it may be an aliased path.
 					if (spec.startsWith('.')) {
