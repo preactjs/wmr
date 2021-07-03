@@ -2,4 +2,4 @@
 'wmr': minor
 ---
 
-Add support for passing any file through plugins. This allows plugins to intercept any file.
+Allow plugins to intercept any file that's imported in JavaScript, not just script and stylesheet files.

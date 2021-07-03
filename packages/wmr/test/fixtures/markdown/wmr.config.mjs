@@ -3,7 +3,9 @@ export default {
 		{
 			name: 'markdown-plugin',
 			resolveId(id) {
-				console.log(id);
+				if (/\.md$/.test(id)) {
+					return id;
+				}
 			},
 			load(id) {
 				if (/\.md$/.test(id)) {
