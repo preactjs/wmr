@@ -517,8 +517,11 @@ export const TRANSFORMS = {
 						}
 					}
 
+					let hasPrefix = false;
 					// \0abc:foo --> /@abcF/foo
 					spec = spec.replace(/^\0?([a-z-]+):(.+)$/, (s, prefix, spec) => {
+						hasPrefix = true;
+
 						// \0abc:/abs/disk/path --> /@abc/cwd-relative-path
 						if (spec[0] === '/' || spec[0] === sep) {
 							spec = relative(root, spec).split(sep).join(posix.sep);
@@ -532,7 +535,8 @@ export const TRANSFORMS = {
 					});
 
 					// foo.css --> foo.css?module (import of CSS Modules proxy module)
-					if (spec.match(/\.(css|s[ac]ss)$/)) spec += '?module';
+					const ext = posix.extname(spec);
+					if (!hasPrefix && ext !== '' && !/[tj]sx?$/.test(ext)) spec += '?module';
 
 					// If file resolves outside of root it may be an aliased path.
 					if (spec.startsWith('.')) {
