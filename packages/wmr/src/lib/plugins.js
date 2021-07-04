@@ -53,7 +53,7 @@ export function getPlugins(options) {
 			production
 		}),
 		// Transpile import assertion syntax to WMR prefixes
-		importAssertionPlugin(),
+		importAssertionPlugin({ sourcemap }),
 		production &&
 			(dynamicImportVars.default || dynamicImportVars)({
 				include: /\.(m?jsx?|tsx?)$/,
@@ -63,6 +63,7 @@ export function getPlugins(options) {
 		sassPlugin({ production, sourcemap, root }),
 		wmrStylesPlugin({ hot: !production, root, production, alias }),
 		processGlobalPlugin({
+			sourcemap,
 			env,
 			NODE_ENV: production ? 'production' : 'development'
 		}),

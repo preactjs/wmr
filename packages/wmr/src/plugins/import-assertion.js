@@ -13,9 +13,11 @@ import { transform } from '../lib/acorn-traverse.js';
  * import foo from "json:./foo.json";
  * ```
  *
+ * @param {object} options
+ * @param {boolean} options.sourcemap
  * @returns {import("rollup").Plugin}
  */
-export function importAssertionPlugin() {
+export function importAssertionPlugin({ sourcemap }) {
 	return {
 		name: 'import-assertion',
 		options(opts) {
@@ -28,10 +30,12 @@ export function importAssertionPlugin() {
 
 			const res = transform(code, {
 				parse: this.parse,
-				plugins: [transformImportAssertions]
+				plugins: [transformImportAssertions],
+				filename: id,
+				// Default is to generate sourcemaps, needs an explicit
+				// boolean
+				sourceMaps: !!sourcemap
 			});
-
-			if (res.code === code) return;
 
 			return {
 				code: res.code,
