@@ -99,15 +99,17 @@ export async function transformImports(code, id, { resolveImportMeta, resolveId,
 				// import specifier itself.
 				const closingQuoteIdx = spec.indexOf(quote, 1);
 				spec = spec.slice(0, closingQuoteIdx + 1);
+				// @ts-ignore
+				item.e = code.indexOf(quote, item.s + 1);
 			}
 
 			spec = spec.replace(/^\s*(['"`])(.*)\1\s*$/g, '$2');
 
 			toResolve.push({
 				spec,
-				// Account for quotes
+				// Account for opening quote
 				start: item.s + 1,
-				end: item.e - 1,
+				end: item.e,
 				kind: KIND_DYNAMIC_IMPORT,
 				property: null
 			});

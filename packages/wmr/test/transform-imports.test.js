@@ -143,4 +143,40 @@ describe('transformImports', () => {
 			expect(result.code).toEqual(expected);
 		});
 	});
+
+	describe('import assertions', () => {
+		it('should ignore in static imports', async () => {
+			const code = await readFile('import-assertion.js');
+			const expected = await readFile('import-assertion.expected.js');
+			const result = await transformImports(code, 'my-test', {
+				resolveId() {
+					return 'it_works';
+				},
+				resolveDynamicImport() {
+					return 'it_works_dynamic';
+				},
+				resolveImportMeta() {
+					return 'it_works_meta';
+				}
+			});
+			expect(result.code).toEqual(expected);
+		});
+
+		it('should ignore in dynamic imports', async () => {
+			const code = await readFile('import-assertion-dynamic.js');
+			const expected = await readFile('import-assertion-dynamic.expected.js');
+			const result = await transformImports(code, 'my-test', {
+				resolveId() {
+					return 'it_works';
+				},
+				resolveDynamicImport() {
+					return 'it_works_dynamic';
+				},
+				resolveImportMeta() {
+					return 'it_works_meta';
+				}
+			});
+			expect(result.code).toEqual(expected);
+		});
+	});
 });
