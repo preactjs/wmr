@@ -4,6 +4,7 @@ import { promises as fs } from 'fs';
 import * as acorn from 'acorn';
 import * as kl from 'kolorist';
 import { debug, formatResolved, formatPath, hasDebugFlag } from './output-utils.js';
+import { mergeSourceMaps } from './sourcemap.js';
 
 // Rollup respects "module", Node 14 doesn't.
 const cjsDefault = m => ('default' in m ? m.default : m);
@@ -279,8 +280,8 @@ export function createPluginContainer(plugins, opts = {}) {
 		 * @param {string} id
 		 */
 		async transform(code, id) {
-			/** @type {import('rollup').ExistingRawSourceMap | null} */
-			let sourceMap = null;
+			/** @type {import('./sourcemap.js').SourceMap[]} */
+			const sourceMaps = [];
 
 			for (plugin of plugins) {
 				if (!plugin.transform) continue;
@@ -291,13 +292,8 @@ export function createPluginContainer(plugins, opts = {}) {
 				if (typeof result === 'object') {
 					code = result.code;
 					if (result.map) {
-						// FIXME: To properly support source maps we need to
-						// collect the maps from each transformation step and
-						// merge them on top of each other.
-						sourceMap = result.map;
-
 						// Normalize source map sources URLs for the browser
-						sourceMap.sources = sourceMap.sources.map(s => {
+						result.map.sources = result.map.sources.map(s => {
 							if (typeof s === 'string') {
 								return `/${posix.normalize(s)}`;
 							} else if (hasDebugFlag()) {
@@ -306,6 +302,8 @@ export function createPluginContainer(plugins, opts = {}) {
 
 							return s;
 						});
+
+						sourceMaps.push(result.map);
 					}
 				} else {
 					if (code !== result) {
@@ -314,7 +312,7 @@ export function createPluginContainer(plugins, opts = {}) {
 					code = result;
 				}
 			}
-			return { code, map: sourceMap };
+			return { code, map: sourceMaps.length ? mergeSourceMaps(sourceMaps) : null };
 		},
 
 		/**
