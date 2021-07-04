@@ -101,7 +101,16 @@ let codeGenerator = {
 	// import(source)
 	ImportExpression(node, state) {
 		state.write('import(');
-		this[node.source.type](node.source, state);
+
+		// TODO: Sometimes this seems to have a source and sometimes
+		// an expression. I don't understand why. The expression seems
+		// to be only set when calling `t.importExpression()`
+		if (node.source) {
+			this[node.source.type](node.source, state);
+		} else {
+			this[node.expression.type](node.expression, state);
+		}
+
 		state.write(')');
 	},
 	JSXFragment(node, state) {
