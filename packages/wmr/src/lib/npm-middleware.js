@@ -142,6 +142,7 @@ async function bundleNpmModule(mod, { source, alias, cwd }) {
 			aliasPlugin({ alias, cwd }),
 			npmProviderPlugin,
 			processGlobalPlugin({
+				sourcemap: false,
 				NODE_ENV: 'development'
 			}),
 			commonjs({
