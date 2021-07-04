@@ -11,6 +11,7 @@ import { getPlugins } from './lib/plugins.js';
 import { watch } from './lib/fs-watcher.js';
 import { matchAlias, resolveAlias } from './lib/aliasing.js';
 import { addTimestamp } from './lib/net-utils.js';
+import { mergeSourceMaps } from './lib/sourcemap.js';
 
 const NOOP = () => {};
 
@@ -485,6 +486,8 @@ export const TRANSFORMS = {
 				file = file.split(posix.sep).join(sep);
 				if (!isAbsolute(file)) file = resolve(root, file);
 				code = await fs.readFile(resolveFile(file, root, alias), 'utf-8');
+
+				// TODO: Optional: Load sourcemap
 			}
 
 			const transformed = await NonRollup.transform(code, id);
@@ -492,7 +495,7 @@ export const TRANSFORMS = {
 			/** @type {import('rollup').ExistingRawSourceMap | null} */
 			let sourceMap = transformed.map;
 
-			code = await transformImports(code, id, {
+			const rewritten = await transformImports(code, id, {
 				resolveImportMeta(property) {
 					return NonRollup.resolveImportMeta(property);
 				},
@@ -612,6 +615,16 @@ export const TRANSFORMS = {
 					return spec;
 				}
 			});
+
+			if (rewritten.map !== null) {
+				if (sourceMap !== null) {
+					// @ts-ignore
+					sourceMap = mergeSourceMaps([sourceMap, rewritten.map]);
+				} else {
+					sourceMap = rewritten.map;
+				}
+			}
+			code = rewritten.code;
 
 			if (sourceMap !== null) {
 				writeCacheFile(cacheKey + '.map', JSON.stringify(sourceMap));

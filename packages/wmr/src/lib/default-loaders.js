@@ -12,7 +12,7 @@ export function defaultLoaders() {
 		async transform(code, id) {
 			if (!/\.([tj]sx?|mjs)$/.test(id)) return;
 
-			const result = await transformImports(code, id, {
+			return await transformImports(code, id, {
 				resolveId(specifier) {
 					const hasPrefix = /^[-\w]+:/.test(specifier);
 
@@ -26,10 +26,6 @@ export function defaultLoaders() {
 					return null;
 				}
 			});
-
-			if (result !== code) {
-				return result;
-			}
 		}
 	};
 }
