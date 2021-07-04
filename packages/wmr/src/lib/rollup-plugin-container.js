@@ -290,7 +290,6 @@ export function createPluginContainer(plugins, opts = {}) {
 
 				logTransform(`${kl.dim(formatPath(id))} [${plugin.name}]`);
 				if (typeof result === 'object') {
-					code = result.code;
 					if (result.map) {
 						// Normalize source map sources URLs for the browser
 						result.map.sources = result.map.sources.map(s => {
@@ -304,7 +303,11 @@ export function createPluginContainer(plugins, opts = {}) {
 						});
 
 						sourceMaps.push(result.map);
+					} else if (result.code !== code) {
+						logTransform(kl.yellow(`Missing sourcemap result in transform() method of `) + kl.magenta(plugin.name));
 					}
+
+					code = result.code;
 				} else {
 					if (code !== result) {
 						logTransform(kl.yellow(`Missing sourcemap result in transform() method of `) + kl.magenta(plugin.name));
