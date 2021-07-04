@@ -46,7 +46,7 @@ function identifierPair(id, importer) {
 
 /**
  * @param {Plugin[]} plugins
- * @param {import('rollup').InputOptions & PluginContainerOptions} [opts]
+ * @param {import('rollup').InputOptions & PluginContainerOptions & {sourcemap?: boolean}} [opts]
  */
 export function createPluginContainer(plugins, opts = {}) {
 	if (!Array.isArray(plugins)) plugins = [plugins];
@@ -303,13 +303,13 @@ export function createPluginContainer(plugins, opts = {}) {
 						});
 
 						sourceMaps.push(result.map);
-					} else if (result.code !== code) {
+					} else if (opts.sourcemap && result.code !== code) {
 						logTransform(kl.yellow(`Missing sourcemap result in transform() method of `) + kl.magenta(plugin.name));
 					}
 
 					code = result.code;
 				} else {
-					if (code !== result) {
+					if (opts.sourcemap && code !== result) {
 						logTransform(kl.yellow(`Missing sourcemap result in transform() method of `) + kl.magenta(plugin.name));
 					}
 					code = result;

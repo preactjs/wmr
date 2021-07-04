@@ -33,12 +33,13 @@ export const moduleGraph = new Map();
  * @returns {import('polka').Middleware}
  */
 export default function wmrMiddleware(options) {
-	let { cwd, root, out, distDir = 'dist', onError, onChange = NOOP, alias } = options;
+	let { cwd, root, out, distDir = 'dist', onError, onChange = NOOP, alias, sourcemap } = options;
 
 	distDir = resolve(dirname(out), distDir);
 
 	const NonRollup = createPluginContainer(getPlugins(options), {
 		cwd: root,
+		sourcemap,
 		writeFile: (filename, source) => {
 			// Remove .cache folder from filename if present. The cache
 			// works with relative keys only.
