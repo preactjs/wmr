@@ -106,6 +106,20 @@ export default async function server({ cwd, root, overlayDir, middleware, http2,
 
 	app.use('/@npm', npmMiddleware({ alias, optimize, cwd }));
 
+	// Chrome devtools often adds `?%20[sm]` to the url
+	// to differentiate between sourcemaps
+	app.use((req, res, next) => {
+		if (/\?%20\[sm\]$/.test(req.url)) {
+			res.writeHead(302, {
+				Location: req.url.replace('?%20[sm]', '.map')
+			});
+			res.end();
+			return;
+		}
+
+		next();
+	});
+
 	if (middleware) {
 		app.use(...middleware);
 	}
