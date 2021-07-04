@@ -61,7 +61,7 @@ export function getPlugins(options) {
 			}),
 		production && publicPathPlugin({ publicPath }),
 		sassPlugin({ production, sourcemap, root }),
-		wmrStylesPlugin({ hot: !production, root, production, alias }),
+		wmrStylesPlugin({ hot: !production, root, production, alias, sourcemap }),
 		processGlobalPlugin({
 			sourcemap,
 			env,

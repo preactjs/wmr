@@ -15,10 +15,11 @@ const RESERVED_WORDS = /^(abstract|async|boolean|break|byte|case|catch|char|clas
  * @param {string} options.root Manually specify the cwd from which to resolve filenames (important for calculating hashes!)
  * @param {boolean} [options.hot] Indicates the plugin should inject a HMR-runtime
  * @param {boolean} [options.production]
+ * @param {boolean} [options.sourcemap]
  * @param {Record<string, string>} options.alias
  * @returns {import('rollup').Plugin}
  */
-export default function wmrStylesPlugin({ root, hot, production, alias }) {
+export default function wmrStylesPlugin({ root, hot, production, alias, sourcemap }) {
 	let assetId = 0;
 	const assetMap = new Map();
 	/** @type {Map<string, Set<string>>} */
@@ -149,7 +150,14 @@ export default function wmrStylesPlugin({ root, hot, production, alias }) {
 				code,
 				moduleSideEffects: true,
 				syntheticNamedExports: true,
-				map: null
+				map: sourcemap
+					? {
+							version: 3,
+							sources: [],
+							mappings: '',
+							names: []
+					  }
+					: null
 			};
 		},
 		async generateBundle(_, bundle) {
