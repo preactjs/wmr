@@ -712,6 +712,15 @@ describe('fixtures', () => {
 			const output = await getOutput(env, instance);
 			expect(output).toMatch(/it works/i);
 		});
+
+		it('should deal with process evaluation', async () => {
+			await loadFixture('process-object', env);
+			instance = await runWmrFast(env.tmp.path);
+			await withLog(instance.output, async () => {
+				const output = await getOutput(env, instance);
+				expect(output).toMatch(/false/i);
+			});
+		});
 	});
 
 	describe('import.meta.env', () => {

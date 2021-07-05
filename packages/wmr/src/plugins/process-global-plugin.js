@@ -87,7 +87,7 @@ export default function processGlobalPlugin({ NODE_ENV = 'development', env = {}
 			const reg = /typeof(\s+|\s*\(+\s*)process([^a-zA-Z$_])/g;
 			let match = null;
 			while ((match = reg.exec(code)) !== null) {
-				s.overwrite(match.index, match[0].length, 'typeof$1undefined$2');
+				s.overwrite(match.index, match.index + match[0].length, `typeof${match[1]}undefined${match[2]}`);
 			}
 
 			/** @type {*} */
