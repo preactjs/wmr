@@ -3259,10 +3259,10 @@ es-module-lexer@^0.3.18:
   resolved "https://registry.yarnpkg.com/es-module-lexer/-/es-module-lexer-0.3.26.tgz#7b507044e97d5b03b01d4392c74ffeb9c177a83b"
   integrity sha512-Va0Q/xqtrss45hWzP8CZJwzGSZJjDM5/MJRE3IXXnUCcVLElR9BRaE9F62BopysASyc4nM3uwhSW7FFB9nlWAA==
 
-es-module-lexer@^0.4.1:
-  version "0.4.1"
-  resolved "https://registry.yarnpkg.com/es-module-lexer/-/es-module-lexer-0.4.1.tgz#dda8c6a14d8f340a24e34331e0fab0cb50438e0e"
-  integrity sha512-ooYciCUtfw6/d2w56UVeqHPcoCFAiJdz5XOkYpv/Txl1HMUozpXjz/2RIQgqwKdXNDPSF1W7mJCFse3G+HDyAA==
+es-module-lexer@^0.7.0:
+  version "0.7.0"
+  resolved "https://registry.yarnpkg.com/es-module-lexer/-/es-module-lexer-0.7.0.tgz#33b22fd35548f4e27c3d5292622b512b2a9391f8"
+  integrity sha512-btzZZ1QNjAMk3p71kK0gBALmqmva0W+gyegNWyrmAHQA/Sf5XrkpB0ZeyUMVDDJWLQHRw1p7WeZDFd2VKvmoPg==
 
 es-to-primitive@^1.2.1:
   version "1.2.1"
