@@ -1,0 +1,162 @@
+diff --git a/node_modules/sourcemap-codec/.DS_Store b/node_modules/sourcemap-codec/.DS_Store
+new file mode 100644
+index 0000000..f7b71aa
+Binary files /dev/null and b/node_modules/sourcemap-codec/.DS_Store differ
+diff --git a/node_modules/sourcemap-codec/dist/sourcemap-codec.mjs b/node_modules/sourcemap-codec/dist/sourcemap-codec.mjs
+new file mode 100644
+index 0000000..4e3813e
+--- /dev/null
++++ b/node_modules/sourcemap-codec/dist/sourcemap-codec.mjs
+@@ -0,0 +1,124 @@
++var charToInteger = {};
++var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
++for (var i = 0; i < chars.length; i++) {
++    charToInteger[chars.charCodeAt(i)] = i;
++}
++function decode(mappings) {
++    var decoded = [];
++    var line = [];
++    var segment = [
++        0,
++        0,
++        0,
++        0,
++        0,
++    ];
++    var j = 0;
++    for (var i = 0, shift = 0, value = 0; i < mappings.length; i++) {
++        var c = mappings.charCodeAt(i);
++        if (c === 44) { // ","
++            segmentify(line, segment, j);
++            j = 0;
++        }
++        else if (c === 59) { // ";"
++            segmentify(line, segment, j);
++            j = 0;
++            decoded.push(line);
++            line = [];
++            segment[0] = 0;
++        }
++        else {
++            var integer = charToInteger[c];
++            if (integer === undefined) {
++                throw new Error('Invalid character (' + String.fromCharCode(c) + ')');
++            }
++            var hasContinuationBit = integer & 32;
++            integer &= 31;
++            value += integer << shift;
++            if (hasContinuationBit) {
++                shift += 5;
++            }
++            else {
++                var shouldNegate = value & 1;
++                value >>>= 1;
++                if (shouldNegate) {
++                    value = value === 0 ? -0x80000000 : -value;
++                }
++                segment[j] += value;
++                j++;
++                value = shift = 0; // reset
++            }
++        }
++    }
++    segmentify(line, segment, j);
++    decoded.push(line);
++    return decoded;
++}
++function segmentify(line, segment, j) {
++    // This looks ugly, but we're creating specialized arrays with a specific
++    // length. This is much faster than creating a new array (which v8 expands to
++    // a capacity of 17 after pushing the first item), or slicing out a subarray
++    // (which is slow). Length 4 is assumed to be the most frequent, followed by
++    // length 5 (since not everything will have an associated name), followed by
++    // length 1 (it's probably rare for a source substring to not have an
++    // associated segment data).
++    if (j === 4)
++        line.push([segment[0], segment[1], segment[2], segment[3]]);
++    else if (j === 5)
++        line.push([segment[0], segment[1], segment[2], segment[3], segment[4]]);
++    else if (j === 1)
++        line.push([segment[0]]);
++}
++function encode(decoded) {
++    var sourceFileIndex = 0; // second field
++    var sourceCodeLine = 0; // third field
++    var sourceCodeColumn = 0; // fourth field
++    var nameIndex = 0; // fifth field
++    var mappings = '';
++    for (var i = 0; i < decoded.length; i++) {
++        var line = decoded[i];
++        if (i > 0)
++            mappings += ';';
++        if (line.length === 0)
++            continue;
++        var generatedCodeColumn = 0; // first field
++        var lineMappings = [];
++        for (var _i = 0, line_1 = line; _i < line_1.length; _i++) {
++            var segment = line_1[_i];
++            var segmentMappings = encodeInteger(segment[0] - generatedCodeColumn);
++            generatedCodeColumn = segment[0];
++            if (segment.length > 1) {
++                segmentMappings +=
++                    encodeInteger(segment[1] - sourceFileIndex) +
++                        encodeInteger(segment[2] - sourceCodeLine) +
++                        encodeInteger(segment[3] - sourceCodeColumn);
++                sourceFileIndex = segment[1];
++                sourceCodeLine = segment[2];
++                sourceCodeColumn = segment[3];
++            }
++            if (segment.length === 5) {
++                segmentMappings += encodeInteger(segment[4] - nameIndex);
++                nameIndex = segment[4];
++            }
++            lineMappings.push(segmentMappings);
++        }
++        mappings += lineMappings.join(',');
++    }
++    return mappings;
++}
++function encodeInteger(num) {
++    var result = '';
++    num = num < 0 ? (-num << 1) | 1 : num << 1;
++    do {
++        var clamped = num & 31;
++        num >>>= 5;
++        if (num > 0) {
++            clamped |= 32;
++        }
++        result += chars[clamped];
++    } while (num > 0);
++    return result;
++}
++
++export { decode, encode };
++//# sourceMappingURL=sourcemap-codec.mjs.map
+diff --git a/node_modules/sourcemap-codec/dist/sourcemap-codec.mjs.map b/node_modules/sourcemap-codec/dist/sourcemap-codec.mjs.map
+new file mode 100644
+index 0000000..5b2c6ed
+--- /dev/null
++++ b/node_modules/sourcemap-codec/dist/sourcemap-codec.mjs.map
+@@ -0,0 +1 @@
++{"version":3,"file":"sourcemap-codec.mjs","sources":["../src/sourcemap-codec.ts"],"sourcesContent":["export type SourceMapSegment =\n\t| [number]\n\t| [number, number, number, number]\n\t| [number, number, number, number, number];\nexport type SourceMapLine = SourceMapSegment[];\nexport type SourceMapMappings = SourceMapLine[];\n\nconst charToInteger: { [charCode: number]: number } = {};\nconst chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';\n\nfor (let i = 0; i < chars.length; i++) {\n\tcharToInteger[chars.charCodeAt(i)] = i;\n}\n\nexport function decode(mappings: string): SourceMapMappings {\n\tconst decoded: SourceMapMappings = [];\n\tlet line: SourceMapLine = [];\n\tconst segment: SourceMapSegment = [\n\t\t0, // generated code column\n\t\t0, // source file index\n\t\t0, // source code line\n\t\t0, // source code column\n\t\t0, // name index\n\t];\n\n\tlet j = 0;\n\tfor (let i = 0, shift = 0, value = 0; i < mappings.length; i++) {\n\t\tconst c = mappings.charCodeAt(i);\n\n\t\tif (c === 44) { // \",\"\n\t\t\tsegmentify(line, segment, j);\n\t\t\tj = 0;\n\n\t\t} else if (c === 59) { // \";\"\n\t\t\tsegmentify(line, segment, j);\n\t\t\tj = 0;\n\t\t\tdecoded.push(line);\n\t\t\tline = [];\n\t\t\tsegment[0] = 0;\n\n\t\t} else {\n\t\t\tlet integer = charToInteger[c];\n\t\t\tif (integer === undefined) {\n\t\t\t\tthrow new Error('Invalid character (' + String.fromCharCode(c) + ')');\n\t\t\t}\n\n\t\t\tconst hasContinuationBit = integer & 32;\n\n\t\t\tinteger &= 31;\n\t\t\tvalue += integer << shift;\n\n\t\t\tif (hasContinuationBit) {\n\t\t\t\tshift += 5;\n\t\t\t} else {\n\t\t\t\tconst shouldNegate = value & 1;\n\t\t\t\tvalue >>>= 1;\n\n\t\t\t\tif (shouldNegate) {\n\t\t\t\t\tvalue = value === 0 ? -0x80000000 : -value;\n\t\t\t\t}\n\n\t\t\t\tsegment[j] += value;\n\t\t\t\tj++;\n\t\t\t\tvalue = shift = 0; // reset\n\t\t\t}\n\t\t}\n\t}\n\n\tsegmentify(line, segment, j);\n\tdecoded.push(line);\n\n\treturn decoded;\n}\n\nfunction segmentify(line: SourceMapSegment[], segment: SourceMapSegment, j: number) {\n\t// This looks ugly, but we're creating specialized arrays with a specific\n\t// length. This is much faster than creating a new array (which v8 expands to\n\t// a capacity of 17 after pushing the first item), or slicing out a subarray\n\t// (which is slow). Length 4 is assumed to be the most frequent, followed by\n\t// length 5 (since not everything will have an associated name), followed by\n\t// length 1 (it's probably rare for a source substring to not have an\n\t// associated segment data).\n\tif (j === 4) line.push([segment[0], segment[1], segment[2], segment[3]]);\n\telse if (j === 5) line.push([segment[0], segment[1], segment[2], segment[3], segment[4]]);\n\telse if (j === 1) line.push([segment[0]]);\n}\n\nexport function encode(decoded: SourceMapMappings): string {\n\tlet sourceFileIndex = 0;  // second field\n\tlet sourceCodeLine = 0;   // third field\n\tlet sourceCodeColumn = 0; // fourth field\n\tlet nameIndex = 0;        // fifth field\n\tlet mappings = '';\n\n\tfor (let i = 0; i < decoded.length; i++) {\n\t\tconst line = decoded[i];\n\t\tif (i > 0) mappings += ';';\n\t\tif (line.length === 0) continue;\n\n\t\tlet generatedCodeColumn = 0; // first field\n\n\t\tconst lineMappings: string[] = [];\n\n\t\tfor (const segment of line) {\n\t\t\tlet segmentMappings = encodeInteger(segment[0] - generatedCodeColumn);\n\t\t\tgeneratedCodeColumn = segment[0];\n\n\t\t\tif (segment.length > 1) {\n\t\t\t\tsegmentMappings +=\n\t\t\t\t\tencodeInteger(segment[1] - sourceFileIndex) +\n\t\t\t\t\tencodeInteger(segment[2] - sourceCodeLine) +\n\t\t\t\t\tencodeInteger(segment[3] - sourceCodeColumn);\n\n\t\t\t\tsourceFileIndex = segment[1];\n\t\t\t\tsourceCodeLine = segment[2];\n\t\t\t\tsourceCodeColumn = segment[3];\n\t\t\t}\n\n\t\t\tif (segment.length === 5) {\n\t\t\t\tsegmentMappings += encodeInteger(segment[4] - nameIndex);\n\t\t\t\tnameIndex = segment[4];\n\t\t\t}\n\n\t\t\tlineMappings.push(segmentMappings);\n\t\t}\n\n\t\tmappings += lineMappings.join(',');\n\t}\n\n\treturn mappings;\n}\n\nfunction encodeInteger(num: number): string {\n\tvar result = '';\n\tnum = num < 0 ? (-num << 1) | 1 : num << 1;\n\tdo {\n\t\tvar clamped = num & 31;\n\t\tnum >>>= 5;\n\t\tif (num > 0) {\n\t\t\tclamped |= 32;\n\t\t}\n\t\tresult += chars[clamped];\n\t} while (num > 0);\n\n\treturn result;\n}\n"],"names":[],"mappings":"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"}
+\ No newline at end of file
+diff --git a/node_modules/sourcemap-codec/package.json b/node_modules/sourcemap-codec/package.json
+index 4b2d219..96f5feb 100644
+--- a/node_modules/sourcemap-codec/package.json
++++ b/node_modules/sourcemap-codec/package.json
+@@ -5,6 +5,15 @@
+   "main": "dist/sourcemap-codec.umd.js",
+   "module": "dist/sourcemap-codec.es.js",
+   "types": "dist/types/sourcemap-codec.d.ts",
++  "exports": {
++    ".": {
++      "browser": "./dist/sourcemap-codec.umd.js",
++      "import": "./dist/sourcemap-codec.mjs",
++      "require": "./dist/sourcemap-codec.umd.js"
++    },
++    "./package.json": "./package.json",
++    "./": "./"
++  },
+   "scripts": {
+     "test": "mocha",
+     "build": "rm -rf dist && rollup -c && tsc",
