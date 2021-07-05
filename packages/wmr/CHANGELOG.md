@@ -1,5 +1,15 @@
 # wmr
 
+## 3.3.0
+
+### Minor Changes
+
+- [`b69f35a`](https://github.com/preactjs/wmr/commit/b69f35a7a394edb923fe26dae0d72e36d5f2eb5d) [#724](https://github.com/preactjs/wmr/pull/724) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Allow plugins to intercept any file that's imported in JavaScript, not just script and stylesheet files.
+
+### Patch Changes
+
+- [`e963a56`](https://github.com/preactjs/wmr/commit/e963a560b46f0cb210878696b2c4c7cf6f2375aa) [#715](https://github.com/preactjs/wmr/pull/715) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Rewrite internal source map handling. This adds full support for source maps during `development` and `production` and ensures that `.map` files are served correctly.
+
 ## 3.2.0
 
 ### Minor Changes
