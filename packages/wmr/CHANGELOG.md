@@ -1,5 +1,11 @@
 # wmr
 
+## 3.3.1
+
+### Patch Changes
+
+- [`d94937f`](https://github.com/preactjs/wmr/commit/d94937fee0804657006382711c3b2e169fdff98a) [#728](https://github.com/preactjs/wmr/pull/728) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix `Cannot read property 'edit' of null` error. This was caused by a wrong alternative to substring matches of `String.prototype.replace`.
+
 ## 3.3.0
 
 ### Minor Changes
