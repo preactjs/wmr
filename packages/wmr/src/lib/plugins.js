@@ -53,7 +53,7 @@ export function getPlugins(options) {
 			production
 		}),
 		// Transpile import assertion syntax to WMR prefixes
-		importAssertionPlugin(),
+		importAssertionPlugin({ sourcemap }),
 		production &&
 			(dynamicImportVars.default || dynamicImportVars)({
 				include: /\.(m?jsx?|tsx?)$/,
@@ -61,13 +61,14 @@ export function getPlugins(options) {
 			}),
 		production && publicPathPlugin({ publicPath }),
 		sassPlugin({ production, sourcemap, root }),
-		wmrStylesPlugin({ hot: !production, root, production, alias }),
+		wmrStylesPlugin({ hot: !production, root, production, alias, sourcemap }),
 		processGlobalPlugin({
+			sourcemap,
 			env,
 			NODE_ENV: production ? 'production' : 'development'
 		}),
-		htmPlugin({ production }),
-		wmrPlugin({ hot: !production, preact: features.preact }),
+		htmPlugin({ production, sourcemap: options.sourcemap }),
+		wmrPlugin({ hot: !production, preact: features.preact, sourcemap: options.sourcemap }),
 		fastCjsPlugin({
 			// Only transpile CommonJS in node_modules and explicit .cjs files:
 			include: /(^npm\/|[/\\]node_modules[/\\]|\.cjs$)/

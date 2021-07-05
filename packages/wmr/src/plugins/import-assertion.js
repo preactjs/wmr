@@ -13,9 +13,11 @@ import { transform } from '../lib/acorn-traverse.js';
  * import foo from "json:./foo.json";
  * ```
  *
+ * @param {object} options
+ * @param {boolean} options.sourcemap
  * @returns {import("rollup").Plugin}
  */
-export function importAssertionPlugin() {
+export function importAssertionPlugin({ sourcemap }) {
 	return {
 		name: 'import-assertion',
 		options(opts) {
@@ -28,8 +30,13 @@ export function importAssertionPlugin() {
 
 			const res = transform(code, {
 				parse: this.parse,
-				plugins: [transformImportAssertions]
+				plugins: [transformImportAssertions],
+				filename: id,
+				// Default is to generate sourcemaps, needs an explicit
+				// boolean
+				sourceMaps: !!sourcemap
 			});
+
 			return {
 				code: res.code,
 				map: res.map
@@ -45,6 +52,32 @@ function transformImportAssertions({ types: t }) {
 	return {
 		name: 'transform-import-assertions',
 		visitor: {
+			ImportExpression(path) {
+				const args = path.node.arguments;
+				if (!args || !args.length) return;
+				if (!t.isObjectExpression(args[0])) return;
+
+				if (!args[0].properties) return;
+				for (let i = 0; i < args[0].properties.length; i++) {
+					const prop = args[0].properties[i];
+
+					if (!t.isIdentifier(prop.key) || prop.key.name !== 'assert') {
+						continue;
+					}
+
+					if (!t.isObjectExpression(prop.value) || !prop.value.properties || !prop.value.properties.length) {
+						continue;
+					}
+
+					const innerProp = prop.value.properties[0];
+					if (!t.isIdentifier(innerProp.key) || innerProp.key.name !== 'type') {
+						continue;
+					}
+
+					const type = innerProp.value.value;
+					path.replaceWith(t.importExpression(t.stringLiteral(`${type}:${path.node.source.value}`)));
+				}
+			},
 			ImportDeclaration(path) {
 				const { assertions } = path.node;
 				if (assertions && assertions.length > 0) {

@@ -11,6 +11,7 @@ import { getPlugins } from './lib/plugins.js';
 import { watch } from './lib/fs-watcher.js';
 import { matchAlias, resolveAlias } from './lib/aliasing.js';
 import { addTimestamp } from './lib/net-utils.js';
+import { mergeSourceMaps } from './lib/sourcemap.js';
 
 const NOOP = () => {};
 
@@ -32,12 +33,13 @@ export const moduleGraph = new Map();
  * @returns {import('polka').Middleware}
  */
 export default function wmrMiddleware(options) {
-	let { cwd, root, out, distDir = 'dist', onError, onChange = NOOP, alias } = options;
+	let { cwd, root, out, distDir = 'dist', onError, onChange = NOOP, alias, sourcemap } = options;
 
 	distDir = resolve(dirname(out), distDir);
 
 	const NonRollup = createPluginContainer(getPlugins(options), {
 		cwd: root,
+		sourcemap,
 		writeFile: (filename, source) => {
 			// Remove .cache folder from filename if present. The cache
 			// works with relative keys only.
@@ -154,6 +156,16 @@ export default function wmrMiddleware(options) {
 
 			logCache(`delete: ${kl.cyan(file)}`);
 			WRITE_CACHE.delete(file);
+
+			// Delete source file if there is any
+			if (options.sourcemap) {
+				const sourceKey = file + '.map';
+
+				if (WRITE_CACHE.has(sourceKey)) {
+					logCache(`delete: ${kl.cyan(sourceKey)}`);
+					WRITE_CACHE.delete(sourceKey);
+				}
+			}
 
 			// We could be dealing with an asset
 			if (WRITE_CACHE.has(file + '?asset')) {
@@ -281,6 +293,8 @@ export default function wmrMiddleware(options) {
 		let transform;
 		if (path === '/_wmr.js') {
 			transform = getWmrClient.bind(null);
+		} else if (/\.map$/.test(path)) {
+			transform = TRANSFORMS.asset;
 		} else if (queryParams.has('asset')) {
 			cacheKey += '?asset';
 			transform = TRANSFORMS.asset;
@@ -473,11 +487,16 @@ export const TRANSFORMS = {
 				file = file.split(posix.sep).join(sep);
 				if (!isAbsolute(file)) file = resolve(root, file);
 				code = await fs.readFile(resolveFile(file, root, alias), 'utf-8');
+
+				// TODO: Optional: Load sourcemap
 			}
 
-			code = await NonRollup.transform(code, id);
+			const transformed = await NonRollup.transform(code, id);
+			code = transformed.code;
+			/** @type {import('rollup').ExistingRawSourceMap | null} */
+			let sourceMap = transformed.map;
 
-			code = await transformImports(code, id, {
+			const rewritten = await transformImports(code, id, {
 				resolveImportMeta(property) {
 					return NonRollup.resolveImportMeta(property);
 				},
@@ -598,6 +617,20 @@ export const TRANSFORMS = {
 				}
 			});
 
+			if (rewritten.map !== null) {
+				if (sourceMap !== null) {
+					// @ts-ignore
+					sourceMap = mergeSourceMaps([sourceMap, rewritten.map]);
+				} else {
+					sourceMap = rewritten.map;
+				}
+			}
+			code = rewritten.code;
+
+			if (sourceMap !== null) {
+				writeCacheFile(cacheKey + '.map', JSON.stringify(sourceMap));
+				code = `${code}\n//# sourceMappingURL=${basename(id)}.map`;
+			}
 			writeCacheFile(cacheKey, code);
 
 			return code;

@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import MagicString from 'magic-string';
+import path from 'path';
 import { ESM_KEYWORDS } from '../fast-cjs-plugin.js';
 
 const BYPASS_HMR = process.env.BYPASS_HMR === 'true';
@@ -35,9 +36,12 @@ export function getWmrClient({ hot = true } = {}) {
  * Implements Hot Module Replacement.
  * Conforms to the {@link esm-hmr https://github.com/pikapkg/esm-hmr} spec.
  * @param {object} options
+ * @param {boolean} [options.hot]
+ * @param {boolean} [options.preact]
+ * @param {boolean} [options.sourcemap]
  * @returns {import('rollup').Plugin}
  */
-export default function wmrPlugin({ hot = true, preact } = {}) {
+export default function wmrPlugin({ hot = true, preact, sourcemap } = {}) {
 	if (BYPASS_HMR) hot = false;
 
 	return {
@@ -102,7 +106,7 @@ export default function wmrPlugin({ hot = true, preact } = {}) {
 
 			return {
 				code: s.toString(),
-				map: s.generateMap({ includeContent: false })
+				map: sourcemap ? s.generateMap({ source: id, file: path.posix.basename(id), includeContent: true }) : null
 			};
 		}
 	};

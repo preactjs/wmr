@@ -3,7 +3,8 @@ import { createHash } from 'crypto';
 import { promises as fs } from 'fs';
 import * as acorn from 'acorn';
 import * as kl from 'kolorist';
-import { debug, formatResolved, formatPath } from './output-utils.js';
+import { debug, formatResolved, formatPath, hasDebugFlag } from './output-utils.js';
+import { mergeSourceMaps } from './sourcemap.js';
 
 // Rollup respects "module", Node 14 doesn't.
 const cjsDefault = m => ('default' in m ? m.default : m);
@@ -45,7 +46,7 @@ function identifierPair(id, importer) {
 
 /**
  * @param {Plugin[]} plugins
- * @param {import('rollup').InputOptions & PluginContainerOptions} [opts]
+ * @param {import('rollup').InputOptions & PluginContainerOptions & {sourcemap?: boolean}} [opts]
  */
 export function createPluginContainer(plugins, opts = {}) {
 	if (!Array.isArray(plugins)) plugins = [plugins];
@@ -279,6 +280,9 @@ export function createPluginContainer(plugins, opts = {}) {
 		 * @param {string} id
 		 */
 		async transform(code, id) {
+			/** @type {import('./sourcemap.js').SourceMap[]} */
+			const sourceMaps = [];
+
 			for (plugin of plugins) {
 				if (!plugin.transform) continue;
 				const result = await plugin.transform.call(ctx, code, id);
@@ -286,12 +290,32 @@ export function createPluginContainer(plugins, opts = {}) {
 
 				logTransform(`${kl.dim(formatPath(id))} [${plugin.name}]`);
 				if (typeof result === 'object') {
+					if (result.map) {
+						// Normalize source map sources URLs for the browser
+						result.map.sources = result.map.sources.map(s => {
+							if (typeof s === 'string') {
+								return `/${posix.normalize(s)}`;
+							} else if (hasDebugFlag()) {
+								logTransform(kl.yellow(`Invalid source map returned by plugin `) + kl.magenta(plugin.name));
+							}
+
+							return s;
+						});
+
+						sourceMaps.push(result.map);
+					} else if (opts.sourcemap && result.code !== code) {
+						logTransform(kl.yellow(`Missing sourcemap result in transform() method of `) + kl.magenta(plugin.name));
+					}
+
 					code = result.code;
 				} else {
+					if (opts.sourcemap && code !== result) {
+						logTransform(kl.yellow(`Missing sourcemap result in transform() method of `) + kl.magenta(plugin.name));
+					}
 					code = result;
 				}
 			}
-			return code;
+			return { code, map: sourceMaps.length ? mergeSourceMaps(sourceMaps) : null };
 		},
 
 		/**

@@ -1,77 +1,65 @@
-import { parse } from 'es-module-lexer/dist/lexer.js';
+import { parse } from 'es-module-lexer';
+import MagicString from 'magic-string';
+import path from 'path';
 
 /** @template T @typedef {Promise<T>|T} MaybePromise */
 
 /** @typedef {(specifier: string, id?: string) => MaybePromise<string|false|null|void>} ResolveFn */
 
+const KIND_IMPORT = 0;
+const KIND_DYNAMIC_IMPORT = 1;
+const KIND_IMPORT_META = 2;
+
 /**
  * @param {string} code Module code
  * @param {string} id Source module specifier
- * @param {object} [options]
+ * @param {object} options
  * @param {ResolveFn?} [options.resolveImportMeta] Replace `import.meta.FIELD` with a JS string. Return `false`/`null` preserve.
  * @param {ResolveFn?} [options.resolveId] Return a replacement for import specifiers
  * @param {ResolveFn?} [options.resolveDynamicImport] `false` preserves, `null` falls back to resolveId()
+ * @param {boolean} [options.sourcemap]
+ * @returns {Promise<{ code: string, map: any }>}
  */
-export async function transformImports(code, id, { resolveImportMeta, resolveId, resolveDynamicImport } = {}) {
+export async function transformImports(code, id, { resolveImportMeta, resolveId, resolveDynamicImport, sourcemap }) {
 	const [imports] = await parse(code, id);
-	let out = '';
+	const s = new MagicString(code);
 	let offset = 0;
 
-	// Import specifiers are synchronously converted into placeholders.
-	// Resolutions are async+parallel, held in a mapping to their placeholders.
-	let resolveIds = 0;
-	const toResolve = new Map();
-
-	// Get a [deduplicated] placeholder for a specifier and kick off resolution
-	const field = (spec, resolver, a, b) => {
-		const match = toResolve.get(spec);
-		if (match) return match.placeholder;
-		const placeholder = `%%_RESOLVE_#${++resolveIds}#_%%`;
-		toResolve.set(spec, {
-			placeholder,
-			spec,
-			p: resolver(a, b)
-		});
-		return placeholder;
-	};
-
-	// Falls through to resolveId() if null, preserves spec if false
-	const doResolveDynamicImport = async (spec, id) => {
-		let f = resolveDynamicImport && (await resolveDynamicImport(spec, id));
-		if (f == null && resolveId) f = await resolveId(spec, id);
-		return f;
-	};
+	/** @type {Array<{ spec: string, start: number, end: number, kind: number, property: null | string}>} */
+	const toResolve = [];
 
 	for (const item of imports) {
 		// Skip items that were already processed by being wrapped in an import - eg `import(import.meta.url)`
 		if (item.s < offset) continue;
 
-		out += code.substring(offset, item.s);
-
-		const isImportMeta = item.d === -2;
+		let isImportMeta = item.d === -2;
 		const isDynamicImport = item.d > -1;
 
 		if (isDynamicImport) {
 			// Bugfix: `import(import.meta.url)` returns an invalid negative end_offset.
 			// We detect that here and find the closing paren to estimate the offset.
 			if (item.e < 0) {
+				// @ts-ignore
 				item.e = code.indexOf(')', item.s);
+				isImportMeta = true;
 			}
 			// dynamic import() has no statement_end, so we take the position following the closing paren:
+			// @ts-ignore
 			item.se = code.indexOf(')', item.e) + 1;
 		}
 
 		let quote = '';
-		let after = code.substring(item.e, item.se);
 
 		let spec = code.substring(item.s, item.e);
 		offset = item.se;
 
 		// import.meta
 		if (isImportMeta) {
+			offset = item.s + 'import.meta'.length;
 			// Check for *simple* property access immediately following `import.meta`:
 			const r = /\s*\.\s*([a-z_$][a-z0-9_$]*)/gi;
 			r.lastIndex = offset;
+
 			const match = r.exec(code);
 			if (match && match.index === offset) {
 				// advance past it and append it to the "specifier":
@@ -80,10 +68,9 @@ export async function transformImports(code, id, { resolveImportMeta, resolveId,
 				// resolve it:
 				const property = match[1];
 				if (resolveImportMeta) {
-					spec = field(spec, resolveImportMeta, property);
+					toResolve.push({ spec, start: item.s, end: offset, kind: KIND_IMPORT_META, property });
 				}
 			}
-			out += spec;
 			continue;
 		}
 
@@ -106,41 +93,66 @@ export async function transformImports(code, id, { resolveImportMeta, resolveId,
 				if (resolveDynamicImport) {
 					console.warn(`Cannot resolve dynamic expression in import(${spec})`);
 				}
-				out += spec + after;
 				continue;
 			} else {
 				// Trim any import assertions if present so that we just have the
 				// import specifier itself.
 				const closingQuoteIdx = spec.indexOf(quote, 1);
 				spec = spec.slice(0, closingQuoteIdx + 1);
+				// @ts-ignore
+				item.e = code.indexOf(quote, item.s + 1);
 			}
 
 			spec = spec.replace(/^\s*(['"`])(.*)\1\s*$/g, '$2');
 
-			if (resolveDynamicImport) {
-				spec = field(spec, doResolveDynamicImport, spec, id);
-				out += quote + spec + quote + after;
-				continue;
-			}
+			toResolve.push({
+				spec,
+				// Account for opening quote
+				start: item.s + 1,
+				end: item.e,
+				kind: KIND_DYNAMIC_IMPORT,
+				property: null
+			});
+			continue;
 		}
 
 		if (resolveId) {
-			spec = field(spec, resolveId, spec, id);
+			toResolve.push({ spec, start: item.s, end: item.e, kind: KIND_IMPORT, property: null });
 		}
-		out += quote + spec + quote + after;
 	}
 
-	out += code.substring(offset);
-
-	// Wait for all resolutions to finish and map them to placeholders
-	const mapping = new Map();
 	await Promise.all(
-		Array.from(toResolve.values()).map(async v => {
-			mapping.set(v.placeholder, (await v.p) || v.spec);
+		toResolve.map(async v => {
+			let resolved = null;
+			if (v.kind === KIND_IMPORT) {
+				// @ts-ignore
+				resolved = await resolveId(v.spec, id);
+			} else if (v.kind === KIND_DYNAMIC_IMPORT) {
+				// @ts-ignore
+				if (resolveDynamicImport) {
+					resolved = await resolveDynamicImport(v.spec, id);
+				}
+
+				if (resolved == null && resolveId) {
+					resolved = await resolveId(v.spec, id);
+				}
+			} else if (v.kind === KIND_IMPORT_META) {
+				// @ts-ignore
+				resolved = await resolveImportMeta(v.property, id);
+			}
+
+			if (!resolved) return;
+
+			if (v.start !== v.end) {
+				s.overwrite(v.start, v.end, resolved);
+			} else {
+				s.prependLeft(v.start, resolved);
+			}
 		})
 	);
 
-	out = out.replace(/%%_RESOLVE_#\d+#_%%/g, s => mapping.get(s));
-
-	return out;
+	return {
+		code: s.toString(),
+		map: sourcemap ? s.generateMap({ source: id, file: path.posix.basename(id), includeContent: true }) : null
+	};
 }

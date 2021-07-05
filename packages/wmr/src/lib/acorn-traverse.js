@@ -3,6 +3,7 @@ import * as jsxWalk from 'acorn-jsx-walk';
 import MagicString from 'magic-string';
 import * as astringLib from 'astring';
 import { codeFrame } from './output-utils.js';
+import { posix } from 'path';
 
 /**
  * @fileoverview
@@ -100,7 +101,16 @@ let codeGenerator = {
 	// import(source)
 	ImportExpression(node, state) {
 		state.write('import(');
-		this[node.source.type](node.source, state);
+
+		// TODO: Sometimes this seems to have a source and sometimes
+		// an expression. I don't understand why. The expression seems
+		// to be only set when calling `t.importExpression()`
+		if (node.source) {
+			this[node.source.type](node.source, state);
+		} else {
+			this[node.expression.type](node.expression, state);
+		}
+
 		state.write(')');
 	},
 	JSXFragment(node, state) {
@@ -745,8 +755,10 @@ export function transform(
 	function getSourceMap() {
 		if (!map) {
 			map = out.generateMap({
-				includeContent: false,
-				source: sourceFileName
+				includeContent: true,
+				// Must be set for most source map verifiers to work
+				source: sourceFileName || filename,
+				file: posix.basename(sourceFileName || filename || '')
 			});
 		}
 		return map;

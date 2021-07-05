@@ -16,7 +16,8 @@
 		"demo": "yarn workspace @examples/demo run",
 		"docs": "yarn workspace docs",
 		"iso": "yarn workspace preact-iso",
-		"ci": "yarn wmr build && yarn --check-files && yarn demo build:prod"
+		"ci": "yarn wmr build && yarn --check-files && yarn demo build:prod",
+		"postinstall": "patch-package --exclude 'nothing'"
 	},
 	"eslintConfig": {
 		"extends": [
@@ -91,6 +92,7 @@
 		"eslint-plugin-prettier": "^3.1.4",
 		"husky": "^4.2.5",
 		"lint-staged": "^10.2.11",
+		"patch-package": "^6.4.7",
 		"prettier": "^2.0.5"
 	}
 }
