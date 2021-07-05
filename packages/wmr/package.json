@@ -60,7 +60,7 @@
 		"cssnano": "^4.1.10",
 		"devcert": "^1.1.2",
 		"errorstacks": "^2.3.2",
-		"es-module-lexer": "^0.4.1",
+		"es-module-lexer": "^0.7.0",
 		"jest": "^26.1.0",
 		"jest-puppeteer": "^5.0.4",
 		"kolorist": "^1.5.0",
