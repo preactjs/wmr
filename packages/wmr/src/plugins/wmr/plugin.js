@@ -21,11 +21,10 @@ export function getWmrClient({ hot = true } = {}) {
  * Conforms to the {@link esm-hmr https://github.com/pikapkg/esm-hmr} spec.
  * @param {object} options
  * @param {boolean} [options.hot]
- * @param {boolean} [options.preact]
  * @param {boolean} [options.sourcemap]
  * @returns {import('rollup').Plugin}
  */
-export default function wmrPlugin({ hot = true, preact, sourcemap } = {}) {
+export default function wmrPlugin({ hot = true, sourcemap } = {}) {
 	if (BYPASS_HMR) hot = false;
 
 	return {
