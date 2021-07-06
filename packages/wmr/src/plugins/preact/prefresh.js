@@ -2,6 +2,7 @@ import MagicString from 'magic-string';
 import path from 'path';
 
 const PREFRESH = `
+import '@prefresh/core';
 if (import.meta.hot) {
   let a=0, m=import(import.meta.url);
   import.meta.hot.accept(async ({module}) => {
@@ -43,7 +44,6 @@ export function prefreshPlugin({ sourcemap }) {
 				indentExclusionRanges: undefined
 			});
 
-			s.prepend(`import '@prefresh/core';\n`);
 			s.append('\n' + PREFRESH);
 
 			return {
