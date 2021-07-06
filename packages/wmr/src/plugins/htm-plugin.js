@@ -68,13 +68,6 @@ export default function htmPlugin({ include, production = true, sourcemap } = {}
 				parse: this.parse
 			});
 
-			// Explicitly drop prefresh inclusion hint if we transformed JSX:
-			// if (out.code !== code) {
-			// 	out.code += '\n/*@@prefresh_include*/';
-			// 	// doesn't work with Rollup:
-			// 	this.getModuleInfo(filename).hasJSX = true;
-			// }
-
 			const end = Date.now();
 			if (end - start > 100) this.warn(`${filename} took ${end - start}ms`);
 			return out;
