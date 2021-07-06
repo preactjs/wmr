@@ -23,6 +23,7 @@ import visualizer from 'rollup-plugin-visualizer';
 import { defaultLoaders } from './default-loaders.js';
 import { importAssertionPlugin } from '../plugins/import-assertion.js';
 import { acornDefaultPlugins } from './acorn-default-plugins.js';
+import { prefreshPlugin } from '../plugins/preact/prefresh.js';
 
 /**
  * @param {import("wmr").Options} options
@@ -40,6 +41,7 @@ export function getPlugins(options) {
 	return [
 		acornDefaultPlugins(),
 		...plugins.slice(0, split),
+		features.preact && !production && prefreshPlugin({ sourcemap }),
 		production && htmlEntriesPlugin({ root, publicPath }),
 		externalUrlsPlugin(),
 		nodeBuiltinsPlugin({ production }),
@@ -68,7 +70,7 @@ export function getPlugins(options) {
 			NODE_ENV: production ? 'production' : 'development'
 		}),
 		htmPlugin({ production, sourcemap: options.sourcemap }),
-		wmrPlugin({ hot: !production, preact: features.preact, sourcemap: options.sourcemap }),
+		wmrPlugin({ hot: !production, sourcemap: options.sourcemap }),
 		fastCjsPlugin({
 			// Only transpile CommonJS in node_modules and explicit .cjs files:
 			include: /(^npm\/|[/\\]node_modules[/\\]|\.cjs$)/
