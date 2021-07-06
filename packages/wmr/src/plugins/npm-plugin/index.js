@@ -12,7 +12,7 @@ import { debug, formatPath } from '../../lib/output-utils.js';
  * @param {boolean} [options.external] If `false`, resolved npm dependencies will be inlined by Rollup.
  * @returns {import('rollup').Plugin}
  */
-export default function npmPlugin({ publicPath = '/@npm', prefix = 'npm/', external = true } = {}) {
+export default function npmPlugin({ publicPath = '/@npm', prefix = '\0npm/', external = true } = {}) {
 	const log = debug('npm:plugin');
 
 	return {
