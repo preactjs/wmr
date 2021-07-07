@@ -4,6 +4,7 @@ import MagicString from 'magic-string';
 import * as astringLib from 'astring';
 import { codeFrame } from './output-utils.js';
 import { posix } from 'path';
+import { hash } from '../plugins/wmr/styles/css-modules.js';
 
 /**
  * @fileoverview
@@ -54,7 +55,7 @@ let codegenContext;
 
 /**
  * @param {Node} node
- * @param {ReturnType<createContext>} [ctx]
+ * @param {ReturnType<typeof createContext>} [ctx]
  */
 export function generate(node, ctx) {
 	codegenContext = ctx;
@@ -68,7 +69,9 @@ let codeGenerator = {
 	...astring.baseGenerator,
 	StringLiteral(node, state) {
 		if (node.raw) state.write(node.raw);
-		state.write(`'${node.value.replace(/'/g, "\\'")}'`);
+		else {
+			state.write(`'${node.value.replace(/'/g, "\\'")}'`);
+		}
 	},
 	ImportSpecifier(node, state) {
 		const { imported, local } = node;
@@ -163,6 +166,11 @@ let codeGenerator = {
 		this[name.type](name, state);
 		if (value) {
 			state.write('=');
+
+			// JSX needs double quotes instead of single quotes
+			if (types.isStringLiteral(value)) {
+				value.raw = JSON.stringify(value.value);
+			}
 			this[value.type](value, state);
 		}
 	},
@@ -189,7 +197,12 @@ for (let type in codeGenerator) {
 				state.write(node._string);
 				return;
 			}
-			if (node.start != null && node.end != null) {
+
+			// Nodes passed via `path.replaceWith()` have offsets that start
+			// at 0 based on the generated replacement subtree. We must
+			// skip this branch to ensure that we don't slice the wrong
+			// offsets.
+			if (!codegenContext.generatorOpts.forceRegenerate && node.start != null && node.end != null) {
 				try {
 					state.write(codegenContext.out.slice(node.start, node.end));
 					return;
@@ -210,11 +223,30 @@ for (let type in codeGenerator) {
 // 	}
 // });
 
+/**
+ *
+ * @param {TemplateStringsArray} str
+ */
 function template(str) {
 	str = String(str);
-	return replacements => template.ast(str.replace(/[A-Z0-9]+/g, s => generate(replacements[s], codegenContext)));
+
+	/**
+	 * @param {Record<string, Node>}
+	 * @returns {Node}
+	 */
+	return replacements => {
+		const replaced = str.replace(/[A-Z0-9]+/g, s => {
+			if (s in replacements) {
+				return generate(replacements[s], codegenContext);
+			}
+
+			return s;
+		});
+
+		return template.ast.call(this, replaced);
+	};
 }
-template.ast = function (str, expressions) {
+template.ast = function (str, expressions = []) {
 	if (Array.isArray(str)) {
 		str = str.reduce((str, q, i) => str + q + (i === expressions.length ? '' : expressions[i]), '');
 	}
@@ -225,7 +257,11 @@ template.ast = function (str, expressions) {
 
 	if (!ctx) throw Error('template.ast() called without a parsing context.');
 
-	return ctx.parse(str, { expression: true });
+	const ast = ctx.parse(str, { expression: true });
+	// AST node will always be wrapped in a `Program` node`
+	// TODO: This limits the scenarios in which `template` can
+	// be used.
+	return ast.body[0];
 };
 
 // keep things clean by making some properties non-enumerable
@@ -237,7 +273,7 @@ class Path {
 	/**
 	 * @param {Node} node
 	 * @param {Node[]} ancestors
-	 * @param {ReturnType<createContext>} [ctx]
+	 * @param {ReturnType<typeof createContext>} [ctx]
 	 */
 	constructor(node, ancestors, ctx) {
 		if (node && ctx.paths.has(node)) {
@@ -351,11 +387,24 @@ class Path {
 		if (this._regenerateParent()) {
 			this._hasString = false;
 		} else {
-			let str = generate(node, this.ctx);
-			this._hasString = true;
+			let str = generate(node, {
+				...this.ctx,
+				generatorOpts: {
+					...this.ctx.generatorOpts,
+					forceRegenerate: true
+				}
+			});
+
+			// Trim double semicolon
+			if (str.endsWith(';')) {
+				str = str.slice(0, -1);
+			}
+
+			this._hasString = false;
 			this.ctx.out.overwrite(this.start, this.end, str);
 		}
 		this._requeue();
+		console.log('AFTER', this.ctx.out.toString());
 	}
 
 	/** @param {string} str */
@@ -387,7 +436,10 @@ class Path {
 	_regenerate() {
 		const { start, end } = this.node;
 		this.node.start = this.node.end = this.node._string = null;
-		let str = generate(this.node, this.ctx);
+		let str = generate(this.node, {
+			...this.ctx,
+			generatorOpts: { ...this.ctx?.generatorOpts, forceRegenerate: true }
+		});
 		this.node.start = start;
 		this.node.end = end;
 		this.replaceWithString(str);
@@ -430,6 +482,136 @@ class Path {
 	_requeue() {
 		this.ctx.queue.add(this);
 	}
+
+	/**
+	 * @param {string} moduleSource
+	 * @param {string} [importName]
+	 */
+	referencesImport(moduleSource, importName) {
+		const binding = this.scope.getBinding(this.node.name);
+		if (!binding) return false;
+
+		const parent = binding.path.parentPath;
+		if (!types.isImportDeclaration(parent.node)) {
+			return false;
+		}
+
+		const node = binding.path.node;
+		if (parent.node.source.value !== moduleSource) {
+			return false;
+		}
+
+		if (!importName) return true;
+
+		if (types.isImportDefaultSpecifier(node) && importName === 'default') {
+			return true;
+		}
+
+		if (types.isImportSpecifier(node) && node.imported.name === importName) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * @returns {Record<string, Path>}
+	 */
+	getOuterBindingIdentifierPaths() {
+		const result = Object.create(null);
+
+		/** @type {Path[]} */
+		const stack = [this];
+		for (let i = 0; i < stack.length; i++) {
+			const id = stack[i];
+			if (!id || !id.node) continue;
+
+			if (types.isIdentifier(id.node)) {
+				result[id.node.name] = id;
+				continue;
+			}
+
+			if (types.isFunctionDeclaration(id.node)) {
+				stack.push(id.get('id'));
+			} else if (types.isVariableDeclarator(id.node)) {
+				if (types.isArrayPattern(id.node.id)) {
+					//
+					const nodePathItems = id.get('id.elements');
+					for (let j = 0; j < nodePathItems.node.length; j++) {
+						stack.push(nodePathItems.get(String(j)));
+					}
+				} else {
+					stack.push(id.get('id'));
+				}
+			}
+		}
+
+		return result;
+	}
+
+	_scope = null;
+	/** @type {Scope} */
+	get scope() {
+		let nodePath = this;
+		while (!nodePath._scope && nodePath.parentPath) {
+			nodePath = nodePath.parentPath;
+		}
+
+		if (!nodePath._scope) {
+			throw new Error('Scope has not been set');
+		}
+
+		return nodePath._scope;
+	}
+}
+
+class Binding {
+	/**
+	 * @param {Path} nodePath
+	 */
+	constructor(nodePath) {
+		this.path = nodePath;
+	}
+}
+
+class Scope {
+	/** @type {Record<string, Binding>} */
+	bindings = {};
+
+	/**
+	 * @param {Scope | null} [parent]
+	 */
+	constructor(parent = null) {
+		this.parent = parent;
+	}
+
+	/**
+	 * @param {string} [name]
+	 */
+	generateUid(name) {
+		return `${name}_${hash(name)}`;
+	}
+
+	/**
+	 * @param {string} [name]
+	 */
+	generateUidIdentifier(name) {
+		return types.identifier(this.generateUid(name));
+	}
+
+	/**
+	 * @param {string} name
+	 * @returns {Binding | undefined}
+	 */
+	getBinding(name) {
+		if (name in this.bindings) {
+			return this.bindings[name];
+		}
+
+		if (this.parent) {
+			return this.parent.getBinding(name);
+		}
+	}
 }
 
 const TYPES = {
@@ -444,6 +626,8 @@ const TYPES = {
 		return clone;
 	},
 	identifier: name => ({ type: 'Identifier', name }),
+	JSXIdentifier: name => ({ type: 'JSXIdentifier', name }),
+	JSXAttribute: (name, value) => ({ type: 'JSXAttribute', name, value }),
 	stringLiteral: value => ({ type: 'StringLiteral', value }),
 	booleanLiteral: value => ({ type: 'BooleanLiteral', value }),
 	numericLiteral: value => ({ type: 'NumericLiteral', value }),
@@ -582,8 +766,33 @@ function visit(root, visitors, state) {
 		return typeof obj === 'object' && obj != null && (obj instanceof Node || 'type' in obj);
 	}
 
+	let scope = new Scope();
+
 	function enter(node, ancestors, seededPath) {
 		const path = seededPath || new ctx.Path(node, ancestors.slice());
+
+		let prevScope = scope;
+		if (types.isBlockStatement(node)) {
+			scope = new Scope(scope);
+		} else if (types.isVariableDeclarator(node)) {
+			if (types.isIdentifier(node.id)) {
+				const name = node.id.name;
+				scope.bindings[name] = new Binding(path);
+			} else if (types.isArrayPattern(node.id)) {
+				// Example: `const [a, b] = foo();`
+				node.id.elements.forEach(item => {
+					if (!item) return;
+					if (types.isIdentifier(item)) {
+						const name = item.name;
+						scope.bindings[name] = new Binding(path);
+					}
+				});
+			}
+		} else if (types.isImportSpecifier(node)) {
+			const name = node.local.name;
+			scope.bindings[name] = new Binding(path);
+		}
+		path._scope = scope;
 
 		if (path.shouldStop) {
 			return false;
@@ -612,6 +821,8 @@ function visit(root, visitors, state) {
 			if (path.shouldStop) {
 				return false;
 			}
+
+			scope = prevScope;
 		}
 
 		ancestors.push(node);
@@ -653,7 +864,7 @@ function visit(root, visitors, state) {
  * @param {string} options.code
  * @param {MagicString} options.out
  * @param {typeof DEFAULTS['parse']} options.parse
- * @param {{ compact?: boolean }} options.generatorOpts
+ * @param {{ compact?: boolean, forceRegenerate?: boolean }} options.generatorOpts
  */
 function createContext({ code, out, parse, generatorOpts }) {
 	const ctx = {
@@ -731,7 +942,7 @@ export function transform(
 		const plugin = typeof id === 'string' ? require(id) : id;
 		const inst = plugin({ types, template }, options);
 		for (let i in inst.visitor) {
-			const visitor = visitors[i] || (visitors[i] = createMetaVisitor());
+			const visitor = visitors[i] || (visitors[i] = createMetaVisitor({ filename }));
 			visitor.visitors.push({
 				stateId,
 				visitor: inst.visitor[i],
@@ -799,14 +1010,17 @@ function buildError(err, code, filename = 'unknown') {
 
 /**
  * An internal visitor that calls other visitors.
+ * @param {object} options
+ * @param {string} [options.filename]
  * @returns {Visitor & { visitors: ({ stateId: symbol, visitor: Visitor, opts?: any })[] }}
  */
-function createMetaVisitor() {
+function createMetaVisitor({ filename }) {
 	function getPluginState(state, v) {
 		let pluginState = state.get(v.stateId);
 		if (!pluginState) {
 			pluginState = new Map();
 			pluginState.opts = v.opts || {};
+			pluginState.filename = filename;
 			state.set(v.stateId, pluginState);
 		}
 		return pluginState;

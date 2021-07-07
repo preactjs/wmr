@@ -208,6 +208,43 @@ describe('acorn-traverse', () => {
 		});
 	});
 
+	describe.only('template', () => {
+		it('should generate code', () => {
+			const res = transformWithPlugin(`function outer() { return 42 }`, ({ types: t, template }) => {
+				return {
+					name: 'foo',
+					visitor: {
+						ReturnStatement(path) {
+							const tpl = template`const foo = "bar";`;
+							path.replaceWith(tpl());
+						}
+					}
+				};
+			});
+			expect(res).toEqual('function outer() { const foo = "bar"; }');
+		});
+
+		it('should replace placeholders', () => {
+			const res = transformWithPlugin(`function outer() { return 42 }`, ({ types: t, template }) => {
+				return {
+					name: 'foo',
+					visitor: {
+						ReturnStatement(path) {
+							const tpl = template`addHookName(FOO, BAR);`;
+							path.get('argument').replaceWith(
+								tpl({
+									FOO: t.stringLiteral('first'),
+									BAR: t.stringLiteral('second')
+								})
+							);
+						}
+					}
+				};
+			});
+			expect(res).toEqual(`function outer() { return addHookName('first', 'second'); }`);
+		});
+	});
+
 	describe('fixtures', () => {
 		const cases = readdirSync(fixtures).filter(f => f[0] !== '.');
 		it.each(cases.filter(f => f.match(/\.expected/)))('fixtures', async expectedFile => {
@@ -220,6 +257,14 @@ describe('acorn-traverse', () => {
 				}
 			]);
 			expect(actual).toEqual(expected);
+		});
+	});
+
+	describe('scope', () => {
+		describe('generateUidIdentifier', () => {
+			it('should handle scope', () => {
+				//
+			});
 		});
 	});
 });

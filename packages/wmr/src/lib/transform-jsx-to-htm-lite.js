@@ -59,6 +59,8 @@ export default function transformJsxToHtmLite({ types: t }, options = {}) {
 				if (isIdent(name.node)) {
 					name.prependString('${');
 					name.appendString('}');
+					// Used for component stack traces
+					// name.appendString(` __source="${state.filename}"`);
 				}
 
 				if (isRootElement(path)) {
