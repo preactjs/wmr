@@ -731,7 +731,7 @@ export function transform(
 		const plugin = typeof id === 'string' ? require(id) : id;
 		const inst = plugin({ types, template }, options);
 		for (let i in inst.visitor) {
-			const visitor = visitors[i] || (visitors[i] = createMetaVisitor());
+			const visitor = visitors[i] || (visitors[i] = createMetaVisitor({ filename }));
 			visitor.visitors.push({
 				stateId,
 				visitor: inst.visitor[i],
@@ -799,14 +799,17 @@ function buildError(err, code, filename = 'unknown') {
 
 /**
  * An internal visitor that calls other visitors.
+ * @param {object} options
+ * @param {string} [options.filename]
  * @returns {Visitor & { visitors: ({ stateId: symbol, visitor: Visitor, opts?: any })[] }}
  */
-function createMetaVisitor() {
+function createMetaVisitor({ filename }) {
 	function getPluginState(state, v) {
 		let pluginState = state.get(v.stateId);
 		if (!pluginState) {
 			pluginState = new Map();
 			pluginState.opts = v.opts || {};
+			pluginState.filename = filename;
 			state.set(v.stateId, pluginState);
 		}
 		return pluginState;
