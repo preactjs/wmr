@@ -38,7 +38,7 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = 'npm/', exter
 			if (importer && importer.startsWith(prefix)) importer = importer.substring(prefix.length);
 
 			// let module, path, version;
-			/** @type {ReturnType <normalizeSpecifier>} */
+			/** @type {ReturnType<typeof normalizeSpecifier>} */
 			let meta;
 
 			const importerMeta = importer && !isDiskPath(importer) && normalizeSpecifier(importer);

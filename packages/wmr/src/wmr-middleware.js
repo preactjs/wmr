@@ -416,7 +416,7 @@ function resolveFile(file, cwd, alias) {
 
 /**
  * @typedef Context
- * @property {ReturnType<createPluginContainer>} NonRollup
+ * @property {ReturnType<typeof createPluginContainer>} NonRollup
  * @property {string} id rollup-style cwd-relative file identifier
  * @property {string} file absolute file path
  * @property {string} path request path

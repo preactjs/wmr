@@ -14,7 +14,7 @@ import { hasDebugFlag } from './output-utils.js';
 
 /**
  * Serve a "proxy module" that uses the WMR runtime to load CSS.
- * @param {ReturnType<normalizeSpecifier>} meta
+ * @param {ReturnType<typeof normalizeSpecifier>} meta
  * @param {import('http').ServerResponse} res
  * @param {boolean} [isModule]
  */

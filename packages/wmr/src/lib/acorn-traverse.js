@@ -49,12 +49,12 @@ cjsDefault(jsxWalk).extend(walk.base);
  * @type {(api: { types: typeof types, template: typeof template }) => PluginContext}
  */
 
-/** @type {ReturnType<createContext> | empty} */
+/** @type {ReturnType<typeof createContext> | empty} */
 let codegenContext;
 
 /**
  * @param {Node} node
- * @param {ReturnType<createContext>} [ctx]
+ * @param {ReturnType<typeof createContext>} [ctx]
  */
 export function generate(node, ctx) {
 	codegenContext = ctx;
@@ -219,7 +219,7 @@ template.ast = function (str, expressions) {
 		str = str.reduce((str, q, i) => str + q + (i === expressions.length ? '' : expressions[i]), '');
 	}
 
-	/** @type {ReturnType<createContext>} */
+	/** @type {ReturnType<typeof createContext>} */
 	// @ts-ignore-next
 	const ctx = this.ctx;
 
@@ -237,7 +237,7 @@ class Path {
 	/**
 	 * @param {Node} node
 	 * @param {Node[]} ancestors
-	 * @param {ReturnType<createContext>} [ctx]
+	 * @param {ReturnType<typeof createContext>} ctx
 	 */
 	constructor(node, ancestors, ctx) {
 		if (node && ctx.paths.has(node)) {
@@ -561,14 +561,14 @@ const types = new Proxy(TYPES, {
 	}
 });
 
-/** @type {ReturnType<createContext>} */
+/** @type {ReturnType<typeof createContext>} */
 let visitingCtx;
 
 /**
  * @param {Node} root
  * @param {Record<string, Visitor>} visitors
  * @param {object} state
- * @this {{ ctx: ReturnType<createContext> }}
+ * @this {{ ctx: ReturnType<typeof createContext> }}
  */
 function visit(root, visitors, state) {
 	const { ctx } = this;
@@ -722,7 +722,7 @@ export function transform(
 	const allPlugins = [];
 	resolvePreset({ presets, plugins }, allPlugins);
 
-	/** @type {Record<string, ReturnType<createMetaVisitor>>} */
+	/** @type {Record<string, ReturnType<typeof createMetaVisitor>>} */
 	const visitors = {};
 
 	for (let i = 0; i < allPlugins.length; i++) {
