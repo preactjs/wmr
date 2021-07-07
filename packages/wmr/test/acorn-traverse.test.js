@@ -60,6 +60,23 @@ describe('acorn-traverse', () => {
 			const str = generate(parse(`<a.b.c />`)).trim();
 			expect(str).toMatchInlineSnapshot('"<a.b.c/>;"');
 		});
+
+		it('should serialize created JSXAttributes', () => {
+			const str = transformWithPlugin('<div />', ({ types: t }) => {
+				return {
+					name: 'foo',
+					visitor: {
+						JSXOpeningElement(path) {
+							// eslint-disable-next-line new-cap
+							const attr = t.JSXAttribute(t.JSXIdentifier('foo'), t.stringLiteral('bar'));
+							path.pushContainer('attributes', attr);
+						}
+					}
+				};
+			});
+
+			expect(str).toMatchInlineSnapshot(`"<div foo=\\"bar\\"/>"`);
+		});
 	});
 
 	describe('transform()', () => {

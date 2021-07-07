@@ -68,7 +68,7 @@ let codeGenerator = {
 	...astring.baseGenerator,
 	StringLiteral(node, state) {
 		if (node.raw) state.write(node.raw);
-		state.write(`'${node.value.replace(/'/g, "\\'")}'`);
+		else state.write(`'${node.value.replace(/'/g, "\\'")}'`);
 	},
 	ImportSpecifier(node, state) {
 		const { imported, local } = node;
@@ -163,6 +163,12 @@ let codeGenerator = {
 		this[name.type](name, state);
 		if (value) {
 			state.write('=');
+
+			// JSX needs double quotes instead of single quotes
+			if (types.isStringLiteral(value)) {
+				value.raw = JSON.stringify(value.value);
+			}
+
 			this[value.type](value, state);
 		}
 	},
@@ -456,6 +462,8 @@ const TYPES = {
 	importDeclaration: (specifiers, source) => ({ type: 'ImportDeclaration', specifiers, source }),
 	importSpecifier: (local, imported) => ({ type: 'ImportSpecifier', local, imported }),
 	importDefaultSpecifier: local => ({ type: 'ImportDefaultSpecifier', local }),
+	JSXIdentifier: name => ({ type: 'JSXIdentifier', name }),
+	JSXAttribute: (name, value) => ({ type: 'JSXAttribute', name, value }),
 	/** @type {(a:Node,b:Node)=>boolean} */
 	isNodesEquivalent(a, b) {
 		if (a instanceof Path) a = a.node;
