@@ -13,7 +13,7 @@ import { hasDebugFlag } from './lib/output-utils.js';
 
 /**
  * @typedef CustomServer
- * @type {polka.Polka & { server?: ReturnType<createServer> | import('http2').Http2Server, ws?: WebSocketServer, http2?: boolean } }
+ * @type {polka.Polka & { server?: ReturnType<typeof createServer> | import('http2').Http2Server, ws?: WebSocketServer, http2?: boolean } }
  */
 
 /**
