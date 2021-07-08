@@ -591,7 +591,8 @@ h5:hover .anchor {
 	max-width: var(--container-width);
 }
 
-.md img {
+.md img,
+.md video {
 	max-width: 100%;
 }
 
