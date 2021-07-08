@@ -28,7 +28,8 @@ describe('Preact', () => {
 		it('should re-render component without destroying DOM', async () => {
 			await loadFixture('preact-jsx', env);
 			instance = await runWmrFast(env.tmp.path);
-			expect(await getOutput(env, instance)).toMatch(`it works`);
+			await env.page.goto(await instance.address, { waitUntil: 'networkidle0' });
+			expect(await env.page.content()).toMatch(`it works`);
 
 			await withLog(instance.output, async () => {
 				const h1 = await env.page.$('h1');
