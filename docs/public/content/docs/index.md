@@ -85,15 +85,18 @@ render(<App />, document.body);
 }
 ```
 
-`preact/compat` is our compatibility layer that allows you to leverage the many libraries of the React ecosystem and use them with Preact. If this is something you'd like to use with WMR you can add an `alias` section as well to your `package.json`:
+`preact/compat` is our compatibility layer that allows you to leverage the many libraries of the React ecosystem and use them with Preact. If this is something you'd like to use with WMR you can add an `alias` section as well to your `wmr.config.mjs`:
 
-```json
-{
-	"alias": {
-		"react": "preact/compat",
-		"react-dom": "preact/compat"
+```js
+import { defineConfig } from 'wmr';
+
+// Full list of options: https://wmr.dev/docs/configuration
+export default defineConfig({
+	alias: {
+		react: 'preact/compat',
+		'react-dom': 'preact/compat'
 	}
-}
+});
 ```
 
 **5.** You're all set! As an extra step, if you'd like WMR to prerender your application to static HTML during production builds, replace `render()` with [preact-iso](https://www.npmjs.com/package/preact-iso):
