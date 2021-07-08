@@ -121,47 +121,40 @@ function App() {
 
 WMR supports a `wmr.config.js` _(or `wmr.config.mjs`)_ configuration file, which can be used to set [WMR's options](https://github.com/preactjs/wmr/blob/main/packages/wmr/types.d.ts) and inject [Rollup plugins](https://github.com/rollup/plugins) or [Polka/Express middleware](https://github.com/lukeed/polka#middleware).
 
-You can export a `default` config function applied to all WMR commands, or individual functions for `start`, `build` and `serve`:
+You can export a `default` config function applied to all WMR commands, or conditionally for `start`, `build` and `serve`:
 
 ```js
 // wmr.config.mjs
+import { defineConfig } from 'wmr';
 import someRollupPlugin from '@rollup/plugin-xyz';
 
-/** @param {import('wmr').Options} config */
-export default async function (config) {
+export default defineConfig(async config => {
 	if (config.mode === 'build') {
-		config.plugins.push(
-			// add any Rollup plugins:
-			someRollupPlugin()
-		);
+		return {
+			plugins: [
+				// add any Rollup plugins:
+				someRollupPlugin()
+			]
+		};
 	}
 
 	if (config.mode === 'serve') {
-		config.middleware.push(
-			// add any Polka middleware:
-			function myPolkaMiddleware(req, res, next) {
-				res.setHeader('X-Foo', 'bar');
-				next();
-			}
-		);
+		return {
+			middleware: [
+				// add any Polka middleware:
+				function myPolkaMiddleware(req, res, next) {
+					res.setHeader('X-Foo', 'bar');
+					next();
+				}
+			]
+		};
 	}
-}
-
-// Or configure each WMR command separately:
-export async function start(config) {
-	// equivalent to `config.mode === 'start'`
-}
-export async function build(config) {
-	// equivalent to `config.mode === 'build'`
-}
-export async function serve(config) {
-	// equivalent to `config.mode === 'serve'`
-}
+});
 ```
 
 > **Note:** remember to add `"type":"module"` to your package.json _or_ use the `.mjs` file extension to make the file a JS module.
 
-See [the full list of options](https://github.com/preactjs/wmr/blob/main/packages/wmr/types.d.ts).
+See [the full list of options](./configuration).
 
 ## Recipes
 
