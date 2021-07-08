@@ -66,6 +66,25 @@ export function generate(node, ctx) {
 
 let codeGenerator = {
 	...astring.baseGenerator,
+	ObjectExpression(node, state) {
+		if (!node.properties.length) {
+			state.write('{}');
+		} else if (node.properties.length <= 5) {
+			state.write('{ ');
+			for (let i = 0; i < node.properties.length; i++) {
+				const prop = node.properties[i];
+				this[prop.type](prop, state);
+				if (i < node.properties.length - 1) {
+					state.write(', ');
+				}
+			}
+			state.write(' }');
+		} else {
+			// Astring inserts line indents by default
+			// eslint-disable-next-line new-cap
+			astring.baseGenerator.ObjectExpression(node, state);
+		}
+	},
 	StringLiteral(node, state) {
 		if (node.raw) state.write(node.raw);
 		else state.write(`'${node.value.replace(/'/g, "\\'")}'`);
@@ -190,7 +209,7 @@ for (let type in codeGenerator) {
 	const fn = codeGenerator[type];
 	codeGenerator[type] = function (node, state) {
 		if (node == null) return '';
-		if (codegenContext) {
+		if (codegenContext && !codegenContext.forceRegenerate) {
 			if (node._string) {
 				state.write(node._string);
 				return;
@@ -216,23 +235,36 @@ for (let type in codeGenerator) {
 // 	}
 // });
 
-function template(str) {
-	str = String(str);
-	return replacements => template.ast(str.replace(/[A-Z0-9]+/g, s => generate(replacements[s], codegenContext)));
-}
-template.ast = function (str, expressions) {
-	if (Array.isArray(str)) {
-		str = str.reduce((str, q, i) => str + q + (i === expressions.length ? '' : expressions[i]), '');
+function createTemplate(parse) {
+	/**
+	 *
+	 * @param {TemplateStringsArray} str
+	 * @returns {(replacements: Record<string, Node>) => Node}
+	 */
+	function template(str) {
+		str = String(str);
+		return (replacements = {}) => {
+			const code = str.replace(/[A-Z0-9]+/g, s => {
+				return s in replacements ? generate(replacements[s]) : s;
+			});
+
+			return template.ast(code);
+		};
 	}
 
-	/** @type {ReturnType<typeof createContext>} */
-	// @ts-ignore-next
-	const ctx = this.ctx;
+	template.ast = function (str, expressions = []) {
+		if (Array.isArray(str)) {
+			str = str.reduce((str, q, i) => str + q + (i === expressions.length ? '' : expressions[i]), '');
+		}
 
-	if (!ctx) throw Error('template.ast() called without a parsing context.');
+		const parsed = parse(str, { expression: true });
+		// Remove outer program node
+		const ast = parsed.body[0];
+		return ast;
+	};
 
-	return ctx.parse(str, { expression: true });
-};
+	return template;
+}
 
 // keep things clean by making some properties non-enumerable
 function def(obj, key, value) {
@@ -357,10 +389,21 @@ class Path {
 		if (this._regenerateParent()) {
 			this._hasString = false;
 		} else {
+			// Skip string generate optimizations as node positions won't
+			// match anymore.
+			this.ctx.forceRegenerate = true;
 			let str = generate(node, this.ctx);
+			this.ctx.forceRegenerate = false;
+
+			// Avoid duplicate semicolons when replacing nodes
+			if (str[str.length - 1] === ';' && this.ctx.out.original[this.end] === ';') {
+				str = str.slice(0, -1);
+			}
+
 			this._hasString = true;
 			this.ctx.out.overwrite(this.start, this.end, str);
 		}
+
 		this._requeue();
 	}
 
@@ -674,16 +717,15 @@ function createContext({ code, out, parse, generatorOpts }) {
 		generatorOpts,
 		types,
 		visit,
-		template,
+		/** @type {ReturnType<typeof createTemplate> | null} */
+		template: createTemplate(parse),
+		forceRegenerate: false,
 		Path
 	};
 
 	const bound = { ctx };
 
 	ctx.visit = ctx.visit.bind(bound);
-
-	ctx.template = template.bind(bound);
-	ctx.template.ast = template.ast.bind(bound);
 
 	// @ts-ignore
 	ctx.Path = function (node, ancestors) {

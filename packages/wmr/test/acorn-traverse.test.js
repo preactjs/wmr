@@ -53,6 +53,54 @@ describe('acorn-traverse', () => {
 		expect(filename).toEqual('foobar.js');
 	});
 
+	describe('template', () => {
+		it('should not throw with no replacements', () => {
+			const str = transformWithPlugin('const a = 2', ({ types: t, template }) => {
+				const tpl = template`const AbCdE = 42`;
+				return {
+					name: 'foo',
+					visitor: {
+						VariableDeclaration(path) {
+							if (path.node.declarations[0].id.name !== 'a') return;
+							path.replaceWith(tpl());
+						}
+					}
+				};
+			});
+
+			expect(str).toMatchInlineSnapshot('"const AbCdE = 42;"');
+		});
+
+		it('should apply replacements', () => {
+			const str = transformWithPlugin('const [v, set] = useState(0);', ({ types: t, template }) => {
+				let applied = false;
+
+				const tpl = template`addHookName(HOOK, NAME)`;
+				return {
+					name: 'foo',
+					visitor: {
+						CallExpression(path) {
+							const callee = path.get('callee');
+							const hookName = callee.node.name;
+
+							if (hookName !== 'useState' || applied) return;
+							applied = true;
+
+							path.replaceWith(
+								tpl({
+									HOOK: t.clone(path.node),
+									NAME: t.stringLiteral('foo')
+								})
+							);
+						}
+					}
+				};
+			});
+
+			expect(str).toMatchInlineSnapshot(`"const [v, set] = addHookName(useState(0), 'foo');"`);
+		});
+	});
+
 	describe('code generation', () => {
 		it('should parse and regenerate ES2020 syntax', async () => {
 			// While we try to avoid doing (full) codegen for performance reasons,
@@ -113,11 +161,11 @@ describe('acorn-traverse', () => {
 			expect(transform('const fn = (a) => 1;')).toMatchInlineSnapshot(`"const fn = (a) => 1;"`);
 
 			expect(transform('const fn = ([a]) => a;')).toMatchInlineSnapshot(`"const fn = ([a]) => a;"`);
-			expect(transform('html`${x.map(([a,b]) => ({a,b}))}`;')).toMatchInlineSnapshot(
-				`"$tag(html)\`\${x.map(([a,b]) => ({a,b}))}\`;"`
+			expect(transform('html`${x.map(([a, b]) => ({ a, b }))}`;')).toMatchInlineSnapshot(
+				`"$tag(html)\`\${x.map(([a, b]) => ({ a, b }))}\`;"`
 			);
-			expect(transform('html`${x.map(([a,b,c]) => ({a,b,c}))}`;')).toMatchInlineSnapshot(
-				`"$tag(html)\`\${x.map(([a,b,c]) => ({a,b,c}))}\`;"`
+			expect(transform('html`${x.map(([a, b, c]) => ({ a, b, c }))}`;')).toMatchInlineSnapshot(
+				`"$tag(html)\`\${x.map(([a, b, c]) => ({ a, b, c }))}\`;"`
 			);
 		});
 	});
@@ -135,13 +183,9 @@ describe('acorn-traverse', () => {
 					`"html\`\${x.map(a => html\`<a>\${a}</a>\`)}\`;"`
 				);
 
-				expect(doTransform('<>${x.map(([a,b,c]) => <a>{{a,b,c}}</a>)}</>;')).toMatchInlineSnapshot(`
-			"html\`$\${x.map(([a, b, c]) => html\`<a>\${{
-			  a,
-			  b,
-			  c
-			}}</a>\`)}\`;"
-		`);
+				expect(doTransform('<>${x.map(([a,b,c]) => <a>{{a,b,c}}</a>)}</>;')).toMatchInlineSnapshot(
+					`"html\`$\${x.map(([a, b, c]) => html\`<a>\${{ a, b, c }}</a>\`)}\`;"`
+				);
 
 				expect(
 					doTransform(dent`
