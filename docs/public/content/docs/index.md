@@ -1,16 +1,16 @@
 ---
 nav: 'Getting Started'
-title: 'Getting Started with WMR'
+title: 'Get Started with WMR'
 description: 'Get up and running with WMR in a few seconds.'
 ---
 
 You can run `npx wmr` in any directory to serve it, just like you would use a static file server.
 
-However, it's often useful to start with a bit of structure. You can create this yourself, or use our quickstart method.
+However, it's often useful to start with a bit of structure. You can create this yourself, or use our [quickstart method](#quickstart).
 
 ## Quickstart _(recommended)_
 
-Create a new project in seconds using [create-wmr](https://npm.im/create-wmr). This tiny tool scaffolds a new project for you, with npm scripts for dev and prod builds, type checking and a simple demo application to start from.
+Create a new project in seconds using [create-wmr](https://npm.im/create-wmr). This tiny tool instantly scaffolds a new project for you, with npm scripts for development and production builds, convenient type checking and a simple demo application to start from.
 
 ```sh
 npm init wmr your-project-name
@@ -22,9 +22,12 @@ or
 yarn create wmr your-project-name
 ```
 
+<!--
 <p>
 <img width="400" height="277" src="https://user-images.githubusercontent.com/105127/100917537-4661e100-34a5-11eb-89bd-565b7bc31919.gif">
 </p>
+-->
+<video width="400" height="277" autoplay muted src="https://user-images.githubusercontent.com/105127/124965579-494f2200-dff0-11eb-8732-26eb3ca5daa0.mov"></video>
 
 > 💁 If you'd like ESLint to be set up for you, add `--eslint` to the command. _Note: this will use 150mb of disk space._
 
