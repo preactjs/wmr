@@ -437,13 +437,10 @@ h5:hover .anchor {
 	z-index: 200;
 	outline: none;
 	transition: background 0.3s;
-	animation: sidebar-slide 500ms ease forwards 1;
 }
-
-@keyframes sidebar-slide {
-	0% {
-		transform: translateX(-100%);
-	}
+.sidebar.hidden {
+	transform: translateX(-100%);
+	pointer-events: none;
 }
 
 /** Mobile off-canvas sidebar layout */
