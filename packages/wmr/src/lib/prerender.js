@@ -102,6 +102,10 @@ async function workerCode({ cwd, out, publicPath, customRoutes }) {
 	const doPrerender = m.prerender;
 	// const App = m.default || m[Object.keys(m)[0]];
 
+	if (typeof doPrerender !== 'function') {
+		throw Error(`No prerender() function was exported by the first <script src="..."> in your index.html.`);
+	}
+
 	/**
 	 * @param {HeadElement|HeadElement[]|Set<HeadElement>} element
 	 * @returns {string} html

@@ -783,6 +783,17 @@ describe('production', () => {
 
 			expect(await fs.access(path.join(env.tmp.path, 'dist', 'non-existent-link', 'index.html'))).toBeUndefined();
 		});
+
+		it('config should throw if no prerender function is exported', async () => {
+			await loadFixture('prerender-missing-export', env);
+			instance = await runWmr(env.tmp.path, 'build', '--prerender');
+			const code = await instance.done;
+
+			await withLog(instance.output, async () => {
+				expect(code).toBe(1);
+				expect(instance.output.join('\n')).toMatch(/No prerender\(\) function/i);
+			});
+		});
 	});
 
 	describe('Code Splitting', () => {
