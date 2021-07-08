@@ -27,7 +27,9 @@ yarn create wmr your-project-name
 <img width="400" height="277" src="https://user-images.githubusercontent.com/105127/100917537-4661e100-34a5-11eb-89bd-565b7bc31919.gif">
 </p>
 -->
-<video width="400" height="277" autoplay muted src="https://user-images.githubusercontent.com/105127/124965579-494f2200-dff0-11eb-8732-26eb3ca5daa0.mov"></video>
+<p align="center">
+	<video width="556" height="385" autoplay muted src="https://user-images.githubusercontent.com/105127/124965579-494f2200-dff0-11eb-8732-26eb3ca5daa0.mov"></video>
+</p>
 
 > 💁 If you'd like ESLint to be set up for you, add `--eslint` to the command. _Note: this will use 150mb of disk space._
 
