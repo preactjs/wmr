@@ -437,6 +437,13 @@ h5:hover .anchor {
 	z-index: 200;
 	outline: none;
 	transition: background 0.3s;
+	animation: sidebar-slide 300ms ease forwards 1 200ms;
+}
+
+@keyframes sidebar-slide {
+	0% {
+		transform: translateX(-100%);
+	}
 }
 
 /** Mobile off-canvas sidebar layout */
@@ -450,6 +457,7 @@ h5:hover .anchor {
 	.sidebar {
 		transform: translateX(-16rem);
 		transition: transform 150ms ease;
+		animation: none;
 		overflow: visible;
 	}
 	.sidebar:focus,
