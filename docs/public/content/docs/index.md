@@ -44,7 +44,7 @@ yarn add -D wmr
 
 > 🔥 _You can also use `npx wmr` anywhere!_
 
-**2.** Next you'll want to create a `public/index.html` file. You can use [this example](https://github.com/preactjs/wmr/blob/main/packages/wmr/demo/public/index.html), though there's really nothing special about this HTML file. Just make sure your scripts are ES Modules by including `type="module"`:
+**2.** Next you'll want to create a `public/index.html` file. You can use [this example](https://github.com/preactjs/wmr/blob/main/packages/create-wmr/tpl/public/index.html), though there's really nothing special about this HTML file. Just make sure your scripts are ES Modules by including `type="module"`:
 
 ```html
 <!DOCTYPE html>
@@ -96,7 +96,7 @@ render(<App />, document.body);
 }
 ```
 
-**5.** You're all set! As an extra step, if you'd like WMR to prerender your application to static HTML during production builds, replace `render()` with [preact-iso](https://www.npmjs.com/package/preact-iso):
+**5.** You're all set! As an extra step, if you'd like WMR to prerender your application to static HTML during production builds, replace `render()` with [preact-iso](https://github.com/preactjs/wmr/tree/main/packages/preact-iso#readme):
 
 ```diff
 -import { render } from 'preact';
