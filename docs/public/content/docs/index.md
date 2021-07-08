@@ -154,7 +154,7 @@ export default defineConfig(async config => {
 
 > **Note:** remember to add `"type":"module"` to your package.json _or_ use the `.mjs` file extension to make the file a JS module.
 
-See [the full list of options](./configuration).
+See [the full list of options](/docs/configuration).
 
 ## Recipes
 
