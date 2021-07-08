@@ -49,6 +49,7 @@ export default function htmlEntriesPlugin({ root, publicPath }) {
 			transformUrl: (url, attr, tag, { attrs }) => {
 				const origUrl = url;
 				if (!isLocalFile(url)) return null;
+				if (/^data:/.test(url)) return null;
 
 				let abs = url;
 				if (url[0] === '/') {
