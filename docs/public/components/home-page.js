@@ -2,6 +2,7 @@
 import Meta from './meta.js';
 import Jumbotron from './jumbotron.js';
 import { useContent } from '../lib/use-content.js';
+import { SlotContent } from '../lib/slots.js';
 import homeContent from 'markdown:../content/index.md';
 
 /**
@@ -24,6 +25,9 @@ export default function Home() {
 	return (
 		<div>
 			<Meta {...meta} />
+			<SlotContent name="sidebar">
+				<aside class="sidebar hidden" tabIndex={0} />
+			</SlotContent>
 			<div class="main">
 				<Jumbotron />
 				<div class="feature-grid">

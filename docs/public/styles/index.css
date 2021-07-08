@@ -436,7 +436,11 @@ h5:hover .anchor {
 	overflow: auto;
 	z-index: 200;
 	outline: none;
-	transition: background 0.3s;
+	transition: background 0.3s, transform 0.5s;
+}
+.sidebar.hidden {
+	transform: translateX(-100%);
+	pointer-events: none;
 }
 
 /** Mobile off-canvas sidebar layout */
@@ -450,6 +454,7 @@ h5:hover .anchor {
 	.sidebar {
 		transform: translateX(-16rem);
 		transition: transform 150ms ease;
+		animation: none;
 		overflow: visible;
 	}
 	.sidebar:focus,
@@ -477,6 +482,9 @@ h5:hover .anchor {
 		color: #fff;
 		pointer-events: all;
 		transition: transform 150ms ease;
+	}
+	.sidebar.hidden:before {
+		display: none;
 	}
 	.sidebar:focus:before,
 	.sidebar:focus-within:before,
