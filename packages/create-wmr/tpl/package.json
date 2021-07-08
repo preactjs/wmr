@@ -8,10 +8,6 @@
 	"eslintConfig": {
 		"extends": "preact"
 	},
-	"alias": {
-		"react": "preact/compat",
-		"react-dom": "preact/compat"
-	},
 	"dependencies": {
 		"preact": "latest",
 		"preact-iso": "latest"
