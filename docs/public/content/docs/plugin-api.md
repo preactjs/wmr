@@ -3,7 +3,7 @@ nav: 'Plugin API'
 title: 'Plugin API'
 ---
 
-This document describes the methods of plugins in WMR. If you're unsure how plugins work, check out the [plugins](/docs/plugins) overview page.
+WMR plugins use the standard [Rollup plugin methods](https://rollupjs.org/guide/en/#plugin-development) along with a few additional WMR-specific extensions described below. For a broad overview of how plugins work, check out the [plugins overview](/docs/plugins) page.
 
 ## Common properties & methods
 
