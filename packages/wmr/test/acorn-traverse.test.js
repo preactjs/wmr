@@ -280,7 +280,7 @@ describe('acorn-traverse', () => {
 
 		it('should serialize JSXNamespacedName (namespaced attributes)', () => {
 			const str = generate(parse(`<x:y a:b="c" />`)).trim();
-			expect(str).toMatchInlineSnapshot('"<x:y a:b=\"c\"/>;"');
+			expect(str).toMatchInlineSnapshot('"<x:y a:b=\\"c\\"/>;"');
 		});
 
 		it('should serialize created JSXAttributes', () => {
@@ -446,7 +446,7 @@ describe('acorn-traverse', () => {
 			const doTransform = code => transformWithPlugin(code, transformJsxToHtm, { generatorOpts: { compact: true } });
 
 			// Should keep the newlines formatting
-			expect(doTransform(`<x:y a:b="c">hi</x:y>;`)).toMatchInlineSnapshot(`"html\`<x:y a:b="c">hi</x:y>\`;"`);
+			expect(doTransform(`<x:y a:b="c">hi</x:y>;`)).toMatchInlineSnapshot(`"html\`<x:y a:b=\\"c\\">hi</x:y>\`;"`);
 		});
 	});
 
