@@ -1042,4 +1042,13 @@ describe('fixtures', () => {
 			expect(warns[0].message.trim()).toEqual(warning.trim());
 		});
 	});
+
+	describe('TypeScript', () => {
+		it('should support override keyword', async () => {
+			await loadFixture('typescript-override', env);
+			instance = await runWmrFast(env.tmp.path);
+			await env.page.goto(await instance.address, { waitUntil: 'networkidle0' });
+			expect(await env.page.content()).toMatch(/it works/);
+		});
+	});
 });
