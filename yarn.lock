@@ -1720,10 +1720,10 @@ babel-plugin-jest-hoist@^26.6.2:
     "@types/babel__core" "^7.0.0"
     "@types/babel__traverse" "^7.0.6"
 
-babel-plugin-transform-jsx-to-htm@^2.1.0:
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/babel-plugin-transform-jsx-to-htm/-/babel-plugin-transform-jsx-to-htm-2.1.0.tgz#9b01ae8ea09d688712a27036feb89d5a43591b97"
-  integrity sha512-jRzPM8bI36savhl+Q7vhYQCgNEEjCj/ULDCzRzpD03ov6aX30t68VFVQ6whXre41GoEzmRUwidV5QsmojcO4iw==
+babel-plugin-transform-jsx-to-htm@^2.2.0:
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/babel-plugin-transform-jsx-to-htm/-/babel-plugin-transform-jsx-to-htm-2.2.0.tgz#760023cd60a531f439a91df3ba99db831425a1ef"
+  integrity sha512-o98JbDlwdF3z03h+wdO5Ft4XTsJFONOM+XAFF9EH0EK8gYVSIwtp2jXvI7u4esIcQPiVy+ZHyZVy76AgnxnGbQ==
   dependencies:
     "@babel/plugin-syntax-jsx" "^7.2.0"
     htm "^3.0.0"
