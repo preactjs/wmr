@@ -278,6 +278,11 @@ describe('acorn-traverse', () => {
 			expect(str).toMatchInlineSnapshot('"<a.b.c/>;"');
 		});
 
+		it('should serialize JSXNamespacedName (namespaced attributes)', () => {
+			const str = generate(parse(`<x:y a:b="c" />`)).trim();
+			expect(str).toMatchInlineSnapshot('"<x:y a:b="c"/>;"');
+		});
+
 		it('should serialize created JSXAttributes', () => {
 			const str = transformWithPlugin('<div />', ({ types: t }) => {
 				return {
@@ -435,6 +440,13 @@ describe('acorn-traverse', () => {
 
 			// Should keep the newlines formatting
 			expect(doTransform(`<A.B>hi</A.B>;`)).toMatchInlineSnapshot(`"html\`<\${A.B}>hi</\${A.B}>\`;"`);
+		});
+
+		it('should serialize namespaced attributes', () => {
+			const doTransform = code => transformWithPlugin(code, transformJsxToHtm, { generatorOpts: { compact: true } });
+
+			// Should keep the newlines formatting
+			expect(doTransform(`<x:y a:b="c">hi</x:y>;`)).toMatchInlineSnapshot(`"html\`<x:y a:b="c">hi</\x:y>\`;"`);
 		});
 	});
 
