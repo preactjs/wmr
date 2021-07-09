@@ -183,6 +183,12 @@ let codeGenerator = {
 		// eslint-disable-next-line new-cap
 		this.Identifier(node, state);
 	},
+	JSXNamespacedName(node, state) {
+		const { name, namespace } = node;
+		this[namespace.type](namespace, state);
+		state.write(':');
+		this[name.type](name, state);
+	},
 	JSXAttribute(node, state) {
 		const { name, value } = node;
 		state.write(' ');
