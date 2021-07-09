@@ -1,5 +1,21 @@
 # wmr
 
+## 3.4.0
+
+### Minor Changes
+
+- [`e83e271`](https://github.com/preactjs/wmr/commit/e83e2717f4beb9677f7716f4222af87ca26cb14f) [#758](https://github.com/preactjs/wmr/pull/758) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - TypeScript: Add support for the `override` keyword on class methods
+
+### Patch Changes
+
+- [`6313cd8`](https://github.com/preactjs/wmr/commit/6313cd8e333771ba0c9d391271559dc1f3b0acb9) [#752](https://github.com/preactjs/wmr/pull/752) Thanks [@developit](https://github.com/developit)! - Improve error message when `prerender()` is not exported
+
+* [`884f44f`](https://github.com/preactjs/wmr/commit/884f44f2f8f8a07037282e57e33a906585fe0a64) [#759](https://github.com/preactjs/wmr/pull/759) Thanks [@developit](https://github.com/developit)! - Fix serialization of namespaced JSX props (`<x:y a:b="c" />`).
+
+- [`2162a21`](https://github.com/preactjs/wmr/commit/2162a218b77145d44248b27c4b19157271649066) [#751](https://github.com/preactjs/wmr/pull/751) Thanks [@developit](https://github.com/developit)! - Preserve Data URLs in script tags instead of attempting to bundle them for production.
+
+* [`71f317c`](https://github.com/preactjs/wmr/commit/71f317cca4df29b1b0bd52f71e76d76b0b308a05) [#757](https://github.com/preactjs/wmr/pull/757) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix "No sass compiler found" error not shown to the user in the terminal when no sass compiler could be found
+
 ## 3.3.1
 
 ### Patch Changes
