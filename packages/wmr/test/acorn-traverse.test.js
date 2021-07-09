@@ -446,7 +446,7 @@ describe('acorn-traverse', () => {
 			const doTransform = code => transformWithPlugin(code, transformJsxToHtm, { generatorOpts: { compact: true } });
 
 			// Should keep the newlines formatting
-			expect(doTransform(`<x:y a:b="c">hi</x:y>;`)).toMatchInlineSnapshot(`"html\`<x:y a:b="c">hi</\x:y>\`;"`);
+			expect(doTransform(`<x:y a:b="c">hi</x:y>;`)).toMatchInlineSnapshot(`"html\`<x:y a:b="c">hi</x:y>\`;"`);
 		});
 	});
 
