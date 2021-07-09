@@ -209,7 +209,7 @@ for (let type in codeGenerator) {
 	const fn = codeGenerator[type];
 	codeGenerator[type] = function (node, state) {
 		if (node == null) return '';
-		if (codegenContext && !codegenContext.forceRegenerate) {
+		if (codegenContext) {
 			if (node._string) {
 				state.write(node._string);
 				return;
@@ -260,6 +260,7 @@ function createTemplate(parse) {
 		const parsed = parse(str, { expression: true });
 		// Remove outer program node
 		const ast = parsed.body[0];
+		clearPositionData(ast);
 		return ast;
 	};
 
@@ -391,9 +392,7 @@ class Path {
 		} else {
 			// Skip string generate optimizations as node positions won't
 			// match anymore.
-			this.ctx.forceRegenerate = true;
 			let str = generate(node, this.ctx);
-			this.ctx.forceRegenerate = false;
 
 			// Avoid duplicate semicolons when replacing nodes
 			if (str[str.length - 1] === ';' && this.ctx.out.original[this.end] === ';') {
@@ -490,6 +489,8 @@ const TYPES = {
 				clone[i] = node[i];
 			}
 		}
+
+		clearPositionData(clone);
 		return clone;
 	},
 	identifier: name => ({ type: 'Identifier', name }),
@@ -612,6 +613,30 @@ const types = new Proxy(TYPES, {
 	}
 });
 
+function clearPositionData(node) {
+	if ('start' in node) node.start = node.end = null;
+
+	for (let i in node) {
+		const v = node[i];
+		if (isNode(v)) {
+			clearPositionData(v);
+		} else if (Array.isArray(v)) {
+			for (const child of v) {
+				if (isNode(child)) {
+					clearPositionData(child);
+				}
+			}
+		}
+	}
+}
+
+/** @type {(obj: any) => obj is Node} */
+function isNode(obj) {
+	return typeof obj === 'object' && obj != null && (obj instanceof Node || 'type' in obj);
+}
+
+let Node;
+
 /** @type {ReturnType<typeof createContext>} */
 let visitingCtx;
 
@@ -628,10 +653,7 @@ function visit(root, visitors, state) {
 	const afters = [];
 
 	// Check instanceof since that's fastest, but also account for POJO nodes.
-	const Node = root.constructor;
-	function isNode(obj) {
-		return typeof obj === 'object' && obj != null && (obj instanceof Node || 'type' in obj);
-	}
+	Node = root.constructor;
 
 	function enter(node, ancestors, seededPath) {
 		const path = seededPath || new ctx.Path(node, ancestors.slice());
@@ -719,7 +741,6 @@ function createContext({ code, out, parse, generatorOpts }) {
 		visit,
 		/** @type {ReturnType<typeof createTemplate> | null} */
 		template: createTemplate(parse),
-		forceRegenerate: false,
 		Path
 	};
 
