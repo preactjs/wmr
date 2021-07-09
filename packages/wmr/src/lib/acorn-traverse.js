@@ -85,10 +85,17 @@ let codeGenerator = {
 			astring.baseGenerator.ObjectExpression(node, state);
 		}
 	},
+
+	// Babel compat
 	StringLiteral(node, state) {
 		if (node.raw) state.write(node.raw);
 		else state.write(`'${node.value.replace(/'/g, "\\'")}'`);
 	},
+	NullLiteral(node, state) {
+		state.write('null');
+	},
+	// end babel compat
+
 	ImportSpecifier(node, state) {
 		const { imported, local } = node;
 		if (imported && imported.name !== local.name) {
@@ -198,12 +205,21 @@ let codeGenerator = {
 	},
 	JSXText(node, state) {
 		state.write(node.raw);
+	},
+
+	// classes
+	PropertyDefinition(node, state) {
+		this[node.key.type](node.key, state);
+		state.write(' = ');
+		this[node.value.type](node.value, state);
+		state.write(';\n');
 	}
 };
 codeGenerator.ImportDefaultSpecifier = codeGenerator.ImportSpecifier;
 codeGenerator.BooleanLiteral = codeGenerator.Literal;
 codeGenerator.RegexpLiteral = codeGenerator.Literal;
-codeGenerator.NumberLiteral = codeGenerator.Literal;
+codeGenerator.NumericLiteral = codeGenerator.Literal;
+codeGenerator.ClassProperty = codeGenerator.PropertyDefinition;
 
 for (let type in codeGenerator) {
 	const fn = codeGenerator[type];
@@ -494,9 +510,18 @@ const TYPES = {
 		return clone;
 	},
 	identifier: name => ({ type: 'Identifier', name }),
+
+	// babel compat
 	stringLiteral: value => ({ type: 'StringLiteral', value }),
 	booleanLiteral: value => ({ type: 'BooleanLiteral', value }),
 	numericLiteral: value => ({ type: 'NumericLiteral', value }),
+	nullLiteral: () => ({ type: 'NullLiteral', value: null }),
+	// end babel compat
+
+	classDeclaration: (id, superClass, body) => ({ type: 'ClassDeclaration', id, superClass, body }),
+	classBody: body => ({ type: 'ClassBody', body }),
+	classProperty: (key, value) => ({ type: 'ClassProperty', key, value }),
+
 	callExpression: (callee, args) => ({ type: 'CallExpression', callee, arguments: args }),
 	memberExpression: (object, property) => ({ type: 'MemberExpression', object, property }),
 	expressionStatement: expression => ({ type: 'ExpressionStatement', expression }),
@@ -664,6 +689,19 @@ function visit(root, visitors, state) {
 
 		if (path.shouldSkip) {
 			return;
+		}
+
+		// Babel has dedicated literal nodes like `NumericLiteral`
+		if (node.type === 'Literal' && !(node.type in visitors)) {
+			if (typeof node.value === 'number') {
+				node.type = 'NumericLiteral';
+			} else if (typeof node.value === 'string') {
+				node.type = 'StringLiteral';
+			} else if (typeof node.value === 'boolean') {
+				node.type = 'BooleanLiteral';
+			} else if (node.value === null) {
+				node.type = 'NullLiteral';
+			}
 		}
 
 		if (node.type in visitors) {

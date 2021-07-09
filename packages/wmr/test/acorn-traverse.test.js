@@ -101,7 +101,158 @@ describe('acorn-traverse', () => {
 		});
 	});
 
+	describe('Babel compat', () => {
+		it('should visit NumericLiteral', () => {
+			let type;
+			transformWithPlugin('const a = 2', () => {
+				return {
+					name: 'foo',
+					visitor: {
+						NumericLiteral(path) {
+							type = path.node.type;
+						}
+					}
+				};
+			});
+
+			expect(type).toEqual('NumericLiteral');
+		});
+
+		it('should generate NumericLiteral', () => {
+			const str = transformWithPlugin('const a = x', ({ types: t }) => {
+				return {
+					name: 'foo',
+					visitor: {
+						Identifier(path) {
+							if (path.node.name !== 'x') return;
+							path.replaceWith(t.numericLiteral(42));
+						}
+					}
+				};
+			});
+
+			expect(str).toEqual('const a = 42');
+		});
+
+		it('should visit StringLiteral', () => {
+			let type;
+			transformWithPlugin('const a = "2"', () => {
+				return {
+					name: 'foo',
+					visitor: {
+						StringLiteral(path) {
+							type = path.node.type;
+						}
+					}
+				};
+			});
+
+			expect(type).toEqual('StringLiteral');
+		});
+
+		it('should generate StringLiteral', () => {
+			const str = transformWithPlugin('const a = x', ({ types: t }) => {
+				return {
+					name: 'foo',
+					visitor: {
+						Identifier(path) {
+							if (path.node.name !== 'x') return;
+							path.replaceWith(t.stringLiteral('abc'));
+						}
+					}
+				};
+			});
+
+			expect(str).toEqual(`const a = 'abc'`);
+		});
+
+		it('should visit BooleanLiteral', () => {
+			let type;
+			transformWithPlugin('const a = true', () => {
+				return {
+					name: 'foo',
+					visitor: {
+						BooleanLiteral(path) {
+							type = path.node.type;
+						}
+					}
+				};
+			});
+
+			expect(type).toEqual('BooleanLiteral');
+		});
+
+		it('should generate BooleanLiteral', () => {
+			const str = transformWithPlugin('const a = x', ({ types: t }) => {
+				return {
+					name: 'foo',
+					visitor: {
+						Identifier(path) {
+							if (path.node.name !== 'x') return;
+							path.replaceWith(t.booleanLiteral(true));
+						}
+					}
+				};
+			});
+
+			expect(str).toEqual(`const a = true`);
+		});
+
+		it('should visit NullLiteral', () => {
+			let type;
+			transformWithPlugin('const a = null', () => {
+				return {
+					name: 'foo',
+					visitor: {
+						NullLiteral(path) {
+							type = path.node.type;
+						}
+					}
+				};
+			});
+
+			expect(type).toEqual('NullLiteral');
+		});
+
+		it('should generate NullLiteral', () => {
+			const str = transformWithPlugin('const a = x', ({ types: t }) => {
+				return {
+					name: 'foo',
+					visitor: {
+						Identifier(path) {
+							if (path.node.name !== 'x') return;
+							path.replaceWith(t.nullLiteral());
+						}
+					}
+				};
+			});
+
+			expect(str).toEqual(`const a = null`);
+		});
+	});
+
 	describe('code generation', () => {
+		it('should generate class properties', () => {
+			const str = transformWithPlugin('const a = x', ({ types: t }) => {
+				return {
+					name: 'foo',
+					visitor: {
+						Identifier(path) {
+							if (path.node.name !== 'x') return;
+							const ast = t.classDeclaration(
+								t.identifier('Foo'),
+								null,
+								t.classBody([t.classProperty(t.identifier('foo'), t.numericLiteral(42))])
+							);
+							path.replaceWith(ast);
+						}
+					}
+				};
+			});
+
+			expect(str).toEqual(`const a = class Foo {\n  foo = 42;\n\n}`);
+		});
+
 		it('should parse and regenerate ES2020 syntax', async () => {
 			// While we try to avoid doing (full) codegen for performance reasons,
 			// it needs to account for 100% of the es2020 spec (plus JSX for good measure).
