@@ -280,7 +280,7 @@ describe('acorn-traverse', () => {
 
 		it('should serialize JSXNamespacedName (namespaced attributes)', () => {
 			const str = generate(parse(`<x:y a:b="c" />`)).trim();
-			expect(str).toMatchInlineSnapshot('"<x:y a:b="c"/>;"');
+			expect(str).toMatchInlineSnapshot('"<x:y a:b=\"c\"/>;"');
 		});
 
 		it('should serialize created JSXAttributes', () => {
