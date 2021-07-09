@@ -16,17 +16,19 @@ let sass;
  */
 async function renderSass({ id, ...opts }) {
 	if (!sass) {
-		for (const loc of ['sass', 'node-sass']) {
-			try {
-				log(kl.dim(`Attempting to load compiler from `) + kl.cyan(loc));
-				let sassLib = await import(loc);
-				sassLib = sassLib.default || sassLib;
-				log(kl.dim(`Loaded compiler from `) + kl.green(loc));
+		if (process.env.DISABLE_SASS !== 'true') {
+			for (const loc of ['sass', 'node-sass']) {
+				try {
+					log(kl.dim(`Attempting to load compiler from `) + kl.cyan(loc));
+					let sassLib = await import(loc);
+					sassLib = sassLib.default || sassLib;
+					log(kl.dim(`Loaded compiler from `) + kl.green(loc));
 
-				// @ts-ignore
-				sass = promisify(sassLib.render.bind(sassLib));
-				break;
-			} catch (e) {}
+					// @ts-ignore
+					sass = promisify(sassLib.render.bind(sassLib));
+					break;
+				} catch (e) {}
+			}
 		}
 
 		if (!sass) {
@@ -136,8 +138,10 @@ export default function sassPlugin({ production, sourcemap, root }) {
 					map: result.map || null
 				};
 			} catch (err) {
-				const code = await fs.readFile(err.file, 'utf-8');
-				err.codeFrame = createCodeFrame(code, err.line - 1, err.column);
+				if (err.file) {
+					const code = await fs.readFile(err.file, 'utf-8');
+					err.codeFrame = createCodeFrame(code, err.line - 1, err.column);
+				}
 				// Sass mixes stack in message, therefore we need to extract
 				// just the message
 				let messageArr = [];
