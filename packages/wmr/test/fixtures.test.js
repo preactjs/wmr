@@ -379,6 +379,17 @@ describe('fixtures', () => {
 	});
 
 	describe('Sass', () => {
+		// eslint-disable-next-line jest/expect-expect
+		it("should throw when a sass compiler can't be found", async () => {
+			await loadFixture('css-sass', env);
+			instance = await runWmrFast(env.tmp.path, { env: { DISABLE_SASS: 'true' } });
+			await getOutput(env, instance);
+
+			await withLog(instance.output, async () => {
+				await waitForMessage(instance.output, /Please install a sass implementation/);
+			});
+		});
+
 		it('should transform sass files', async () => {
 			await loadFixture('css-sass', env);
 			instance = await runWmrFast(env.tmp.path);
