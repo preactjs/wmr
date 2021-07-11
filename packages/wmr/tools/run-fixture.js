@@ -6,6 +6,7 @@ spawn(
 	{
 		stdio: 'inherit',
 		env: {
+			...process.env,
 			// Package "application-config-path" needs this (required by devcert)
 			HOME: process.env.HOME,
 			FORCE_COLOR: '1',

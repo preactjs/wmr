@@ -742,7 +742,7 @@ describe('fixtures', () => {
 			expect(output).toMatch(/development/i);
 		});
 
-		it('should contain all env variables starting with WMR_', async () => {
+		it.only('should contain all env variables starting with WMR_', async () => {
 			await loadFixture('env-vars', env);
 			instance = await runWmrFast(env.tmp.path, {
 				env: {

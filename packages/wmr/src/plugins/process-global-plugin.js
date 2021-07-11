@@ -17,6 +17,9 @@ function acornEnvPlugin(env) {
 					const source = path.getSource();
 					const match = source.match(/^(?:import\.meta|process)\.env\.(.+)/);
 
+					console.log('source-->');
+					console.log(source);
+					console.log();
 					if (match) {
 						const value = env[match[1]];
 						// Replace non-existing env variables with undefined
@@ -59,6 +62,8 @@ export default function processGlobalPlugin({ NODE_ENV = 'development', env = {}
 		transform(code, id) {
 			if (!/\.([tj]sx?|mjs)$/.test(id)) return;
 
+			console.log(processObj);
+			console.log('process', code, env);
 			const result = transform(code, {
 				plugins: [acornEnvPlugin({ ...env, NODE_ENV })],
 				parse: this.parse,
@@ -69,6 +74,7 @@ export default function processGlobalPlugin({ NODE_ENV = 'development', env = {}
 			});
 
 			code = result.code;
+			console.log('result', code);
 
 			const s = new MagicString(code);
 
