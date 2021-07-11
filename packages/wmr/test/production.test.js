@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import path from 'path';
 import { promises as fs } from 'fs';
+import { pathToFileURL } from 'url';
 import { setupTest, teardown, runWmr, loadFixture, serveStatic, withLog } from './test-helpers.js';
 import { printCoverage, analyzeTrace } from './tracing-helpers.js';
 
@@ -854,6 +855,27 @@ describe('production', () => {
 
 			const chunks = await readdir('dist/about');
 			expect(chunks).toEqual(['index.html']);
+		});
+	});
+
+	describe('--visualize', () => {
+		it('should create stats.html', async () => {
+			await loadFixture('simple', env);
+			instance = await runWmr(env.tmp.path, 'build', '--visualize');
+			const code = await instance.done;
+
+			await withLog(instance.output, async () => {
+				expect(code).toBe(0);
+
+				const stats = path.join(env.tmp.path, 'stats.html');
+				const statsUrl = pathToFileURL(stats);
+
+				await env.page.goto(statsUrl.href, {
+					waitUntil: ['networkidle0', 'load']
+				});
+
+				expect(await env.page.content()).toMatch(/RollUp Visualizer/);
+			});
 		});
 	});
 });
