@@ -604,18 +604,16 @@ class Scope {
 	}
 
 	/**
-	 * @returns {Path | null}
+	 * @returns {Scope | null}
 	 */
 	getFunctionParent() {
-		let p = this.path;
+		let scope = this;
 
-		while ((p = p.parentPath)) {
-			if (types.isFunctionDeclaration(p.node)) {
-				return p;
-			}
+		while (!types.isFunctionDeclaration(scope.path.node)) {
+			scope = scope.parent;
 		}
 
-		return null;
+		return scope;
 	}
 
 	/**
@@ -627,6 +625,26 @@ class Scope {
 		while (!types.isProgram(scope.path.node)) {
 			scope = scope.parent;
 		}
+
+		return scope;
+	}
+
+	/**
+	 * @returns {Scope}
+	 */
+	getBlockParent() {
+		let scope = this;
+
+		do {
+			const node = scope.path.node;
+			if (
+				('block' in node && types.isBlockStatement(node.block)) ||
+				('body' in node && types.isBlockStatement(node.body)) ||
+				types.isProgram(node)
+			) {
+				break;
+			}
+		} while ((scope = scope.parent));
 
 		return scope;
 	}

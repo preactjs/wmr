@@ -291,8 +291,24 @@ describe('acorn-traverse', () => {
 					visitor: {
 						VariableDeclaration(path) {
 							const fn = path.scope.getFunctionParent();
-							expect(fn.node.type).toEqual('FunctionDeclaration');
-							expect(fn.node.id.name).toEqual('foo');
+							expect(fn.path.node.type).toEqual('FunctionDeclaration');
+							expect(fn.path.node.id.name).toEqual('foo');
+						}
+					}
+				};
+			});
+		});
+
+		it('should support getBlockParent()', () => {
+			expect.assertions(2);
+			transformWithPlugin('function foo() {const a = 1}', () => {
+				return {
+					name: 'foo',
+					visitor: {
+						VariableDeclaration(path) {
+							const fn = path.scope.getBlockParent();
+							expect(fn.path.node.type).toEqual('FunctionDeclaration');
+							expect(fn.path.node.id.name).toEqual('foo');
 						}
 					}
 				};
