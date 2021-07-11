@@ -8,29 +8,49 @@ import { mergeSourceMaps } from '../lib/sourcemap.js';
  * the actual value.
  * @param {Record<string, string>} env
  */
-function acornEnvPlugin(env) {
-	return () => {
+export function acornEnvPlugin(env) {
+	/**
+	 *
+	 * @param {import('../lib/acorn-traverse').Path} path
+	 * @param {*} value
+	 */
+	function replaceEnv(path, value) {
+		// Replace non-existing env variables with undefined
+		if (value === undefined) {
+			path.replaceWith({
+				type: 'Identifier',
+				name: 'undefined'
+			});
+		} else {
+			path.replaceWithString(JSON.stringify(value));
+		}
+	}
+
+	return ({ types: t }) => {
 		return {
 			name: 'transform-env',
 			visitor: {
 				MemberExpression(path) {
-					const source = path.getSource();
-					const match = source.match(/^(?:import\.meta|process)\.env\.(.+)/);
+					if (!t.isIdentifier(path.node.property) || !t.isMemberExpression(path.node.object)) return;
 
-					console.log('source-->');
-					console.log(source);
-					console.log();
-					if (match) {
-						const value = env[match[1]];
-						// Replace non-existing env variables with undefined
-						if (value === undefined) {
-							path.replaceWith({
-								type: 'Identifier',
-								name: 'undefined'
-							});
-						} else {
-							path.replaceWithString(JSON.stringify(value));
-						}
+					// import.meta.env.FOO
+					if (
+						t.isMetaProperty(path.node.object.object) &&
+						t.isIdentifier(path.node.object.property) &&
+						path.node.object.property.name === 'env'
+					) {
+						const name = path.node.property.name;
+						replaceEnv(path, env[name]);
+					}
+					// process.env.FOO
+					else if (
+						t.isIdentifier(path.node.object.object) &&
+						path.node.object.object.name === 'process' &&
+						t.isIdentifier(path.node.object.property) &&
+						path.node.object.property.name === 'env'
+					) {
+						const name = path.node.property.name;
+						replaceEnv(path, env[name]);
 					}
 				}
 			}
