@@ -104,6 +104,11 @@ export default async function server({ cwd, root, overlayDir, middleware, http2,
 		app.use(compression({ threshold, level: 4 }));
 	}
 
+	// Custom middlewares should always come first, similar to plugins
+	if (middleware) {
+		app.use(...middleware);
+	}
+
 	app.use('/@npm', npmMiddleware({ alias, optimize, cwd }));
 
 	// Chrome devtools often adds `?%20[sm]` to the url
@@ -119,10 +124,6 @@ export default async function server({ cwd, root, overlayDir, middleware, http2,
 
 		next();
 	});
-
-	if (middleware) {
-		app.use(...middleware);
-	}
 
 	if (overlayDir) {
 		app.use(sirv(resolve(root || '', overlayDir), { dev: true }));
