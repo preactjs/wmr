@@ -2,11 +2,39 @@
 
 declare module 'wmr' {
 	import { Plugin as RollupPlugin, OutputOptions, RollupError, RollupWatcherEvent } from 'rollup';
-	import { Middleware } from 'polka';
+	import { ServerResponse, IncomingMessage } from 'http';
 
 	export type Mode = 'start' | 'serve' | 'build';
 
-	export { Middleware };
+	export interface Request extends IncomingMessage {
+		/**
+		 * The originally-requested URL, including parent router segments.
+		 */
+		originalUrl: string;
+
+		/**
+		 * The path portion of the requested URL.
+		 */
+		path: string;
+
+		/**
+		 * The values of named parameters within your route pattern
+		 */
+		params: Record<string, string>;
+
+		/**
+		 * The un-parsed querystring
+		 */
+		search: string | null;
+
+		/**
+		 * The parsed querystring
+		 */
+		query: Record<string, string | string[]>;
+	}
+
+	export type Next = (err?: string | Error) => void;
+	export type Middleware = (req: Request, res: ServerResponse, next: Next) => void;
 
 	export type OutputOption = OutputOptions | ((opts: OutputOptions) => OutputOptions);
 
