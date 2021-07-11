@@ -589,6 +589,19 @@ class Scope {
 
 		return null;
 	}
+
+	/**
+	 * @returns {Scope}
+	 */
+	getProgramParent() {
+		let scope = this;
+
+		while (!types.isProgram(scope.path.node)) {
+			scope = scope.parent;
+		}
+
+		return scope;
+	}
 }
 
 const TYPES = {
@@ -837,6 +850,8 @@ function visit(root, visitors, state) {
 		} else if (types.isImportSpecifier(node)) {
 			const name = node.local.name;
 			scope.bindings[name] = new Binding(path);
+		} else if (types.isProgram(node)) {
+			scope = new Scope(path, null);
 		}
 		path._scope = scope;
 

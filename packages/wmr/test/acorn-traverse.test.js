@@ -299,6 +299,21 @@ describe('acorn-traverse', () => {
 			});
 		});
 
+		it('should support getProgramParent()', () => {
+			expect.assertions(1);
+			transformWithPlugin('function foo() {const a = 1}', () => {
+				return {
+					name: 'foo',
+					visitor: {
+						VariableDeclaration(path) {
+							let id = path.scope.getProgramParent();
+							expect(id.path.node.type).toEqual('Program');
+						}
+					}
+				};
+			});
+		});
+
 		it('should track variable bindings', () => {
 			let bindings = new Set();
 			transformWithPlugin('const a = x, b = 2; const c = 123', () => {
