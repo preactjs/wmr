@@ -268,6 +268,278 @@ describe('acorn-traverse', () => {
 		});
 	});
 
+	describe('Scope', () => {
+		it('should track variable bindings', () => {
+			let bindings = new Set();
+			transformWithPlugin('const a = x, b = 2; const c = 123', () => {
+				return {
+					name: 'foo',
+					visitor: {
+						Identifier(path) {
+							Object.keys(path.scope.bindings).forEach(k => bindings.add(k));
+						}
+					}
+				};
+			});
+
+			expect(Array.from(bindings)).toEqual(['a', 'b', 'c']);
+		});
+
+		describe('Block Scope', () => {
+			it('should overwrite variables', () => {
+				expect.assertions(4);
+				transformWithPlugin(
+					dent`
+					const a = 1;
+					{
+						a = 42;
+					}`,
+					() => {
+						return {
+							name: 'foo',
+							visitor: {
+								ExpressionStatement(path) {
+									const a = path.scope.getBinding('a');
+									expect(a).toBeDefined();
+
+									expect(a.path.node.type).toEqual('VariableDeclarator');
+									expect(a.path.parentPath.node.type).toEqual('VariableDeclaration');
+									expect(a.path.parent.type).toEqual('VariableDeclaration');
+								}
+							}
+						};
+					}
+				);
+			});
+		});
+
+		describe('Function Scope', () => {
+			it('should overwrite with function arg', () => {
+				expect.assertions(4);
+				transformWithPlugin(
+					dent`
+					const a = 1;
+					function foo(b) {
+						return 42;
+					}
+					const b = 2;`,
+					() => {
+						return {
+							name: 'foo',
+							visitor: {
+								ReturnStatement(path) {
+									expect(path.scope.getBinding('a')).toBeDefined();
+
+									const b = path.scope.getBinding('b');
+									expect(b).toBeDefined();
+									expect(b.path.node.type).toEqual('Identifier');
+									expect(b.path.parentPath.node.type).toEqual('FunctionDeclaration');
+								}
+							}
+						};
+					}
+				);
+			});
+
+			it('should work with destructured function arg', () => {
+				expect.assertions(4);
+				transformWithPlugin(
+					dent`
+					const a = 1;
+					function foo({ b }) {
+						return 42;
+					}
+					const b = 2;`,
+					() => {
+						return {
+							name: 'foo',
+							visitor: {
+								ReturnStatement(path) {
+									expect(path.scope.getBinding('a')).toBeDefined();
+
+									const b = path.scope.getBinding('b');
+									expect(b).toBeDefined();
+									expect(b.path.node.type).toEqual('ObjectPattern');
+									expect(b.path.parentPath.node.type).toEqual('FunctionDeclaration');
+								}
+							}
+						};
+					}
+				);
+			});
+
+			it('should work with destructured renamed function arg', () => {
+				expect.assertions(4);
+				transformWithPlugin(
+					dent`
+					const a = 1;
+					function foo({ x: b }) {
+						return 42;
+					}
+					const b = 2;`,
+					() => {
+						return {
+							name: 'foo',
+							visitor: {
+								ReturnStatement(path) {
+									expect(path.scope.getBinding('a')).toBeDefined();
+
+									const b = path.scope.getBinding('b');
+									expect(b).toBeDefined();
+									expect(b.path.node.type).toEqual('ObjectPattern');
+									expect(b.path.parentPath.node.type).toEqual('FunctionDeclaration');
+								}
+							}
+						};
+					}
+				);
+			});
+
+			it('should work with default function arg value', () => {
+				expect.assertions(4);
+				transformWithPlugin(
+					dent`
+					const a = 1;
+					function foo({ b = 42 }) {
+						return 42;
+					}
+					const b = 2;`,
+					() => {
+						return {
+							name: 'foo',
+							visitor: {
+								ReturnStatement(path) {
+									expect(path.scope.getBinding('a')).toBeDefined();
+
+									const b = path.scope.getBinding('b');
+									expect(b).toBeDefined();
+									expect(b.path.node.type).toEqual('ObjectPattern');
+									expect(b.path.parentPath.node.type).toEqual('FunctionDeclaration');
+								}
+							}
+						};
+					}
+				);
+			});
+
+			it('should work with array function arg value', () => {
+				expect.assertions(4);
+				transformWithPlugin(
+					dent`
+					const a = 1;
+					function foo([b]) {
+						return 42;
+					}
+					const b = 2;`,
+					() => {
+						return {
+							name: 'foo',
+							visitor: {
+								ReturnStatement(path) {
+									expect(path.scope.getBinding('a')).toBeDefined();
+
+									const b = path.scope.getBinding('b');
+									expect(b).toBeDefined();
+									expect(b.path.node.type).toEqual('ArrayPattern');
+									expect(b.path.parentPath.node.type).toEqual('FunctionDeclaration');
+								}
+							}
+						};
+					}
+				);
+			});
+
+			it('should work with array function default arg value', () => {
+				expect.assertions(4);
+				transformWithPlugin(
+					dent`
+					const a = 1;
+					function foo([b = 42]) {
+						return 42;
+					}
+					const b = 2;`,
+					() => {
+						return {
+							name: 'foo',
+							visitor: {
+								ReturnStatement(path) {
+									expect(path.scope.getBinding('a')).toBeDefined();
+
+									const b = path.scope.getBinding('b');
+									expect(b).toBeDefined();
+									expect(b.path.node.type).toEqual('ArrayPattern');
+									expect(b.path.parentPath.node.type).toEqual('FunctionDeclaration');
+								}
+							}
+						};
+					}
+				);
+			});
+		});
+
+		describe('Scope in loops', () => {
+			it('should work in for-loops', () => {
+				expect.assertions(5);
+				transformWithPlugin(
+					dent`
+					const a = 1;
+					for (let i = 0; i < 10; i++) {
+						break;
+					}
+					const b = 2;`,
+					() => {
+						return {
+							name: 'foo',
+							visitor: {
+								VariableDeclarator(path) {
+									if (path.node.id.name !== 'a') return;
+
+									expect(path.scope.getBinding('i')).toBeUndefined();
+								},
+								BreakStatement(path) {
+									const i = path.scope.getBinding('i');
+									expect(i).toBeDefined();
+									expect(i.path.node.type).toEqual('VariableDeclarator');
+									expect(i.path.parentPath.node.type).toEqual('VariableDeclaration');
+									expect(i.path.parent.type).toEqual('VariableDeclaration');
+								}
+							}
+						};
+					}
+				);
+			});
+
+			it('should work in while-loops', () => {
+				expect.assertions(4);
+				transformWithPlugin(
+					dent`
+					const a = 1;
+					while (true) {
+						let a = 42
+						break;
+					}`,
+					({ types: t }) => {
+						return {
+							name: 'foo',
+							visitor: {
+								VariableDeclarator(path) {
+									const p = path.scope.getBinding('a').path;
+									if (t.isProgram(path.parentPath.parent)) {
+										expect(p.node.type).toEqual('VariableDeclarator');
+										expect(p.node.init.value).toEqual(1);
+									} else {
+										expect(p.node.type).toEqual('VariableDeclarator');
+										expect(p.node.init.value).toEqual(42);
+									}
+								}
+							}
+						};
+					}
+				);
+			});
+		});
+	});
+
 	describe('code generation', () => {
 		it('should generate class properties', () => {
 			const str = transformWithPlugin('const a = x', ({ types: t }) => {
