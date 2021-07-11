@@ -53,6 +53,43 @@ describe('acorn-traverse', () => {
 		expect(filename).toEqual('foobar.js');
 	});
 
+	it('should set correct parentPath in function declaration', () => {
+		expect.assertions(2);
+		transformWithPlugin(
+			dent`
+				function foo({ b }) {
+					return 42;
+				}`,
+			() => ({
+				name: 'foo',
+				visitor: {
+					ReturnStatement(path) {
+						expect(path.parentPath.node.type).toEqual('BlockStatement');
+						expect(path.parentPath.parentPath.node.type).toEqual('FunctionDeclaration');
+					}
+				}
+			})
+		);
+	});
+
+	it('should set correct parent in function declaration', () => {
+		expect.assertions(1);
+		transformWithPlugin(
+			dent`
+				function foo({ b }) {
+					return 42;
+				}`,
+			() => ({
+				name: 'foo',
+				visitor: {
+					ReturnStatement(path) {
+						expect(path.parentPath.parent.type).toEqual('FunctionDeclaration');
+					}
+				}
+			})
+		);
+	});
+
 	describe('template', () => {
 		it('should not throw with no replacements', () => {
 			const str = transformWithPlugin('const a = 2', ({ types: t, template }) => {
