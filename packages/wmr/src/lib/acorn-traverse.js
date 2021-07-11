@@ -403,7 +403,6 @@ class Path {
 
 	/** @param {Path | Node} node */
 	replaceWith(node) {
-		console.log('replacewith', node);
 		if (node instanceof Path) node = node.node;
 
 		this.node = node;
@@ -432,7 +431,6 @@ class Path {
 
 	/** @param {string} str */
 	replaceWithString(str) {
-		console.log('replace', str);
 		// walk up the tree and check if we're within an already-replaced root.
 		// if so, regenerate the root from AST.
 		this.node._string = str;
@@ -444,19 +442,16 @@ class Path {
 	}
 
 	remove() {
-		console.log('remove');
 		this.replaceWithString('');
 	}
 
 	/** @param {string} str */
 	prependString(str) {
-		console.log('prependLeft', str);
 		this.ctx.out.appendLeft(this.start, str);
 	}
 
 	/** @param {string} str */
 	appendString(str) {
-		console.log('append', str);
 		this.ctx.out.appendRight(this.end, str);
 	}
 
