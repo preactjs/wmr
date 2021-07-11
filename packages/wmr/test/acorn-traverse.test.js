@@ -269,6 +269,36 @@ describe('acorn-traverse', () => {
 	});
 
 	describe('Scope', () => {
+		it('should support hasBinding()', () => {
+			expect.assertions(1);
+			transformWithPlugin('const a = 1', () => {
+				return {
+					name: 'foo',
+					visitor: {
+						Identifier(path) {
+							expect(path.scope.hasBinding('a')).toEqual(true);
+						}
+					}
+				};
+			});
+		});
+
+		it('should support getFunctionParent()', () => {
+			expect.assertions(2);
+			transformWithPlugin('function foo() {const a = 1}', () => {
+				return {
+					name: 'foo',
+					visitor: {
+						VariableDeclaration(path) {
+							const fn = path.scope.getFunctionParent();
+							expect(fn.node.type).toEqual('FunctionDeclaration');
+							expect(fn.node.id.name).toEqual('foo');
+						}
+					}
+				};
+			});
+		});
+
 		it('should track variable bindings', () => {
 			let bindings = new Set();
 			transformWithPlugin('const a = x, b = 2; const c = 123', () => {
