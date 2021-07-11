@@ -855,9 +855,11 @@ function visit(root, visitors, state) {
 			}
 			if (ctx.queue.has(path)) {
 				// node was requeued, skip (but don't stop)
+				ancestors.pop();
 				return;
 			}
 			if (path.shouldStop) {
+				ancestors.pop();
 				return false;
 			}
 
