@@ -347,14 +347,6 @@ class Path {
 		let ancestors = this.ancestors.slice();
 		let parent = ancestors.pop();
 		if (!parent) return undefined;
-
-		if (Array.isArray(parent)) {
-			ancestors = ancestors.slice();
-			parent = ancestors.pop();
-		}
-
-		if (!parent) return undefined;
-
 		return new Path(parent, ancestors, this.ctx);
 	}
 
@@ -401,7 +393,8 @@ class Path {
 			const name = token[1] || token[2];
 			const prev = node;
 			node = node[name];
-			if (!Array.isArray(node)) {
+
+			if (!Array.isArray(prev)) {
 				ancestors.push(prev);
 			}
 		}
@@ -507,6 +500,69 @@ class Path {
 	}
 	_requeue() {
 		this.ctx.queue.add(this);
+	}
+
+	/** @private */
+	_scope = null;
+
+	/** @type {Scope} */
+	get scope() {
+		let nodePath = this;
+		while (!nodePath._scope && nodePath.parentPath) {
+			nodePath = nodePath.parentPath;
+		}
+
+		if (!nodePath._scope) {
+			throw new Error('Scope has not been set');
+		}
+
+		return nodePath._scope;
+	}
+}
+
+/**
+ * Holds information about the binding of a variable.
+ * TODO: Add references like in babel
+ */
+class Binding {
+	/**
+	 * @param {Path} nodePath
+	 */
+	constructor(nodePath) {
+		this.path = nodePath;
+	}
+
+	get identifier() {
+		return this.path.node;
+	}
+}
+
+/**
+ * Represents a scope layer in JavaScript.
+ */
+class Scope {
+	/** @type {Record<string, Binding>} */
+	bindings = {};
+
+	/**
+	 * @param {Scope | null} [parent]
+	 */
+	constructor(parent = null) {
+		this.parent = parent;
+	}
+
+	/**
+	 * @param {string} name
+	 * @returns {Binding | undefined}
+	 */
+	getBinding(name) {
+		if (name in this.bindings) {
+			return this.bindings[name];
+		}
+
+		if (this.parent) {
+			return this.parent.getBinding(name);
+		}
 	}
 }
 
@@ -697,8 +753,66 @@ function visit(root, visitors, state) {
 	// Check instanceof since that's fastest, but also account for POJO nodes.
 	Node = root.constructor;
 
+	let scope = new Scope();
+
 	function enter(node, ancestors, seededPath) {
 		const path = seededPath || new ctx.Path(node, ancestors.slice());
+		ancestors.push(node);
+
+		let prevScope = scope;
+		if (types.isFunctionDeclaration(node)) {
+			scope = new Scope(scope);
+
+			for (let i = 0; i < node.params.length; i++) {
+				const param = node.params[i];
+				if (types.isIdentifier(param)) {
+					const paramPath = path.get(`params.${i}`);
+					scope.bindings[param.name] = new Binding(paramPath);
+				} else if (types.isObjectPattern(param)) {
+					for (let j = 0; j < param.properties.length; j++) {
+						const prop = param.properties[j];
+						if (types.isIdentifier(prop.value)) {
+							const propPath = path.get(`params.${i}`);
+							scope.bindings[prop.value.name] = new Binding(propPath);
+						} else if (types.isAssignmentPattern(prop.value)) {
+							const propPath = path.get(`params.${i}`);
+							scope.bindings[prop.value.left.name] = new Binding(propPath);
+						}
+					}
+				} else if (types.isArrayPattern(param)) {
+					for (let j = 0; j < param.elements.length; j++) {
+						const el = param.elements[j];
+						if (types.isIdentifier(el)) {
+							const elPath = path.get(`params.${i}`);
+							scope.bindings[el.name] = new Binding(elPath);
+						} else if (types.isAssignmentPattern(el)) {
+							const propPath = path.get(`params.${i}`);
+							scope.bindings[el.left.name] = new Binding(propPath);
+						}
+					}
+				}
+			}
+		} else if (types.isBlockStatement(node)) {
+			scope = new Scope(scope);
+		} else if (types.isVariableDeclarator(node)) {
+			if (types.isIdentifier(node.id)) {
+				const name = node.id.name;
+				scope.bindings[name] = new Binding(path);
+			} else if (types.isArrayPattern(node.id)) {
+				// Example: `const [a, b] = foo();`
+				node.id.elements.forEach(item => {
+					if (!item) return;
+					if (types.isIdentifier(item)) {
+						const name = item.name;
+						scope.bindings[name] = new Binding(path);
+					}
+				});
+			}
+		} else if (types.isImportSpecifier(node)) {
+			const name = node.local.name;
+			scope.bindings[name] = new Binding(path);
+		}
+		path._scope = scope;
 
 		if (path.shouldStop) {
 			return false;
@@ -735,14 +849,17 @@ function visit(root, visitors, state) {
 			}
 			if (ctx.queue.has(path)) {
 				// node was requeued, skip (but don't stop)
+				ancestors.pop();
 				return;
 			}
 			if (path.shouldStop) {
+				ancestors.pop();
 				return false;
 			}
+
+			scope = prevScope;
 		}
 
-		ancestors.push(node);
 		outer: for (let i in node) {
 			const v = node[i];
 			if (isNode(v)) {
