@@ -1,6 +1,7 @@
 import * as rollup from 'rollup';
 import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
+import wasm from '@rollup/plugin-wasm';
 // import unpkgPlugin from '../plugins/unpkg-plugin.js';
 import npmPlugin, { normalizeSpecifier } from '../plugins/npm-plugin/index.js';
 import { resolvePackageVersion, loadPackageFile } from '../plugins/npm-plugin/registry.js';
@@ -151,6 +152,7 @@ async function bundleNpmModule(mod, { source, alias, cwd }) {
 				transformMixedEsModules: true
 			}),
 			json(),
+			wasm(),
 			{
 				name: 'no-builtins',
 				load(s) {

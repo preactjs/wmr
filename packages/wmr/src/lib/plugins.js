@@ -20,6 +20,7 @@ import copyAssetsPlugin from '../plugins/copy-assets-plugin.js';
 import nodeBuiltinsPlugin from '../plugins/node-builtins-plugin.js';
 import dynamicImportVars from '@rollup/plugin-dynamic-import-vars';
 import visualizer from 'rollup-plugin-visualizer';
+import wasm from '@rollup/plugin-wasm';
 import { defaultLoaders } from './default-loaders.js';
 import { importAssertionPlugin } from '../plugins/import-assertion.js';
 import { acornDefaultPlugins } from './acorn-default-plugins.js';
@@ -45,6 +46,7 @@ export function getPlugins(options) {
 		production && htmlEntriesPlugin({ root, publicPath }),
 		externalUrlsPlugin(),
 		nodeBuiltinsPlugin({ production }),
+		wasm(),
 		urlPlugin({ inline: !production, root, alias }),
 		jsonPlugin({ root }),
 		bundlePlugin({ inline: !production, cwd: root }),

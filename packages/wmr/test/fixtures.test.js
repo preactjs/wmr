@@ -1062,4 +1062,33 @@ describe('fixtures', () => {
 			expect(await env.page.content()).toMatch(/it works/);
 		});
 	});
+
+	describe.only('WASM', () => {
+		it('should load from node_modules', async () => {
+			await loadFixture('wasm-npm', env);
+
+			const fixture = path.join(__dirname, 'fixtures', 'wasm-npm');
+			const modDir = path.join(env.tmp.path, 'node_modules', 'test');
+			await fs.mkdir(modDir, { recursive: true });
+			await fs.copyFile(path.join(fixture, 'add.wasm'), path.join(modDir, 'add.wasm'));
+			await fs.writeFile(
+				path.join(modDir, 'package.json'),
+				JSON.stringify(
+					{
+						name: 'test',
+						exports: './add.wasm'
+					},
+					null,
+					2
+				)
+			);
+
+			instance = await runWmrFast(env.tmp.path);
+			await withLog(instance.output, async () => {
+				await env.page.goto(await instance.address, { waitUntil: 'networkidle0' });
+
+				expect(await env.page.content()).toMatch(/it works/);
+			});
+		});
+	});
 });
