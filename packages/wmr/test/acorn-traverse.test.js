@@ -269,6 +269,32 @@ describe('acorn-traverse', () => {
 	});
 
 	describe('code generation', () => {
+		it('should generate variable declarations', () => {
+			const str = transformWithPlugin('function foo(){}\nfunction bar() {}', ({ types: t }) => {
+				return {
+					name: 'foo',
+					visitor: {
+						FunctionDeclaration(path) {
+							// Replace with:
+							//   const a = 1;
+							//   a = 2;
+							if (path.node.id.name === 'foo') {
+								const ast = t.variableDeclaration('const', [
+									t.variableDeclarator(t.identifier('a'), t.numericLiteral(1))
+								]);
+								path.replaceWith(ast);
+							} else {
+								const ast2 = t.assignmentExpression('=', t.identifier('a'), t.numericLiteral(2));
+								path.replaceWith(ast2);
+							}
+						}
+					}
+				};
+			});
+
+			expect(str).toEqual(`const a = 1;\na = 2`);
+		});
+
 		it('should generate class properties', () => {
 			const str = transformWithPlugin('const a = x', ({ types: t }) => {
 				return {
