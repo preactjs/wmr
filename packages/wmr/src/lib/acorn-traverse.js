@@ -535,6 +535,14 @@ class Binding {
 	get identifier() {
 		return this.path.node;
 	}
+
+	referencePaths = [];
+	get referenced() {
+		return this.referencePaths.length > 0;
+	}
+	get references() {
+		return this.referencePaths.length;
+	}
 }
 
 /**
