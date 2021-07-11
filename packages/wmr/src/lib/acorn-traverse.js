@@ -344,9 +344,17 @@ class Path {
 	}
 
 	get parentPath() {
-		const ancestors = this.ancestors.slice();
-		const parent = ancestors.pop();
+		let ancestors = this.ancestors.slice();
+		let parent = ancestors.pop();
 		if (!parent) return undefined;
+
+		if (Array.isArray(parent)) {
+			ancestors = ancestors.slice();
+			parent = ancestors.pop();
+		}
+
+		if (!parent) return undefined;
+
 		return new Path(parent, ancestors, this.ctx);
 	}
 
