@@ -648,6 +648,26 @@ class Scope {
 
 		return scope;
 	}
+
+	/**
+	 * @param {object} options
+	 * @param {Node} options.id
+	 * @param {Node} [options.init]
+	 * @param {"var" | "let"} [options.kind]
+	 */
+	push({ id, init, kind = 'let' }) {
+		let path = this.path;
+
+		// Traverse upwards until we have  a path where we can
+		// attach declarations to.
+		if (!types.isBlockStatement(path.node) && !types.isProgram(path.node)) {
+			path = this.getBlockParent().path;
+		}
+
+		const decl = types.variableDeclarator(id, init);
+		const declaration = types.variableDeclaration(kind, [decl]);
+		path.unshiftContainer('body', declaration);
+	}
 }
 
 const TYPES = {

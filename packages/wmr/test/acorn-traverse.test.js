@@ -330,6 +330,27 @@ describe('acorn-traverse', () => {
 			});
 		});
 
+		it('should support push()', () => {
+			const str = transformWithPlugin('function foo() {const a = 1}', ({ types: t }) => {
+				let parsed = new Set();
+				return {
+					name: 'foo',
+					visitor: {
+						NumericLiteral(path) {
+							if (parsed.has(path.node)) return;
+							parsed.add(path.node);
+							path.scope.push({
+								id: t.identifier('abc'),
+								init: t.stringLiteral('foo')
+							});
+						}
+					}
+				};
+			});
+
+			expect(str).toEqual(`function foo() {\n  let abc = 'foo';\n  const a = 1\n}`);
+		});
+
 		it('should track variable bindings', () => {
 			let bindings = new Set();
 			transformWithPlugin('const a = x, b = 2; const c = 123', () => {
