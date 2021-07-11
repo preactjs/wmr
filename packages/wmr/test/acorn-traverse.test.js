@@ -330,6 +330,27 @@ describe('acorn-traverse', () => {
 			expect(Array.from(bindings)).toEqual(['a', 'b', 'c']);
 		});
 
+		it('should support generateUidIdentifier()', () => {
+			expect.assertions(4);
+			transformWithPlugin('function foo() {const a = 1}', () => {
+				return {
+					name: 'foo',
+					visitor: {
+						VariableDeclaration(path) {
+							const id = path.scope.generateUidIdentifier('foo');
+							expect(id.type).toEqual('Identifier');
+							expect(id.name).toEqual('foo');
+						},
+						NumericLiteral(path) {
+							const id = path.scope.generateUidIdentifier('a');
+							expect(id.type).toEqual('Identifier');
+							expect(id.name).toEqual('a_1');
+						}
+					}
+				};
+			});
+		});
+
 		describe('Block Scope', () => {
 			it('should overwrite variables', () => {
 				expect.assertions(4);

@@ -544,6 +544,9 @@ class Scope {
 	/** @type {Record<string, Binding>} */
 	bindings = {};
 
+	/** @type {Record<string, boolean>} */
+	references = {};
+
 	/**
 	 * @param {Path} path
 	 * @param {Scope | null} [parent]
@@ -573,6 +576,31 @@ class Scope {
 	 */
 	hasBinding(name) {
 		return name in this.bindings;
+	}
+
+	/**
+	 * @param {string} name
+	 * @returns {Node}
+	 */
+	generateUidIdentifier(name) {
+		return types.identifier(this.generateUid(name));
+	}
+
+	/**
+	 * @param {string} name
+	 * @returns {string}
+	 */
+	generateUid(name = 'temp') {
+		let i = 1;
+		let id = name;
+
+		while (this.hasBinding(id) || id in this.getProgramParent().references) {
+			id = name + `_${i++}`;
+		}
+
+		this.getProgramParent().references[id] = true;
+
+		return id;
 	}
 
 	/**
