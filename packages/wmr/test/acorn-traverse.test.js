@@ -139,6 +139,24 @@ describe('acorn-traverse', () => {
 	});
 
 	describe('Babel compat', () => {
+		it('should support path.hub', () => {
+			expect.assertions(1);
+			transformWithPlugin(
+				'const a = 2',
+				() => {
+					return {
+						name: 'foo',
+						visitor: {
+							NumericLiteral(path) {
+								expect(path.hub.file.opts.filename).toEqual('foo.js');
+							}
+						}
+					};
+				},
+				{ filename: 'foo.js' }
+			);
+		});
+
 		it('should visit NumericLiteral', () => {
 			let type;
 			transformWithPlugin('const a = 2', () => {

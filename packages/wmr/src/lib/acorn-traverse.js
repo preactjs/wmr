@@ -343,6 +343,10 @@ class Path {
 		}
 	}
 
+	get hub() {
+		return this.ctx.hub;
+	}
+
 	get parentPath() {
 		let ancestors = this.ancestors.slice();
 		let parent = ancestors.pop();
@@ -1004,10 +1008,11 @@ function visit(root, visitors, state) {
  * @param {object} options
  * @param {string} options.code
  * @param {MagicString} options.out
+ * @param {string} [options.filename]
  * @param {typeof DEFAULTS['parse']} options.parse
- * @param {{ compact?: boolean }} options.generatorOpts
+ * @param {{ compact?: boolean, filename?: string }} options.generatorOpts
  */
-function createContext({ code, out, parse, generatorOpts }) {
+function createContext({ code, out, parse, generatorOpts, filename }) {
 	const ctx = {
 		paths: new WeakMap(),
 		/** @type {Set<Path>} */
@@ -1020,7 +1025,14 @@ function createContext({ code, out, parse, generatorOpts }) {
 		visit,
 		/** @type {ReturnType<typeof createTemplate> | null} */
 		template: createTemplate(parse),
-		Path
+		Path,
+		hub: {
+			file: {
+				opts: {
+					filename
+				}
+			}
+		}
 	};
 
 	const bound = { ctx };
@@ -1067,7 +1079,7 @@ export function transform(
 	parse = parse || DEFAULTS.parse;
 	generatorOpts = generatorOpts || {};
 	const out = new MagicString(code);
-	const { types, template, visit } = createContext({ code, out, parse, generatorOpts });
+	const { types, template, visit } = createContext({ code, out, parse, generatorOpts, filename });
 
 	const allPlugins = [];
 	resolvePreset({ presets, plugins }, allPlugins);
