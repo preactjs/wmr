@@ -269,6 +269,88 @@ describe('acorn-traverse', () => {
 	});
 
 	describe('Scope', () => {
+		it('should support hasBinding()', () => {
+			expect.assertions(1);
+			transformWithPlugin('const a = 1', () => {
+				return {
+					name: 'foo',
+					visitor: {
+						Identifier(path) {
+							expect(path.scope.hasBinding('a')).toEqual(true);
+						}
+					}
+				};
+			});
+		});
+
+		it('should support getFunctionParent()', () => {
+			expect.assertions(2);
+			transformWithPlugin('function foo() {const a = 1}', () => {
+				return {
+					name: 'foo',
+					visitor: {
+						VariableDeclaration(path) {
+							const fn = path.scope.getFunctionParent();
+							expect(fn.path.node.type).toEqual('FunctionDeclaration');
+							expect(fn.path.node.id.name).toEqual('foo');
+						}
+					}
+				};
+			});
+		});
+
+		it('should support getBlockParent()', () => {
+			expect.assertions(2);
+			transformWithPlugin('function foo() {const a = 1}', () => {
+				return {
+					name: 'foo',
+					visitor: {
+						VariableDeclaration(path) {
+							const fn = path.scope.getBlockParent();
+							expect(fn.path.node.type).toEqual('FunctionDeclaration');
+							expect(fn.path.node.id.name).toEqual('foo');
+						}
+					}
+				};
+			});
+		});
+
+		it('should support getProgramParent()', () => {
+			expect.assertions(1);
+			transformWithPlugin('function foo() {const a = 1}', () => {
+				return {
+					name: 'foo',
+					visitor: {
+						VariableDeclaration(path) {
+							let id = path.scope.getProgramParent();
+							expect(id.path.node.type).toEqual('Program');
+						}
+					}
+				};
+			});
+		});
+
+		it('should support push()', () => {
+			const str = transformWithPlugin('function foo() {const a = 1}', ({ types: t }) => {
+				let parsed = new Set();
+				return {
+					name: 'foo',
+					visitor: {
+						NumericLiteral(path) {
+							if (parsed.has(path.node)) return;
+							parsed.add(path.node);
+							path.scope.push({
+								id: t.identifier('abc'),
+								init: t.stringLiteral('foo')
+							});
+						}
+					}
+				};
+			});
+
+			expect(str).toEqual(`function foo() {\n  let abc = 'foo';\n  const a = 1\n}`);
+		});
+
 		it('should track variable bindings', () => {
 			let bindings = new Set();
 			transformWithPlugin('const a = x, b = 2; const c = 123', () => {
@@ -283,6 +365,27 @@ describe('acorn-traverse', () => {
 			});
 
 			expect(Array.from(bindings)).toEqual(['a', 'b', 'c']);
+		});
+
+		it('should support generateUidIdentifier()', () => {
+			expect.assertions(4);
+			transformWithPlugin('function foo() {const a = 1}', () => {
+				return {
+					name: 'foo',
+					visitor: {
+						VariableDeclaration(path) {
+							const id = path.scope.generateUidIdentifier('foo');
+							expect(id.type).toEqual('Identifier');
+							expect(id.name).toEqual('foo');
+						},
+						NumericLiteral(path) {
+							const id = path.scope.generateUidIdentifier('a');
+							expect(id.type).toEqual('Identifier');
+							expect(id.name).toEqual('a_1');
+						}
+					}
+				};
+			});
 		});
 
 		describe('Block Scope', () => {

@@ -544,10 +544,15 @@ class Scope {
 	/** @type {Record<string, Binding>} */
 	bindings = {};
 
+	/** @type {Record<string, boolean>} */
+	references = {};
+
 	/**
+	 * @param {Path} path
 	 * @param {Scope | null} [parent]
 	 */
-	constructor(parent = null) {
+	constructor(path, parent = null) {
+		this.path = path;
 		this.parent = parent;
 	}
 
@@ -563,6 +568,105 @@ class Scope {
 		if (this.parent) {
 			return this.parent.getBinding(name);
 		}
+	}
+
+	/**
+	 * @param {string} name
+	 * @returns {boolean}
+	 */
+	hasBinding(name) {
+		return name in this.bindings;
+	}
+
+	/**
+	 * @param {string} name
+	 * @returns {Node}
+	 */
+	generateUidIdentifier(name) {
+		return types.identifier(this.generateUid(name));
+	}
+
+	/**
+	 * @param {string} name
+	 * @returns {string}
+	 */
+	generateUid(name = 'temp') {
+		let i = 1;
+		let id = name;
+
+		while (this.hasBinding(id) || id in this.getProgramParent().references) {
+			id = name + `_${i++}`;
+		}
+
+		this.getProgramParent().references[id] = true;
+
+		return id;
+	}
+
+	/**
+	 * @returns {Scope | null}
+	 */
+	getFunctionParent() {
+		let scope = this;
+
+		while (!types.isFunctionDeclaration(scope.path.node)) {
+			scope = scope.parent;
+		}
+
+		return scope;
+	}
+
+	/**
+	 * @returns {Scope}
+	 */
+	getProgramParent() {
+		let scope = this;
+
+		while (!types.isProgram(scope.path.node)) {
+			scope = scope.parent;
+		}
+
+		return scope;
+	}
+
+	/**
+	 * @returns {Scope}
+	 */
+	getBlockParent() {
+		let scope = this;
+
+		do {
+			const node = scope.path.node;
+			if (
+				('block' in node && types.isBlockStatement(node.block)) ||
+				('body' in node && types.isBlockStatement(node.body)) ||
+				types.isProgram(node)
+			) {
+				break;
+			}
+		} while ((scope = scope.parent));
+
+		return scope;
+	}
+
+	/**
+	 * @param {object} options
+	 * @param {Node} options.id
+	 * @param {Node} [options.init]
+	 * @param {"var" | "let"} [options.kind]
+	 */
+	push({ id, init, kind = 'let' }) {
+		let path = this.path;
+
+		// Traverse upwards until we have  a path where we can
+		// attach declarations to.
+		if (!types.isBlockStatement(path.node) && !types.isProgram(path.node)) {
+			path = this.getBlockParent().path;
+		}
+
+		const decl = types.variableDeclarator(id, init);
+		const declaration = types.variableDeclaration(kind, [decl]);
+		path.unshiftContainer('body', declaration);
 	}
 }
 
@@ -753,7 +857,8 @@ function visit(root, visitors, state) {
 	// Check instanceof since that's fastest, but also account for POJO nodes.
 	Node = root.constructor;
 
-	let scope = new Scope();
+	/** @type {Scope} */
+	let scope = new Scope(null, null);
 
 	function enter(node, ancestors, seededPath) {
 		const path = seededPath || new ctx.Path(node, ancestors.slice());
@@ -761,7 +866,7 @@ function visit(root, visitors, state) {
 
 		let prevScope = scope;
 		if (types.isFunctionDeclaration(node)) {
-			scope = new Scope(scope);
+			scope = new Scope(path, scope);
 
 			for (let i = 0; i < node.params.length; i++) {
 				const param = node.params[i];
@@ -793,7 +898,7 @@ function visit(root, visitors, state) {
 				}
 			}
 		} else if (types.isBlockStatement(node)) {
-			scope = new Scope(scope);
+			scope = new Scope(path, scope);
 		} else if (types.isVariableDeclarator(node)) {
 			if (types.isIdentifier(node.id)) {
 				const name = node.id.name;
@@ -811,6 +916,8 @@ function visit(root, visitors, state) {
 		} else if (types.isImportSpecifier(node)) {
 			const name = node.local.name;
 			scope.bindings[name] = new Binding(path);
+		} else if (types.isProgram(node)) {
+			scope = new Scope(path, null);
 		}
 		path._scope = scope;
 
