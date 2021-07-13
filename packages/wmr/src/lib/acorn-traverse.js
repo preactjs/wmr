@@ -917,7 +917,11 @@ function visit(root, visitors, state) {
 					}
 				});
 			}
-		} else if (types.isImportSpecifier(node)) {
+		} else if (
+			types.isImportSpecifier(node) ||
+			types.isImportDefaultSpecifier(node) ||
+			types.isImportNamespaceSpecifier(node)
+		) {
 			const name = node.local.name;
 			scope.bindings[name] = new Binding(path);
 		} else if (types.isProgram(node)) {

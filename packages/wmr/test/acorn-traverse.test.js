@@ -659,6 +659,83 @@ describe('acorn-traverse', () => {
 				);
 			});
 		});
+
+		describe('Module Scope', () => {
+			it('should track default imports', () => {
+				expect.assertions(4);
+				transformWithPlugin(
+					dent`
+					import a from "foo";
+					a + 1;
+					`,
+					() => {
+						return {
+							name: 'foo',
+							visitor: {
+								ExpressionStatement(path) {
+									const a = path.scope.getBinding('a');
+									expect(a).toBeDefined();
+
+									expect(a.path.node.type).toEqual('ImportDefaultSpecifier');
+									expect(a.path.parentPath.node.type).toEqual('ImportDeclaration');
+									expect(a.path.parent.type).toEqual('ImportDeclaration');
+								}
+							}
+						};
+					}
+				);
+			});
+
+			it('should track namespaced imports', () => {
+				expect.assertions(4);
+				transformWithPlugin(
+					dent`
+					import * as a from "foo";
+					a + 1;
+					`,
+					() => {
+						return {
+							name: 'foo',
+							visitor: {
+								ExpressionStatement(path) {
+									const a = path.scope.getBinding('a');
+									expect(a).toBeDefined();
+
+									expect(a.path.node.type).toEqual('ImportNamespaceSpecifier');
+									expect(a.path.parentPath.node.type).toEqual('ImportDeclaration');
+									expect(a.path.parent.type).toEqual('ImportDeclaration');
+								}
+							}
+						};
+					}
+				);
+			});
+
+			it('should track named imports', () => {
+				expect.assertions(4);
+				transformWithPlugin(
+					dent`
+					import {foo as a} from "foo";
+					a + 1;
+					`,
+					() => {
+						return {
+							name: 'foo',
+							visitor: {
+								ExpressionStatement(path) {
+									const a = path.scope.getBinding('a');
+									expect(a).toBeDefined();
+
+									expect(a.path.node.type).toEqual('ImportSpecifier');
+									expect(a.path.parentPath.node.type).toEqual('ImportDeclaration');
+									expect(a.path.parent.type).toEqual('ImportDeclaration');
+								}
+							}
+						};
+					}
+				);
+			});
+		});
 	});
 
 	describe('code generation', () => {
