@@ -380,6 +380,10 @@ class Path {
 		return containerPath && containerPath.node;
 	}
 
+	get type() {
+		return this.node.type;
+	}
+
 	// @TODO siblings
 
 	/**
@@ -444,7 +448,7 @@ class Path {
 
 	/**
 	 * @param {string} selector
-	 * @returns {Path}
+	 * @returns {Path | Path[]}
 	 */
 	get(selector) {
 		const ancestors = this.ancestors.slice();
@@ -460,6 +464,11 @@ class Path {
 				ancestors.push(prev);
 			}
 		}
+
+		if (Array.isArray(node)) {
+			return node.map(n => new Path(n, ancestors, this.ctx));
+		}
+
 		return new Path(node, ancestors, this.ctx);
 	}
 
@@ -679,15 +688,16 @@ class Scope {
 	 */
 	generateUid(name = 'temp') {
 		let i = 1;
+		name = !name.startsWith('_') ? `_${name}` : name;
 		let id = name;
 
 		while (this.hasBinding(id) || id in this.getProgramParent().references) {
-			id = name + `_${i++}`;
+			id = name + `${i++}`;
 		}
 
 		this.getProgramParent().references[id] = true;
 
-		return id === name ? `_${id}` : id;
+		return id;
 	}
 
 	/**
@@ -881,6 +891,9 @@ const TYPES = {
 			}
 			return children;
 		}
+	},
+	isBlock(node) {
+		return node.type === 'BlockStatement' || node.type === 'Program';
 	}
 };
 
@@ -895,16 +908,6 @@ const types = new Proxy(TYPES, {
 		if (typeof key !== 'string') return;
 
 		if (key.startsWith('is')) {
-			if (key === 'isBlock') {
-				obj[key] = pathOrNode => {
-					if (pathOrNode == null) return false;
-					const node = pathOrNode instanceof Path ? pathOrNode.node : pathOrNode;
-					if (node.type === 'BlockStatement' || node.type === 'Program') return true;
-					return false;
-				};
-				return obj[key];
-			}
-
 			// Handle { type: 'StringLiteral', value: any }
 			let type = key.substring(2);
 			// Handle { type:'Literal', value:'string' }
@@ -1217,12 +1220,27 @@ export function transform(
 		const plugin = typeof id === 'string' ? require(id) : id;
 		const inst = plugin({ types, template }, options);
 		for (let i in inst.visitor) {
-			const visitor = visitors[i] || (visitors[i] = createMetaVisitor({ filename }));
-			visitor.visitors.push({
-				stateId,
-				visitor: inst.visitor[i],
-				opts: options
-			});
+			// Merged visitors are separated via a pipe symbol:
+			// `'ArrowFunctionExpression|FunctionExpression'`
+			if (/|/.test(i)) {
+				const parts = i.split('|');
+				for (let j = 0; j < parts.length; j++) {
+					let visitor = visitors[parts[j]] || (visitors[parts[j]] = createMetaVisitor({ filename }));
+					visitor.visitors.push({
+						stateId,
+						visitor: inst.visitor[i],
+						opts: options
+					});
+				}
+			} else {
+				// Normal visitors can be called directly
+				let visitor = visitors[i] || (visitors[i] = createMetaVisitor({ filename }));
+				visitor.visitors.push({
+					stateId,
+					visitor: inst.visitor[i],
+					opts: options
+				});
+			}
 		}
 	}
 

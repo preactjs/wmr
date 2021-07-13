@@ -784,6 +784,36 @@ describe('acorn-traverse', () => {
 		});
 	});
 
+	describe('Visitor', () => {
+		it('should visit merged visitor function', () => {
+			expect.assertions(2);
+			transformWithPlugin(
+				dent`
+				const NotFound = () => (
+					<section>
+						<h1>404: Not Found</h1>
+						<p>It's gone :(</p>
+					</section>
+				);
+				
+				export default NotFound;`,
+				() => ({
+					name: 'foo',
+					visitor: {
+						'ArrowFunctionExpression|FunctionExpression': {
+							enter(path) {
+								expect(path.node.type).toEqual('ArrowFunctionExpression');
+							},
+							exit(path) {
+								expect(path.node.type).toEqual('ArrowFunctionExpression');
+							}
+						}
+					}
+				})
+			);
+		});
+	});
+
 	describe('code generation', () => {
 		it('should generate variable declarations', () => {
 			const str = transformWithPlugin('function foo(){}\nfunction bar() {}', ({ types: t }) => {
@@ -900,7 +930,7 @@ describe('acorn-traverse', () => {
 			expect(str).toEqual('function foo() {}\nconst bar = 1;\n');
 		});
 
-		it.only('should support calling insertAfter() twice', () => {
+		it.skip('should support calling insertAfter() twice', () => {
 			const str = transformWithPlugin(
 				dent`
 				function foo() {}`,
