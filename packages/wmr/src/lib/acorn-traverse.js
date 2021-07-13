@@ -376,6 +376,44 @@ class Path {
 
 	// @TODO siblings
 
+	/**
+	 * @param {string} source The module source
+	 * @param {string} [name] The imported name
+	 * @returns {boolean}
+	 */
+	referencesImport(source, name) {
+		if (!types.isIdentifier(this.node)) return false;
+
+		const binding = this.scope.getBinding(this.node.name);
+		if (!binding) return false;
+
+		const parent = binding.path.parentPath;
+		if (!types.isImportDeclaration(parent.node)) return false;
+
+		if (parent.node.source.value !== source) {
+			return false;
+		}
+
+		if (!name) return true;
+
+		const node = binding.path.node;
+		if (types.isImportDefaultSpecifier(node) && name === 'default') {
+			return true;
+		}
+
+		if (types.isImportNamespaceSpecifier(node) && name === '*') {
+			return true;
+		}
+
+		if (types.isImportSpecifier(node) && node.imported.name === name) {
+			return true;
+		}
+
+		return false;
+	}
+
+	// @TODO siblings
+
 	/** @param {(path: Path) => any} callback */
 	forEach(callback) {
 		const arr = Array.isArray(this.node) ? this.node : [this.node];

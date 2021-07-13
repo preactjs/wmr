@@ -90,6 +90,52 @@ describe('acorn-traverse', () => {
 		);
 	});
 
+	it('should support referencesImport()', () => {
+		expect.assertions(13);
+		transformWithPlugin(
+			dent`
+				import bar from "foo";
+				import * as boof from "bar";
+				import { a as b } from "bob";
+
+				bar();
+				boof();
+				b();
+			`,
+			() => ({
+				name: 'foo',
+				visitor: {
+					CallExpression(path) {
+						const callee = path.get('callee');
+
+						if (callee.node.name === 'bar') {
+							// No importedName
+							expect(callee.referencesImport('foo')).toEqual(true);
+							expect(callee.referencesImport('bar')).toEqual(false);
+
+							expect(callee.referencesImport('foo', 'default')).toEqual(true);
+
+							expect(callee.referencesImport('foo', '*')).toEqual(false);
+							expect(callee.referencesImport('foo', 'foo')).toEqual(false);
+						} else if (callee.node.name === 'boof') {
+							expect(callee.referencesImport('bar')).toEqual(true);
+							expect(callee.referencesImport('bar', '*')).toEqual(true);
+
+							expect(callee.referencesImport('bar', 'default')).toEqual(false);
+							expect(callee.referencesImport('bar', 'bar')).toEqual(false);
+						} else if (callee.node.name === 'b') {
+							expect(callee.referencesImport('bob')).toEqual(true);
+							expect(callee.referencesImport('bob', 'a')).toEqual(true);
+
+							expect(callee.referencesImport('nope')).toEqual(false);
+							expect(callee.referencesImport('bob', 'b')).toEqual(false);
+						}
+					}
+				}
+			})
+		);
+	});
+
 	describe('template', () => {
 		it('should not throw with no replacements', () => {
 			const str = transformWithPlugin('const a = 2', ({ types: t, template }) => {
