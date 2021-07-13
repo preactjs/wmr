@@ -24,6 +24,7 @@ import { defaultLoaders } from './default-loaders.js';
 import { importAssertionPlugin } from '../plugins/import-assertion.js';
 import { acornDefaultPlugins } from './acorn-default-plugins.js';
 import { prefreshPlugin } from '../plugins/preact/prefresh.js';
+import { prefreshPluginV2 } from '../plugins/preact/prefresh-v2.js';
 
 /**
  * @param {import("wmr").Options} options
@@ -41,7 +42,6 @@ export function getPlugins(options) {
 	return [
 		acornDefaultPlugins(),
 		...plugins.slice(0, split),
-		features.preact && !production && prefreshPlugin({ sourcemap }),
 		production && htmlEntriesPlugin({ root, publicPath }),
 		externalUrlsPlugin(),
 		nodeBuiltinsPlugin({ production }),
@@ -54,6 +54,8 @@ export function getPlugins(options) {
 			sourcemap,
 			production
 		}),
+		// features.preact && !production && prefreshPlugin({ sourcemap }),
+		features.preact && !production && prefreshPluginV2({ sourcemap }),
 		// Transpile import assertion syntax to WMR prefixes
 		importAssertionPlugin({ sourcemap }),
 		production &&

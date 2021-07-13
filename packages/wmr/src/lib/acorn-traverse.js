@@ -116,7 +116,13 @@ let codeGenerator = {
 			if (specifiers.length) {
 				if (defaultSpecifier) state.write(', ');
 				state.write('{ ');
-				for (const s of specifiers) this[s.type](s, state);
+				for (let i = 0; i < specifiers.length; i++) {
+					const s = specifiers[i];
+					this[s.type](s, state);
+					if (i < specifiers.length - 1) {
+						state.write(', ');
+					}
+				}
 				state.write(' }');
 			}
 			state.write(' from ');
@@ -236,7 +242,7 @@ for (let type in codeGenerator) {
 				state.write(node._string);
 				return;
 			}
-			if (node.start != null && node.end != null) {
+			if (false && node.start != null && node.end != null) {
 				try {
 					state.write(codegenContext.out.slice(node.start, node.end));
 					return;
@@ -377,6 +383,18 @@ class Path {
 	// @TODO siblings
 
 	/**
+	 * @param {(path: Path) => boolean} fn
+	 * @returns {Path | null}
+	 */
+	find(fn) {
+		let p = this;
+		do {
+			if (fn(p)) return p;
+		} while ((p = p.parentPath));
+		return null;
+	}
+
+	/**
 	 * @param {string} source The module source
 	 * @param {string} [name] The imported name
 	 * @returns {boolean}
@@ -412,7 +430,9 @@ class Path {
 		return false;
 	}
 
-	// @TODO siblings
+	traverse(visitor, state) {
+		this.ctx?.visit(this.node, visitor, state);
+	}
 
 	/** @param {(path: Path) => any} callback */
 	forEach(callback) {
@@ -485,6 +505,27 @@ class Path {
 
 	remove() {
 		this.replaceWithString('');
+	}
+
+	insertAfter(node) {
+		// Insert the child into the the container at the next index
+		let index = this.key + 1;
+		const list = this.parent[this.listKey];
+		list.splice(index, 0, node);
+
+		// Update all subsequent Path keys to their shifted indices
+		while (++index < list.length) {
+			const p = this.ctx.paths.get(list[index]);
+			if (p) p.key = index;
+		}
+
+		// Create a Path entry for the inserted node, and regenerate the container
+		const parent = this.parentPath;
+		parent._hasString = true; // Force parent path regeneration
+
+		if (this._regenerateParent()) {
+			this._hasString = false;
+		}
 	}
 
 	/** @param {string} str */
@@ -598,6 +639,10 @@ class Scope {
 		this.parent = parent;
 	}
 
+	get block() {
+		return this.path.node;
+	}
+
 	/**
 	 * @param {string} name
 	 * @returns {Binding | undefined}
@@ -642,7 +687,7 @@ class Scope {
 
 		this.getProgramParent().references[id] = true;
 
-		return id;
+		return id === name ? `_${id}` : id;
 	}
 
 	/**
@@ -725,7 +770,25 @@ const TYPES = {
 		clearPositionData(clone);
 		return clone;
 	},
+	cloneDeep(node) {
+		if (node !== null && typeof node !== 'object') return node;
+		if (Array.isArray(node)) {
+			return node.map(i => this.cloneDeep(i));
+		}
+
+		const clone = { type: node.type };
+		for (let i in node) {
+			if (i !== '_string' && i !== 'start' && i !== 'end' && i !== 'loc') {
+				clone[i] = node[i];
+			}
+		}
+
+		clearPositionData(clone);
+		return clone;
+	},
 	identifier: name => ({ type: 'Identifier', name }),
+	blockStatement: body => ({ type: 'BlockStatement', body }),
+	returnStatement: argument => ({ type: 'ReturnStatement', argument }),
 
 	// babel compat
 	stringLiteral: value => ({ type: 'StringLiteral', value }),
@@ -738,7 +801,9 @@ const TYPES = {
 	classBody: body => ({ type: 'ClassBody', body }),
 	classProperty: (key, value) => ({ type: 'ClassProperty', key, value }),
 
+	arrayExpression: elements => ({ type: 'ArrayExpression', elements }),
 	callExpression: (callee, args) => ({ type: 'CallExpression', callee, arguments: args }),
+	functionExpression: (id, params, body) => ({ type: 'FunctionExpression', id, params, body }),
 	memberExpression: (object, property) => ({ type: 'MemberExpression', object, property }),
 	expressionStatement: expression => ({ type: 'ExpressionStatement', expression }),
 	taggedTemplateExpression: (tag, quasi) => ({ type: 'TaggedTemplateExpression', tag, quasi }),
@@ -830,6 +895,16 @@ const types = new Proxy(TYPES, {
 		if (typeof key !== 'string') return;
 
 		if (key.startsWith('is')) {
+			if (key === 'isBlock') {
+				obj[key] = pathOrNode => {
+					if (pathOrNode == null) return false;
+					const node = pathOrNode instanceof Path ? pathOrNode.node : pathOrNode;
+					if (node.type === 'BlockStatement' || node.type === 'Program') return true;
+					return false;
+				};
+				return obj[key];
+			}
+
 			// Handle { type: 'StringLiteral', value: any }
 			let type = key.substring(2);
 			// Handle { type:'Literal', value:'string' }
@@ -900,10 +975,13 @@ function visit(root, visitors, state) {
 	Node = root.constructor;
 
 	/** @type {Scope} */
-	let scope = new Scope(null, null);
+	let scope;
 
 	function enter(node, ancestors, seededPath) {
 		const path = seededPath || new ctx.Path(node, ancestors.slice());
+		if (node === root) {
+			scope = new Scope(path, null);
+		}
 		ancestors.push(node);
 
 		let prevScope = scope;
@@ -1070,6 +1148,10 @@ function createContext({ code, out, parse, generatorOpts, filename }) {
 		Path,
 		hub: {
 			file: {
+				ast: {
+					// TODO: use acorn's `onComment()` hook
+					comments: []
+				},
 				opts: {
 					filename
 				}
