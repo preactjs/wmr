@@ -244,7 +244,6 @@ let codeGenerator = {
 		state.write(';\n');
 	}
 };
-codeGenerator.ImportDefaultSpecifier = codeGenerator.ImportSpecifier;
 codeGenerator.BooleanLiteral = codeGenerator.Literal;
 codeGenerator.RegexpLiteral = codeGenerator.Literal;
 codeGenerator.NumericLiteral = codeGenerator.Literal;
