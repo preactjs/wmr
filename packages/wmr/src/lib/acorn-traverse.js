@@ -972,10 +972,13 @@ function visit(root, visitors, state) {
 	Node = root.constructor;
 
 	/** @type {Scope} */
-	let scope = new Scope(null, null);
+	let scope;
 
 	function enter(node, ancestors, seededPath) {
 		const path = seededPath || new ctx.Path(node, ancestors.slice());
+		if (node === root) {
+			scope = new Scope(path, null);
+		}
 		ancestors.push(node);
 
 		let prevScope = scope;
