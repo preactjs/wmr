@@ -54,6 +54,18 @@ describe('acorn-traverse', () => {
 	});
 
 	describe('Path', () => {
+		it('should support type', () => {
+			expect.assertions(1);
+			transformWithPlugin(`function foo() {}`, () => ({
+				name: 'foo',
+				visitor: {
+					FunctionDeclaration(path) {
+						expect(path.type).toEqual('FunctionDeclaration');
+					}
+				}
+			}));
+		});
+
 		it('should set correct parentPath in function declaration', () => {
 			expect.assertions(2);
 			transformWithPlugin(

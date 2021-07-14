@@ -396,6 +396,10 @@ class Path {
 		return containerPath && containerPath.node;
 	}
 
+	get type() {
+		return this.node.type;
+	}
+
 	// @TODO siblings
 
 	/**
