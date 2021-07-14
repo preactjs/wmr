@@ -1001,6 +1001,47 @@ describe('acorn-traverse', () => {
 	});
 
 	describe('transform()', () => {
+		it('should support insertAfter()', () => {
+			const str = transformWithPlugin(
+				dent`
+				function foo() {}`,
+				({ types: t }) => ({
+					name: 'foo',
+					visitor: {
+						FunctionDeclaration(path) {
+							path.insertAfter(
+								t.variableDeclaration('const', [t.variableDeclarator(t.identifier('bar'), t.numericLiteral(1))])
+							);
+						}
+					}
+				})
+			);
+
+			expect(str).toEqual('function foo() {}\nconst bar = 1;\n');
+		});
+
+		it.skip('should support calling insertAfter() twice', () => {
+			const str = transformWithPlugin(
+				dent`
+				function foo() {}`,
+				({ types: t }) => ({
+					name: 'foo',
+					visitor: {
+						FunctionDeclaration(path) {
+							path.insertAfter(
+								t.variableDeclaration('const', [t.variableDeclarator(t.identifier('bar'), t.numericLiteral(1))])
+							);
+							path.insertAfter(
+								t.variableDeclaration('let', [t.variableDeclarator(t.identifier('boof'), t.numericLiteral(2))])
+							);
+						}
+					}
+				})
+			);
+
+			expect(str).toEqual('function foo() {}\nlet boof = 2;\nconst bar = 1;\n');
+		});
+
 		it('should regenerate destructured parameters', () => {
 			const transform = withVisitor(t => ({
 				TaggedTemplateExpression(path) {

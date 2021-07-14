@@ -510,6 +510,27 @@ class Path {
 		this.replaceWithString('');
 	}
 
+	insertAfter(node) {
+		// Insert the child into the the container at the next index
+		let index = this.key + 1;
+		const list = this.parent[this.listKey];
+		list.splice(index, 0, node);
+
+		// Update all subsequent Path keys to their shifted indices
+		while (++index < list.length) {
+			const p = this.ctx.paths.get(list[index]);
+			if (p) p.key = index;
+		}
+
+		// Create a Path entry for the inserted node, and regenerate the container
+		const parent = this.parentPath;
+		parent._hasString = true; // Force parent path regeneration
+
+		if (this._regenerateParent()) {
+			this._hasString = false;
+		}
+	}
+
 	/** @param {string} str */
 	prependString(str) {
 		this.ctx.out.appendLeft(this.start, str);
