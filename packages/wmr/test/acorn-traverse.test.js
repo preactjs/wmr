@@ -79,6 +79,22 @@ describe('acorn-traverse', () => {
 			}));
 		});
 
+		it('should support traverse()', () => {
+			expect.assertions(1);
+			transformWithPlugin(`function foo() { return 42 }`, () => ({
+				name: 'foo',
+				visitor: {
+					Program(path) {
+						path.traverse({
+							FunctionDeclaration(path) {
+								expect(path.node.type).toEqual('FunctionDeclaration');
+							}
+						});
+					}
+				}
+			}));
+		});
+
 		it('should set correct parentPath in function declaration', () => {
 			expect.assertions(2);
 			transformWithPlugin(

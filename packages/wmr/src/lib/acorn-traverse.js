@@ -450,7 +450,9 @@ class Path {
 		return false;
 	}
 
-	// @TODO siblings
+	traverse(visitor, state) {
+		this.ctx.visit(this.node, visitor, state);
+	}
 
 	/** @param {(path: Path) => any} callback */
 	forEach(callback) {
