@@ -432,7 +432,7 @@ describe('acorn-traverse', () => {
 		});
 
 		it('should support generateUidIdentifier()', () => {
-			expect.assertions(4);
+			expect.assertions(6);
 			transformWithPlugin('function foo() {const a = 1}', () => {
 				return {
 					name: 'foo',
@@ -440,12 +440,16 @@ describe('acorn-traverse', () => {
 						VariableDeclaration(path) {
 							const id = path.scope.generateUidIdentifier('foo');
 							expect(id.type).toEqual('Identifier');
-							expect(id.name).toEqual('foo');
+							expect(id.name).toEqual('_foo');
 						},
 						NumericLiteral(path) {
 							const id = path.scope.generateUidIdentifier('a');
 							expect(id.type).toEqual('Identifier');
-							expect(id.name).toEqual('a_1');
+							expect(id.name).toEqual('_a');
+
+							const id2 = path.scope.generateUidIdentifier('a');
+							expect(id2.type).toEqual('Identifier');
+							expect(id2.name).toEqual('_a1');
 						}
 					}
 				};

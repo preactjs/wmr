@@ -634,10 +634,11 @@ class Scope {
 	 */
 	generateUid(name = 'temp') {
 		let i = 1;
+		name = !name.startsWith('_') ? `_${name}` : name;
 		let id = name;
 
 		while (this.hasBinding(id) || id in this.getProgramParent().references) {
-			id = name + `_${i++}`;
+			id = name + `${i++}`;
 		}
 
 		this.getProgramParent().references[id] = true;
