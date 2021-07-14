@@ -66,6 +66,19 @@ describe('acorn-traverse', () => {
 			}));
 		});
 
+		it('should support find()', () => {
+			expect.assertions(1);
+			transformWithPlugin(`function foo() { return 42 }`, () => ({
+				name: 'foo',
+				visitor: {
+					ReturnStatement(path) {
+						const outer = path.find(p => p.node.type === 'FunctionDeclaration');
+						expect(outer.node.type).toEqual('FunctionDeclaration');
+					}
+				}
+			}));
+		});
+
 		it('should set correct parentPath in function declaration', () => {
 			expect.assertions(2);
 			transformWithPlugin(
@@ -355,6 +368,20 @@ describe('acorn-traverse', () => {
 					visitor: {
 						Identifier(path) {
 							expect(path.scope.hasBinding('a')).toEqual(true);
+						}
+					}
+				};
+			});
+		});
+
+		it('should support .block', () => {
+			expect.assertions(1);
+			transformWithPlugin('const a = 1', () => {
+				return {
+					name: 'foo',
+					visitor: {
+						Identifier(path) {
+							expect(path.scope.block.type).toEqual('Program');
 						}
 					}
 				};

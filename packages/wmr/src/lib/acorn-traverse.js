@@ -403,6 +403,18 @@ class Path {
 	// @TODO siblings
 
 	/**
+	 * @param {(path: Path) => boolean} fn
+	 * @returns {Path | null}
+	 */
+	find(fn) {
+		let p = this;
+		do {
+			if (fn(p)) return p;
+		} while ((p = p.parentPath));
+		return null;
+	}
+
+	/**
 	 * @param {string} source The module source
 	 * @param {string} [name] The imported name
 	 * @returns {boolean}
@@ -643,6 +655,10 @@ class Scope {
 	constructor(path, parent = null) {
 		this.path = path;
 		this.parent = parent;
+	}
+
+	get block() {
+		return this.path.node;
 	}
 
 	/**
