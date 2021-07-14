@@ -104,23 +104,46 @@ let codeGenerator = {
 		}
 		this[local.type](local, state);
 	},
+	ImportDefaultSpecifier(node, state) {
+		const { local } = node;
+		this[local.type](local, state);
+	},
+	ImportNamespaceSpecifier(node, state) {
+		const { local } = node;
+		state.write('* as ');
+		this[local.type](local, state);
+	},
 	ImportDeclaration(node, state) {
 		const { specifiers = [], source } = node;
 		state.write('import ');
 		if (specifiers.length) {
-			let defaultSpecifier;
-			if (specifiers[0].type === 'ImportDefaultSpecifier') {
-				defaultSpecifier = specifiers.shift();
-				this[defaultSpecifier.type](defaultSpecifier, state);
+			if (specifiers[0].type === 'ImportNamespaceSpecifier') {
+				const s = specifiers[0];
+				this[s.type](s, state);
+			} else {
+				let defaultSpecifier;
+				if (specifiers[0].type === 'ImportDefaultSpecifier') {
+					defaultSpecifier = specifiers.shift();
+					this[defaultSpecifier.type](defaultSpecifier, state);
+				}
+
+				if (specifiers.length) {
+					if (defaultSpecifier) state.write(', ');
+					state.write('{ ');
+					for (let i = 0; i < specifiers.length; i++) {
+						const s = specifiers[i];
+						this[s.type](s, state);
+						if (i < specifiers.length - 1) {
+							state.write(', ');
+						}
+					}
+					state.write(' }');
+				}
 			}
-			if (specifiers.length) {
-				if (defaultSpecifier) state.write(', ');
-				state.write('{ ');
-				for (const s of specifiers) this[s.type](s, state);
-				state.write(' }');
-			}
+
 			state.write(' from ');
 		}
+
 		this[source.type](source, state);
 		state.write(';');
 	},
@@ -221,7 +244,6 @@ let codeGenerator = {
 		state.write(';\n');
 	}
 };
-codeGenerator.ImportDefaultSpecifier = codeGenerator.ImportSpecifier;
 codeGenerator.BooleanLiteral = codeGenerator.Literal;
 codeGenerator.RegexpLiteral = codeGenerator.Literal;
 codeGenerator.NumericLiteral = codeGenerator.Literal;
@@ -343,6 +365,10 @@ class Path {
 		}
 	}
 
+	get hub() {
+		return this.ctx.hub;
+	}
+
 	get parentPath() {
 		let ancestors = this.ancestors.slice();
 		let parent = ancestors.pop();
@@ -370,7 +396,63 @@ class Path {
 		return containerPath && containerPath.node;
 	}
 
+	get type() {
+		return this.node.type;
+	}
+
 	// @TODO siblings
+
+	/**
+	 * @param {(path: Path) => boolean} fn
+	 * @returns {Path | null}
+	 */
+	find(fn) {
+		let p = this;
+		do {
+			if (fn(p)) return p;
+		} while ((p = p.parentPath));
+		return null;
+	}
+
+	/**
+	 * @param {string} source The module source
+	 * @param {string} [name] The imported name
+	 * @returns {boolean}
+	 */
+	referencesImport(source, name) {
+		if (!types.isIdentifier(this.node)) return false;
+
+		const binding = this.scope.getBinding(this.node.name);
+		if (!binding) return false;
+
+		const parent = binding.path.parentPath;
+		if (!types.isImportDeclaration(parent.node)) return false;
+
+		if (parent.node.source.value !== source) {
+			return false;
+		}
+
+		if (!name) return true;
+
+		const node = binding.path.node;
+		if (types.isImportDefaultSpecifier(node) && name === 'default') {
+			return true;
+		}
+
+		if (types.isImportNamespaceSpecifier(node) && name === '*') {
+			return true;
+		}
+
+		if (types.isImportSpecifier(node) && node.imported.name === name) {
+			return true;
+		}
+
+		return false;
+	}
+
+	traverse(visitor, state) {
+		this.ctx.visit(this.node, visitor, state);
+	}
 
 	/** @param {(path: Path) => any} callback */
 	forEach(callback) {
@@ -443,6 +525,27 @@ class Path {
 
 	remove() {
 		this.replaceWithString('');
+	}
+
+	insertAfter(node) {
+		// Insert the child into the the container at the next index
+		let index = this.key + 1;
+		const list = this.parent[this.listKey];
+		list.splice(index, 0, node);
+
+		// Update all subsequent Path keys to their shifted indices
+		while (++index < list.length) {
+			const p = this.ctx.paths.get(list[index]);
+			if (p) p.key = index;
+		}
+
+		// Create a Path entry for the inserted node, and regenerate the container
+		const parent = this.parentPath;
+		parent._hasString = true; // Force parent path regeneration
+
+		if (this._regenerateParent()) {
+			this._hasString = false;
+		}
 	}
 
 	/** @param {string} str */
@@ -556,6 +659,10 @@ class Scope {
 		this.parent = parent;
 	}
 
+	get block() {
+		return this.path.node;
+	}
+
 	/**
 	 * @param {string} name
 	 * @returns {Binding | undefined}
@@ -592,10 +699,11 @@ class Scope {
 	 */
 	generateUid(name = 'temp') {
 		let i = 1;
+		name = !name.startsWith('_') ? `_${name}` : name;
 		let id = name;
 
 		while (this.hasBinding(id) || id in this.getProgramParent().references) {
-			id = name + `_${i++}`;
+			id = name + `${i++}`;
 		}
 
 		this.getProgramParent().references[id] = true;
@@ -683,7 +791,25 @@ const TYPES = {
 		clearPositionData(clone);
 		return clone;
 	},
+	cloneDeep(node) {
+		if (node !== null && typeof node !== 'object') return node;
+		if (Array.isArray(node)) {
+			return node.map(i => this.cloneDeep(i));
+		}
+
+		const clone = { type: node.type };
+		for (let i in node) {
+			if (i !== '_string' && i !== 'start' && i !== 'end' && i !== 'loc') {
+				clone[i] = node[i];
+			}
+		}
+
+		clearPositionData(clone);
+		return clone;
+	},
 	identifier: name => ({ type: 'Identifier', name }),
+	blockStatement: body => ({ type: 'BlockStatement', body }),
+	returnStatement: argument => ({ type: 'ReturnStatement', argument }),
 
 	// babel compat
 	stringLiteral: value => ({ type: 'StringLiteral', value }),
@@ -696,7 +822,9 @@ const TYPES = {
 	classBody: body => ({ type: 'ClassBody', body }),
 	classProperty: (key, value) => ({ type: 'ClassProperty', key, value }),
 
+	arrayExpression: elements => ({ type: 'ArrayExpression', elements }),
 	callExpression: (callee, args) => ({ type: 'CallExpression', callee, arguments: args }),
+	functionExpression: (id, params, body) => ({ type: 'FunctionExpression', id, params, body }),
 	memberExpression: (object, property) => ({ type: 'MemberExpression', object, property }),
 	expressionStatement: expression => ({ type: 'ExpressionStatement', expression }),
 	taggedTemplateExpression: (tag, quasi) => ({ type: 'TaggedTemplateExpression', tag, quasi }),
@@ -705,6 +833,7 @@ const TYPES = {
 	importDeclaration: (specifiers, source) => ({ type: 'ImportDeclaration', specifiers, source }),
 	importSpecifier: (local, imported) => ({ type: 'ImportSpecifier', local, imported }),
 	importDefaultSpecifier: local => ({ type: 'ImportDefaultSpecifier', local }),
+	importNamespaceSpecifier: local => ({ type: 'ImportNamespaceSpecifier', local }),
 	assignmentExpression: (operator, left, right) => ({ type: 'AssignmentExpression', operator, left, right }),
 	variableDeclaration: (kind, declarations) => ({ type: 'VariableDeclaration', kind, declarations }),
 	variableDeclarator: (id, init) => ({ type: 'VariableDeclarator', id, init }),
@@ -774,6 +903,9 @@ const TYPES = {
 			}
 			return children;
 		}
+	},
+	isBlock(node) {
+		return node.type === 'BlockStatement' || node.type === 'Program';
 	}
 };
 
@@ -858,10 +990,13 @@ function visit(root, visitors, state) {
 	Node = root.constructor;
 
 	/** @type {Scope} */
-	let scope = new Scope(null, null);
+	let scope;
 
 	function enter(node, ancestors, seededPath) {
 		const path = seededPath || new ctx.Path(node, ancestors.slice());
+		if (node === root) {
+			scope = new Scope(path, null);
+		}
 		ancestors.push(node);
 
 		let prevScope = scope;
@@ -913,7 +1048,11 @@ function visit(root, visitors, state) {
 					}
 				});
 			}
-		} else if (types.isImportSpecifier(node)) {
+		} else if (
+			types.isImportSpecifier(node) ||
+			types.isImportDefaultSpecifier(node) ||
+			types.isImportNamespaceSpecifier(node)
+		) {
 			const name = node.local.name;
 			scope.bindings[name] = new Binding(path);
 		} else if (types.isProgram(node)) {
@@ -1004,10 +1143,11 @@ function visit(root, visitors, state) {
  * @param {object} options
  * @param {string} options.code
  * @param {MagicString} options.out
+ * @param {string} [options.filename]
  * @param {typeof DEFAULTS['parse']} options.parse
- * @param {{ compact?: boolean }} options.generatorOpts
+ * @param {{ compact?: boolean, filename?: string }} options.generatorOpts
  */
-function createContext({ code, out, parse, generatorOpts }) {
+function createContext({ code, out, parse, generatorOpts, filename }) {
 	const ctx = {
 		paths: new WeakMap(),
 		/** @type {Set<Path>} */
@@ -1020,7 +1160,18 @@ function createContext({ code, out, parse, generatorOpts }) {
 		visit,
 		/** @type {ReturnType<typeof createTemplate> | null} */
 		template: createTemplate(parse),
-		Path
+		Path,
+		hub: {
+			file: {
+				ast: {
+					// TODO: use acorn's `onComment()` hook
+					comments: []
+				},
+				opts: {
+					filename
+				}
+			}
+		}
 	};
 
 	const bound = { ctx };
@@ -1067,7 +1218,7 @@ export function transform(
 	parse = parse || DEFAULTS.parse;
 	generatorOpts = generatorOpts || {};
 	const out = new MagicString(code);
-	const { types, template, visit } = createContext({ code, out, parse, generatorOpts });
+	const { types, template, visit } = createContext({ code, out, parse, generatorOpts, filename });
 
 	const allPlugins = [];
 	resolvePreset({ presets, plugins }, allPlugins);
@@ -1081,12 +1232,27 @@ export function transform(
 		const plugin = typeof id === 'string' ? require(id) : id;
 		const inst = plugin({ types, template }, options);
 		for (let i in inst.visitor) {
-			const visitor = visitors[i] || (visitors[i] = createMetaVisitor({ filename }));
-			visitor.visitors.push({
-				stateId,
-				visitor: inst.visitor[i],
-				opts: options
-			});
+			// Merged visitors are separated via a pipe symbol:
+			// `'ArrowFunctionExpression|FunctionExpression'`
+			if (/|/.test(i)) {
+				const parts = i.split('|');
+				for (let j = 0; j < parts.length; j++) {
+					let visitor = visitors[parts[j]] || (visitors[parts[j]] = createMetaVisitor({ filename }));
+					visitor.visitors.push({
+						stateId,
+						visitor: inst.visitor[i],
+						opts: options
+					});
+				}
+			} else {
+				// Normal visitors can be called directly
+				let visitor = visitors[i] || (visitors[i] = createMetaVisitor({ filename }));
+				visitor.visitors.push({
+					stateId,
+					visitor: inst.visitor[i],
+					opts: options
+				});
+			}
 		}
 	}
 
