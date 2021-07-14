@@ -412,7 +412,7 @@ describe('acorn-traverse', () => {
 				};
 			});
 
-			expect(str).toEqual(`function foo() {\n  let abc = 'foo';\n  const a = 1\n}`);
+			expect(str).toEqual(`function foo() {\n  let abc = 'foo';\n  const a = 1;\n}`);
 		});
 
 		it('should track variable bindings', () => {
