@@ -104,23 +104,46 @@ let codeGenerator = {
 		}
 		this[local.type](local, state);
 	},
+	ImportDefaultSpecifier(node, state) {
+		const { local } = node;
+		this[local.type](local, state);
+	},
+	ImportNamespaceSpecifier(node, state) {
+		const { local } = node;
+		state.write('* as ');
+		this[local.type](local, state);
+	},
 	ImportDeclaration(node, state) {
 		const { specifiers = [], source } = node;
 		state.write('import ');
 		if (specifiers.length) {
-			let defaultSpecifier;
-			if (specifiers[0].type === 'ImportDefaultSpecifier') {
-				defaultSpecifier = specifiers.shift();
-				this[defaultSpecifier.type](defaultSpecifier, state);
+			if (specifiers[0].type === 'ImportNamespaceSpecifier') {
+				const s = specifiers[0];
+				this[s.type](s, state);
+			} else {
+				let defaultSpecifier;
+				if (specifiers[0].type === 'ImportDefaultSpecifier') {
+					defaultSpecifier = specifiers.shift();
+					this[defaultSpecifier.type](defaultSpecifier, state);
+				}
+
+				if (specifiers.length) {
+					if (defaultSpecifier) state.write(', ');
+					state.write('{ ');
+					for (let i = 0; i < specifiers.length; i++) {
+						const s = specifiers[i];
+						this[s.type](s, state);
+						if (i < specifiers.length - 1) {
+							state.write(', ');
+						}
+					}
+					state.write(' }');
+				}
 			}
-			if (specifiers.length) {
-				if (defaultSpecifier) state.write(', ');
-				state.write('{ ');
-				for (const s of specifiers) this[s.type](s, state);
-				state.write(' }');
-			}
+
 			state.write(' from ');
 		}
+
 		this[source.type](source, state);
 		state.write(';');
 	},
@@ -748,6 +771,7 @@ const TYPES = {
 	importDeclaration: (specifiers, source) => ({ type: 'ImportDeclaration', specifiers, source }),
 	importSpecifier: (local, imported) => ({ type: 'ImportSpecifier', local, imported }),
 	importDefaultSpecifier: local => ({ type: 'ImportDefaultSpecifier', local }),
+	importNamespaceSpecifier: local => ({ type: 'ImportNamespaceSpecifier', local }),
 	assignmentExpression: (operator, left, right) => ({ type: 'AssignmentExpression', operator, left, right }),
 	variableDeclaration: (kind, declarations) => ({ type: 'VariableDeclaration', kind, declarations }),
 	variableDeclarator: (id, init) => ({ type: 'VariableDeclarator', id, init }),

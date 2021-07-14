@@ -789,6 +789,63 @@ describe('acorn-traverse', () => {
 	});
 
 	describe('code generation', () => {
+		// FIXME: Repeated operations break string generation here
+		it.skip('should generate import statements', () => {
+			const str = transformWithPlugin(
+				dent`
+					a;
+				`,
+				({ types: t }) => {
+					return {
+						name: 'foo',
+						visitor: {
+							Program(path) {
+								path.pushContainer('body', t.importDeclaration([], t.stringLiteral('foo')));
+
+								path.pushContainer(
+									'body',
+									t.importDeclaration([t.importDefaultSpecifier(t.identifier('foo'))], t.stringLiteral('foo'))
+								);
+
+								path.pushContainer(
+									'body',
+									t.importDeclaration([t.importNamespaceSpecifier(t.identifier('bar'))], t.stringLiteral('foo'))
+								);
+
+								path.pushContainer(
+									'body',
+									t.importDeclaration(
+										[
+											t.importSpecifier(t.identifier('baz')),
+											t.importSpecifier(t.identifier('baba'), t.identifier('boof'))
+										],
+										t.stringLiteral('foo')
+									)
+								);
+
+								path.pushContainer(
+									'body',
+									t.importDeclaration(
+										[t.importDefaultSpecifier(t.identifier('foobar')), t.importSpecifier(t.identifier('asdf'))],
+										t.stringLiteral('foo')
+									)
+								);
+							}
+						}
+					};
+				}
+			);
+
+			expect(str).toEqual(dent`
+				a;
+				import 'foo';
+				import foo from 'foo';
+				import * as bar from 'foo';
+				import { baz, boof as baba } from 'foo';
+				import foobar, { asdf } from 'foo';
+			`);
+		});
+
 		it('should generate variable declarations', () => {
 			const str = transformWithPlugin('function foo(){}\nfunction bar() {}', ({ types: t }) => {
 				return {
