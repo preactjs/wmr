@@ -790,6 +790,8 @@ const TYPES = {
 		return clone;
 	},
 	identifier: name => ({ type: 'Identifier', name }),
+	blockStatement: body => ({ type: 'BlockStatement', body }),
+	returnStatement: argument => ({ type: 'ReturnStatement', argument }),
 
 	// babel compat
 	stringLiteral: value => ({ type: 'StringLiteral', value }),
@@ -802,7 +804,9 @@ const TYPES = {
 	classBody: body => ({ type: 'ClassBody', body }),
 	classProperty: (key, value) => ({ type: 'ClassProperty', key, value }),
 
+	arrayExpression: elements => ({ type: 'ArrayExpression', elements }),
 	callExpression: (callee, args) => ({ type: 'CallExpression', callee, arguments: args }),
+	functionExpression: (id, params, body) => ({ type: 'FunctionExpression', id, params, body }),
 	memberExpression: (object, property) => ({ type: 'MemberExpression', object, property }),
 	expressionStatement: expression => ({ type: 'ExpressionStatement', expression }),
 	taggedTemplateExpression: (tag, quasi) => ({ type: 'TaggedTemplateExpression', tag, quasi }),
@@ -881,6 +885,9 @@ const TYPES = {
 			}
 			return children;
 		}
+	},
+	isBlock(node) {
+		return node.type === 'BlockStatement' || node.type === 'Program';
 	}
 };
 
