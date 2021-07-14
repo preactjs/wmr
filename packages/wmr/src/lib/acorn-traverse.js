@@ -1160,12 +1160,27 @@ export function transform(
 		const plugin = typeof id === 'string' ? require(id) : id;
 		const inst = plugin({ types, template }, options);
 		for (let i in inst.visitor) {
-			const visitor = visitors[i] || (visitors[i] = createMetaVisitor({ filename }));
-			visitor.visitors.push({
-				stateId,
-				visitor: inst.visitor[i],
-				opts: options
-			});
+			// Merged visitors are separated via a pipe symbol:
+			// `'ArrowFunctionExpression|FunctionExpression'`
+			if (/|/.test(i)) {
+				const parts = i.split('|');
+				for (let j = 0; j < parts.length; j++) {
+					let visitor = visitors[parts[j]] || (visitors[parts[j]] = createMetaVisitor({ filename }));
+					visitor.visitors.push({
+						stateId,
+						visitor: inst.visitor[i],
+						opts: options
+					});
+				}
+			} else {
+				// Normal visitors can be called directly
+				let visitor = visitors[i] || (visitors[i] = createMetaVisitor({ filename }));
+				visitor.visitors.push({
+					stateId,
+					visitor: inst.visitor[i],
+					opts: options
+				});
+			}
 		}
 	}
 

@@ -788,6 +788,65 @@ describe('acorn-traverse', () => {
 		});
 	});
 
+	describe('Visitor', () => {
+		it('should call function visitor', () => {
+			expect.assertions(1);
+			transformWithPlugin(`function foo() {}`, () => ({
+				name: 'foo',
+				visitor: {
+					FunctionDeclaration(path) {
+						expect(path.node.type).toEqual('FunctionDeclaration');
+					}
+				}
+			}));
+		});
+
+		it('should call enter and exit visitor', () => {
+			expect.assertions(2);
+			transformWithPlugin(`function foo() {}`, () => ({
+				name: 'foo',
+				visitor: {
+					FunctionDeclaration: {
+						enter(path) {
+							expect(path.node.type).toEqual('FunctionDeclaration');
+						},
+						exit(path) {
+							expect(path.node.type).toEqual('FunctionDeclaration');
+						}
+					}
+				}
+			}));
+		});
+
+		it('should visit merged visitor function', () => {
+			expect.assertions(2);
+			transformWithPlugin(
+				dent`
+				const NotFound = () => (
+					<section>
+						<h1>404: Not Found</h1>
+						<p>It's gone :(</p>
+					</section>
+				);
+				
+				export default NotFound;`,
+				() => ({
+					name: 'foo',
+					visitor: {
+						'ArrowFunctionExpression|FunctionExpression': {
+							enter(path) {
+								expect(path.node.type).toEqual('ArrowFunctionExpression');
+							},
+							exit(path) {
+								expect(path.node.type).toEqual('ArrowFunctionExpression');
+							}
+						}
+					}
+				})
+			);
+		});
+	});
+
 	describe('code generation', () => {
 		// FIXME: Repeated operations break string generation here
 		it.skip('should generate import statements', () => {
