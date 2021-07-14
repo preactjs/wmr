@@ -789,6 +789,22 @@ const TYPES = {
 		clearPositionData(clone);
 		return clone;
 	},
+	cloneDeep(node) {
+		if (node !== null && typeof node !== 'object') return node;
+		if (Array.isArray(node)) {
+			return node.map(i => this.cloneDeep(i));
+		}
+
+		const clone = { type: node.type };
+		for (let i in node) {
+			if (i !== '_string' && i !== 'start' && i !== 'end' && i !== 'loc') {
+				clone[i] = node[i];
+			}
+		}
+
+		clearPositionData(clone);
+		return clone;
+	},
 	identifier: name => ({ type: 'Identifier', name }),
 	blockStatement: body => ({ type: 'BlockStatement', body }),
 	returnStatement: argument => ({ type: 'ReturnStatement', argument }),
