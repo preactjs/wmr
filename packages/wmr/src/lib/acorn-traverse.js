@@ -258,7 +258,7 @@ for (let type in codeGenerator) {
 				state.write(node._string);
 				return;
 			}
-			if (node.start != null && node.end != null) {
+			if (true && node.start != null && node.end != null) {
 				try {
 					state.write(codegenContext.out.slice(node.start, node.end));
 					return;
@@ -464,7 +464,7 @@ class Path {
 
 	/**
 	 * @param {string} selector
-	 * @returns {Path}
+	 * @returns {Path | Path[]}
 	 */
 	get(selector) {
 		const ancestors = this.ancestors.slice();
@@ -480,6 +480,11 @@ class Path {
 				ancestors.push(prev);
 			}
 		}
+
+		if (Array.isArray(node)) {
+			return node.map(n => new Path(n, ancestors, this.ctx));
+		}
+
 		return new Path(node, ancestors, this.ctx);
 	}
 

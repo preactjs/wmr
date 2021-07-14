@@ -1,0 +1,84 @@
+diff --git a/node_modules/@prefresh/babel-plugin/src/index.mjs b/node_modules/@prefresh/babel-plugin/src/index.mjs
+index a9eeb47..113df69 100644
+--- a/node_modules/@prefresh/babel-plugin/src/index.mjs
++++ b/node_modules/@prefresh/babel-plugin/src/index.mjs
+@@ -286,6 +286,7 @@ export default function (babel, opts = {}) {
+ 
+     let forceReset = hasForceResetComment(scope.path);
+     const customHooksInScope = [];
++    console.log("HOOKS", customHooks)
+     customHooks.forEach(callee => {
+       // Check if a corresponding binding exists where we emit the signature.
+       let bindingName;
+@@ -299,6 +300,7 @@ export default function (babel, opts = {}) {
+           bindingName = callee.name;
+           break;
+       }
++      console.log("BIND", scope.hasBinding(bindingName), bindingName, callee)
+       if (scope.hasBinding(bindingName)) {
+         customHooksInScope.push(callee);
+       } else {
+@@ -326,6 +328,9 @@ export default function (babel, opts = {}) {
+       args.push(t.booleanLiteral(forceReset));
+     }
+     if (customHooksInScope.length > 0) {
++      console.log(customHooksInScope, "AST", JSON.stringify(t.blockStatement([
++        t.returnStatement(t.arrayExpression(customHooksInScope)),
++      ])))
+       args.push(
+         // TODO: We could use an arrow here to be more compact.
+         // However, don't do it until AMA can run them natively.
+@@ -649,7 +654,7 @@ export default function (babel, opts = {}) {
+           // we can insert a statement rather than hard coding it.
+           let insertAfterPath = null;
+           path.find(p => {
+-            if (p.parentPath.isBlock()) {
++            if (t.isBlock(p.parentPath.node)) {
+               insertAfterPath = p;
+               return true;
+             }
+@@ -676,6 +681,7 @@ export default function (babel, opts = {}) {
+         exit(path) {
+           const node = path.node;
+           const signature = getHookCallsSignature(node);
++          console.log("SIG", path.node.type, signature)
+           if (signature === null) {
+             return;
+           }
+@@ -850,20 +856,26 @@ export default function (babel, opts = {}) {
+           // Don't mutate the tree above this point.
+ 
+           registrationsByProgramPath.delete(path);
++          
+           const declarators = [];
+-          path.pushContainer('body', t.variableDeclaration('var', declarators));
++          const expressions = []
+           registrations.forEach(({ handle, persistentID }) => {
+-            path.pushContainer(
+-              'body',
+-              t.expressionStatement(
+-                t.callExpression(refreshReg, [
+-                  handle,
+-                  t.stringLiteral(persistentID),
+-                ])
+-              )
+-            );
++            expressions.push(t.expressionStatement(
++              t.callExpression(refreshReg, [
++                handle,
++                t.stringLiteral(persistentID),
++              ])
++            ));
++
+             declarators.push(t.variableDeclarator(handle));
+           });
++
++          path.pushContainer('body', t.variableDeclaration('var', declarators));
++
++          expressions.forEach(exp => path.pushContainer(
++            'body',
++            exp
++          ));
+         },
+       },
+     },

@@ -35,6 +35,7 @@
 	"devDependencies": {
 		"@babel/core": "^7.13.10",
 		"@babel/plugin-transform-modules-commonjs": "^7.13.8",
+		"@prefresh/babel-plugin": "^0.4.1",
 		"@rollup/plugin-alias": "^3.1.1",
 		"@rollup/plugin-commonjs": "^14.0.0",
 		"@rollup/plugin-dynamic-import-vars": "^1.1.1",
