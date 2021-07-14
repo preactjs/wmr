@@ -53,47 +53,48 @@ describe('acorn-traverse', () => {
 		expect(filename).toEqual('foobar.js');
 	});
 
-	it('should set correct parentPath in function declaration', () => {
-		expect.assertions(2);
-		transformWithPlugin(
-			dent`
+	describe('Path', () => {
+		it('should set correct parentPath in function declaration', () => {
+			expect.assertions(2);
+			transformWithPlugin(
+				dent`
 				function foo({ b }) {
 					return 42;
 				}`,
-			() => ({
-				name: 'foo',
-				visitor: {
-					ReturnStatement(path) {
-						expect(path.parentPath.node.type).toEqual('BlockStatement');
-						expect(path.parentPath.parentPath.node.type).toEqual('FunctionDeclaration');
+				() => ({
+					name: 'foo',
+					visitor: {
+						ReturnStatement(path) {
+							expect(path.parentPath.node.type).toEqual('BlockStatement');
+							expect(path.parentPath.parentPath.node.type).toEqual('FunctionDeclaration');
+						}
 					}
-				}
-			})
-		);
-	});
+				})
+			);
+		});
 
-	it('should set correct parent in function declaration', () => {
-		expect.assertions(1);
-		transformWithPlugin(
-			dent`
+		it('should set correct parent in function declaration', () => {
+			expect.assertions(1);
+			transformWithPlugin(
+				dent`
 				function foo({ b }) {
 					return 42;
 				}`,
-			() => ({
-				name: 'foo',
-				visitor: {
-					ReturnStatement(path) {
-						expect(path.parentPath.parent.type).toEqual('FunctionDeclaration');
+				() => ({
+					name: 'foo',
+					visitor: {
+						ReturnStatement(path) {
+							expect(path.parentPath.parent.type).toEqual('FunctionDeclaration');
+						}
 					}
-				}
-			})
-		);
-	});
+				})
+			);
+		});
 
-	it('should support referencesImport()', () => {
-		expect.assertions(13);
-		transformWithPlugin(
-			dent`
+		it('should support referencesImport()', () => {
+			expect.assertions(13);
+			transformWithPlugin(
+				dent`
 				import bar from "foo";
 				import * as boof from "bar";
 				import { a as b } from "bob";
@@ -102,38 +103,39 @@ describe('acorn-traverse', () => {
 				boof();
 				b();
 			`,
-			() => ({
-				name: 'foo',
-				visitor: {
-					CallExpression(path) {
-						const callee = path.get('callee');
+				() => ({
+					name: 'foo',
+					visitor: {
+						CallExpression(path) {
+							const callee = path.get('callee');
 
-						if (callee.node.name === 'bar') {
-							// No importedName
-							expect(callee.referencesImport('foo')).toEqual(true);
-							expect(callee.referencesImport('bar')).toEqual(false);
+							if (callee.node.name === 'bar') {
+								// No importedName
+								expect(callee.referencesImport('foo')).toEqual(true);
+								expect(callee.referencesImport('bar')).toEqual(false);
 
-							expect(callee.referencesImport('foo', 'default')).toEqual(true);
+								expect(callee.referencesImport('foo', 'default')).toEqual(true);
 
-							expect(callee.referencesImport('foo', '*')).toEqual(false);
-							expect(callee.referencesImport('foo', 'foo')).toEqual(false);
-						} else if (callee.node.name === 'boof') {
-							expect(callee.referencesImport('bar')).toEqual(true);
-							expect(callee.referencesImport('bar', '*')).toEqual(true);
+								expect(callee.referencesImport('foo', '*')).toEqual(false);
+								expect(callee.referencesImport('foo', 'foo')).toEqual(false);
+							} else if (callee.node.name === 'boof') {
+								expect(callee.referencesImport('bar')).toEqual(true);
+								expect(callee.referencesImport('bar', '*')).toEqual(true);
 
-							expect(callee.referencesImport('bar', 'default')).toEqual(false);
-							expect(callee.referencesImport('bar', 'bar')).toEqual(false);
-						} else if (callee.node.name === 'b') {
-							expect(callee.referencesImport('bob')).toEqual(true);
-							expect(callee.referencesImport('bob', 'a')).toEqual(true);
+								expect(callee.referencesImport('bar', 'default')).toEqual(false);
+								expect(callee.referencesImport('bar', 'bar')).toEqual(false);
+							} else if (callee.node.name === 'b') {
+								expect(callee.referencesImport('bob')).toEqual(true);
+								expect(callee.referencesImport('bob', 'a')).toEqual(true);
 
-							expect(callee.referencesImport('nope')).toEqual(false);
-							expect(callee.referencesImport('bob', 'b')).toEqual(false);
+								expect(callee.referencesImport('nope')).toEqual(false);
+								expect(callee.referencesImport('bob', 'b')).toEqual(false);
+							}
 						}
 					}
-				}
-			})
-		);
+				})
+			);
+		});
 	});
 
 	describe('template', () => {
