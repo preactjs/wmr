@@ -1145,6 +1145,10 @@ function createContext({ code, out, parse, generatorOpts, filename }) {
 		Path,
 		hub: {
 			file: {
+				ast: {
+					// TODO: use acorn's `onComment()` hook
+					comments: []
+				},
 				opts: {
 					filename
 				}
