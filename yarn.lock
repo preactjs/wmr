@@ -3337,10 +3337,10 @@ escodegen@^1.14.1:
   optionalDependencies:
     source-map "~0.6.1"
 
-escorn@^0.4.0:
-  version "0.4.0"
-  resolved "https://registry.yarnpkg.com/escorn/-/escorn-0.4.0.tgz#76d8cdf7c57d2f3a49e254158cf3efee7d922434"
-  integrity sha512-aSyEakvXdsu6tW4akk2attZ1ETCqwcGEv/weO/lWok92YIDdu78TbZ2ZQaU4xS7TxAd0JO8YIY8lh4vHo7zV7A==
+escorn@^0.4.1:
+  version "0.4.1"
+  resolved "https://registry.yarnpkg.com/escorn/-/escorn-0.4.1.tgz#e5c0b8a1616ebd22a51ca1e0fefe63b0e57049d7"
+  integrity sha512-5rL4q+y8eeQV8NWfskqU7+UUn/go0WtBkbjic5rASwDpVDaQrEhkjt5jrwHN+TklfI+RnyDWz5/u/Q7vhsxc2A==
   dependencies:
     acorn "^8.4.1"
     acorn-class-fields "^1.0.0"
