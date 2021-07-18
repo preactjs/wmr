@@ -1,5 +1,5 @@
 import acornJsx from 'acorn-jsx';
-import { transform } from '../lib/acorn-traverse.js';
+import { transform } from 'escorn';
 import transformJsxToHtm from 'babel-plugin-transform-jsx-to-htm';
 import transformJsxToHtmLite from '../lib/transform-jsx-to-htm-lite.js';
 
@@ -41,7 +41,7 @@ export default function htmPlugin({ include, production = true, sourcemap } = {}
 
 			const start = Date.now();
 
-			const jsxTransform = production ? transformJsxToHtm : transformJsxToHtmLite;
+			const jsxTransform = production ? transformJsxToHtm : transformJsxToHtm;
 
 			const out = transform(code, {
 				plugins: [
@@ -59,12 +59,7 @@ export default function htmPlugin({ include, production = true, sourcemap } = {}
 					]
 				],
 				filename,
-				// Default is to generate sourcemaps, needs an explicit
-				// boolean
-				sourceMaps: !!sourcemap,
-				generatorOpts: {
-					compact: production
-				},
+				sourceMap: sourcemap,
 				parse: this.parse
 			});
 

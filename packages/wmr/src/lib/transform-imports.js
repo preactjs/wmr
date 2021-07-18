@@ -21,6 +21,7 @@ const KIND_IMPORT_META = 2;
  * @returns {Promise<{ code: string, map: any }>}
  */
 export async function transformImports(code, id, { resolveImportMeta, resolveId, resolveDynamicImport, sourcemap }) {
+	console.log('IMPROTS', code);
 	const [imports] = await parse(code, id);
 	const s = new MagicString(code);
 	let offset = 0;

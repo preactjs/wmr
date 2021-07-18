@@ -1,5 +1,5 @@
 import { importAssertions } from 'acorn-import-assertions';
-import { transform } from '../lib/acorn-traverse.js';
+import { transform } from 'escorn';
 
 /**
  * Rewrite import assertions to url prefixes. This is done because
@@ -32,9 +32,7 @@ export function importAssertionPlugin({ sourcemap }) {
 				parse: this.parse,
 				plugins: [transformImportAssertions],
 				filename: id,
-				// Default is to generate sourcemaps, needs an explicit
-				// boolean
-				sourceMaps: !!sourcemap
+				sourceMap: sourcemap
 			});
 
 			return {
@@ -46,36 +44,46 @@ export function importAssertionPlugin({ sourcemap }) {
 }
 
 /**
- * @type {import('../lib/acorn-traverse').Plugin}
+ * @type {import('escorn').Plugin}
  */
 function transformImportAssertions({ types: t }) {
 	return {
 		name: 'transform-import-assertions',
 		visitor: {
-			ImportExpression(path) {
+			CallExpression(path) {
+				if (!t.isImport(path.node.callee)) return;
+
 				const args = path.node.arguments;
-				if (!args || !args.length) return;
-				if (!t.isObjectExpression(args[0])) return;
+				if (!args || args.length < 2) return;
+				const source = args[0];
+				const assertions = args[1];
+				if (!t.isStringLiteral(source) || !t.isObjectExpression(assertions)) return;
 
-				if (!args[0].properties) return;
-				for (let i = 0; i < args[0].properties.length; i++) {
-					const prop = args[0].properties[i];
+				if (!assertions.properties) return;
+				for (let i = 0; i < assertions.properties.length; i++) {
+					const prop = assertions.properties[i];
 
-					if (!t.isIdentifier(prop.key) || prop.key.name !== 'assert') {
+					if (t.isSpreadElement(prop) || !t.isIdentifier(prop.key) || prop.key.name !== 'assert') {
 						continue;
 					}
 
-					if (!t.isObjectExpression(prop.value) || !prop.value.properties || !prop.value.properties.length) {
+					if (
+						t.isObjectMethod(prop) ||
+						!t.isObjectExpression(prop.value) ||
+						!prop.value.properties ||
+						!prop.value.properties.length
+					) {
 						continue;
 					}
 
 					const innerProp = prop.value.properties[0];
-					if (!t.isIdentifier(innerProp.key) || innerProp.key.name !== 'type') {
+					if (!t.isObjectProperty(innerProp)) continue;
+					if (!t.isIdentifier(innerProp.key) || innerProp.key.name !== 'type' || !t.isStringLiteral(innerProp.value)) {
 						continue;
 					}
 
 					const type = innerProp.value.value;
-					path.replaceWith(t.importExpression(t.stringLiteral(`${type}:${path.node.source.value}`)));
+					path.replaceWith(t.callExpression(t.import(), [t.stringLiteral(`${type}:${source.value}`)]));
 				}
 			},
 			ImportDeclaration(path) {
