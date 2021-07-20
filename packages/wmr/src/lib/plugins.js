@@ -24,6 +24,7 @@ import { defaultLoaders } from './default-loaders.js';
 import { importAssertionPlugin } from '../plugins/import-assertion.js';
 import { acornDefaultPlugins } from './acorn-default-plugins.js';
 import { prefreshPlugin } from '../plugins/preact/prefresh.js';
+import { absolutePathPlugin } from '../plugins/absolute-path-plugin.js';
 
 /**
  * @param {import("wmr").Options} options
@@ -48,6 +49,7 @@ export function getPlugins(options) {
 		urlPlugin({ inline: !production, root, alias }),
 		jsonPlugin({ root }),
 		bundlePlugin({ inline: !production, cwd: root }),
+		absolutePathPlugin({ root }),
 		aliasPlugin({ alias }),
 		sucrasePlugin({
 			typescript: true,
