@@ -65,6 +65,12 @@ export default function sassPlugin({ production, sourcemap, root }) {
 		// need a way to do the opposite here to support loading virtual
 		// sass modules. This is a limitation in Rollup. So for now we only
 		// do resolution here.
+
+		// Sass always returns file urls with absolute paths
+		if (url.startsWith('file://')) {
+			url = url.slice('file://'.length);
+		}
+
 		let resolved;
 		try {
 			const importer = prev !== 'stdin' ? prev : null;
