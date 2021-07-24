@@ -862,7 +862,7 @@ const TYPES = {
 	/** @type {(a:Node,b?:Node)=>boolean} */
 	isIdentifier(a, b) {
 		if (a instanceof Path) a = a.node;
-		if (a.type !== 'Identifier') return false;
+		if (!a || a.type !== 'Identifier') return false;
 		return !b || TYPES.isNodesEquivalent(a, b);
 	},
 	react: {
