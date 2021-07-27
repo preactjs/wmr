@@ -172,6 +172,7 @@ export default function sassPlugin({ production, sourcemap, root }) {
 			if (bundle) return Array.from(bundle);
 		},
 		async generateBundle(opts, bundle) {
+			if (!production) return;
 			await Promise.all(
 				Object.values(bundle).map(async asset => {
 					if (asset.type !== 'asset' || !/\.s[ac]ss$/.test(asset.fileName)) return;
