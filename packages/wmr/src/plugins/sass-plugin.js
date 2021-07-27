@@ -128,6 +128,25 @@ export default function sassPlugin({ production, sourcemap, root }) {
 		return result;
 	}
 
+	async function handleError(err) {
+		if (err.file) {
+			const code = await fs.readFile(err.file, 'utf-8');
+			err.codeFrame = createCodeFrame(code, err.line - 1, err.column);
+		}
+		// Sass mixes stack in message, therefore we need to extract
+		// just the message
+		let messageArr = [];
+		err.message.split('\n').some(line => {
+			if (/^\s*(?:\d+\s*)?[│╷]\s*/.test(line)) {
+				return true;
+			}
+			messageArr.push(line);
+		});
+
+		err.message = messageArr.join('\n');
+		throw err;
+	}
+
 	return {
 		name: 'sass',
 		async transform(code, id) {
@@ -142,29 +161,14 @@ export default function sassPlugin({ production, sourcemap, root }) {
 			}
 
 			try {
-				const result = await transformSass(id, file, code);
+				const result = await transformSass.call(this, id, file, code);
 
 				return {
 					code: result.css,
 					map: result.map || null
 				};
 			} catch (err) {
-				if (err.file) {
-					const code = await fs.readFile(err.file, 'utf-8');
-					err.codeFrame = createCodeFrame(code, err.line - 1, err.column);
-				}
-				// Sass mixes stack in message, therefore we need to extract
-				// just the message
-				let messageArr = [];
-				err.message.split('\n').some(line => {
-					if (/^\s*(?:\d+\s*)?[│╷]\s*/.test(line)) {
-						return true;
-					}
-					messageArr.push(line);
-				});
-
-				err.message = messageArr.join('\n');
-				throw err;
+				await handleError(err);
 			}
 		},
 		watchChange(id) {
@@ -179,7 +183,7 @@ export default function sassPlugin({ production, sourcemap, root }) {
 					const id = asset.fileName;
 					const mapFile = asset.fileName + '.map';
 					try {
-						const result = await transformSass(id, asset.fileName, asset.source);
+						const result = await transformSass.call(this, id, asset.fileName, asset.source);
 
 						asset.source = result.css;
 						if (result.map) {
@@ -190,22 +194,7 @@ export default function sassPlugin({ production, sourcemap, root }) {
 							});
 						}
 					} catch (err) {
-						if (err.file) {
-							const code = await fs.readFile(err.file, 'utf-8');
-							err.codeFrame = createCodeFrame(code, err.line - 1, err.column);
-						}
-						// Sass mixes stack in message, therefore we need to extract
-						// just the message
-						let messageArr = [];
-						err.message.split('\n').some(line => {
-							if (/^\s*(?:\d+\s*)?[│╷]\s*/.test(line)) {
-								return true;
-							}
-							messageArr.push(line);
-						});
-
-						err.message = messageArr.join('\n');
-						throw err;
+						await handleError(err);
 					}
 				})
 			);
