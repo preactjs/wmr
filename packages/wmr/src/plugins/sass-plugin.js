@@ -113,18 +113,6 @@ export default function sassPlugin({ production, sourcemap, root }) {
 			sourceMap: sourcemap !== false
 		});
 
-		for (let file of result.includedFiles) {
-			// `node-sass` always returns unix style paths,
-			// even on windows
-			file = path.normalize(file);
-
-			if (!fileToBundles.has(file)) {
-				fileToBundles.set(file, new Set());
-			}
-			// @ts-ignore
-			fileToBundles.get(file).add(id);
-		}
-
 		return result;
 	}
 
@@ -162,6 +150,19 @@ export default function sassPlugin({ production, sourcemap, root }) {
 
 			try {
 				const result = await transformSass.call(this, id, file, code);
+
+				for (let file of result.includedFiles) {
+					// `node-sass` always returns unix style paths,
+					// even on windows
+					file = path.normalize(file);
+
+					if (!fileToBundles.has(file)) {
+						fileToBundles.set(file, new Set());
+					}
+					this.addWatchFile(file);
+					// @ts-ignore
+					fileToBundles.get(file).add(id);
+				}
 
 				return {
 					code: result.css,
