@@ -7,7 +7,7 @@ const strip = url => url.replace(/[?&]t=\d+/g, '');
 const addTimestamp = (url, time) => url + (/\?/.test(url) ? '&' : '?') + 't=' + time;
 
 const resolve = url => new URL(url, location.origin).href;
-let ws;
+let ws, connectTimer, connectDelay = 0;
 
 /**
  * @param {boolean} [needsReload] Force page to reload once it's connected
@@ -19,7 +19,9 @@ function connect(needsReload) {
 		ws.send(JSON.stringify(msg));
 	}
 
+	clearTimeout(connectTimer);
 	ws.addEventListener('open', () => {
+		connectDelay = 0;
 		log(`Connected to server.`);
 		if (needsReload) {
 			window.location.reload();
@@ -31,6 +33,15 @@ function connect(needsReload) {
 
 	ws.addEventListener('message', handleMessage);
 	ws.addEventListener('error', handleError);
+	ws.addEventListener('close', reconnect);
+}
+
+function reconnect() {
+	connectDelay = Math.min(connectDelay * 2, 30000) || 500;
+	connectTimer = setTimeout(() => {
+		if (ws) ws.close();
+		connect(false);
+	}, connectDelay);
 }
 
 connect();
