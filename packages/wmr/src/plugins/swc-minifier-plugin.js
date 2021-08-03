@@ -8,8 +8,6 @@ export default function swcMinifyPlugin({ sourcemap = false, warnThreshold = 50,
 		async renderChunk(code, chunk) {
 			let out, duration;
 			try {
-				// We only time the synhronous region here, because Terser is actually synchronous.
-				// (measuring `await` would return the cumulative time taken by all minify() calls).
 				const start = Date.now();
 				const p = swc.minify(code, {
 					compress,
@@ -26,8 +24,8 @@ export default function swcMinifyPlugin({ sourcemap = false, warnThreshold = 50,
 						comments: false
 					}
 				});
-				duration = Date.now() - start;
 				out = await p;
+				duration = Date.now() - start;
 			} catch (err) {
 				return this.error(err);
 			}
