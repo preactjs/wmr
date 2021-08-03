@@ -15,15 +15,16 @@ export default function swcMinifyPlugin({ sourcemap, warnThreshold = 50, compres
 						target: 'es2018',
 						parser: {
 							dynamicImport: true
+						},
+						minify: {
+							compress,
+							sourceMap: sourcemap || false,
+							mangle: true,
+							module: true,
+							safari10: true
 						}
 					},
-					minify: {
-						compress,
-						sourceMap: sourcemap || false,
-						ecma: 2018,
-						mangle: true,
-						safari10: true
-					}
+					minify: true
 				});
 				out = await p;
 				duration = Date.now() - start;
