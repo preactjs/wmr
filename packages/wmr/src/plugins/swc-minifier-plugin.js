@@ -1,4 +1,4 @@
-import swc from '@swc/core';
+import { minify } from '@swc/core';
 import { hasDebugFlag } from '../lib/output-utils.js';
 
 /** @returns {import('rollup').Plugin} */
@@ -9,7 +9,7 @@ export default function swcMinifyPlugin({ sourcemap = false, warnThreshold = 50,
 			let out, duration;
 			try {
 				const start = Date.now();
-				const p = swc.minify(code, {
+				const p = minify(code, {
 					compress,
 					ecma: 2018,
 					mangle: true,

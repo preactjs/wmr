@@ -10,7 +10,7 @@ import alias from '@rollup/plugin-alias';
 import json from '@rollup/plugin-json';
 import replace from '@rollup/plugin-replace';
 import builtins from 'builtin-modules';
-import { minify } from 'terser';
+import { minify } from '@swc/core';
 
 /** @type {import('rollup').RollupOptions} */
 const config = {
@@ -51,7 +51,7 @@ const config = {
 			}
 		]
 	},
-	external: [...builtins, 'less'],
+	external: [...builtins, 'less', '@swc/core'],
 	// /* Logs all included npm dependencies: */
 	// external(source, importer) {
 	// 	const ch = source[0];

@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs';
 import zlib from 'zlib';
-import { minify } from 'terser';
+import { minify } from '@swc/core';
 import { dirname, resolve } from 'path';
 
 // TODO: this could be indefinite, since cache keys are deterministic (version+path)
