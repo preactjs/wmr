@@ -11,18 +11,11 @@ export default function swcMinifyPlugin({ sourcemap = false, warnThreshold = 50,
 				const start = Date.now();
 				const p = minify(code, {
 					compress,
+					sourceMap: sourcemap,
 					ecma: 2018,
 					mangle: true,
 					module: true,
-					safari10: true,
-					parse: {
-						bare_returns: false,
-						html5_comments: false,
-						shebang: false
-					},
-					output: {
-						comments: false
-					}
+					safari10: true
 				});
 				out = await p;
 				duration = Date.now() - start;
