@@ -10,7 +10,7 @@ import alias from '@rollup/plugin-alias';
 import json from '@rollup/plugin-json';
 import replace from '@rollup/plugin-replace';
 import builtins from 'builtin-modules';
-import { minify } from '@swc/core';
+import { minify } from 'terser';
 
 /** @type {import('rollup').RollupOptions} */
 const config = {
