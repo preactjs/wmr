@@ -709,7 +709,7 @@ describe('production', () => {
 
 			// https://cdn.example.com/assets/math.d41e7373.css
 			expect(math).toMatch(`("https://cdn.example.com/assets/${assets[1]}")`);
-			expect(math).toMatch(`import("./${chunks[0]}")`);
+			expect(math).toMatch(`import('./${chunks[0]}')`);
 
 			// (preload) https://cdn.example.com/assets/math.d41e7373.css
 			expect(main).toMatch(`$w_s$("https://cdn.example.com/assets/${assets[1]}")`);
@@ -746,7 +746,7 @@ describe('production', () => {
 
 			// https://cdn.example.com/assets/math.d41e7373.css
 			expect(math).toMatch(`("https://cdn.example.com/assets/${assets[1]}")`);
-			expect(math).toMatch(`import("./${chunks[0]}")`);
+			expect(math).toMatch(`import('./${chunks[0]}')`);
 
 			// (preload) https://cdn.example.com/assets/math.d41e7373.css
 			expect(main).toMatch(`$w_s$("https://cdn.example.com/assets/${assets[1]}")`);
