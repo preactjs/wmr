@@ -43,6 +43,7 @@
 		"@rollup/plugin-node-resolve": "^13.0.4",
 		"@rollup/plugin-replace": "^3.0.0",
 		"@rollup/plugin-virtual": "^2.0.3",
+		"@swc/core": "^1.2.71",
 		"@types/jest": "^26.0.4",
 		"acorn-class-fields": "^1.0.0",
 		"acorn-import-assertions": "^1.7.2",

@@ -1,22 +1,21 @@
-import { minify } from 'terser';
+import swc from '@swc/core';
 import { hasDebugFlag } from '../lib/output-utils.js';
 
 /** @returns {import('rollup').Plugin} */
-export default function fastMinifyPlugin({ sourcemap = false, warnThreshold = 50, compress = false } = {}) {
+export default function swcMinifyPlugin({ sourcemap = false, warnThreshold = 50, compress = false } = {}) {
 	return {
-		name: 'fast-minify',
+		name: 'swc-minify',
 		async renderChunk(code, chunk) {
 			let out, duration;
 			try {
 				// We only time the synhronous region here, because Terser is actually synchronous.
 				// (measuring `await` would return the cumulative time taken by all minify() calls).
 				const start = Date.now();
-				const p = minify(code, {
-					sourceMap: sourcemap,
-					mangle: true,
+				const p = swc.minify(code, {
 					compress,
-					module: true,
 					ecma: 2018,
+					mangle: true,
+					module: true,
 					safari10: true,
 					parse: {
 						bare_returns: false,

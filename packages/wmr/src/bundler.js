@@ -1,6 +1,6 @@
 import { relative, sep, posix, resolve, dirname } from 'path';
 import * as rollup from 'rollup';
-import terser from './plugins/fast-minify.js';
+import minifier from './plugins/swc-minifier-plugin.js';
 import totalist from 'totalist';
 import { getPlugins } from './lib/plugins.js';
 import { onWarn } from './lib/output-utils.js';
@@ -45,7 +45,7 @@ export async function bundleProd(options) {
 			return fileName;
 		},
 		hoistTransitiveImports: true,
-		plugins: [minify && terser({ compress: true, sourcemap })],
+		plugins: [minify && minifier({ compress: true, sourcemap })],
 		sourcemap,
 		sourcemapPathTransform(p, mapPath) {
 			let url = pathToPosix(relative(root, resolve(dirname(mapPath), p)));
