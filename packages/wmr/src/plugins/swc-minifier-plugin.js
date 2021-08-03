@@ -2,7 +2,7 @@ import swc from '@swc/core';
 import { hasDebugFlag } from '../lib/output-utils.js';
 
 /** @returns {import('rollup').Plugin} */
-export default function swcMinifyPlugin({ sourcemap = false, warnThreshold = 50, compress = false } = {}) {
+export default function swcMinifyPlugin({ sourcemap, warnThreshold = 50, compress = false } = {}) {
 	return {
 		name: 'swc-minify',
 		async renderChunk(code, chunk) {
@@ -19,7 +19,7 @@ export default function swcMinifyPlugin({ sourcemap = false, warnThreshold = 50,
 					},
 					minify: {
 						compress,
-						sourceMap: sourcemap,
+						sourceMap: sourcemap || false,
 						ecma: 2018,
 						mangle: true,
 						module: true,
