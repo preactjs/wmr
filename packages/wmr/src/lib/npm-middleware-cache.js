@@ -41,7 +41,8 @@ function upgradeToBrotli(mem) {
 	return swc
 		.transform(mem.code, {
 			jsc: {
-				target: 'es2018',
+				// Target ES2021 so it doesn't transpile
+				target: 'es2021',
 				parser: {
 					dynamicImport: true
 				},

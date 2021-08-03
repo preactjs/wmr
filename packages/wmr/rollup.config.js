@@ -31,7 +31,7 @@ const config = {
 				async renderChunk(code) {
 					const result = await swc.transform(code, {
 						jsc: {
-							target: 'es2019',
+							target: 'es2021',
 							parser: {
 								dynamicImport: true
 							},
