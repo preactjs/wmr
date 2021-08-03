@@ -22,7 +22,6 @@ export default function swcMinifyPlugin({ sourcemap, warnThreshold = 50, compres
 						sourceMap: sourcemap || false,
 						ecma: 2018,
 						mangle: true,
-						module: true,
 						safari10: true
 					}
 				});
