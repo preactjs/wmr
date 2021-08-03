@@ -48,7 +48,7 @@ function upgradeToBrotli(mem) {
 				minify: {
 					compress: true,
 					sourceMap: false,
-					ecma: 2018,
+					ecma: 2019,
 					mangle: true,
 					safari10: true
 				}

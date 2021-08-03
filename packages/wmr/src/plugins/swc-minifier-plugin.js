@@ -19,6 +19,7 @@ export default function swcMinifyPlugin({ sourcemap, warnThreshold = 50, compres
 						minify: {
 							compress,
 							sourceMap: sourcemap || false,
+							ecma: 2018,
 							mangle: true,
 							module: true,
 							safari10: true
