@@ -14,6 +14,7 @@ export default function swcMinifyPlugin({ sourcemap, warnThreshold = 50, compres
 					jsc: {
 						// Target ES2021 so it doesn't transpile
 						target: 'es2021',
+						transform: null,
 						parser: {
 							dynamicImport: true
 						},

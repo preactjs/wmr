@@ -46,6 +46,7 @@ function upgradeToBrotli(mem) {
 				parser: {
 					dynamicImport: true
 				},
+				transform: null,
 				minify: {
 					compress: true,
 					sourceMap: false,

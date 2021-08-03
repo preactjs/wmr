@@ -32,6 +32,7 @@ const config = {
 					const result = await swc.transform(code, {
 						jsc: {
 							target: 'es2021',
+							transform: null,
 							parser: {
 								dynamicImport: true
 							},
