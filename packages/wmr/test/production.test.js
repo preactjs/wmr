@@ -314,6 +314,15 @@ describe('production', () => {
 			instance = await runWmr(env.tmp.path, 'build');
 			const dir = await fs.readdir(path.join(env.tmp.path, 'dist', 'assets'));
 			expect(dir.some(x => x.endsWith('.css'))).toBeTruthy();
+
+			const code = await instance.done;
+			expect(code).toEqual(0);
+			const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+			cleanup.push(stop);
+			await env.page.goto(address, {
+				waitUntil: ['networkidle0', 'load']
+			});
+			expect(await env.page.$eval('div', el => getComputedStyle(el).color)).toBe('rgb(255, 0, 0)');
 		});
 
 		it('should alias CSS', async () => {
