@@ -309,6 +309,14 @@ describe('production', () => {
 			});
 		});
 
+		it('should pick up scss from the html file', async () => {
+			await loadFixture('css-sass-html', env);
+			instance = await runWmr(env.tmp.path, 'build');
+			const dir = await fs.readdir(path.join(env.tmp.path, 'dist', 'assets'));
+			expect(dir.some(x => x.endsWith('.css'))).toBeTruthy();
+			console.log(dir);
+		});
+
 		it('should alias CSS', async () => {
 			await loadFixture('alias-css', env);
 			instance = await runWmr(env.tmp.path, 'build');
