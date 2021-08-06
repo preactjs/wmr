@@ -309,6 +309,22 @@ describe('production', () => {
 			});
 		});
 
+		it('should pick up scss from the html file', async () => {
+			await loadFixture('css-sass-html', env);
+			instance = await runWmr(env.tmp.path, 'build');
+
+			const code = await instance.done;
+			const dir = await fs.readdir(path.join(env.tmp.path, 'dist', 'assets'));
+			expect(dir.some(x => x.endsWith('.scss'))).toBeTruthy();
+			expect(code).toEqual(0);
+			const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+			cleanup.push(stop);
+			await env.page.goto(address, {
+				waitUntil: ['networkidle0', 'load']
+			});
+			expect(await env.page.$eval('div', el => getComputedStyle(el).color)).toBe('rgb(255, 0, 0)');
+		});
+
 		it('should alias CSS', async () => {
 			await loadFixture('alias-css', env);
 			instance = await runWmr(env.tmp.path, 'build');
