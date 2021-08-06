@@ -95,6 +95,46 @@ export default function sassPlugin({ production, sourcemap, root }) {
 		done({ file });
 	}
 
+	async function transformSass(id, fileName, source) {
+		const result = await renderSass({
+			// Custom options for logging
+			id,
+			file: fileName,
+			data: source,
+			includePaths: [path.dirname(id)],
+			importer: [
+				// Note: Async importers MUST return `undefined`, otherwise they
+				// don't work!!!
+				(url, prev, done) => {
+					sassResolver(url, prev, done, this.resolve.bind(this));
+				}
+			],
+			outputStyle: production ? 'compressed' : undefined,
+			sourceMap: sourcemap !== false
+		});
+
+		return result;
+	}
+
+	async function handleError(err) {
+		if (err.file) {
+			const code = await fs.readFile(err.file, 'utf-8');
+			err.codeFrame = createCodeFrame(code, err.line - 1, err.column);
+		}
+		// Sass mixes stack in message, therefore we need to extract
+		// just the message
+		let messageArr = [];
+		err.message.split('\n').some(line => {
+			if (/^\s*(?:\d+\s*)?[│╷]\s*/.test(line)) {
+				return true;
+			}
+			messageArr.push(line);
+		});
+
+		err.message = messageArr.join('\n');
+		throw err;
+	}
+
 	return {
 		name: 'sass',
 		async transform(code, id) {
@@ -109,32 +149,17 @@ export default function sassPlugin({ production, sourcemap, root }) {
 			}
 
 			try {
-				const result = await renderSass({
-					// Custom options for logging
-					id,
-					file,
-					data: code,
-					includePaths: [path.dirname(id)],
-					importer: [
-						// Note: Async importers MUST return `undefined`, otherwise they
-						// don't work!!!
-						(url, prev, done) => {
-							sassResolver(url, prev, done, this.resolve.bind(this));
-						}
-					],
-					outputStyle: production ? 'compressed' : undefined,
-					sourceMap: sourcemap !== false
-				});
+				const result = await transformSass.call(this, id, file, code);
 
 				for (let file of result.includedFiles) {
 					// `node-sass` always returns unix style paths,
 					// even on windows
 					file = path.normalize(file);
-					this.addWatchFile(file);
 
 					if (!fileToBundles.has(file)) {
 						fileToBundles.set(file, new Set());
 					}
+					this.addWatchFile(file);
 					// @ts-ignore
 					fileToBundles.get(file).add(id);
 				}
@@ -144,27 +169,36 @@ export default function sassPlugin({ production, sourcemap, root }) {
 					map: result.map || null
 				};
 			} catch (err) {
-				if (err.file) {
-					const code = await fs.readFile(err.file, 'utf-8');
-					err.codeFrame = createCodeFrame(code, err.line - 1, err.column);
-				}
-				// Sass mixes stack in message, therefore we need to extract
-				// just the message
-				let messageArr = [];
-				err.message.split('\n').some(line => {
-					if (/^\s*(?:\d+\s*)?[│╷]\s*/.test(line)) {
-						return true;
-					}
-					messageArr.push(line);
-				});
-
-				err.message = messageArr.join('\n');
-				throw err;
+				await handleError(err);
 			}
 		},
 		watchChange(id) {
 			const bundle = fileToBundles.get(id);
 			if (bundle) return Array.from(bundle);
+		},
+		async generateBundle(opts, bundle) {
+			if (!production) return;
+			await Promise.all(
+				Object.values(bundle).map(async asset => {
+					if (asset.type !== 'asset' || !/\.s[ac]ss$/.test(asset.fileName)) return;
+					const id = asset.fileName;
+					const mapFile = asset.fileName + '.map';
+					try {
+						const result = await transformSass.call(this, id, asset.fileName, asset.source);
+
+						asset.source = result.css;
+						if (result.map) {
+							this.emitFile({
+								type: 'asset',
+								fileName: mapFile,
+								source: result.map.toString()
+							});
+						}
+					} catch (err) {
+						await handleError(err);
+					}
+				})
+			);
 		}
 	};
 }
