@@ -315,8 +315,7 @@ describe('production', () => {
 
 			const code = await instance.done;
 			const dir = await fs.readdir(path.join(env.tmp.path, 'dist', 'assets'));
-			console.log(dir);
-			expect(dir.some(x => x.endsWith('.css'))).toBeTruthy();
+			expect(dir.some(x => x.endsWith('.scss'))).toBeTruthy();
 			expect(code).toEqual(0);
 			const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
 			cleanup.push(stop);
