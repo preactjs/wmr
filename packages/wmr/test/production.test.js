@@ -314,7 +314,6 @@ describe('production', () => {
 			instance = await runWmr(env.tmp.path, 'build');
 			const dir = await fs.readdir(path.join(env.tmp.path, 'dist', 'assets'));
 			expect(dir.some(x => x.endsWith('.css'))).toBeTruthy();
-			console.log(dir);
 		});
 
 		it('should alias CSS', async () => {
