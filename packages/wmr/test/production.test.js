@@ -312,10 +312,10 @@ describe('production', () => {
 		it('should pick up scss from the html file', async () => {
 			await loadFixture('css-sass-html', env);
 			instance = await runWmr(env.tmp.path, 'build');
-			const dir = await fs.readdir(path.join(env.tmp.path, 'dist', 'assets'));
-			expect(dir.some(x => x.endsWith('.css'))).toBeTruthy();
 
 			const code = await instance.done;
+			const dir = await fs.readdir(path.join(env.tmp.path, 'dist', 'assets'));
+			expect(dir.some(x => x.endsWith('.css'))).toBeTruthy();
 			expect(code).toEqual(0);
 			const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
 			cleanup.push(stop);
