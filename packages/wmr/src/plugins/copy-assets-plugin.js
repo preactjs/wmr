@@ -22,7 +22,7 @@ const IGNORE_FILES = [
  * @param {string} options.root
  * @returns {import('rollup').Plugin}
  */
-export default function copyAssetsPlugin({ root }) {
+export default function copyAssetsPlugin({ root, mergedAssets }) {
 	let entries = [];
 	return {
 		name: 'copy-assets',
@@ -57,6 +57,7 @@ export default function copyAssetsPlugin({ root }) {
 
 			await Promise.all(
 				files.map(async name => {
+					if (mergedAssets.has(join(root, name))) return;
 					this.emitFile({
 						type: 'asset',
 						fileName: name,

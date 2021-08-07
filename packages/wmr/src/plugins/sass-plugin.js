@@ -56,7 +56,7 @@ async function renderSass({ id, ...opts }) {
  * @param {string} opts.root
  * @returns {import('rollup').Plugin}
  */
-export default function sassPlugin({ production, sourcemap, root }) {
+export default function sassPlugin({ production, sourcemap, root, mergedAssets }) {
 	/** @type {Map<string, Set<string>>} */
 	const fileToBundles = new Map();
 
@@ -155,6 +155,7 @@ export default function sassPlugin({ production, sourcemap, root }) {
 					// `node-sass` always returns unix style paths,
 					// even on windows
 					file = path.normalize(file);
+					if (mergedAssets) mergedAssets.add(file);
 
 					if (!fileToBundles.has(file)) {
 						fileToBundles.set(file, new Set());
