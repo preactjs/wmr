@@ -335,7 +335,7 @@ describe('production', () => {
 			expect(dir.some(x => x.endsWith('.scss') || x.endsWith('.css'))).toBeFalsy();
 			const hash = cssFile.split('.')[1];
 
-			await updateFile(env.tmp.path, '2.scss', content => content.replace('green', 'red'));
+			await updateFile(path.join(env.tmp.path, 'public'), '2.scss', content => content.replace('green', 'red'));
 			instance = await runWmr(env.tmp.path, 'build');
 			await instance.done;
 			const [newCssFile] = await fs.readdir(path.join(env.tmp.path, 'dist', 'assets'));
