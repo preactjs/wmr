@@ -344,6 +344,25 @@ describe('production', () => {
 			expect(hash === newHash).toBeFalsy();
 		});
 
+		it('should correctly hash imported files from html', async () => {
+			await loadFixture('css-sass-import-hash-html', env);
+			instance = await runWmr(env.tmp.path, 'build');
+
+			await instance.done;
+			const dir = await fs.readdir(path.join(env.tmp.path, 'dist'));
+			const [cssFile] = await fs.readdir(path.join(env.tmp.path, 'dist', 'assets'));
+			expect(dir.some(x => x.endsWith('.scss') || x.endsWith('.css'))).toBeFalsy();
+			const hash = cssFile.split('.')[1];
+
+			await updateFile(path.join(env.tmp.path, 'public'), '2.scss', content => content.replace('green', 'red'));
+			instance = await runWmr(env.tmp.path, 'build');
+			await instance.done;
+			const [newCssFile] = await fs.readdir(path.join(env.tmp.path, 'dist', 'assets'));
+			const newHash = newCssFile.split('.')[1];
+
+			expect(hash === newHash).toBeFalsy();
+		});
+
 		it('should alias CSS', async () => {
 			await loadFixture('alias-css', env);
 			instance = await runWmr(env.tmp.path, 'build');
