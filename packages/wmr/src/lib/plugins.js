@@ -44,7 +44,7 @@ export function getPlugins(options) {
 		acornDefaultPlugins(),
 		...plugins.slice(0, split),
 		features.preact && !production && prefreshPlugin({ sourcemap }),
-		production && htmlEntriesPlugin({ root, publicPath }),
+		production && htmlEntriesPlugin({ root, publicPath, mergedAssets, sourcemap }),
 		externalUrlsPlugin(),
 		nodeBuiltinsPlugin({ production }),
 		urlPlugin({ inline: !production, root, alias }),

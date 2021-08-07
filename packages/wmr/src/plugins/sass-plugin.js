@@ -48,6 +48,62 @@ async function renderSass({ id, ...opts }) {
 	};
 }
 
+export async function transformSass(id, fileName, source, root, production, sourcemap) {
+	const result = await renderSass({
+		// Custom options for logging
+		id,
+		file: fileName,
+		data: source,
+		includePaths: [path.dirname(id)],
+		importer: [
+			// Note: Async importers MUST return `undefined`, otherwise they
+			// don't work!!!
+			(url, prev, done) => {
+				sassResolver(url, prev, done, this.resolve.bind(this), root);
+			}
+		],
+		outputStyle: production ? 'compressed' : undefined,
+		sourceMap: sourcemap !== false
+	});
+
+	return result;
+}
+
+export async function sassResolver(url, prev, done, pluginResolve, root) {
+	// TODO: Rollup only supports top to bottom compilation, but we
+	// need a way to do the opposite here to support loading virtual
+	// sass modules. This is a limitation in Rollup. So for now we only
+	// do resolution here.
+
+	// Sass always returns file urls with absolute paths
+	if (url.startsWith('file://')) {
+		url = url.slice('file://'.length);
+	}
+
+	let resolved;
+	try {
+		const importer = prev !== 'stdin' ? prev : null;
+		resolved = await pluginResolve(url, importer);
+	} catch (err) {
+		done(err);
+		return;
+	}
+
+	let file = resolved ? resolved.id : url;
+
+	// Bail out if nothing changed.
+	if (file === url) {
+		done(null);
+		return;
+	}
+
+	if (!path.isAbsolute(file)) {
+		file = path.join(root, file);
+	}
+
+	done({ file });
+}
+
 /**
  * Transform SASS files with node-sass.
  * @param {object} opts
@@ -59,62 +115,6 @@ async function renderSass({ id, ...opts }) {
 export default function sassPlugin({ production, sourcemap, root, mergedAssets }) {
 	/** @type {Map<string, Set<string>>} */
 	const fileToBundles = new Map();
-
-	async function sassResolver(url, prev, done, pluginResolve) {
-		// TODO: Rollup only supports top to bottom compilation, but we
-		// need a way to do the opposite here to support loading virtual
-		// sass modules. This is a limitation in Rollup. So for now we only
-		// do resolution here.
-
-		// Sass always returns file urls with absolute paths
-		if (url.startsWith('file://')) {
-			url = url.slice('file://'.length);
-		}
-
-		let resolved;
-		try {
-			const importer = prev !== 'stdin' ? prev : null;
-			resolved = await pluginResolve(url, importer);
-		} catch (err) {
-			done(err);
-			return;
-		}
-
-		let file = resolved ? resolved.id : url;
-
-		// Bail out if nothing changed.
-		if (file === url) {
-			done(null);
-			return;
-		}
-
-		if (!path.isAbsolute(file)) {
-			file = path.join(root, file);
-		}
-
-		done({ file });
-	}
-
-	async function transformSass(id, fileName, source) {
-		const result = await renderSass({
-			// Custom options for logging
-			id,
-			file: fileName,
-			data: source,
-			includePaths: [path.dirname(id)],
-			importer: [
-				// Note: Async importers MUST return `undefined`, otherwise they
-				// don't work!!!
-				(url, prev, done) => {
-					sassResolver(url, prev, done, this.resolve.bind(this));
-				}
-			],
-			outputStyle: production ? 'compressed' : undefined,
-			sourceMap: sourcemap !== false
-		});
-
-		return result;
-	}
 
 	async function handleError(err) {
 		if (err.file) {
@@ -149,7 +149,7 @@ export default function sassPlugin({ production, sourcemap, root, mergedAssets }
 			}
 
 			try {
-				const result = await transformSass.call(this, id, file, code);
+				const result = await transformSass.call(this, id, file, code, root, production, sourcemap);
 
 				for (let file of result.includedFiles) {
 					// `node-sass` always returns unix style paths,
@@ -176,30 +176,6 @@ export default function sassPlugin({ production, sourcemap, root, mergedAssets }
 		watchChange(id) {
 			const bundle = fileToBundles.get(id);
 			if (bundle) return Array.from(bundle);
-		},
-		async generateBundle(opts, bundle) {
-			if (!production) return;
-			await Promise.all(
-				Object.values(bundle).map(async asset => {
-					if (asset.type !== 'asset' || !/\.s[ac]ss$/.test(asset.fileName)) return;
-					const id = asset.fileName;
-					const mapFile = asset.fileName + '.map';
-					try {
-						const result = await transformSass.call(this, id, asset.fileName, asset.source);
-
-						asset.source = result.css;
-						if (result.map) {
-							this.emitFile({
-								type: 'asset',
-								fileName: mapFile,
-								source: result.map.toString()
-							});
-						}
-					} catch (err) {
-						await handleError(err);
-					}
-				})
-			);
 		}
 	};
 }

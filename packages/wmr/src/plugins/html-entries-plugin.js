@@ -3,6 +3,7 @@ import { resolve, join, dirname, relative, sep, posix } from 'path';
 import { transformHtml } from '../lib/transform-html.js';
 import { yellow, bgYellow, bgRed, dim, bold, white, black, magenta, cyan } from 'kolorist';
 import { codeFrame } from '../lib/output-utils.js';
+import { transformSass } from './sass-plugin.js';
 
 /** @typedef {import('rollup').OutputAsset & { referencedFiles: string[], importedIds: string[] }} ExtendedAsset */
 
@@ -26,7 +27,7 @@ const toSystemPath = p => p.split(posix.sep).join(sep);
  * @param {string} [options.publicPath] Prepend to generated filenames
  * @returns {import('rollup').Plugin}
  */
-export default function htmlEntriesPlugin({ root, publicPath }) {
+export default function htmlEntriesPlugin({ root, publicPath, sourcemap, mergedAssets }) {
 	const ENTRIES = [];
 	const META = new Map();
 
@@ -97,7 +98,16 @@ export default function htmlEntriesPlugin({ root, publicPath }) {
 					all.push(ref);
 					waiting.push(
 						fs.readFile(abs, 'utf-8').then(source => {
-							this.setAssetSource(ref, source);
+							if (/\.s[ac]ss$/.test(abs)) {
+								transformSass.call(this, abs, abs, source, root, true, sourcemap).then(result => {
+									for (let file of result.includedFiles) {
+										if (mergedAssets) mergedAssets.add(file);
+									}
+									this.setAssetSource(ref, result.css);
+								});
+							} else {
+								this.setAssetSource(ref, source);
+							}
 						})
 					);
 					return `/__ASSET__/${ref}`;
