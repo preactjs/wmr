@@ -12,6 +12,7 @@ import { watch } from './lib/fs-watcher.js';
 import { matchAlias, resolveAlias } from './lib/aliasing.js';
 import { addTimestamp } from './lib/net-utils.js';
 import { mergeSourceMaps } from './lib/sourcemap.js';
+import { isFile } from './lib/fs-utils.js';
 
 const NOOP = () => {};
 
@@ -289,22 +290,37 @@ export default function wmrMiddleware(options) {
 
 		log(`${kl.cyan(formatPath(path))} -> ${kl.dim(id)} file: ${kl.dim(file)}`);
 
-		/** @type {(ctx: Context) => Result | Promise<Result>} */
-		let transform;
-		if (path === '/_wmr.js') {
-			transform = getWmrClient.bind(null);
-		} else if (/\.map$/.test(path)) {
-			transform = TRANSFORMS.asset;
-		} else if (queryParams.has('asset')) {
-			cacheKey += '?asset';
-			transform = TRANSFORMS.asset;
-		} else if (prefix || hasIdPrefix || isModule || /\.([mc]js|[tj]sx?)$/.test(file) || /\.(css|s[ac]ss)$/.test(file)) {
-			transform = TRANSFORMS.js;
-		} else {
-			transform = TRANSFORMS.generic;
-		}
-
 		try {
+			/** @type {(ctx: Context) => Result | Promise<Result>} */
+			let transform;
+			if (path === '/_wmr.js') {
+				transform = getWmrClient.bind(null);
+			} else if (/\.map$/.test(path)) {
+				transform = TRANSFORMS.asset;
+			} else if (queryParams.has('asset')) {
+				cacheKey += '?asset';
+				transform = TRANSFORMS.asset;
+			} else if (
+				prefix ||
+				hasIdPrefix ||
+				isModule ||
+				/\.([mc]js|[tj]sx?)$/.test(file) ||
+				/\.(css|s[ac]ss)$/.test(file)
+			) {
+				transform = TRANSFORMS.js;
+			} else if (file.startsWith(root + sep) && (await isFile(file))) {
+				// Ignore dotfiles
+				if (posix.basename(file).startsWith('.')) {
+					throw {
+						message: `File not found`,
+						code: 404
+					};
+				}
+				transform = TRANSFORMS.asset;
+			} else {
+				transform = TRANSFORMS.generic;
+			}
+
 			const start = Date.now();
 			let result = await transform({
 				req,
