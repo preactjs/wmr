@@ -7,7 +7,7 @@ const strip = url => url.replace(/[?&]t=\d+/g, '');
 const addTimestamp = (url, time) => url + (/\?/.test(url) ? '&' : '?') + 't=' + time;
 
 const resolve = url => new URL(url, location.origin).href;
-let ws, visibilityCallback;
+let ws, visibilityCallback, connectTimer, connectDelay = 0;
 
 /**
  * @param {boolean} [needsReload] Force page to reload once it's connected
@@ -27,6 +27,10 @@ function connect(needsReload) {
 			window.removeEventListener('visibilitychange', visibilityCallback);
 			visibilityCallback = undefined;
 		}
+		if (connectTimer) {
+			clearTimeout(connectTimer);
+			connectTimer = undefined;
+		}
 		if (needsReload) {
 			window.location.reload();
 		} else {
@@ -41,6 +45,12 @@ function connect(needsReload) {
 }
 
 function reconnect() {
+	connectDelay = Math.min(connectDelay * 2, 30000) || 500;
+	connectTimer = setTimeout(() => {
+		if (ws) ws.close();
+		connect(false);
+	}, connectDelay);
+
 	if (!visibilityCallback) {
 		visibilityCallback = () => {
 			if (document.visibilityState === 'visible')
