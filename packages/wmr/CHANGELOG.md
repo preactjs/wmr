@@ -1,5 +1,21 @@
 # wmr
 
+## 3.5.0
+
+### Minor Changes
+
+- [`1367d57`](https://github.com/preactjs/wmr/commit/1367d576137a4e0b9a80c80dc044531b87149a20) [#790](https://github.com/preactjs/wmr/pull/790) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Serve exactly matched files in root (default: `/public`) as is instead of serving the fallback `index.html`. This effectively turns the root directory in an asset directory.
+
+### Patch Changes
+
+- [`731fb56`](https://github.com/preactjs/wmr/commit/731fb565130f926b0868764bb7d22e2bee642c5a) [#782](https://github.com/preactjs/wmr/pull/782) Thanks [@JoviDeCroock](https://github.com/JoviDeCroock)! - Transpile scss when it's included from an html file
+
+* [`fd94818`](https://github.com/preactjs/wmr/commit/fd948183c78488379b4412595b176befa28a49ba) [#778](https://github.com/preactjs/wmr/pull/778) Thanks [@developit](https://github.com/developit)! - Avoid isIdentifier() crash on null/undefined values
+
+- [`e6c6d1c`](https://github.com/preactjs/wmr/commit/e6c6d1cbe297a1e7be4987265de6538b0281391f) [#789](https://github.com/preactjs/wmr/pull/789) Thanks [@JoviDeCroock](https://github.com/JoviDeCroock)! - Correctly import nested sass-imports from html files and avoid duplicate asset-copy
+
+* [`50c7128`](https://github.com/preactjs/wmr/commit/50c7128d6c367a0d5d2de2a164b57ce07c0c53cb) [#774](https://github.com/preactjs/wmr/pull/774) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix absolute imports starting with `/` not working in SASS
+
 ## 3.4.1
 
 ### Patch Changes
