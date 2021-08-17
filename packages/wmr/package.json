@@ -96,7 +96,7 @@
 		"ws": "^7.3.1"
 	},
 	"dependencies": {
-		"@swc/core": "^1.2.77"
+		"@swc/core": "^1.2.78"
 	},
 	"optionalDependencies": {
 		"fsevents": "^2.1.3"
