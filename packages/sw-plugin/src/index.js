@@ -18,6 +18,7 @@ export default function swPlugin(options) {
 	}
 
 	const wmrProxyPlugin = {
+		name: 'sw-wmr-proxy-plugin',
 		resolveId(id) {
 			const normalizedId = id[1] + id[2] === ':\\' ? pathToPosix(id.slice(2)) : id;
 			if (id.startsWith('/@npm/')) return id;
@@ -66,7 +67,7 @@ export default function swPlugin(options) {
 			}
 
 			// In development, we bundle to IIFE via Rollup, but use WMR's HTTP server to transpile dependencies:
-			id = path.resolve(options.cwd, id.slice(4));
+			id = path.resolve(options.root, id.slice(4));
 
 			try {
 				var { rollup } = await import('rollup'); // eslint-disable-line no-var
@@ -86,7 +87,7 @@ export default function swPlugin(options) {
 			const fileId = this.emitFile({
 				type: 'asset',
 				name: '_' + id,
-				fileName: '_sw.js',
+				fileName: '_sw.js?asset',  // hack: ensure the dev middleware responds with the raw asset
 				source: output[0].code
 			});
 
