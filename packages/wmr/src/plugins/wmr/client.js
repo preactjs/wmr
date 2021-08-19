@@ -22,7 +22,7 @@ function connect(needsReload) {
 	ws.addEventListener('open', () => {
 		log(`Connected to server.`);
 		if (needsReload) {
-			window.location.reload();
+			location.reload();
 		} else {
 			queue.forEach(sendSocketMessage);
 			queue = [];
@@ -44,7 +44,7 @@ function handleMessage(e) {
 	const data = JSON.parse(e.data);
 	switch (data.type) {
 		case 'reload':
-			window.location.reload();
+			location.reload();
 			break;
 		case 'update':
 			if (errorOverlay) {
@@ -216,6 +216,7 @@ function traverseSheet(sheet, target) {
 
 // Update a non-imported stylesheet
 function updateStyleSheet(url) {
+	if (typeof document === 'undefined') return;
 	const sheets = document.styleSheets;
 
 	for (let i = 0; i < sheets.length; i++) {
@@ -244,6 +245,7 @@ function updateStyleSheet(url) {
  * @param {{type: "error", error: string, codeFrame: string, stack: import('errorstacks').StackFrame[]}} data
  */
 function createErrorOverlay(data) {
+	if (typeof document === 'undefined') return;
 	if (errorOverlay) errorOverlay.remove();
 
 	const iframe = document.createElement('iframe');
