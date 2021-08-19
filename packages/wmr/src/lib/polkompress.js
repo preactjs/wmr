@@ -72,6 +72,10 @@ export default function compression({ threshold = 1024, level = -1, brotli = fal
 
 		const { end, write, on, writeHead } = res;
 
+		res.flush = function () {
+			if (!started) start();
+		};
+
 		res.writeHead = function (status, reason, headers) {
 			if (typeof reason !== 'string') [headers, reason] = [reason, headers];
 			if (headers) for (let i in headers) res.setHeader(i, headers[i]);
