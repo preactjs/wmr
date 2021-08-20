@@ -6,6 +6,8 @@ function log(...args) {
 const strip = url => url.replace(/[?&]t=\d+/g, '');
 const addTimestamp = (url, time) => url + (/\?/.test(url) ? '&' : '?') + 't=' + time;
 
+const HAS_DOM = typeof document !== 'undefined';
+
 const resolve = url => new URL(url, location.origin).href;
 let ws;
 
@@ -22,7 +24,7 @@ function connect(needsReload) {
 	ws.addEventListener('open', () => {
 		log(`Connected to server.`);
 		if (needsReload) {
-			window.location.reload();
+			location.reload();
 		} else {
 			queue.forEach(sendSocketMessage);
 			queue = [];
@@ -44,7 +46,7 @@ function handleMessage(e) {
 	const data = JSON.parse(e.data);
 	switch (data.type) {
 		case 'reload':
-			window.location.reload();
+			location.reload();
 			break;
 		case 'update':
 			if (errorOverlay) {
@@ -64,6 +66,7 @@ function handleMessage(e) {
 					} else if (url.replace(URL_SUFFIX, '') === resolve(location.pathname).replace(URL_SUFFIX, '')) {
 						return location.reload();
 					} else {
+						if (!HAS_DOM) return;
 						for (const el of document.querySelectorAll('[src],[href]')) {
 							// @ts-ignore-next
 							const p = el.src ? 'src' : 'href';
@@ -195,7 +198,7 @@ export function style(filename, id) {
 	let node = styles.get(id);
 	if (node) {
 		node.href = addTimestamp(filename, Date.now());
-	} else {
+	} else if (HAS_DOM) {
 		const node = document.createElement('link');
 		node.rel = 'stylesheet';
 		node.href = filename;
@@ -216,6 +219,7 @@ function traverseSheet(sheet, target) {
 
 // Update a non-imported stylesheet
 function updateStyleSheet(url) {
+	if (!HAS_DOM) return;
 	const sheets = document.styleSheets;
 
 	for (let i = 0; i < sheets.length; i++) {
@@ -244,6 +248,7 @@ function updateStyleSheet(url) {
  * @param {{type: "error", error: string, codeFrame: string, stack: import('errorstacks').StackFrame[]}} data
  */
 function createErrorOverlay(data) {
+	if (!HAS_DOM) return;
 	if (errorOverlay) errorOverlay.remove();
 
 	const iframe = document.createElement('iframe');
