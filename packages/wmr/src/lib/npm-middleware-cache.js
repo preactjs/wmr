@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs';
 import zlib from 'zlib';
-import { minify } from 'terser';
+import swc from '@swc/core';
 import { dirname, resolve } from 'path';
 
 // TODO: this could be indefinite, since cache keys are deterministic (version+path)
@@ -38,18 +38,25 @@ function upgradeToBrotli(mem) {
 	// const start = Date.now();
 	mem.upgrading = true;
 	let error;
-	return minify(mem.code, {
-		mangle: {
-			// Temporary workaround for duplicate identifier bug in Terser 4/5:
-			// https://github.com/terser/terser/issues/800#issuecomment-701017137
-			keep_fnames: true
-		},
-		compress: true,
-		module: true,
-		ecma: 2018,
-		safari10: true,
-		sourceMap: false
-	})
+	return swc
+		.transform(mem.code, {
+			jsc: {
+				// Target ES2021 so it doesn't transpile
+				target: 'es2021',
+				parser: {
+					dynamicImport: true
+				},
+				transform: null,
+				minify: {
+					compress: true,
+					sourceMap: false,
+					ecma: 2019,
+					mangle: true,
+					safari10: true
+				}
+			},
+			minify: true
+		})
 		.catch(err => {
 			console.error(err);
 			error = err;

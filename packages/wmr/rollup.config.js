@@ -10,7 +10,7 @@ import alias from '@rollup/plugin-alias';
 import json from '@rollup/plugin-json';
 import replace from '@rollup/plugin-replace';
 import builtins from 'builtin-modules';
-import { minify } from 'terser';
+import swc from '@swc/core';
 
 /** @type {import('rollup').RollupOptions} */
 const config = {
@@ -29,21 +29,22 @@ const config = {
 			{
 				name: 'minify',
 				async renderChunk(code) {
-					const result = await minify(code, {
-						ecma: 2019,
-						module: true,
-						compress: {
-							toplevel: true
+					const result = await swc.transform(code, {
+						jsc: {
+							target: 'es2021',
+							transform: null,
+							parser: {
+								dynamicImport: true
+							},
+							minify: {
+								compress: true,
+								sourceMap: true,
+								mangle: true,
+								module: true,
+								ecma: 2019
+							}
 						},
-						mangle: {
-							eval: true
-						},
-						sourceMap: false,
-						output: {
-							comments: false,
-							inline_script: false,
-							ecma: 2019
-						}
+						minify: true
 					});
 					if (typeof result.code === 'string') code = result.code;
 					return { code };
@@ -51,7 +52,7 @@ const config = {
 			}
 		]
 	},
-	external: [...builtins],
+	external: [...builtins, '@swc/core'],
 	// /* Logs all included npm dependencies: */
 	// external(source, importer) {
 	// 	const ch = source[0];

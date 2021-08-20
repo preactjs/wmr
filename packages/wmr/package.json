@@ -86,11 +86,13 @@
 		"stylis": "^4.0.10",
 		"sucrase": "^3.20.0",
 		"tar-stream": "^2.1.3",
-		"terser": "^5.7.0",
 		"tmp-promise": "^3.0.2",
 		"totalist": "^1.1.0",
 		"utf-8-validate": "^5.0.2",
 		"ws": "^7.3.1"
+	},
+	"dependencies": {
+		"@swc/core": "^1.2.80"
 	},
 	"optionalDependencies": {
 		"fsevents": "^2.1.3"
