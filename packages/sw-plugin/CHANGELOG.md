@@ -1,5 +1,11 @@
 # @wmr-plugins/service-worker
 
+## 0.3.1
+
+### Patch Changes
+
+- [`ad698da`](https://github.com/preactjs/wmr/commit/ad698da31a5e13775bd0169c0ce00dff1cc5dbdf) [#796](https://github.com/preactjs/wmr/pull/796) Thanks [@developit](https://github.com/developit)! - Fix Service Worker plugin for WMR 3.5+
+
 ## 0.3.0
 
 ### Minor Changes

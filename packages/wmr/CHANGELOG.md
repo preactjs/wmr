@@ -1,5 +1,11 @@
 # wmr
 
+## 3.5.1
+
+### Patch Changes
+
+- [`e1c1db2`](https://github.com/preactjs/wmr/commit/e1c1db2cfd1edf86d3378eca8a43c98f37394a02) [#797](https://github.com/preactjs/wmr/pull/797) Thanks [@developit](https://github.com/developit)! - Fix HMR breaking in Web Workers
+
 ## 3.5.0
 
 ### Minor Changes
