@@ -56,6 +56,38 @@ jobs:
         if: ${{ needs.changes.outputs.preact-iso == 'true' }}
         run: yarn eslint packages/preact-iso && yarn iso test
 
+  demo:
+    needs: changes
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # Change the condition for ESM Dist Test below when changing this.
+        node-version: [12.18, 14.x]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install
+        if: ${{ needs.changes.outputs.wmr == 'true' || needs.changes.outputs.preact-iso == 'true' }}
+        run: yarn --frozen-lockfile
+      - name: Start
+        if: ${{ needs.changes.outputs.wmr == 'true' }}
+        run: |
+          yarn demo dev > /tmp/stdout.log 2> /tmp/stderr.log &
+          sleep 1
+          curl --retry-connrefused --retry 5 http://localhost:8080 > /dev/null
+      - name: Debug start (if necessary)
+        if: ${{ needs.changes.outputs.wmr == 'true' }} && failure()
+        run: |
+          cat /tmp/stdout.log
+          cat /tmp/stderr.log
+      - name: Test
+        if: ${{ needs.changes.outputs.wmr == 'true' }}
+        run: playwright test demo
+
   lhci:
     needs: changes
     if: ${{ needs.changes.outputs.wmr == 'true' }}
