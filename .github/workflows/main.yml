@@ -86,7 +86,7 @@ jobs:
           cat /tmp/stderr.log
       - name: Test
         if: ${{ needs.changes.outputs.wmr == 'true' }}
-        run: playwright test demo
+        run: npx playwright test demo
 
   lhci:
     needs: changes
