@@ -18,5 +18,5 @@ test('basic test of navigating to Error page', async ({ page }) => {
 	await page.goto('http://localhost:8080/');
 	await page.click('text=Error');
 	expect(page.url()).toBe('http://localhost:8080/error');
-	await expect(page.locator("text=It's gone :(").first()).toBeVisible();
+	await expect(page.locator("text=It's gone")).toBeVisible();
 });
