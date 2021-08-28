@@ -290,6 +290,18 @@ export function createPluginContainer(plugins, opts = {}) {
 
 				logTransform(`${kl.dim(formatPath(id))} [${plugin.name}]`);
 				if (typeof result === 'object') {
+					if (typeof result.map === 'string') {
+						try {
+							result.map = JSON.parse(result.map);
+						} catch {
+							if (hasDebugFlag()) {
+								logTransform(kl.yellow(`Invalid source map JSON returned by plugin `) + kl.magenta(plugin.name));
+							}
+
+							result.map = undefined;
+						}
+					}
+
 					if (result.map) {
 						// Normalize source map sources URLs for the browser
 						result.map.sources = result.map.sources.map(s => {
