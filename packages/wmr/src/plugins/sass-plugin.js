@@ -110,6 +110,7 @@ export async function sassResolver(url, prev, done, pluginResolve, root) {
  * @param {boolean} opts.production
  * @param {boolean} opts.sourcemap
  * @param {string} opts.root
+ * @param {Set<string>} opts.mergedAssets
  * @returns {import('rollup').Plugin}
  */
 export default function sassPlugin({ production, sourcemap, root, mergedAssets }) {
