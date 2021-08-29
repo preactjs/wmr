@@ -93,9 +93,16 @@ export default function htmlEntriesPlugin({ root, publicPath, sourcemap, mergedA
 				}
 
 				if (tag === 'link' && attrs && attrs.rel && /^stylesheet$/i.test(attrs.rel)) {
+					let assetName = url;
+
+					// Ensure that stylesheets have `.css` as an extension
+					if (/\.s[ac]ss$/.test(assetName)) {
+						assetName = posix.join(posix.dirname(url), posix.basename(url, posix.extname(url)) + '.css');
+					}
+
 					const ref = this.emitFile({
 						type: 'asset',
-						name: url.replace(/^\.\//, '')
+						name: assetName.replace(/^\.\//, '')
 					});
 					all.push(ref);
 					waiting.push(
