@@ -109,6 +109,16 @@ describe('Less', () => {
 			});
 		});
 
+		it('should resolve relative nested alias import', async () => {
+			await loadFixture('css-less-nested-alias-relative', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			await withLog(instance.output, async () => {
+				expect(await env.page.$eval('h1', el => getComputedStyle(el).color)).toMatch(/rgb\(255, 0, 0\)/);
+			});
+		});
+
 		it('should resolve js-style relative alias import', async () => {
 			await loadFixture('css-less-alias-relative', env);
 			instance = await runWmrFast(env.tmp.path);
@@ -169,19 +179,21 @@ describe('Less', () => {
 			await loadFixture('css-less-import-hash', env);
 			instance = await runWmr(env.tmp.path, 'build');
 
-			await instance.done;
-			const dir = await fs.readdir(path.join(env.tmp.path, 'dist'));
-			const [cssFile] = await fs.readdir(path.join(env.tmp.path, 'dist', 'assets'));
-			expect(dir.some(x => x.endsWith('.css'))).toBeFalsy();
-			const hash = cssFile.split('.')[1];
+			await withLog(instance.output, async () => {
+				await instance.done;
+				const dir = await fs.readdir(path.join(env.tmp.path, 'dist'));
+				const [cssFile] = await fs.readdir(path.join(env.tmp.path, 'dist', 'assets'));
+				expect(dir.some(x => x.endsWith('.css'))).toBeFalsy();
+				const hash = cssFile.split('.')[1];
 
-			await updateFile(path.join(env.tmp.path, 'public'), '2.less', content => content.replace('green', 'red'));
-			instance = await runWmr(env.tmp.path, 'build');
-			await instance.done;
-			const [newCssFile] = await fs.readdir(path.join(env.tmp.path, 'dist', 'assets'));
-			const newHash = newCssFile.split('.')[1];
+				await updateFile(path.join(env.tmp.path, 'public'), '2.less', content => content.replace('green', 'red'));
+				instance = await runWmr(env.tmp.path, 'build');
+				await instance.done;
+				const [newCssFile] = await fs.readdir(path.join(env.tmp.path, 'dist', 'assets'));
+				const newHash = newCssFile.split('.')[1];
 
-			expect(hash === newHash).toBeFalsy();
+				expect(hash === newHash).toBeFalsy();
+			});
 		});
 
 		it('should correctly hash imported files from html', async () => {

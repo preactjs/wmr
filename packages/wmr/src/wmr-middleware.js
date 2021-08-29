@@ -283,8 +283,13 @@ export default function wmrMiddleware(options) {
 		// Force serving as a js module for proxy modules. Main use
 		// case is CSS-Modules.
 		const isModule = queryParams.has('module');
+		const isAsset = queryParams.has('asset');
 
-		let type = isModule ? 'application/javascript;charset=utf-8' : getMimeType(file);
+		let type;
+		if (isModule) type = 'application/javascript;charset=utf-8';
+		else if (isAsset && /\.(?:s[ac]ss|less)$/.test(file)) type = 'text/css';
+		else type = getMimeType(file);
+
 		if (type) {
 			res.setHeader('Content-Type', type);
 		}

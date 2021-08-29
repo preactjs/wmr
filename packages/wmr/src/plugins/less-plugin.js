@@ -1,4 +1,5 @@
 import path from 'path';
+import { createCodeFrame } from 'simple-code-frame';
 
 /** @type {import('less') | undefined} */
 let less;
@@ -14,7 +15,8 @@ const lessFileLoader = resolve =>
 					// Supply fake importer for relative resolution
 					const importer = path.join(currentDirectory, 'fake.less');
 					const resolved = await resolve(file, importer, { skipSelf: true });
-					let resolvedId = resolved.id;
+
+					let resolvedId = resolved ? resolved.id : file;
 
 					// Support bare imports: `@import "bar"`
 					if (!path.isAbsolute(resolvedId)) {
@@ -52,7 +54,16 @@ export async function renderLess(code, { id, resolve, sourcemap }) {
 	};
 	if (sourcemap) lessOptions.sourceMap = {};
 
-	return await less.render(code, lessOptions);
+	try {
+		return await less.render(code, lessOptions);
+	} catch (err) {
+		if (err.extract && 'line' in err && 'column' in err) {
+			const code = err.extract.filter(l => l !== undefined).join('\n');
+			err.codeFrame = createCodeFrame(code, err.line - 1, err.column);
+		}
+
+		throw err;
+	}
 }
 
 /**
