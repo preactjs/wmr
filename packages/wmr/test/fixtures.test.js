@@ -111,6 +111,18 @@ describe('fixtures', () => {
 		expect(text).toMatch('it works');
 	});
 
+	// Issue #811
+	it('should support virtual ids starting with /@', async () => {
+		await loadFixture('virtual-id-at', env);
+		instance = await runWmrFast(env.tmp.path);
+		await getOutput(env, instance);
+
+		await waitForPass(async () => {
+			const color = await env.page.$eval('h1', el => getComputedStyle(el).color);
+			expect(color).toBe('rgb(255, 0, 0)');
+		});
+	});
+
 	it('should prioritize extensionless import by extension array', async () => {
 		await loadFixture('import-priority', env);
 		instance = await runWmrFast(env.tmp.path);

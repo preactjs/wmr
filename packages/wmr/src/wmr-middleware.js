@@ -242,6 +242,12 @@ export default function wmrMiddleware(options) {
 			// Virtual paths have no exact file match, so we don't set `file`
 			hasIdPrefix = true;
 			id = path.slice('/@id/'.length);
+
+			// Add back leading slash if it was part of the virtual id.
+			// Example: `/@windicss/windi.css`
+			if (req.path.startsWith('/@id//')) {
+				id = '/' + id;
+			}
 		} else if (path.startsWith('/@alias/')) {
 			id = posix.normalize(path.slice('/@alias/'.length));
 
@@ -534,7 +540,11 @@ export const TRANSFORMS = {
 					const resolved = await NonRollup.resolveId(spec, file);
 					if (resolved) {
 						spec = typeof resolved == 'object' ? resolved.id : resolved;
-						if (/^(\/|\\|[a-z]:\\)/i.test(spec)) {
+						// Some rollup plugins use absolute paths as virtual identifiers :/
+						// Example: `/@windicss/windi.css`
+						if (/^\/@/.test(spec)) {
+							spec = `/@id/${spec}`;
+						} else if (/^(\/|\\|[a-z]:\\)/i.test(spec)) {
 							spec = relative(dirname(file), spec).split(sep).join(posix.sep);
 							if (!/^\.?\.?\//.test(spec)) {
 								spec = './' + spec;
@@ -579,7 +589,7 @@ export const TRANSFORMS = {
 						if (aliased) spec = aliased;
 					}
 
-					if (!spec.startsWith('/@alias/') && !/^\0?\.?\.?[/\\]/.test(spec)) {
+					if (!spec.startsWith('/@id/') && !spec.startsWith('/@alias/') && !/^\0?\.?\.?[/\\]/.test(spec)) {
 						// Check if the spec is an alias
 						const aliased = matchAlias(alias, spec);
 						if (aliased) spec = aliased;
