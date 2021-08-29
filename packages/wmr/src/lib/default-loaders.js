@@ -1,4 +1,5 @@
 import { IMPLICIT_URL } from '../plugins/url-plugin.js';
+import { hasCustomPrefix } from './fs-utils.js';
 import { transformImports } from './transform-imports.js';
 
 /**
@@ -14,12 +15,8 @@ export function defaultLoaders() {
 
 			return await transformImports(code, id, {
 				resolveId(specifier) {
-					const hasPrefix = /^[-\w]+:/.test(specifier);
-
-					if (!hasPrefix) {
-						if (IMPLICIT_URL.test(specifier)) {
-							return `url:${specifier}`;
-						}
+					if (!hasCustomPrefix(specifier) && IMPLICIT_URL.test(specifier)) {
+						return `url:${specifier}`;
 					}
 					return null;
 				}

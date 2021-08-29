@@ -1,4 +1,4 @@
-import { promises as fs } from 'fs';
+import { hasCustomPrefix } from '../lib/fs-utils.js';
 
 /**
  * Load JSON files
@@ -25,13 +25,9 @@ export default function jsonPlugin({ root }) {
 			const resolved = await this.resolve(id, importer, { skipSelf: true });
 			return resolved && resolved.id;
 		},
-		async load(id) {
-			if (!id.endsWith('.json')) return null;
 
-			return await fs.readFile(id, 'utf-8');
-		},
 		transform(code, id) {
-			if (!id.endsWith('.json') || /^\0?[-\w]+:/.test(id)) return;
+			if (!id.endsWith('.json') || hasCustomPrefix(id)) return;
 
 			return {
 				code: `export default ${code}`,
