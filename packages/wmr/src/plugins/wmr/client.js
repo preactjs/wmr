@@ -56,7 +56,7 @@ function handleMessage(e) {
 			data.changes.forEach(url => {
 				url = resolve(url);
 				if (!mods.get(url)) {
-					if (/\.(css|s[ac]ss)$/.test(url)) {
+					if (/\.(css|s[ac]ss|less)$/.test(url)) {
 						if (mods.has(url + '?module')) {
 							url += '?module';
 						} else {

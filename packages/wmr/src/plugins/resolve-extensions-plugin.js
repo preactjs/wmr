@@ -36,7 +36,7 @@ export default function resolveExtensionsPlugin({ extensions, index, mainFields 
 		name: 'resolve-extensions-plugin',
 		async resolveId(id, importer) {
 			if (id[0] === '\0') return;
-			if (/\.(tsx?|css|s[ac]ss|wasm)$/.test(id)) return;
+			if (/\.(tsx?|css|s[ac]ss|less|wasm)$/.test(id)) return;
 
 			let resolved;
 			try {

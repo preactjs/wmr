@@ -133,6 +133,10 @@ declare module '*.module.sass' {
 	const mapping: Mapping;
 	export default mapping;
 }
+declare module '*.module.less' {
+	const mapping: Mapping;
+	export default mapping;
+}
 declare module '*.module.styl' {
 	const mapping: Mapping;
 	export default mapping;
@@ -147,6 +151,10 @@ declare module '*.scss' {
 	export default url;
 }
 declare module '*.sass' {
+	const url: string;
+	export default url;
+}
+declare module '*.less' {
 	const url: string;
 	export default url;
 }

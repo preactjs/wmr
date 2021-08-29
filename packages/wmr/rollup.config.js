@@ -51,7 +51,7 @@ const config = {
 			}
 		]
 	},
-	external: [...builtins],
+	external: [...builtins, 'less'],
 	// /* Logs all included npm dependencies: */
 	// external(source, importer) {
 	// 	const ch = source[0];

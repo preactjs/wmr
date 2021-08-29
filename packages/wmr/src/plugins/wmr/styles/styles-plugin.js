@@ -6,6 +6,8 @@ import { transformCss } from '../../../lib/transform-css.js';
 import { matchAlias } from '../../../lib/aliasing.js';
 import { modularizeCss } from './css-modules.js';
 
+export const STYLE_REG = /\.(?:css|s[ac]ss|less)$/;
+
 // invalid object keys
 const RESERVED_WORDS =
 	/^(abstract|async|boolean|break|byte|case|catch|char|class|const|continue|debugger|default|delete|do|double|else|enum|export|extends|false|final|finally|float|for|function|goto|if|implements|import|in|instanceof|int|interface|let|long|native|new|null|package|private|protected|public|return|short|static|super|switch|synchronized|this|throw|throws|transient|true|try|typeof|var|void|volatile|while|with|yield)$/;
@@ -29,7 +31,7 @@ export default function wmrStylesPlugin({ root, hot, production, alias, sourcema
 	return {
 		name: 'wmr-styles',
 		async transform(source, id) {
-			if (!id.match(/\.(css|s[ac]ss)$/)) return;
+			if (!STYLE_REG.test(id)) return;
 			if (id[0] === '\0') return;
 
 			let idRelative = id;
@@ -37,7 +39,7 @@ export default function wmrStylesPlugin({ root, hot, production, alias, sourcema
 			idRelative = aliased ? aliased.slice('/@alias/'.length) : relative(root, id);
 
 			const mappings = [];
-			if (/\.module\.(css|s[ac]ss)$/.test(id)) {
+			if (/\.module\.(css|s[ac]ss|less)$/.test(id)) {
 				source = await modularizeCss(source, idRelative, mappings, id);
 			} else {
 				if (/(composes:|:global|:local)/.test(source)) {
@@ -99,7 +101,7 @@ export default function wmrStylesPlugin({ root, hot, production, alias, sourcema
 
 			const ref = this.emitFile({
 				type: 'asset',
-				name: basename(id).replace(/\.s[ac]ss$/, '.css'),
+				name: basename(id).replace(/\.(s[ac]ss|less)$/, '.css'),
 				// Preserve asset path to avoid file clashes:
 				//   foo/styles.module.css
 				//   bar/styles.module.css

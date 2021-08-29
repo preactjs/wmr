@@ -1,6 +1,7 @@
 import { posix } from 'path';
 import { hasDebugFlag } from '../lib/output-utils.js';
 import { injectHead } from '../lib/transform-html.js';
+import { STYLE_REG } from './wmr/styles/styles-plugin.js';
 
 /** @typedef {import('rollup').OutputBundle} Bundle */
 /** @typedef {import('rollup').OutputChunk} Chunk */
@@ -522,7 +523,7 @@ function replaceSimpleFunctionCall(code, replacer) {
 	});
 }
 
-const isCssFilename = fileName => /\.(?:css|s[ac]ss)$/.test(fileName);
+const isCssFilename = fileName => STYLE_REG.test(fileName);
 
 function getAssetSource(asset) {
 	let code = asset.source;
