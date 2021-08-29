@@ -69,7 +69,7 @@ export default function npmMiddleware({ source = 'npm', alias, optimize, cwd } =
 			res.setHeader('etag', etag);
 
 			// CSS files and proxy modules don't use Rollup.
-			if (/\.((css|s[ac]ss)|wasm|txt|json)$/.test(meta.path)) {
+			if (/\.((css|s[ac]ss|less)|wasm|txt|json)$/.test(meta.path)) {
 				return handleAsset(meta, res, url.searchParams.has('module'));
 			}
 

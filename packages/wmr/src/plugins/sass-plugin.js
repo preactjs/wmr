@@ -156,7 +156,7 @@ export default function sassPlugin({ production, sourcemap, root, mergedAssets }
 					// `node-sass` always returns unix style paths,
 					// even on windows
 					file = path.normalize(file);
-					if (mergedAssets) mergedAssets.add(file);
+					mergedAssets.add(file);
 
 					if (!fileToBundles.has(file)) {
 						fileToBundles.set(file, new Set());

@@ -13,6 +13,7 @@ import { matchAlias, resolveAlias } from './lib/aliasing.js';
 import { addTimestamp } from './lib/net-utils.js';
 import { mergeSourceMaps } from './lib/sourcemap.js';
 import { isFile } from './lib/fs-utils.js';
+import { STYLE_REG } from './plugins/wmr/styles/styles-plugin.js';
 
 const NOOP = () => {};
 
@@ -192,7 +193,7 @@ export default function wmrMiddleware(options) {
 				bubbleUpdates(file + '?module');
 			}
 
-			if (/\.(css|s[ac]ss)$/.test(file)) {
+			if (STYLE_REG.test(file)) {
 				pendingChanges.add('/' + file);
 			} else if (/\.(mjs|[tj]sx?)$/.test(file)) {
 				if (!moduleGraph.has(file)) {
@@ -300,13 +301,7 @@ export default function wmrMiddleware(options) {
 			} else if (queryParams.has('asset')) {
 				cacheKey += '?asset';
 				transform = TRANSFORMS.asset;
-			} else if (
-				prefix ||
-				hasIdPrefix ||
-				isModule ||
-				/\.([mc]js|[tj]sx?)$/.test(file) ||
-				/\.(css|s[ac]ss)$/.test(file)
-			) {
+			} else if (prefix || hasIdPrefix || isModule || /\.([mc]js|[tj]sx?)$/.test(file) || STYLE_REG.test(file)) {
 				transform = TRANSFORMS.js;
 			} else if (file.startsWith(root + sep) && (await isFile(file))) {
 				// Ignore dotfiles
@@ -344,7 +339,7 @@ export default function wmrMiddleware(options) {
 				// Grab the asset id out of the compiled js
 				// TODO: Wire this up into Style-Plugin by passing the
 				// import type through resolution somehow
-				if (!isModule && /\.(css|s[ac]ss)$/.test(file) && typeof result === 'string') {
+				if (!isModule && STYLE_REG.test(file) && typeof result === 'string') {
 					const match = result.match(/style\(["']\/([^"']+?)["'].*?\);/m);
 
 					if (match) {

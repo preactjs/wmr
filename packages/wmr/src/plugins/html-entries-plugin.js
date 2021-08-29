@@ -4,6 +4,7 @@ import { transformHtml } from '../lib/transform-html.js';
 import { yellow, bgYellow, bgRed, dim, bold, white, black, magenta, cyan } from 'kolorist';
 import { codeFrame } from '../lib/output-utils.js';
 import { transformSass } from './sass-plugin.js';
+import { renderLess } from './less-plugin.js';
 
 /** @typedef {import('rollup').OutputAsset & { referencedFiles: string[], importedIds: string[] }} ExtendedAsset */
 
@@ -96,7 +97,7 @@ export default function htmlEntriesPlugin({ root, publicPath, sourcemap, mergedA
 					let assetName = url;
 
 					// Ensure that stylesheets have `.css` as an extension
-					if (/\.s[ac]ss$/.test(assetName)) {
+					if (/\.(?:s[ac]ss|less)$/.test(assetName)) {
 						assetName = posix.join(posix.dirname(url), posix.basename(url, posix.extname(url)) + '.css');
 					}
 
@@ -112,6 +113,14 @@ export default function htmlEntriesPlugin({ root, publicPath, sourcemap, mergedA
 									for (let file of result.includedFiles) {
 										if (mergedAssets) mergedAssets.add(file);
 									}
+									this.setAssetSource(ref, result.css);
+								});
+							} else if (/\.less$/.test(abs)) {
+								return renderLess(source, { id: abs, sourcemap, resolve: this.resolve.bind(this) }).then(result => {
+									for (let file of result.imports) {
+										if (mergedAssets) mergedAssets.add(file);
+									}
+
 									this.setAssetSource(ref, result.css);
 								});
 							} else {
