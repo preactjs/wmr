@@ -20,6 +20,7 @@ const IGNORE_FILES = [
 /**
  * @param {object} options
  * @param {string} options.root
+ * @param {Set<string>} options.mergedAssets
  * @returns {import('rollup').Plugin}
  */
 export default function copyAssetsPlugin({ root, mergedAssets }) {

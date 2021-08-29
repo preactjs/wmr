@@ -24,6 +24,8 @@ const toSystemPath = p => p.split(posix.sep).join(sep);
  *
  * @param {object} options
  * @param {string} options.root
+ * @param {Set<string>} options.mergedAssets
+ * @param {boolean} options.sourcemap
  * @param {string} [options.publicPath] Prepend to generated filenames
  * @returns {import('rollup').Plugin}
  */
