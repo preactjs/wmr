@@ -315,7 +315,7 @@ describe('production', () => {
 
 			const code = await instance.done;
 			const dir = await fs.readdir(path.join(env.tmp.path, 'dist', 'assets'));
-			expect(dir.some(x => x.endsWith('.scss'))).toBeTruthy();
+			expect(dir.some(x => x.endsWith('.css'))).toBeTruthy();
 			expect(code).toEqual(0);
 			const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
 			cleanup.push(stop);
@@ -332,7 +332,7 @@ describe('production', () => {
 			await instance.done;
 			const dir = await fs.readdir(path.join(env.tmp.path, 'dist'));
 			const [cssFile] = await fs.readdir(path.join(env.tmp.path, 'dist', 'assets'));
-			expect(dir.some(x => x.endsWith('.scss') || x.endsWith('.css'))).toBeFalsy();
+			expect(dir.some(x => x.endsWith('.css'))).toBeFalsy();
 			const hash = cssFile.split('.')[1];
 
 			await updateFile(path.join(env.tmp.path, 'public'), '2.scss', content => content.replace('green', 'red'));
@@ -351,7 +351,7 @@ describe('production', () => {
 			await instance.done;
 			const dir = await fs.readdir(path.join(env.tmp.path, 'dist'));
 			const [cssFile] = await fs.readdir(path.join(env.tmp.path, 'dist', 'assets'));
-			expect(dir.some(x => x.endsWith('.scss') || x.endsWith('.css'))).toBeFalsy();
+			expect(dir.some(x => x.endsWith('.css'))).toBeFalsy();
 			const hash = cssFile.split('.')[1];
 
 			await updateFile(path.join(env.tmp.path, 'public'), '2.scss', content => content.replace('green', 'red'));
