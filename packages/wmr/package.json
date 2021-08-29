@@ -65,6 +65,7 @@
 		"jest-puppeteer": "^5.0.4",
 		"kolorist": "^1.5.0",
 		"magic-string": "^0.25.7",
+		"mime": "^2.5.2",
 		"ncp": "^2.0.0",
 		"node-fetch": "^2.6.1",
 		"npm-merge-driver-install": "^1.1.1",
