@@ -67,7 +67,7 @@ export function getPlugins(options) {
 			}),
 		production && publicPathPlugin({ publicPath }),
 		sassPlugin({ production, sourcemap, root, mergedAssets }),
-		lessPlugin({ sourcemap, mergedAssets }),
+		lessPlugin({ sourcemap, mergedAssets, alias }),
 		wmrStylesPlugin({ hot: !production, root, production, alias, sourcemap }),
 		processGlobalPlugin({
 			sourcemap,

@@ -1,16 +1,21 @@
 import path from 'path';
 import { createCodeFrame } from 'simple-code-frame';
+import { resolveAlias } from '../lib/aliasing.js';
 
 /** @type {import('less') | undefined} */
 let less;
 
-const lessFileLoader = resolve =>
+const lessFileLoader = (resolve, root) =>
 	class LessPluginWmr {
 		static install(less, pluginManager) {
 			class LessFileManagerWmr extends less.FileManager {
 				async loadFile(filename, currentDirectory, options, environment) {
 					let file = filename;
 					if (!file.endsWith('.less')) file = file + '.less';
+
+					if (!path.isAbsolute(currentDirectory)) {
+						currentDirectory = path.join(root, currentDirectory);
+					}
 
 					// Supply fake importer for relative resolution
 					const importer = path.join(currentDirectory, 'fake.less');
@@ -33,7 +38,7 @@ const lessFileLoader = resolve =>
 
 /**
  * @param {string} code
- * @param {{id: string, resolve: any, sourcemap: boolean}} options
+ * @param {{id: string, resolve: any, sourcemap: boolean }} options
  * @returns {Promise<{ css: string, map?: string, imports: string[] }>}
  */
 export async function renderLess(code, { id, resolve, sourcemap }) {
@@ -50,7 +55,7 @@ export async function renderLess(code, { id, resolve, sourcemap }) {
 
 	const lessOptions = {
 		filename: id,
-		plugins: [lessFileLoader(resolve)]
+		plugins: [lessFileLoader(resolve, path.dirname(id))]
 	};
 	if (sourcemap) lessOptions.sourceMap = {};
 
@@ -70,9 +75,10 @@ export async function renderLess(code, { id, resolve, sourcemap }) {
  * @param {object} options
  * @param {boolean} options.sourcemap
  * @param {Set<string>} options.mergedAssets
+ * @param {Record<string, string>} options.alias
  * @returns {import('rollup').Plugin}
  */
-export function lessPlugin({ sourcemap, mergedAssets }) {
+export function lessPlugin({ sourcemap, mergedAssets, alias }) {
 	/** @type {Map<string, Set<string>>} */
 	const fileToBundles = new Map();
 
@@ -81,7 +87,10 @@ export function lessPlugin({ sourcemap, mergedAssets }) {
 		async transform(code, id) {
 			if (!/\.less$/.test(id)) return;
 
-			const result = await renderLess(code, { resolve: this.resolve.bind(this), sourcemap, id });
+			// Use absolute file paths, otherwise nested alias resolution
+			// fails in less
+			const file = resolveAlias(alias, id);
+			const result = await renderLess(code, { resolve: this.resolve.bind(this), sourcemap, id: file });
 
 			for (let file of result.imports) {
 				mergedAssets.add(file);
