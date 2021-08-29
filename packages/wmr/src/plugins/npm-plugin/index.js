@@ -103,7 +103,7 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = 'npm/', exter
 				const versionTag = emitVersion && meta.version ? '@' + meta.version : '';
 				id = `${meta.module}${versionTag}${meta.path ? '/' + meta.path : ''}`;
 
-				return { id: `${publicPath}/${id}`, external: true };
+				return { id: `${publicPath}/${id}`, external: 'absolute' };
 			}
 
 			// Compute the final path
