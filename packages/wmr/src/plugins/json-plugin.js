@@ -1,9 +1,7 @@
-import path from 'path';
 import { promises as fs } from 'fs';
 
 /**
- * Convert JSON imports to ESM. Uses a prefix `\0json:./foo.json`.
- * In dev mode, this creates URLs like `/@json/path/to/foo.json`.
+ * Load JSON files
  *
  * @example
  *   import foo from './foo.json';
@@ -15,37 +13,25 @@ import { promises as fs } from 'fs';
  */
 export default function jsonPlugin({ root }) {
 	const IMPORT_PREFIX = 'json:';
-	const INTERNAL_PREFIX = '\0json:';
 
 	return {
 		name: 'json-plugin',
 		async resolveId(id, importer) {
-			if (!id.startsWith(IMPORT_PREFIX)) return;
-
-			id = id.slice(IMPORT_PREFIX.length);
+			if (id.startsWith(IMPORT_PREFIX)) {
+				id = id.slice(IMPORT_PREFIX.length);
+			}
+			if (!id.endsWith('.json')) return;
 
 			const resolved = await this.resolve(id, importer, { skipSelf: true });
-			return resolved && INTERNAL_PREFIX + resolved.id;
+			return resolved && resolved.id;
 		},
-		// TODO: If we find a way to remove the need for adding
-		// an internal prefix we can get rid of the whole
-		// loading logic here and let rollup handle that part.
 		async load(id) {
-			if (!id.startsWith(INTERNAL_PREFIX)) return null;
+			if (!id.endsWith('.json')) return null;
 
-			id = id.slice(INTERNAL_PREFIX.length);
-
-			// TODO: Add a global helper function to normalize paths
-			// and check that we're allowed to load a file.
-			const file = path.resolve(root, id);
-			if (!file.startsWith(root)) {
-				throw new Error(`JSON file must be placed inside ${root}`);
-			}
-
-			return await fs.readFile(file, 'utf-8');
+			return await fs.readFile(id, 'utf-8');
 		},
 		transform(code, id) {
-			if (!id.startsWith(INTERNAL_PREFIX)) return;
+			if (!id.endsWith('.json') || /^\0?[-\w]+:/.test(id)) return;
 
 			return {
 				code: `export default ${code}`,

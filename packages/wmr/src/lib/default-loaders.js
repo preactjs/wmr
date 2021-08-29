@@ -17,9 +17,7 @@ export function defaultLoaders() {
 					const hasPrefix = /^[-\w]+:/.test(specifier);
 
 					if (!hasPrefix) {
-						if (specifier.endsWith('.json')) {
-							return `json:${specifier}`;
-						} else if (IMPLICIT_URL.test(specifier)) {
+						if (IMPLICIT_URL.test(specifier)) {
 							return `url:${specifier}`;
 						}
 					}
