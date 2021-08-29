@@ -2,7 +2,6 @@
  * cssnano is great, but it's hard to package and quite large.
  * This is essentially the same plugins, but without SVGO.
  */
-import postcss from 'postcss';
 import discardComments from 'postcss-discard-comments';
 import postcssReduceInitial from 'postcss-reduce-initial';
 import postcssReduceTransforms from 'postcss-reduce-transforms';
@@ -28,23 +27,26 @@ import postcssNormalizeUnicode from 'postcss-normalize-unicode';
 import postcssNormalizeDisplayValues from 'postcss-normalize-display-values';
 import postcssNormalizeTimingFunctions from 'postcss-normalize-timing-functions';
 
-const rawCache = postcss.plugin('cssnano-util-raw-cache', () => {
-	return (css, result) => {
-		result.root.rawCache = {
-			colon: ':',
-			indent: '',
-			beforeDecl: '',
-			beforeRule: '',
-			beforeOpen: '',
-			beforeClose: '',
-			beforeComment: '',
-			after: '',
-			emptyBody: '',
-			commentLeft: '',
-			commentRight: ''
+const rawCache = {
+	postcssPlugin: 'cssnano-util-raw-cache',
+	Once() {
+		return (css, result) => {
+			result.root.rawCache = {
+				colon: ':',
+				indent: '',
+				beforeDecl: '',
+				beforeRule: '',
+				beforeOpen: '',
+				beforeClose: '',
+				beforeComment: '',
+				after: '',
+				emptyBody: '',
+				commentLeft: '',
+				commentRight: ''
+			};
 		};
-	};
-});
+	}
+};
 
 const plugins = [
 	discardComments,

@@ -169,10 +169,14 @@ const config = {
 		commonjs({
 			exclude: [/\.mjs$/, /\/rollup\//, resolve('src')],
 			ignore: builtins,
-			transformMixedEsModules: true
+			transformMixedEsModules: true,
+			requireReturnsDefault: 'preferred'
 		}),
 		nodeResolve({
 			preferBuiltins: true,
+			// Rollup prefers "default" by default and rollup itself points to a
+			// browser build there...
+			exportConditions: ['node', 'import', 'module', 'default'],
 			extensions: ['.mjs', '.js', '.json', '.es6', '.node']
 		}),
 		json()
