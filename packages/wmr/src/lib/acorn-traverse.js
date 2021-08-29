@@ -82,7 +82,7 @@ let codeGenerator = {
 		} else {
 			// Astring inserts line indents by default
 			// eslint-disable-next-line new-cap
-			astring.baseGenerator.ObjectExpression(node, state);
+			astring.baseGenerator.ObjectExpression.call(this, node, state);
 		}
 	},
 
