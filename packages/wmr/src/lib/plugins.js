@@ -96,7 +96,7 @@ export function getPlugins(options) {
 		production && copyAssetsPlugin({ root, mergedAssets }),
 		production &&
 			visualize &&
-			visualizer.default({
+			(visualizer.default || visualizer)({
 				// Don't open in unit tests
 				open: process.env.NODE_ENV !== 'test',
 				gzipSize: true,
