@@ -43,7 +43,9 @@ export default function wmrStylesPlugin({ root, hot, production, alias, sourcema
 				source = await modularizeCss(source, idRelative, mappings, id);
 			} else {
 				if (/(composes:|:global|:local)/.test(source)) {
-					console.warn(`Warning: ICSS ("composes:") is only supported in CSS Modules.`);
+					console.warn(
+						kl.yellow(`Warning: ICSS ("composes:") is only supported in CSS Modules. `) + kl.dim(idRelative)
+					);
 				}
 				source = transformCss(source);
 			}
