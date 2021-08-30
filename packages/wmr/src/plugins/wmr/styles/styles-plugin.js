@@ -50,7 +50,7 @@ export default function wmrStylesPlugin({ root, hot, production, alias, sourcema
 					const column = lines[lines.length - 1].length;
 					const codeFrame = createCodeFrame(source, line, column);
 
-					const message = `Warning: ICSS ("composes:") is only supported in CSS Modules.`;
+					const message = `Warning: ICSS ("${match[0]}") is only supported in CSS Modules.`;
 					console.warn(`${kl.yellow(message)} ${kl.dim(idRelative)}\n${codeFrame}`);
 				}
 				source = transformCss(source);
