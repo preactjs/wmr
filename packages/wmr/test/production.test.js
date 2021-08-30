@@ -129,6 +129,24 @@ describe('production', () => {
 		expect(text).toMatch(/it works/);
 	});
 
+	// Issue #811
+	it('should support virtual ids starting with /@', async () => {
+		await loadFixture('virtual-id-at', env);
+		instance = await runWmr(env.tmp.path, 'build');
+		const code = await instance.done;
+		expect(code).toEqual(0);
+
+		const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+		cleanup.push(stop);
+
+		await env.page.goto(address, {
+			waitUntil: ['networkidle0', 'load']
+		});
+
+		const color = await env.page.$eval('h1', el => getComputedStyle(el).color);
+		expect(color).toBe('rgb(255, 0, 0)');
+	});
+
 	it("should preserve './' for relative specifiers", async () => {
 		await loadFixture('plugin-resolve', env);
 		instance = await runWmr(env.tmp.path, 'build');
