@@ -5,6 +5,7 @@ import { transformCssImports } from '../../../lib/transform-css-imports.js';
 import { transformCss } from '../../../lib/transform-css.js';
 import { matchAlias } from '../../../lib/aliasing.js';
 import { modularizeCss } from './css-modules.js';
+import { createCodeFrame } from 'simple-code-frame';
 
 export const STYLE_REG = /\.(?:css|s[ac]ss|less)$/;
 
@@ -42,10 +43,15 @@ export default function wmrStylesPlugin({ root, hot, production, alias, sourcema
 			if (/\.module\.(css|s[ac]ss|less)$/.test(id)) {
 				source = await modularizeCss(source, idRelative, mappings, id);
 			} else {
-				if (/(composes:|:global|:local)/.test(source)) {
-					console.warn(
-						kl.yellow(`Warning: ICSS ("composes:") is only supported in CSS Modules. `) + kl.dim(idRelative)
-					);
+				const match = source.match(/(composes:|:global|:local)/);
+				if (match !== null) {
+					const lines = source.slice(0, match.index).split('\n');
+					const line = lines.length - 1;
+					const column = lines[lines.length - 1].length;
+					const codeFrame = createCodeFrame(source, line, column);
+
+					const message = `Warning: ICSS ("composes:") is only supported in CSS Modules.`;
+					console.warn(`${kl.yellow(message)} ${kl.dim(idRelative)}\n${codeFrame}`);
 				}
 				source = transformCss(source);
 			}
