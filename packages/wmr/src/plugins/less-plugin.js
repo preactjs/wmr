@@ -1,6 +1,7 @@
 import path from 'path';
 import { createCodeFrame } from 'simple-code-frame';
 import { resolveAlias } from '../lib/aliasing.js';
+import { isFile } from '../lib/fs-utils.js';
 
 /** @type {import('less') | undefined} */
 let less;
@@ -17,11 +18,17 @@ const lessFileLoader = (resolve, root) =>
 						currentDirectory = path.join(root, currentDirectory);
 					}
 
-					// Supply fake importer for relative resolution
-					const importer = path.join(currentDirectory, 'fake.less');
-					const resolved = await resolve(file, importer, { skipSelf: true });
+					let resolvedId;
+					const maybeRelative = path.join(currentDirectory, file);
+					if (await isFile(maybeRelative)) {
+						resolvedId = maybeRelative;
+					} else {
+						// Supply fake importer for relative resolution
+						const importer = path.join(currentDirectory, 'fake.less');
+						const resolved = await resolve(file, importer, { skipSelf: true });
 
-					let resolvedId = resolved ? resolved.id : file;
+						resolvedId = resolved ? resolved.id : file;
+					}
 
 					// Support bare imports: `@import "bar"`
 					if (!path.isAbsolute(resolvedId)) {
