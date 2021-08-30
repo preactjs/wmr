@@ -69,7 +69,6 @@ export default function processGlobalPlugin({ NODE_ENV = 'development', env = {}
 			});
 
 			code = result.code;
-
 			const s = new MagicString(code);
 
 			// if that wasn't the only way `process.env` was referenced...
@@ -77,10 +76,8 @@ export default function processGlobalPlugin({ NODE_ENV = 'development', env = {}
 				// hack: avoid injecting imports into commonjs modules
 				if (/^\s*(import|export)[\s{]/gm.test(code)) {
 					s.prepend(`import process from '${PREFIX}process.js';\n`);
-					code = `import process from '${PREFIX}process.js';${code}`;
 				} else {
 					s.prepend(`var process=${processObj};\n`);
-					code = `var process=${processObj};${code}`;
 				}
 			}
 
