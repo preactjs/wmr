@@ -79,12 +79,12 @@ export default function processGlobalPlugin({ NODE_ENV = 'development', env = {}
 				} else {
 					s.prepend(`var process=${processObj};\n`);
 				}
-			}
-
-			const reg = /typeof(\s+|\s*\(+\s*)process([^a-zA-Z$_])/g;
-			let match = null;
-			while ((match = reg.exec(code)) !== null) {
-				s.overwrite(match.index, match.index + match[0].length, `typeof${match[1]}undefined${match[2]}`);
+			} else {
+				const reg = /typeof(\s+|\s*\(+\s*)process([^a-zA-Z$_.])/g;
+				let match = null;
+				while ((match = reg.exec(code)) !== null) {
+					s.overwrite(match.index, match.index + match[0].length, `typeof${match[1]}undefined${match[2]}`);
+				}
 			}
 
 			/** @type {*} */
