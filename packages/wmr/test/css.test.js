@@ -5,6 +5,7 @@ import {
 	setupTest,
 	teardown,
 	updateFile,
+	waitForMessage,
 	waitForPass,
 	withLog
 } from './test-helpers.js';
@@ -89,6 +90,14 @@ describe('CSS', () => {
 			});
 
 			expect(instance.output.join('\n')).toMatch(/Cannot use reserved word/);
+		});
+
+		// eslint-disable-next-line jest/expect-expect
+		it('should warn on composes keyword being used in non CSS module context', async () => {
+			await loadFixture('css-module-compose-warn', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+			await waitForMessage(instance.output, /Warning: Keyword "composes:"/);
 		});
 
 		it('should not overwrite style files', async () => {

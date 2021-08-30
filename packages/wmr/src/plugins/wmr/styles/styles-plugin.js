@@ -1,10 +1,11 @@
 import { promises as fs } from 'fs';
 import * as kl from 'kolorist';
-import { basename, dirname, relative, resolve, sep, posix } from 'path';
+import { basename, dirname, relative, resolve, sep, posix, extname } from 'path';
 import { transformCssImports } from '../../../lib/transform-css-imports.js';
 import { transformCss } from '../../../lib/transform-css.js';
 import { matchAlias } from '../../../lib/aliasing.js';
 import { modularizeCss } from './css-modules.js';
+import { createCodeFrame } from 'simple-code-frame';
 
 export const STYLE_REG = /\.(?:css|s[ac]ss|less)$/;
 
@@ -42,8 +43,18 @@ export default function wmrStylesPlugin({ root, hot, production, alias, sourcema
 			if (/\.module\.(css|s[ac]ss|less)$/.test(id)) {
 				source = await modularizeCss(source, idRelative, mappings, id);
 			} else {
-				if (/(composes:|:global|:local)/.test(source)) {
-					console.warn(`Warning: ICSS ("composes:") is only supported in CSS Modules.`);
+				const match = source.match(/(composes:|:global|:local)/);
+				if (match !== null) {
+					const lines = source.slice(0, match.index).split('\n');
+					const line = lines.length - 1;
+					const column = lines[lines.length - 1].length;
+					const codeFrame = createCodeFrame(source, line, column);
+
+					const originalName = basename(idRelative);
+					const nameHint = basename(idRelative, extname(idRelative)) + '.module' + extname(idRelative);
+
+					const message = `Warning: Keyword "${match[0]}" is only supported in CSS Modules.\nTo resolve this warning rename the file from "${originalName}" to "${nameHint}" to enable CSS Modules.`;
+					console.warn(`${kl.yellow(message)}\n  ${kl.dim(idRelative)}\n${codeFrame}`);
 				}
 				source = transformCss(source);
 			}
