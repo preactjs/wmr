@@ -809,6 +809,35 @@ describe('fixtures', () => {
 				expect(output).toMatch(/false/i);
 			});
 		});
+
+		it('should handle complex / dynamic process.env usage', async () => {
+			await loadFixture('process-complex', env);
+			instance = await runWmrFast(env.tmp.path, {
+				env: {
+					WMR_A: 'wmr-a',
+					WMR_B: 'wmr-b',
+					WMR_C: 'wmr-c'
+				}
+			});
+			await getOutput(env, instance);
+			const result = JSON.parse((await env.page.$eval('#out', node => node.textContent)) || 'undefined');
+			expect(result).toEqual({
+				WMR_A: 'wmr-a',
+				WMR_B: 'wmr-b',
+				NODE_ENV: 'development',
+				keys: ['WMR_A', 'WMR_B', 'WMR_C', 'NODE_ENV'],
+				withFullAccess: {
+					type: 'object',
+					typeofEnv: 'object',
+					typeofWMR_A: 'string'
+				},
+				withoutFullAccess: {
+					type: 'object',
+					typeofEnv: 'object',
+					typeofWMR_A: 'string'
+				}
+			});
+		});
 	});
 
 	describe('import.meta.env', () => {
