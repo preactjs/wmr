@@ -17,6 +17,7 @@ import {
 import { rollup } from 'rollup';
 import nodeBuiltinsPlugin from '../src/plugins/node-builtins-plugin.js';
 import { supportsSearchParams } from '../src/lib/net-utils.js';
+import { rm } from '../src/lib/fs-utils.js';
 
 jest.setTimeout(30000);
 
@@ -143,6 +144,41 @@ describe('fixtures', () => {
 
 			// Don't serve aliased files as is
 			expect(await env.page.evaluate(`fetch('/@alias/foo/bar').then(r => r.text())`)).not.toMatch('foobar');
+		});
+	});
+
+	it('should pass event to watcheChange', async () => {
+		await loadFixture('watch', env);
+		instance = await runWmrFast(env.tmp.path);
+		const text = await getOutput(env, instance);
+		expect(text).toMatch(/it works/);
+
+		await withLog(instance.output, async () => {
+			// Change
+			await updateFile(env.tmp.path, 'public/foo.js', () => {
+				return `export const value = 'it still works';`;
+			});
+
+			const file = path.join(env.tmp.path, 'public/foo.js');
+			await waitForPass(async () => {
+				const text = await getOutput(env, instance);
+				expect(text).toMatch(/it still works/);
+			});
+
+			await waitForMessage(instance.output, /WATCH update/);
+
+			// Delete
+			await rm(file);
+			await waitForMessage(instance.output, /WATCH delete/);
+
+			// Add
+			await fs.writeFile(file, `export const value = 'it works';`);
+			await waitForPass(async () => {
+				const text = await getOutput(env, instance);
+				expect(text).toMatch(/it works/);
+			});
+
+			await waitForMessage(instance.output, /WATCH create/);
 		});
 	});
 

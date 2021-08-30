@@ -195,18 +195,23 @@ export function createPluginContainer(plugins, opts = {}) {
 
 		/**
 		 * @param {string} id
+		 * @param {{event: 'create' | 'update' | 'delete'}} event
 		 * @returns {string[]} WMR specific
 		 */
-		watchChange(id) {
+		watchChange(id, event) {
 			const pending = [];
-			if (watchFiles.has(id)) {
-				for (plugin of plugins) {
-					if (!plugin.watchChange) continue;
-					// Note return value is WMR specific
-					const res = plugin.watchChange.call(ctx, id);
-					if (Array.isArray(res)) {
-						pending.push(...res);
-					}
+			if (event.event === 'create') {
+				watchFiles.add(id);
+			} else if (event.event === 'delete') {
+				watchFiles.delete(id);
+			}
+
+			for (plugin of plugins) {
+				if (!plugin.watchChange) continue;
+				// Note return value is WMR specific
+				const res = plugin.watchChange.call(ctx, id, event);
+				if (Array.isArray(res)) {
+					pending.push(...res);
 				}
 			}
 			return pending;
