@@ -1,5 +1,25 @@
 # wmr
 
+## 3.6.0
+
+### Minor Changes
+
+- [`a49e4f9`](https://github.com/preactjs/wmr/commit/a49e4f9d56e7acec95cf3b02a4aba4e19b6083b0) [#806](https://github.com/preactjs/wmr/pull/806) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Add support for `.less` stylesheets.
+
+### Patch Changes
+
+- [`f03859b`](https://github.com/preactjs/wmr/commit/f03859b5eb46a052a78c22d2d5a3883fe86e80a8) [#812](https://github.com/preactjs/wmr/pull/812) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Add a workaround to support virtual identifiers starting with `/@` to support `rollup-plugin-windicss`.
+
+* [`81b0e5e`](https://github.com/preactjs/wmr/commit/81b0e5e13556b322ceb049e88f11876224172e82) [#611](https://github.com/preactjs/wmr/pull/611) Thanks [@rschristian](https://github.com/rschristian)! - Updates the bundle visualizer to latest, allowing for some useful output exclusions
+
+- [`4e37369`](https://github.com/preactjs/wmr/commit/4e37369544b639a45f64ad0c0713d68b1a0a3c55) [#802](https://github.com/preactjs/wmr/pull/802) Thanks [@rschristian](https://github.com/rschristian)! - If Preact-CLI's debug service worker is detected, WMR will unregister it to avoid repeated 404 errors.
+
+* [`be5cda0`](https://github.com/preactjs/wmr/commit/be5cda088a31530d1ab627bec07b362c5f515ecb) [#807](https://github.com/preactjs/wmr/pull/807) Thanks [@lPadier](https://github.com/lPadier)! - Fix building JSX nodes with object with more than 5 properties and then JSX in ap
+
+- [`e8d22ae`](https://github.com/preactjs/wmr/commit/e8d22ae2162255b1f14441f0a9f9ed940b166669) [#805](https://github.com/preactjs/wmr/pull/805) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix `.scss` files not being renamed to `.css` on production builds, when they were directly referenced in an HTML file.
+
+* [`e49e856`](https://github.com/preactjs/wmr/commit/e49e8566b6ede97ac899fc5b7fbba9f8a4f1a957) [#814](https://github.com/preactjs/wmr/pull/814) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Add missing watch events to rollup's `watchChange` hook in development
+
 ## 3.5.1
 
 ### Patch Changes
