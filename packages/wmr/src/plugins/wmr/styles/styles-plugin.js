@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs';
 import * as kl from 'kolorist';
-import { basename, dirname, relative, resolve, sep, posix } from 'path';
+import { basename, dirname, relative, resolve, sep, posix, extname } from 'path';
 import { transformCssImports } from '../../../lib/transform-css-imports.js';
 import { transformCss } from '../../../lib/transform-css.js';
 import { matchAlias } from '../../../lib/aliasing.js';
@@ -50,8 +50,11 @@ export default function wmrStylesPlugin({ root, hot, production, alias, sourcema
 					const column = lines[lines.length - 1].length;
 					const codeFrame = createCodeFrame(source, line, column);
 
-					const message = `Warning: ICSS ("${match[0]}") is only supported in CSS Modules.`;
-					console.warn(`${kl.yellow(message)} ${kl.dim(idRelative)}\n${codeFrame}`);
+					const originalName = basename(idRelative);
+					const nameHint = basename(idRelative, extname(idRelative)) + '.module' + extname(idRelative);
+
+					const message = `Warning: Keyword "${match[0]}" is only supported in CSS Modules.\nTo resolve this warning rename the file from "${originalName}" to "${nameHint}" to enable CSS Modules.`;
+					console.warn(`${kl.yellow(message)}\n  ${kl.dim(idRelative)}\n${codeFrame}`);
 				}
 				source = transformCss(source);
 			}

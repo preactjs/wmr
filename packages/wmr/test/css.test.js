@@ -97,7 +97,7 @@ describe('CSS', () => {
 			await loadFixture('css-module-compose-warn', env);
 			instance = await runWmrFast(env.tmp.path);
 			await getOutput(env, instance);
-			await waitForMessage(instance.output, /Warning: ICSS/);
+			await waitForMessage(instance.output, /Warning: Keyword "composes:"/);
 		});
 
 		it('should not overwrite style files', async () => {
