@@ -75,6 +75,7 @@ export default function wmrMiddleware(options) {
 	const watcher = watch(watchDirs, {
 		cwd,
 		disableGlobbing: true,
+		ignoreInitial: true,
 		ignored: [/(^|[/\\])(node_modules|\.git|\.DS_Store)([/\\]|$)/, resolve(cwd, out), resolve(cwd, distDir)]
 	});
 	const pendingChanges = new Set();
@@ -119,16 +120,20 @@ export default function wmrMiddleware(options) {
 		return false;
 	}
 
-	watcher.on('change', filename => {
-		const absolute = resolve(cwd, filename);
+	/**
+	 * @param {string} absoluteId
+	 * @param {'create' | 'update' | 'delete'} changeType
+	 */
+	function applyWatchChanges(absoluteId, changeType) {
+		const event = { event: changeType };
 
 		const seen = new Set();
-		const items = [absolute];
+		const items = [absoluteId];
 		/** @type {string | undefined} */
 		let item;
 		while ((item = items.pop()) !== undefined) {
 			if (seen.has(item)) continue;
-			const res = NonRollup.watchChange(item);
+			const res = NonRollup.watchChange(item, event);
 			if (Array.isArray(res)) items.push(...res);
 			seen.add(item);
 		}
@@ -154,7 +159,7 @@ export default function wmrMiddleware(options) {
 				file = file.split(sep).join(posix.sep);
 			}
 
-			logWatcher(`${kl.cyan(originalFile)} -> ${kl.dim(file)} [change]`);
+			logWatcher(`${kl.cyan(originalFile)} -> ${kl.dim(file)} [${changeType}]`);
 
 			logCache(`delete: ${kl.cyan(file)}`);
 			WRITE_CACHE.delete(file);
@@ -213,6 +218,21 @@ export default function wmrMiddleware(options) {
 				onChange({ reload: true });
 			}
 		}
+	}
+
+	watcher.on('add', filename => {
+		const absolute = resolve(cwd, filename);
+		applyWatchChanges(absolute, 'create');
+	});
+
+	watcher.on('unlink', filename => {
+		const absolute = resolve(cwd, filename);
+		applyWatchChanges(absolute, 'delete');
+	});
+
+	watcher.on('change', filename => {
+		const absolute = resolve(cwd, filename);
+		applyWatchChanges(absolute, 'update');
 	});
 
 	return async (req, res, next) => {
