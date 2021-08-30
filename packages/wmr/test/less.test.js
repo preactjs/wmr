@@ -224,5 +224,24 @@ describe('Less', () => {
 
 			expect(hash === newHash).toBeFalsy();
 		});
+
+		it('should correctly resolve nested relative files', async () => {
+			await loadFixture('css-less-nested-relative', env);
+			instance = await runWmr(env.tmp.path, 'build');
+
+			await withLog(instance.output, async () => {
+				const code = await instance.done;
+				expect(code).toEqual(0);
+
+				const dir = await fs.readdir(path.join(env.tmp.path, 'dist', 'assets'));
+				expect(dir.some(x => x.endsWith('.css'))).toBeTruthy();
+				const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+				cleanup.push(stop);
+				await env.page.goto(address, {
+					waitUntil: ['networkidle0', 'load']
+				});
+				expect(await env.page.$eval('h1', el => getComputedStyle(el).color)).toBe('rgb(255, 0, 0)');
+			});
+		});
 	});
 });
