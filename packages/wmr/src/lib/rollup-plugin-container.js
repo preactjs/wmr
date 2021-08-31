@@ -124,15 +124,20 @@ export function createPluginContainer(plugins, opts = {}) {
 			return mod.info;
 		},
 		emitFile(assetOrFile) {
-			const { type, name, fileName } = assetOrFile;
-			const source = assetOrFile.type === 'asset' && assetOrFile.source;
+			const { type, fileName } = assetOrFile;
+			const name = type === 'chunk' ? assetOrFile.name || assetOrFile.id : assetOrFile.name;
+			const source = type === 'asset' && assetOrFile.source;
 			const id = String(++ids);
 			const filename = fileName || generateFilename({ type, name, source, fileName });
 			files.set(id, { id, name, filename });
-			if (source) {
-				if (type === 'chunk') {
+
+			if (type === 'chunk') {
+				if (source) {
 					throw Error(`emitFile({ type:"chunk" }) cannot include a source`);
 				}
+
+				// TODO: We probably need to process the chunk manually from here
+			} else if (source) {
 				if (opts.writeFile) opts.writeFile(filename, source);
 				else fs.writeFile(filename, source);
 			}
