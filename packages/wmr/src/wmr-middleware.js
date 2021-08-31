@@ -59,11 +59,13 @@ export default function wmrMiddleware(options) {
 			// Use a hash to prevent collisions between assets with the
 			// same basename.
 			assetFileNames: '[name][extname]?asset',
-			dir: out
+			dir: out,
+			format: 'esm'
 		}
 	});
 
 	NonRollup.buildStart();
+	NonRollup.outputOptions();
 
 	// Make watcher aware of aliased directories
 	const pathAliases = Object.keys(alias)
