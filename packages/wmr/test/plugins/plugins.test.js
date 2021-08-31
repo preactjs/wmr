@@ -1,4 +1,4 @@
-import { loadFixture, runWmrFast, setupTest, teardown, waitForMessage, withLog } from '../test-helpers.js';
+import { getOutput, loadFixture, runWmrFast, setupTest, teardown, waitForMessage, withLog } from '../test-helpers.js';
 
 jest.setTimeout(30000);
 
@@ -44,6 +44,15 @@ describe('config', () => {
 			await withLog(instance.output, async () => {
 				await waitForMessage(instance.output, /OPTIONS format: esm/);
 			});
+		});
+
+		it('should support `this.error()`', async () => {
+			await loadFixture('plugin-error', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+			await waitForMessage(instance.output, /oh no #1/);
+			await waitForMessage(instance.output, /oh no #2/);
+			await waitForMessage(instance.output, /oh no #3/);
 		});
 	});
 });
