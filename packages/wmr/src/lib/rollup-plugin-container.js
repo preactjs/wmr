@@ -89,7 +89,8 @@ export function createPluginContainer(plugins, opts = {}) {
 			file: opts.output && opts.output.file,
 			entryFileNames: opts.output && opts.output.entryFileNames,
 			chunkFileNames: opts.output && opts.output.chunkFileNames,
-			assetFileNames: opts.output && opts.output.assetFileNames
+			assetFileNames: opts.output && opts.output.assetFileNames,
+			format: opts.output && opts.output.format
 		},
 		parse(code, opts) {
 			return parser.parse(code, {
@@ -191,6 +192,18 @@ export function createPluginContainer(plugins, opts = {}) {
 					}
 				})
 			);
+		},
+
+		outputOptions() {
+			for (plugin of plugins) {
+				if (!plugin.outputOptions) continue;
+
+				const opts = ctx.outputOptions;
+				const result = plugin.outputOptions.call(ctx, opts);
+				if (result) {
+					ctx.outputOptions = { opts, ...result };
+				}
+			}
 		},
 
 		/**

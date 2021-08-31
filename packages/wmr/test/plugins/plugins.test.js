@@ -36,5 +36,14 @@ describe('config', () => {
 				expect(instance.output[configResolvedHook]).toMatch(/cwd:.*, root:.*\/public/);
 			});
 		});
+
+		it('should call outputOptions', async () => {
+			await loadFixture('plugin-output-options', env);
+			instance = await runWmrFast(env.tmp.path);
+			await instance.address;
+			await withLog(instance.output, async () => {
+				await waitForMessage(instance.output, /OPTIONS format: esm/);
+			});
+		});
 	});
 });
