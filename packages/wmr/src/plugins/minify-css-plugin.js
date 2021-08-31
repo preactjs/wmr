@@ -1,6 +1,7 @@
 import { posix } from 'path';
 import cssnano from '../lib/cssnano-lite.js';
 import postcss from 'postcss';
+import { STYLE_REG } from './wmr/styles/styles-plugin.js';
 
 const processor = postcss(cssnano());
 
@@ -73,4 +74,4 @@ function handleError(rollupContext, error) {
 	rollupContext.error(err, { line: error.line, column: error.column });
 }
 
-const isCssFilename = fileName => /\.(?:css|s[ac]ss)$/.test(fileName);
+const isCssFilename = fileName => STYLE_REG.test(fileName);

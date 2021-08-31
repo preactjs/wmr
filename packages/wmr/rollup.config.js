@@ -8,8 +8,9 @@ import commonjs from '@rollup/plugin-commonjs';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import alias from '@rollup/plugin-alias';
 import json from '@rollup/plugin-json';
+import replace from '@rollup/plugin-replace';
 import builtins from 'builtin-modules';
-import terser from 'terser';
+import { minify } from 'terser';
 
 /** @type {import('rollup').RollupOptions} */
 const config = {
@@ -27,8 +28,8 @@ const config = {
 		plugins: [
 			{
 				name: 'minify',
-				renderChunk(code) {
-					const result = terser.minify(code, {
+				async renderChunk(code) {
+					const result = await minify(code, {
 						ecma: 2019,
 						module: true,
 						compress: {
@@ -44,12 +45,13 @@ const config = {
 							ecma: 2019
 						}
 					});
-					return result.code || null;
+					if (typeof result.code === 'string') code = result.code;
+					return { code };
 				}
 			}
 		]
 	},
-	external: [...builtins],
+	external: [...builtins, 'less'],
 	// /* Logs all included npm dependencies: */
 	// external(source, importer) {
 	// 	const ch = source[0];
@@ -64,6 +66,9 @@ const config = {
 	// },
 	plugins: [
 		shebangPlugin(),
+		replace({
+			'process.env.VERSION': JSON.stringify(require('./package.json').version)
+		}),
 		{
 			// This inlines some fs.promises.readFile() calls, while allowing them to run unbundled in Node.
 			name: 'inline-fs-readfile',
@@ -114,26 +119,23 @@ const config = {
 			// rather than bundleds as fs.readFile()
 			name: 'fix-visualizer',
 			transform(code, id) {
-				if (/rollup-plugin-visualizer[/\\]plugin[/\\]build-stats\.js$/.test(id)) {
-					code = code.replace(
-						/fs\.readFile\(path\.join\(__dirname,\s*(.+?)\)\s*,\s*"utf8"\s*\)/g,
-						(str, stringifiedJoin) => {
-							const path = require('path');
-							const fs = require('fs');
-							const filePathParts = stringifiedJoin
-								.replace(/['"`]+/g, '')
-								.replace(/\$\{template\}/g, 'treemap')
-								.split(', ');
-							const filepath = path.resolve(path.dirname(id), ...filePathParts);
-							try {
-								const text = fs.readFileSync(filepath, 'utf-8');
-								return `Promise.resolve(${JSON.stringify(text)})`;
-							} catch (err) {
-								this.warn(`Failed to inline ${filepath} into ${id}:\n${err.message}`);
-								return `Promise.reject(Error(${JSON.stringify(err.message)}))`;
-							}
+				if (/rollup-plugin-visualizer[/\\]dist[/\\]plugin[/\\]build-stats\.js$/.test(id)) {
+					code = code.replace(/fs.*readFile.*\(__dirname,\s*(.+?)\)\s*,\s*"utf8"\s*\)/g, (_str, stringifiedJoin) => {
+						const path = require('path');
+						const fs = require('fs');
+						const filePathParts = stringifiedJoin
+							.replace(/['"`]+/g, '')
+							.replace(/\$\{template\}/g, 'treemap')
+							.split(', ');
+						const filepath = path.resolve(path.dirname(id), ...filePathParts);
+						try {
+							const text = fs.readFileSync(filepath, 'utf-8');
+							return `Promise.resolve(${JSON.stringify(text)})`;
+						} catch (err) {
+							this.warn(`Failed to inline ${filepath} into ${id}:\n${err.message}`);
+							return `Promise.reject(Error(${JSON.stringify(err.message)}))`;
 						}
-					);
+					});
 					return { code, map: null };
 				}
 			}
@@ -157,16 +159,21 @@ const config = {
 				// only pull in fsevents when its exports are accessed (avoids exceptions):
 				{ find: /^fsevents$/, replacement: require.resolve('./src/lib/~fsevents.js') },
 				// avoid pulling in 50kb of "editions" dependencies to resolve one file:
-				{ find: /^istextorbinary$/, replacement: 'istextorbinary/edition-node-0.12/index.js' } // 2.6.0
+				{ find: /^istextorbinary$/, replacement: 'istextorbinary/edition-node-0.12/index.js' }, // 2.6.0
+				{ find: /^acorn-import-assertions$/, replacement: require.resolve('acorn-import-assertions') }
 			]
 		}),
 		commonjs({
 			exclude: [/\.mjs$/, /\/rollup\//, resolve('src')],
 			ignore: builtins,
-			transformMixedEsModules: true
+			transformMixedEsModules: true,
+			requireReturnsDefault: 'preferred'
 		}),
 		nodeResolve({
 			preferBuiltins: true,
+			// Rollup prefers "default" by default and rollup itself points to a
+			// browser build there...
+			exportConditions: ['node', 'import', 'module', 'default'],
 			extensions: ['.mjs', '.js', '.json', '.es6', '.node']
 		}),
 		json()

@@ -1,10 +1,6 @@
 import { promises as fs } from 'fs';
 import { resolve, dirname, join } from 'path';
 
-const EXTS = ['.js', '.cjs'];
-
-const EXTS_TS = ['.ts', '.tsx'];
-
 const MAINFIELDS = ['module', 'main'];
 
 async function fileExists(file) {
@@ -25,22 +21,13 @@ async function fstat(file) {
 
 /**
  * Resolve extensionless or directory specifiers by looking them up on the disk.
- * @param {object} [options]
- * @param {string[]} [options.extensions=['.js','/index.js']] File extensions/suffixes to check for
- * @param {boolean} [options.typescript] Also check for `.ts` and `.tsx` extensions
+ * @param {object} options
+ * @param {string[]} options.extensions File extensions/suffixes to check for
  * @param {boolean} [options.index] Also check for `/index.*` for all extensions
  * @param {string[]} [options.mainFields=['module','main']] If set, checks for package.json main fields
  * @returns {import('rollup').Plugin}
  */
-export default function resolveExtensionsPlugin({
-	extensions = EXTS,
-	typescript,
-	index,
-	mainFields = MAINFIELDS
-} = {}) {
-	if (typescript) {
-		extensions = extensions.concat(EXTS_TS);
-	}
+export default function resolveExtensionsPlugin({ extensions, index, mainFields = MAINFIELDS }) {
 	if (index) {
 		extensions = extensions.concat(extensions.map(e => `/index${e}`));
 	}
@@ -49,7 +36,7 @@ export default function resolveExtensionsPlugin({
 		name: 'resolve-extensions-plugin',
 		async resolveId(id, importer) {
 			if (id[0] === '\0') return;
-			if (/\.(tsx?|css|s[ac]ss|wasm)$/.test(id)) return;
+			if (/\.(tsx?|css|s[ac]ss|less|wasm)$/.test(id)) return;
 
 			let resolved;
 			try {

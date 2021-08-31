@@ -8,9 +8,10 @@ import transformJsxToHtmLite from '../lib/transform-jsx-to-htm-lite.js';
  * @param {object} [options]
  * @param {RegExp | ((filename: string) => boolean)} [options.include] Controls whether files are processed to transform JSX.
  * @param {boolean} [options.production = true] If `false`, a simpler whitespace-preserving transform is used.
+ * @param {boolean} [options.sourcemap]
  * @returns {import('rollup').Plugin}
  */
-export default function htmPlugin({ include, production = true } = {}) {
+export default function htmPlugin({ include, production = true, sourcemap } = {}) {
 	return {
 		name: 'htm-plugin',
 
@@ -58,19 +59,14 @@ export default function htmPlugin({ include, production = true } = {}) {
 					]
 				],
 				filename,
-				sourceMaps: true,
+				// Default is to generate sourcemaps, needs an explicit
+				// boolean
+				sourceMaps: !!sourcemap,
 				generatorOpts: {
 					compact: production
 				},
 				parse: this.parse
 			});
-
-			// Explicitly drop prefresh inclusion hint if we transformed JSX:
-			// if (out.code !== code) {
-			// 	out.code += '\n/*@@prefresh_include*/';
-			// 	// doesn't work with Rollup:
-			// 	this.getModuleInfo(filename).hasJSX = true;
-			// }
 
 			const end = Date.now();
 			if (end - start > 100) this.warn(`${filename} took ${end - start}ms`);

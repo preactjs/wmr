@@ -9,19 +9,17 @@ import {
 	get,
 	waitForMessage,
 	waitForNotMessage,
-	waitFor
+	waitFor,
+	withLog,
+	waitForPass,
+	updateFile
 } from './test-helpers.js';
 import { rollup } from 'rollup';
 import nodeBuiltinsPlugin from '../src/plugins/node-builtins-plugin.js';
 import { supportsSearchParams } from '../src/lib/net-utils.js';
+import { rm } from '../src/lib/fs-utils.js';
 
 jest.setTimeout(30000);
-
-async function updateFile(tempDir, file, replacer) {
-	const compPath = path.join(tempDir, file);
-	const content = await fs.readFile(compPath, 'utf-8');
-	await fs.writeFile(compPath, replacer(content));
-}
 
 describe('fixtures', () => {
 	/** @type {TestEnv} */
@@ -56,6 +54,18 @@ describe('fixtures', () => {
 		expect(await getOutput(env, instance)).toMatch(`class fields work`);
 	});
 
+	it('should support private class-fields', async () => {
+		await loadFixture('class-fields-private', env);
+		instance = await runWmrFast(env.tmp.path);
+		expect(await getOutput(env, instance)).toMatch(`class fields work`);
+	});
+
+	it('should support logical assignments', async () => {
+		await loadFixture('logical-assignment', env);
+		instance = await runWmrFast(env.tmp.path);
+		expect(await getOutput(env, instance)).toMatch(`{"foo":"foo","baz":"qux"}`);
+	});
+
 	it('should not if sub-import is not in export map', async () => {
 		await loadFixture('empty', env);
 		instance = await runWmrFast(env.tmp.path);
@@ -77,13 +87,6 @@ describe('fixtures', () => {
 		});
 	});
 
-	it('should allow overwriting default json loader', async () => {
-		await loadFixture('overwrite-loader-json', env);
-		instance = await runWmrFast(env.tmp.path);
-		const text = await getOutput(env, instance);
-		expect(text).toMatch(/foobarbaz/);
-	});
-
 	it('should allow overwriting default url loader', async () => {
 		await loadFixture('overwrite-loader-url', env);
 		instance = await runWmrFast(env.tmp.path);
@@ -100,6 +103,88 @@ describe('fixtures', () => {
 		const text = await getOutput(env, instance);
 
 		expect(text).toMatch('it works');
+	});
+
+	// Issue #811
+	it('should support virtual ids starting with /@', async () => {
+		await loadFixture('virtual-id-at', env);
+		instance = await runWmrFast(env.tmp.path);
+		await getOutput(env, instance);
+
+		await waitForPass(async () => {
+			const color = await env.page.$eval('h1', el => getComputedStyle(el).color);
+			expect(color).toBe('rgb(255, 0, 0)');
+		});
+	});
+
+	it('should prioritize extensionless import by extension array', async () => {
+		await loadFixture('import-priority', env);
+		instance = await runWmrFast(env.tmp.path);
+		const text = await getOutput(env, instance);
+
+		expect(text).toMatch('foo.ts');
+	});
+
+	it('should pass any file', async () => {
+		await loadFixture('markdown', env);
+		instance = await runWmrFast(env.tmp.path);
+		const text = await getOutput(env, instance);
+
+		expect(text).toMatch('it works');
+	});
+
+	it('should serve files from root dir as is', async () => {
+		await loadFixture('serve-fallback', env);
+		instance = await runWmrFast(env.tmp.path);
+		await getOutput(env, instance);
+
+		await withLog(instance.output, async () => {
+			await waitForPass(async () => {
+				expect(await env.page.content()).toMatch(/it works/);
+			});
+
+			expect(await env.page.evaluate(`fetch('10-seconds-of-silence').then(r => r.headers)`)).toEqual({});
+			expect(await env.page.evaluate(`fetch('extensionless').then(r => r.text())`)).toEqual('asdf');
+			expect(await env.page.evaluate(`fetch('.foo').then(r => r.status)`)).toEqual(404);
+
+			// Don't serve aliased files as is
+			expect(await env.page.evaluate(`fetch('/@alias/foo/bar').then(r => r.text())`)).not.toMatch('foobar');
+		});
+	});
+
+	it('should pass event to watcheChange', async () => {
+		await loadFixture('watch', env);
+		instance = await runWmrFast(env.tmp.path);
+		const text = await getOutput(env, instance);
+		expect(text).toMatch(/it works/);
+
+		await withLog(instance.output, async () => {
+			// Change
+			await updateFile(env.tmp.path, 'public/foo.js', () => {
+				return `export const value = 'it still works';`;
+			});
+
+			const file = path.join(env.tmp.path, 'public/foo.js');
+			await waitForPass(async () => {
+				const text = await getOutput(env, instance);
+				expect(text).toMatch(/it still works/);
+			});
+
+			await waitForMessage(instance.output, /WATCH update/);
+
+			// Delete
+			await rm(file);
+			await waitForMessage(instance.output, /WATCH delete/);
+
+			// Add
+			await fs.writeFile(file, `export const value = 'it works';`);
+			await waitForPass(async () => {
+				const text = await getOutput(env, instance);
+				expect(text).toMatch(/it works/);
+			});
+
+			await waitForMessage(instance.output, /WATCH create/);
+		});
 	});
 
 	describe('empty', () => {
@@ -167,13 +252,15 @@ describe('fixtures', () => {
 		it('should return ?asset URLs in development', async () => {
 			await loadFixture('url-prefix', env);
 			instance = await runWmrFast(env.tmp.path);
-			const output = await getOutput(env, instance);
-			expect(output).toMatch(/<pre id="out">{.+}<\/pre>/);
-			const json = JSON.parse(await env.page.$eval('#out', el => el.textContent || ''));
-			expect(json).toHaveProperty('htmlUrl', '/index.html?asset');
-			expect(json).toHaveProperty('selfUrl', '/index.js?asset');
-			const out = await env.page.evaluate(async () => await (await fetch('/index.js?asset')).text());
-			expect(out).toEqual(await fs.readFile(path.resolve(__dirname, 'fixtures/url-prefix/index.js'), 'utf-8'));
+			await withLog(instance.output, async () => {
+				const output = await getOutput(env, instance);
+				expect(output).toMatch(/<pre id="out">{.+}<\/pre>/);
+				const json = JSON.parse(await env.page.$eval('#out', el => el.textContent || ''));
+				expect(json).toHaveProperty('htmlUrl', '/index.html?asset');
+				expect(json).toHaveProperty('selfUrl', '/index.js?asset');
+				const out = await env.page.evaluate(async () => await (await fetch('/index.js?asset')).text());
+				expect(out).toEqual(await fs.readFile(path.resolve(__dirname, 'fixtures/url-prefix/index.js'), 'utf-8'));
+			});
 		});
 	});
 
@@ -185,6 +272,121 @@ describe('fixtures', () => {
 			expect(output).toMatch(/preact was used to render/);
 			expect(await env.page.evaluate(`window.React === window.preactCompat`)).toBe(true);
 			expect(await env.page.evaluate(`window.ReactDOM === window.preactCompat`)).toBe(true);
+		});
+
+		it('should warn when .aliases instead of .alias is found in config', async () => {
+			await loadFixture('alias-deprecated', env);
+			instance = await runWmrFast(env.tmp.path);
+			const output = await getOutput(env, instance);
+
+			await withLog(instance.output, async () => {
+				expect(output).toMatch(/preact was used to render/);
+				expect(await env.page.evaluate(`window.React === window.preactCompat`)).toBe(true);
+				expect(await env.page.evaluate(`window.ReactDOM === window.preactCompat`)).toBe(true);
+
+				expect(instance.output.join('\n')).toMatch(/Please switch to "alias"/);
+			});
+		});
+
+		it('should allow directory aliasing outside of cwd', async () => {
+			await loadFixture('alias-outside', env);
+			instance = await runWmrFast(env.tmp.path);
+			await withLog(instance.output, async () => {
+				const output = await getOutput(env, instance);
+				expect(output).toMatch(/it works/);
+
+				await page.evaluate(async () => {
+					try {
+						await import('./forbidden.js');
+						throw new Error('fail');
+					} catch (err) {
+						if (err.message === 'fail') {
+							throw err;
+						}
+					}
+				});
+
+				const status = await page.evaluate(async () => {
+					const res = await fetch('/@alias/forbidden/forbidden.js');
+					return res.status;
+				});
+				expect(status).toEqual(404);
+			});
+		});
+
+		it('should alias <project>/src/ by default', async () => {
+			await loadFixture('alias-src', env);
+			instance = await runWmrFast(env.tmp.path);
+			await withLog(instance.output, async () => {
+				const output = await getOutput(env, instance);
+				expect(output).toMatch(/it works/);
+			});
+		});
+
+		it('should not add <project>/src/ alias if that is our cwd', async () => {
+			await loadFixture('alias-src-public', env);
+			instance = await runWmrFast(env.tmp.path);
+			await withLog(instance.output, async () => {
+				const output = await getOutput(env, instance);
+				expect(output).toMatch(/it works/);
+			});
+		});
+
+		it('should alias assets', async () => {
+			await loadFixture('alias-src', env);
+			instance = await runWmrFast(env.tmp.path);
+			await withLog(instance.output, async () => {
+				const output = await getOutput(env, instance);
+				expect(output).toMatch(/it works/);
+			});
+		});
+
+		it('should alias CSS', async () => {
+			await loadFixture('alias-css', env);
+			instance = await runWmrFast(env.tmp.path);
+			await withLog(instance.output, async () => {
+				await getOutput(env, instance);
+				const color = await env.page.$eval('h1', el => getComputedStyle(el).color);
+				expect(color).toBe('rgb(255, 218, 185)');
+			});
+		});
+
+		it('should watch aliased directories', async () => {
+			await loadFixture('alias-src', env);
+			instance = await runWmrFast(env.tmp.path);
+			await withLog(instance.output, async () => {
+				let output = await getOutput(env, instance);
+				expect(output).toMatch(/it works/);
+
+				updateFile(env.tmp.path, 'src/works.js', () => {
+					return `export const works = 'works 2';`;
+				});
+
+				output = await getOutput(env, instance);
+				expect(output).toMatch(/it works 2/);
+			});
+		});
+
+		it('should watch aliased parent directories', async () => {
+			await loadFixture('alias-parent', env);
+			instance = await runWmrFast(env.tmp.path);
+			await withLog(instance.output, async () => {
+				await getOutput(env, instance);
+
+				await waitForPass(async () => {
+					const color = await env.page.$eval('h1', el => getComputedStyle(el).color);
+					expect(color).toBe('rgb(255, 218, 185)');
+				});
+
+				await updateFile(env.tmp.path, 'foo/style.css', () => {
+					return `h1 { color: red; }`;
+				});
+
+				await waitForPass(async () => {
+					const color = await env.page.$eval('h1', el => getComputedStyle(el).color);
+					expect(color).toBe('rgb(255, 0, 0)');
+				});
+			});
 		});
 	});
 
@@ -236,19 +438,100 @@ describe('fixtures', () => {
 		});
 	});
 
-	describe('CSS', () => {
-		it('should load referenced files via @import', async () => {
-			await loadFixture('css-imports', env);
-			instance = await runWmrFast(env.tmp.path);
+	describe('Sass', () => {
+		// eslint-disable-next-line jest/expect-expect
+		it("should throw when a sass compiler can't be found", async () => {
+			await loadFixture('css-sass', env);
+			instance = await runWmrFast(env.tmp.path, { env: { DISABLE_SASS: 'true' } });
 			await getOutput(env, instance);
-			expect(await env.page.$eval('h1', el => getComputedStyle(el).color)).toBe('rgb(255, 0, 0)');
+
+			await withLog(instance.output, async () => {
+				await waitForMessage(instance.output, /Please install a sass implementation/);
+			});
 		});
 
-		it('should load referenced files via url()', async () => {
-			await loadFixture('css-imports', env);
+		it('should transform sass files', async () => {
+			await loadFixture('css-sass', env);
 			instance = await runWmrFast(env.tmp.path);
 			await getOutput(env, instance);
-			expect(await env.page.$eval('body', el => getComputedStyle(el).background)).toMatch(/img\.jpg/);
+
+			await withLog(instance.output, async () => {
+				expect(await env.page.$eval('h1', el => getComputedStyle(el).color)).toMatch(/rgb\(255, 0, 0\)/);
+			});
+		});
+
+		it('should transform sass modules', async () => {
+			await loadFixture('css-sass-module', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			await withLog(instance.output, async () => {
+				expect(await env.page.$eval('h1', el => getComputedStyle(el).color)).toMatch(/rgb\(255, 0, 0\)/);
+			});
+		});
+
+		it('should transform aliased imports modules', async () => {
+			await loadFixture('css-sass-alias', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			await withLog(instance.output, async () => {
+				expect(await env.page.$eval('h1', el => getComputedStyle(el).color)).toMatch(/rgb\(255, 0, 0\)/);
+			});
+		});
+
+		it('should not crash on non-existing files', async () => {
+			await loadFixture('css-sass-file-error', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			await withLog(instance.output, async () => {
+				await waitForPass(async () => {
+					expect(instance.output.join('\n')).toMatch(/Can't find stylesheet to import/);
+				});
+			});
+		});
+
+		it('should catch resolve error', async () => {
+			await loadFixture('css-sass-resolve-error', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			await withLog(instance.output, async () => {
+				await waitForPass(async () => {
+					expect(instance.output.join('\n')).toMatch(/500 \.\/public\/style.scss - fail/);
+				});
+			});
+		});
+
+		it('should resolve nested alias import', async () => {
+			await loadFixture('css-sass-nested-alias', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			await withLog(instance.output, async () => {
+				expect(await env.page.$eval('h1', el => getComputedStyle(el).color)).toMatch(/rgb\(255, 0, 0\)/);
+			});
+		});
+
+		it('should resolve js-style relative alias import', async () => {
+			await loadFixture('css-sass-alias-relative', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			await withLog(instance.output, async () => {
+				expect(await env.page.$eval('h1', el => getComputedStyle(el).color)).toMatch(/rgb\(255, 0, 0\)/);
+			});
+		});
+
+		it('should resolve absolute imports', async () => {
+			await loadFixture('css-sass-absolute', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			await withLog(instance.output, async () => {
+				expect(await env.page.$eval('h1', el => getComputedStyle(el).color)).toMatch(/rgb\(255, 0, 0\)/);
+			});
 		});
 	});
 
@@ -285,10 +568,10 @@ describe('fixtures', () => {
 				content.replace('<p class="home">Home</p>', '<p class="home">Away</p>')
 			);
 
-			await timeout(1000);
-
-			text = home ? await home.evaluate(el => el.textContent) : null;
-			expect(text).toEqual('Away');
+			await waitForPass(async () => {
+				text = home ? await home.evaluate(el => el.textContent) : null;
+				expect(text).toEqual('Away');
+			});
 		});
 
 		it('should bubble up updates in non-accepted files', async () => {
@@ -375,39 +658,9 @@ describe('fixtures', () => {
 			text = child ? await child.evaluate(el => el.textContent) : null;
 			expect(text).toEqual('child');
 		});
-
-		it('should hot reload a css-file imported from index.html', async () => {
-			await loadFixture('hmr', env);
-			instance = await runWmrFast(env.tmp.path);
-			await getOutput(env, instance);
-
-			expect(await page.$eval('body', e => getComputedStyle(e).color)).toBe('rgb(51, 51, 51)');
-
-			await updateFile(env.tmp.path, 'index.css', content => content.replace('color: #333;', 'color: #000;'));
-
-			await timeout(1000);
-
-			expect(await page.$eval('body', e => getComputedStyle(e).color)).toBe('rgb(0, 0, 0)');
-		});
-
-		it('should hot reload a module css-file', async () => {
-			await loadFixture('hmr', env);
-			instance = await runWmrFast(env.tmp.path);
-			await getOutput(env, instance);
-
-			expect(await page.$eval('main', e => getComputedStyle(e).color)).toBe('rgb(51, 51, 51)');
-
-			await updateFile(env.tmp.path, 'style.module.css', content => content.replace('color: #333;', 'color: #000;'));
-
-			await timeout(1000);
-
-			expect(await page.$eval('main', e => getComputedStyle(e).color)).toBe('rgb(0, 0, 0)');
-		});
 	});
 
 	describe('hmr-scss', () => {
-		const timeout = n => new Promise(r => setTimeout(r, n));
-
 		it('should hot reload an scss-file imported from index.html', async () => {
 			await loadFixture('hmr-scss', env);
 			instance = await runWmrFast(env.tmp.path);
@@ -417,9 +670,9 @@ describe('fixtures', () => {
 
 			await updateFile(env.tmp.path, 'index.scss', content => content.replace('color: #333;', 'color: #000;'));
 
-			await timeout(1000);
-
-			expect(await page.$eval('body', e => getComputedStyle(e).color)).toBe('rgb(0, 0, 0)');
+			await waitForPass(async () => {
+				expect(await page.$eval('body', e => getComputedStyle(e).color)).toBe('rgb(0, 0, 0)');
+			});
 		});
 
 		it('should hot reload an imported scss-file from another scss-file', async () => {
@@ -431,9 +684,9 @@ describe('fixtures', () => {
 
 			await updateFile(env.tmp.path, 'home.scss', content => content.replace('color: #333;', 'color: #000;'));
 
-			await timeout(1000);
-
-			expect(await page.$eval('main', e => getComputedStyle(e).color)).toBe('rgb(0, 0, 0)');
+			await waitForPass(async () => {
+				expect(await page.$eval('main', e => getComputedStyle(e).color)).toBe('rgb(0, 0, 0)');
+			});
 		});
 	});
 
@@ -540,6 +793,44 @@ describe('fixtures', () => {
 			const output = await getOutput(env, instance);
 			expect(output).toMatch(/it works/i);
 		});
+
+		it('should deal with process evaluation', async () => {
+			await loadFixture('process-object', env);
+			instance = await runWmrFast(env.tmp.path);
+			await withLog(instance.output, async () => {
+				const output = await getOutput(env, instance);
+				expect(output).toMatch(/false/i);
+			});
+		});
+
+		it('should handle complex / dynamic process.env usage', async () => {
+			await loadFixture('process-complex', env);
+			instance = await runWmrFast(env.tmp.path, {
+				env: {
+					WMR_A: 'wmr-a',
+					WMR_B: 'wmr-b',
+					WMR_C: 'wmr-c'
+				}
+			});
+			await getOutput(env, instance);
+			const result = JSON.parse((await env.page.$eval('#out', node => node.textContent)) || 'undefined');
+			expect(result).toEqual({
+				WMR_A: 'wmr-a',
+				WMR_B: 'wmr-b',
+				NODE_ENV: 'development',
+				keys: ['WMR_A', 'WMR_B', 'WMR_C', 'NODE_ENV'],
+				withFullAccess: {
+					type: 'object',
+					typeofEnv: 'object',
+					typeofWMR_A: 'string'
+				},
+				withoutFullAccess: {
+					type: 'object',
+					typeofEnv: 'object',
+					typeofWMR_A: 'string'
+				}
+			});
+		});
 	});
 
 	describe('import.meta.env', () => {
@@ -549,6 +840,36 @@ describe('fixtures', () => {
 			const output = await getOutput(env, instance);
 			expect(output).toMatch(/development/i);
 		});
+
+		it('should contain all env variables starting with WMR_', async () => {
+			await loadFixture('env-vars', env);
+			instance = await runWmrFast(env.tmp.path, {
+				env: {
+					FOO: 'fail',
+					WMR_FOO: 'foo',
+					WMR_BAR: 'bar'
+				}
+			});
+			const output = await getOutput(env, instance);
+			expect(output).not.toMatch(/fail/i);
+			expect(output).toMatch(/foo bar/i);
+		});
+	});
+
+	describe('import assertions', () => {
+		it('should support .json assertion', async () => {
+			await loadFixture('import-assertions', env);
+			instance = await runWmrFast(env.tmp.path);
+			const output = await getOutput(env, instance);
+			expect(output).toMatch(/{"foo":"bar"}/);
+		});
+
+		it('should support dynamic .json assertion', async () => {
+			await loadFixture('import-assertions-dynamic', env);
+			instance = await runWmrFast(env.tmp.path);
+			const output = await getOutput(env, instance);
+			expect(output).toMatch(/{"default":{"foo":"bar"}}/);
+		});
 	});
 
 	describe('json', () => {
@@ -556,10 +877,13 @@ describe('fixtures', () => {
 			await loadFixture('json', env);
 			instance = await runWmrFast(env.tmp.path);
 			await env.page.goto(await instance.address);
-			expect(await env.page.evaluate(`import('/index.js')`)).toEqual({
-				default: {
-					name: 'foo'
-				}
+
+			await withLog(instance.output, async () => {
+				expect(await env.page.evaluate(`import('/index.js')`)).toEqual({
+					default: {
+						name: 'foo'
+					}
+				});
 			});
 		});
 
@@ -567,11 +891,34 @@ describe('fixtures', () => {
 			await loadFixture('json', env);
 			instance = await runWmrFast(env.tmp.path);
 			await env.page.goto(await instance.address);
-			expect(await env.page.evaluate(`import('/using-prefix.js')`)).toEqual({
-				default: {
-					second: 'file',
-					a: 42
-				}
+
+			await withLog(instance.output, async () => {
+				expect(await env.page.evaluate(`import('/using-prefix.js')`)).toEqual({
+					default: {
+						second: 'file',
+						a: 42
+					}
+				});
+			});
+		});
+
+		it('should load aliased json files', async () => {
+			await loadFixture('json-alias', env);
+			instance = await runWmrFast(env.tmp.path);
+
+			await withLog(instance.output, async () => {
+				const output = await getOutput(env, instance);
+				expect(output).toMatch(/it works/i);
+			});
+		});
+
+		it('should allow overwriting default json loader', async () => {
+			await loadFixture('overwrite-loader-json', env);
+			instance = await runWmrFast(env.tmp.path);
+
+			await withLog(instance.output, async () => {
+				const text = await getOutput(env, instance);
+				expect(text).toMatch(/foobarbaz/);
 			});
 		});
 	});
@@ -744,9 +1091,41 @@ describe('fixtures', () => {
 
 			expect(await env.page.content()).toMatch('foo 42');
 		});
+
+		it('should support TypeScript with CJS module type', async () => {
+			await loadFixture('config-typescript-cjs', env);
+			instance = await runWmrFast(env.tmp.path);
+
+			await waitForMessage(instance.output, /foo/);
+
+			const files = await fs.readdir(env.tmp.path);
+			expect(files).not.toContain('wmr.config.js');
+		});
+
+		it('should only load TypeScript config', async () => {
+			await loadFixture('config-multiple', env);
+			instance = await runWmrFast(env.tmp.path);
+
+			await waitForMessage(instance.output, /plugin-ts/);
+			expect(true).toEqual(true); // Silence linter
+		});
 	});
 
 	describe('plugins', () => {
+		it("should preserve './' for relative specifiers", async () => {
+			await loadFixture('plugin-resolve', env);
+			instance = await runWmrFast(env.tmp.path);
+			const output = await getOutput(env, instance);
+			expect(output).toMatch(/Resolved: \.\/foo\.js/);
+		});
+
+		it("should preserve './' for relative specifiers with prefixes", async () => {
+			await loadFixture('plugin-resolve-prefix', env);
+			instance = await runWmrFast(env.tmp.path);
+			const output = await getOutput(env, instance);
+			expect(output).toMatch(/Resolved: url:\.\/foo\.js/);
+		});
+
 		it('should order by plugin.enforce value', async () => {
 			await loadFixture('plugin-enforce', env);
 			instance = await runWmrFast(env.tmp.path);
@@ -769,6 +1148,13 @@ describe('fixtures', () => {
 			await env.page.goto(await instance.address);
 			const text = await env.page.evaluate(`fetch('/test').then(r => r.text())`);
 			expect(text).toEqual('it works');
+		});
+
+		it('should run custom middlewares first', async () => {
+			await loadFixture('middleware-custom', env);
+			instance = await runWmrFast(env.tmp.path);
+			const output = await getOutput(env, instance);
+			expect(output).toMatch(/it works/);
 		});
 	});
 
@@ -797,6 +1183,15 @@ describe('fixtures', () => {
 			});
 			expect(warns).toHaveLength(1);
 			expect(warns[0].message.trim()).toEqual(warning.trim());
+		});
+	});
+
+	describe('TypeScript', () => {
+		it('should support override keyword', async () => {
+			await loadFixture('typescript-override', env);
+			instance = await runWmrFast(env.tmp.path);
+			await env.page.goto(await instance.address, { waitUntil: 'networkidle0' });
+			expect(await env.page.content()).toMatch(/it works/);
 		});
 	});
 });

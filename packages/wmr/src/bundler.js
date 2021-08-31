@@ -9,16 +9,16 @@ const pathToPosix = p => p.split(sep).join(posix.sep);
 
 /** @param {import('wmr').BuildOptions} options */
 export async function bundleProd(options) {
-	let { cwd, root, out, sourcemap, profile, minify, npmChunks = false, output } = options;
+	let { root, cwd, out, sourcemap, profile, minify, npmChunks = false, output } = options;
 
 	// note: we intentionally pass these to Rollup as posix paths
 	const ignore = /^\.\/(node_modules|dist|build)\//;
 	/** @type {string[]} */ const input = [];
 
-	await totalist(cwd, (rel, abs) => {
+	await totalist(root, (rel, abs) => {
 		if (ignore.test(abs)) return;
 		if (!/\.html?/.test(rel)) return;
-		input.push('./' + pathToPosix(relative(root, abs)));
+		input.push('./' + pathToPosix(relative(cwd, abs)));
 	});
 
 	const bundle = await rollup.rollup({
@@ -46,7 +46,7 @@ export async function bundleProd(options) {
 		plugins: [minify && terser({ compress: true, sourcemap })],
 		sourcemap,
 		sourcemapPathTransform(p, mapPath) {
-			let url = pathToPosix(relative(cwd, resolve(dirname(mapPath), p)));
+			let url = pathToPosix(relative(root, resolve(dirname(mapPath), p)));
 			// strip leading relative path
 			url = url.replace(/^\.\//g, '');
 			// replace internal npm prefix

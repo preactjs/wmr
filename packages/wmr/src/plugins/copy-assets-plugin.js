@@ -1,25 +1,29 @@
-import { resolve, relative, join } from 'path';
+import { relative, join } from 'path';
 import { promises as fs } from 'fs';
 
 const IGNORE_FILES = [
 	'.',
+	'.d.ts',
 	'node_modules',
 	'package.json',
 	'package-lock.json',
 	'yarn.lock',
 	'tsconfig.json',
 	'babel.config.js',
+	'wmr.config.mjs',
+	'wmr.config.js',
+	'wmr.config.ts',
 	'/dist',
 	'/build'
 ];
 
 /**
- * @param {object} [options]
- * @param {string} [options.cwd]
+ * @param {object} options
+ * @param {string} options.root
+ * @param {Set<string>} options.mergedAssets
  * @returns {import('rollup').Plugin}
  */
-export default function copyAssetsPlugin({ cwd = '.' } = {}) {
-	cwd = resolve('.', cwd);
+export default function copyAssetsPlugin({ root, mergedAssets }) {
 	let entries = [];
 	return {
 		name: 'copy-assets',
@@ -29,7 +33,7 @@ export default function copyAssetsPlugin({ cwd = '.' } = {}) {
 		async generateBundle(_, bundle) {
 			const processed = new Set();
 
-			for (const f of entries) processed.add(relative(cwd, f));
+			for (const f of entries) processed.add(relative(root, f));
 
 			for (let i in bundle) {
 				// never overwrite a generated file:
@@ -40,7 +44,7 @@ export default function copyAssetsPlugin({ cwd = '.' } = {}) {
 					for (const f of chunk.referencedFiles) processed.add(f);
 					for (const f in chunk.modules) {
 						if (f[0] === '\0') continue;
-						processed.add(relative(cwd, f));
+						processed.add(relative(root, f));
 					}
 				} else if (chunk.name) {
 					// TODO: this isn't safe because names aren't paths
@@ -50,14 +54,15 @@ export default function copyAssetsPlugin({ cwd = '.' } = {}) {
 				}
 			}
 
-			const files = await readdirRecursive(cwd, [...IGNORE_FILES, ...Array.from(processed).map(f => '/' + f)]);
+			const files = await readdirRecursive(root, [...IGNORE_FILES, ...Array.from(processed).map(f => '/' + f)]);
 
 			await Promise.all(
 				files.map(async name => {
+					if (mergedAssets.has(join(root, name))) return;
 					this.emitFile({
 						type: 'asset',
 						fileName: name,
-						source: await fs.readFile(join(cwd, name))
+						source: await fs.readFile(join(root, name))
 					});
 				})
 			);
@@ -72,12 +77,19 @@ export default function copyAssetsPlugin({ cwd = '.' } = {}) {
 async function readdirRecursive(rootDir, ignore = []) {
 	const files = [];
 	const noDotFiles = ignore.includes('.');
+	const noDeclarationFiles = ignore.includes('.d.ts');
 	const r = async dir => {
 		const p = [];
 		const wdir = join(rootDir, dir);
 		for (const f of await fs.readdir(wdir, { withFileTypes: true })) {
 			const name = join(dir, f.name);
-			if ((noDotFiles && f.name[0] === '.') || ignore.includes(f.name) || ignore.includes('/' + name)) continue;
+			if (
+				(noDotFiles && f.name[0] === '.') ||
+				(noDeclarationFiles && /\.d\.ts$/.test(f.name)) ||
+				ignore.includes(f.name) ||
+				ignore.includes('/' + name)
+			)
+				continue;
 			if (f.isFile()) files.push(name);
 			else if (f.isDirectory()) p.push(r(name));
 		}

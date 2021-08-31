@@ -13,7 +13,7 @@ import { hasDebugFlag } from './lib/output-utils.js';
 
 /**
  * @typedef CustomServer
- * @type {polka.Polka & { server?: ReturnType<createServer> | import('http2').Http2Server, ws?: WebSocketServer, http2?: boolean } }
+ * @type {polka.Polka & { server?: ReturnType<typeof createServer> | import('http2').Http2Server, ws?: WebSocketServer, http2?: boolean } }
  */
 
 /**
@@ -26,13 +26,13 @@ import { hasDebugFlag } from './lib/output-utils.js';
  * @param {boolean} [options.http2 = false] Use HTTP/2
  * @param {boolean|number} [options.compress = true] Compress responses? Pass a `number` to set the size threshold.
  * @param {boolean} [options.optimize = true] Enable lazy dependency compression and optimization
- * @param {Record<string, string>} [options.aliases] module aliases
+ * @param {Record<string, string>} [options.alias] module or path alias mappings
  */
-export default async function server({ cwd, root, overlayDir, middleware, http2, compress = true, optimize, aliases }) {
+export default async function server({ cwd, root, overlayDir, middleware, http2, compress = true, optimize, alias }) {
 	try {
-		await fs.access(resolve(cwd, 'index.html'));
+		await fs.access(resolve(root, 'index.html'));
 	} catch (e) {
-		process.stderr.write(kl.yellow(`Warning: missing "index.html" file ${kl.dim(`(in ${cwd})`)}`) + '\n');
+		process.stderr.write(kl.yellow(`Warning: missing "index.html" file ${kl.dim(`(in ${root})`)}`) + '\n');
 	}
 
 	/** @type {CustomServer} */
@@ -67,7 +67,7 @@ export default async function server({ cwd, root, overlayDir, middleware, http2,
 			// We can log the fully detailed error to the CLI
 			const displayPath = fullPath.startsWith('/@')
 				? fullPath
-				: './' + join(relative(root, cwd), fullPath.replace(/^\//, ''));
+				: './' + join(relative(cwd, root), fullPath.replace(/^\//, ''));
 
 			const codeFrame = err.codeFrame ? `\n${err.codeFrame}` : '';
 			const prettyStack = errorstacks
@@ -104,19 +104,34 @@ export default async function server({ cwd, root, overlayDir, middleware, http2,
 		app.use(compression({ threshold, level: 4 }));
 	}
 
-	app.use('/@npm', npmMiddleware({ aliases, optimize, cwd: root }));
-
+	// Custom middlewares should always come first, similar to plugins
 	if (middleware) {
 		app.use(...middleware);
 	}
 
+	app.use('/@npm', npmMiddleware({ alias, optimize, cwd }));
+
+	// Chrome devtools often adds `?%20[sm]` to the url
+	// to differentiate between sourcemaps
+	app.use((req, res, next) => {
+		if (/\?%20\[sm\]$/.test(req.url)) {
+			res.writeHead(302, {
+				Location: req.url.replace('?%20[sm]', '.map')
+			});
+			res.end();
+			return;
+		}
+
+		next();
+	});
+
 	if (overlayDir) {
-		app.use(sirv(resolve(cwd || '', overlayDir), { dev: true }));
+		app.use(sirv(resolve(root || '', overlayDir), { dev: true }));
 	}
 
 	// SPA nav fallback
 	app.use(
-		sirv(cwd || '', {
+		sirv(root || '', {
 			ignores: ['@npm'],
 			single: true,
 			etag: true,

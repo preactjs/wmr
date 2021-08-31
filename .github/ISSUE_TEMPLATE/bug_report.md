@@ -24,6 +24,12 @@ Steps to reproduce the behavior:
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 
+**Bug occurs with:**
+
+- [ ] `wmr` or `wmr start` (development)
+- [ ] `wmr build` (production)
+- [ ] `wmr serve`
+
 **Desktop (please complete the following information):**
 
 - OS: [e.g. MacOS 11.2.3, Windows 10]

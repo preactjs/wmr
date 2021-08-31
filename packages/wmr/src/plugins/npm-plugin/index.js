@@ -38,7 +38,7 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = 'npm/', exter
 			if (importer && importer.startsWith(prefix)) importer = importer.substring(prefix.length);
 
 			// let module, path, version;
-			/** @type {ReturnType <normalizeSpecifier>} */
+			/** @type {ReturnType<typeof normalizeSpecifier>} */
 			let meta;
 
 			const importerMeta = importer && !isDiskPath(importer) && normalizeSpecifier(importer);
@@ -103,7 +103,7 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = 'npm/', exter
 				const versionTag = emitVersion && meta.version ? '@' + meta.version : '';
 				id = `${meta.module}${versionTag}${meta.path ? '/' + meta.path : ''}`;
 
-				return { id: `${publicPath}/${id}`, external: true };
+				return { id: `${publicPath}/${id}`, external: 'absolute' };
 			}
 
 			// Compute the final path

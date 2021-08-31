@@ -1,5 +1,17 @@
 # @wmr-plugins/directory-import
 
+## 0.3.0
+
+### Minor Changes
+
+- [`22150b3`](https://github.com/preactjs/wmr/commit/22150b3d1e35ba272930e9506744d6bcc0a40500) [#680](https://github.com/preactjs/wmr/pull/680) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Update for WMR `3.x` which corrects the swapped usage of `options.cwd` vs `options.root`.
+
+## 0.2.1
+
+### Patch Changes
+
+- [`d61db25`](https://github.com/preactjs/wmr/commit/d61db257e8bf544a0e530db5d132774db16dca99) [#600](https://github.com/preactjs/wmr/pull/600) Thanks [@developit](https://github.com/developit)! - Fix directory plugin not resolving in prod builds
+
 ## 0.2.0
 
 ### Minor Changes

@@ -24,7 +24,7 @@ import { parseStackTrace } from 'errorstacks';
 const deepCloneJSON = obj => JSON.parse(JSON.stringify(obj));
 
 /**
- * @param {Parameters<server>[0] & OtherOptions} options
+ * @param {Parameters<typeof server>[0] & OtherOptions} options
  */
 export default async function start(options = {}) {
 	// @todo remove this hack once registry.js is instantiable
@@ -44,17 +44,19 @@ export default async function start(options = {}) {
 	options.port = await instance.resolvePort;
 
 	if (!supportsSearchParams) {
+		// eslint-disable-next-line no-console
 		console.log(kl.yellow(`WMR: Automatic config reloading is not supported on Node <= 12.18.4`));
 	} else {
 		const logWatcher = debug('wmr:watcher');
 		const watcher = watch(configWatchFiles, {
-			cwd: cloned.root,
+			cwd: cloned.cwd,
 			disableGlobbing: true
 		});
 		watcher.on('ready', () => logWatcher(' watching for config changes'));
 		watcher.on('change', async () => {
 			await instance.close();
 
+			// eslint-disable-next-line no-console
 			console.log(kl.yellow(`WMR: `) + kl.green(`config or .env file changed, restarting server...\n`));
 
 			// Fire up new instance
@@ -147,7 +149,7 @@ async function bootServer(options, configWatchFiles) {
 	};
 }
 
-const injectWmrMiddleware = ({ cwd }) => {
+const injectWmrMiddleware = ({ root }) => {
 	return async (req, res, next) => {
 		// If we haven't intercepted the request it's safe to assume we need to inject wmr.
 		const path = posix.normalize(req.path);
@@ -157,7 +159,7 @@ const injectWmrMiddleware = ({ cwd }) => {
 
 		try {
 			const start = Date.now();
-			const index = resolve(cwd, 'index.html');
+			const index = resolve(root, 'index.html');
 			const html = await fs.readFile(index, 'utf-8');
 			const result = await injectWmr(html);
 			const time = Date.now() - start;

@@ -3,6 +3,8 @@ import { resolve, join, dirname, relative, sep, posix } from 'path';
 import { transformHtml } from '../lib/transform-html.js';
 import { yellow, bgYellow, bgRed, dim, bold, white, black, magenta, cyan } from 'kolorist';
 import { codeFrame } from '../lib/output-utils.js';
+import { transformSass } from './sass-plugin.js';
+import { renderLess } from './less-plugin.js';
 
 /** @typedef {import('rollup').OutputAsset & { referencedFiles: string[], importedIds: string[] }} ExtendedAsset */
 
@@ -22,13 +24,13 @@ const toSystemPath = p => p.split(posix.sep).join(sep);
  * Notably, <scripts> become *user-defined entries*, so they correctly use `output.entryFileNames`.
  *
  * @param {object} options
- * @param {string} [options.cwd]
- * @param {string} [options.publicDir]
+ * @param {string} options.root
+ * @param {Set<string>} options.mergedAssets
+ * @param {boolean} options.sourcemap
  * @param {string} [options.publicPath] Prepend to generated filenames
  * @returns {import('rollup').Plugin}
  */
-export default function htmlEntriesPlugin({ cwd, publicDir, publicPath } = {}) {
-	const root = publicDir || cwd || '.';
+export default function htmlEntriesPlugin({ root, publicPath, sourcemap, mergedAssets }) {
 	const ENTRIES = [];
 	const META = new Map();
 
@@ -51,6 +53,7 @@ export default function htmlEntriesPlugin({ cwd, publicDir, publicPath } = {}) {
 			transformUrl: (url, attr, tag, { attrs }) => {
 				const origUrl = url;
 				if (!isLocalFile(url)) return null;
+				if (/^data:/.test(url)) return null;
 
 				let abs = url;
 				if (url[0] === '/') {
@@ -91,14 +94,38 @@ export default function htmlEntriesPlugin({ cwd, publicDir, publicPath } = {}) {
 				}
 
 				if (tag === 'link' && attrs && attrs.rel && /^stylesheet$/i.test(attrs.rel)) {
+					let assetName = url;
+
+					// Ensure that stylesheets have `.css` as an extension
+					if (/\.(?:s[ac]ss|less)$/.test(assetName)) {
+						assetName = posix.join(posix.dirname(url), posix.basename(url, posix.extname(url)) + '.css');
+					}
+
 					const ref = this.emitFile({
 						type: 'asset',
-						name: url.replace(/^\.\//, '')
+						name: assetName.replace(/^\.\//, '')
 					});
 					all.push(ref);
 					waiting.push(
 						fs.readFile(abs, 'utf-8').then(source => {
-							this.setAssetSource(ref, source);
+							if (/\.s[ac]ss$/.test(abs)) {
+								transformSass.call(this, abs, abs, source, root, true, sourcemap).then(result => {
+									for (let file of result.includedFiles) {
+										if (mergedAssets) mergedAssets.add(file);
+									}
+									this.setAssetSource(ref, result.css);
+								});
+							} else if (/\.less$/.test(abs)) {
+								return renderLess(source, { id: abs, sourcemap, resolve: this.resolve.bind(this) }).then(result => {
+									for (let file of result.imports) {
+										if (mergedAssets) mergedAssets.add(file);
+									}
+
+									this.setAssetSource(ref, result.css);
+								});
+							} else {
+								this.setAssetSource(ref, source);
+							}
 						})
 					);
 					return `/__ASSET__/${ref}`;
@@ -150,7 +177,7 @@ export default function htmlEntriesPlugin({ cwd, publicDir, publicPath } = {}) {
 					this.error(
 						`\n${bgRed(white(bold(`ERROR`)))} File not found: ${cyan(script)}` +
 							`\n> ${white(
-								`Is the extension correct? ${dim('<script src="')}${magenta(relative(cwd, script))}${dim('">')} ?`
+								`Is the extension correct? ${dim('<script src="')}${magenta(relative(root, script))}${dim('">')} ?`
 							)}\n`
 					);
 				}

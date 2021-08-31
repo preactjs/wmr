@@ -8,11 +8,11 @@ export default function Header() {
 		<div class="header-area">
 			<header class="header">
 				<nav aria-label="primary" class="menu">
-					<a href="/" class="menu-item" data-active={path === '/'}>
-						WMR
+					<a href="/" class="menu-item menu-logo" data-active={path === '/'}>
+						<span class="menu-item-inner">WMR</span>
 					</a>
 					<a href="/docs" class="menu-item" data-active={path.startsWith('/docs')}>
-						Docs
+						<span class="menu-item-inner">Docs</span>
 					</a>
 				</nav>
 				<nav aria-label="social" class="menu">
@@ -33,7 +33,6 @@ export default function Header() {
 						class="menu-item menu-item-icon"
 					>
 						<img src="/assets/github.svg" alt="WMR on GitHub" class="icon" width="20" height="20" />
-						<span class="menu-item-icon-label version">v1.4.2</span>
 					</a>
 				</nav>
 			</header>

@@ -1,12 +1,14 @@
 import { posix } from 'path';
 import { hasDebugFlag } from '../lib/output-utils.js';
+import { injectHead } from '../lib/transform-html.js';
+import { STYLE_REG } from './wmr/styles/styles-plugin.js';
 
 /** @typedef {import('rollup').OutputBundle} Bundle */
 /** @typedef {import('rollup').OutputChunk} Chunk */
 /** @typedef {import('rollup').OutputAsset} Asset */
 /** @typedef {Asset & { referencedFiles?: string[], importedIds?: string[] }} ExtendedAsset */
 
-const DEBUG = hasDebugFlag();
+let DEBUG;
 
 const DEFAULT_STYLE_LOAD_FN = '$w_s$';
 const DEFAULT_STYLE_LOAD_IMPL = `function $w_s$(e,t){typeof document=='undefined'?wmr.ssr.head.elements.add({type:'link',props:{rel:'stylesheet',href:e}}):document.querySelector('link[rel=stylesheet][href="'+e+'"]')||((t=document.createElement("link")).rel="stylesheet",t.href=e,document.head.appendChild(t))}`;
@@ -23,13 +25,14 @@ const DEFAULT_STYLE_LOAD_IMPL = `function $w_s$(e,t){typeof document=='undefined
  * @returns {import('rollup').Plugin}
  */
 export default function optimizeGraphPlugin({ publicPath = '', cssMinSize = 1000 } = {}) {
+	DEBUG = hasDebugFlag();
 	return {
 		name: 'optimize-graph',
 		async generateBundle(_, bundle) {
 			const graph = new ChunkGraph(bundle, { publicPath });
 			mergeAdjacentCss(graph);
 			hoistCascadedCss(graph, { cssMinSize });
-			hoistEntryCss(graph);
+			await hoistEntryCss(graph);
 			hoistTransitiveImports(graph);
 		}
 	};
@@ -222,6 +225,7 @@ function mergeAdjacentCss(graph) {
 
 		if (DEBUG) {
 			const p = posix.relative(process.cwd(), chunk.facadeModuleId || chunk.fileName);
+			// eslint-disable-next-line no-console
 			console.log(`Merging ${toMerge.length} adjacent CSS assets imported by ${p}:\n  ${toMerge.join(', ')}`);
 		}
 
@@ -249,14 +253,39 @@ function mergeAdjacentCss(graph) {
  * Extract CSS imports from entry modules into the HTML files that reference them.
  * @param {ChunkGraph} graph
  */
-function hoistEntryCss(graph) {
+async function hoistEntryCss(graph) {
 	for (const fileName in graph.bundle) {
 		/** @type {ExtendedAsset | Chunk} */
 		const asset = graph.bundle[fileName];
 		if (asset.type !== 'asset' || !/\.html$/.test(fileName)) continue;
 
-		const cssImport = asset.referencedFiles && asset.referencedFiles.find(f => f.endsWith('.css'));
-		if (!cssImport || !asset.importedIds) continue;
+		let cssImport = null;
+		if (asset.referencedFiles) {
+			// Check if the HTML file has direct CSS imports
+			cssImport = asset.referencedFiles.find(f => f.endsWith('.css'));
+
+			// If it's not: Check for entry js css files
+			if (!cssImport && asset.importedIds) {
+				const jsEntry = asset.importedIds.find(f => f.endsWith('.js'));
+				if (jsEntry) {
+					const entry = graph.bundle[jsEntry];
+					if (entry.isEntry) {
+						const cssFile = entry.referencedFiles.find(f => f.endsWith('.css'));
+
+						// Ignore if no entry css:
+						if (!cssFile) continue;
+
+						asset.referencedFiles.push(cssFile);
+
+						asset.source = await injectHead(asset.source, {
+							tag: 'link',
+							attrs: { rel: 'stylesheet', href: '/' + cssFile }
+						});
+						continue;
+					}
+				}
+			}
+		}
 
 		const cssAsset = /** @type {Asset} */ (graph.bundle[cssImport]);
 		for (const id of asset.importedIds) {
@@ -267,6 +296,7 @@ function hoistEntryCss(graph) {
 				const f = chunk.referencedFiles[i];
 				if (!isCssFilename(f)) continue;
 				if (cssAsset) {
+					// eslint-disable-next-line no-console
 					if (DEBUG) console.log(`Hoisting CSS "${f}" imported by ${id} into parent HTML import "${cssImport}".`);
 					// @TODO: this needs to update the hash of the chunk into which CSS got merged.
 					cssAsset.source += '\n' + getAssetSource(graph.bundle[f]);
@@ -286,6 +316,7 @@ function hoistEntryCss(graph) {
 					}
 				} else {
 					// @TODO: this branch is actually unreachable
+					// eslint-disable-next-line no-console
 					if (DEBUG) console.log(`Hoisting CSS "${f}" imported by ${id} into parent HTML.`);
 					const url = toImport(graph.publicPath, f);
 					asset.source = getAssetSource(asset).replace(/<\/head>/, `<link rel="stylesheet" href=${url}></head>`);
@@ -330,6 +361,7 @@ function hoistCascadedCss(graph, { cssMinSize }) {
 
 			if (ownCss) {
 				// TODO: here be dragons
+				// eslint-disable-next-line no-console
 				if (DEBUG) console.log(`Merging ${fileName} into ${ownCss} (${ownerFileName} → ${parentFileName})`);
 				const parentAsset = /** @type {Asset} */ (graph.bundle[ownCss]);
 				parentAsset.source += '\n' + asset.source;
@@ -341,6 +373,7 @@ function hoistCascadedCss(graph, { cssMinSize }) {
 				const i = ownerChunk.referencedFiles.indexOf(fileName);
 				if (i !== -1) ownerChunk.referencedFiles.splice(i, 1);
 			} else {
+				// eslint-disable-next-line no-console
 				if (DEBUG) console.log(`Hoisting ${fileName} from ${ownerFileName} into ${parentFileName}`);
 				const meta = graph.getMeta(parentFileName);
 				// inject the stylesheet loader: (and register it)
@@ -391,12 +424,14 @@ function hoistTransitiveImports(graph) {
 					meta.styleLoadFn = DEFAULT_STYLE_LOAD_FN;
 					appendCode += '\n' + DEFAULT_STYLE_LOAD_IMPL;
 				}
+				// eslint-disable-next-line no-console
 				if (DEBUG) console.log(`Preloading CSS for import(${spec}): ${css}`);
 				preloads.push(...css.map(f => `${meta.styleLoadFn}(${toImport(graph.publicPath, f)})`));
 			}
 
 			const js = deps.js.get(spec);
 			if (js && js.length) {
+				// eslint-disable-next-line no-console
 				if (DEBUG) console.log(`Preloading JS for import(${spec}): ${js}`);
 				preloads.push(
 					...js.map(f => {
@@ -488,7 +523,7 @@ function replaceSimpleFunctionCall(code, replacer) {
 	});
 }
 
-const isCssFilename = fileName => /\.(?:css|s[ac]ss)$/.test(fileName);
+const isCssFilename = fileName => STYLE_REG.test(fileName);
 
 function getAssetSource(asset) {
 	let code = asset.source;

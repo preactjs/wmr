@@ -1,30 +1,40 @@
-import terser from 'terser';
+import { minify } from 'terser';
 import { hasDebugFlag } from '../lib/output-utils.js';
 
 /** @returns {import('rollup').Plugin} */
 export default function fastMinifyPlugin({ sourcemap = false, warnThreshold = 50, compress = false } = {}) {
 	return {
 		name: 'fast-minify',
-		renderChunk(code, chunk) {
-			const start = Date.now();
-			const out = terser.minify(code, {
-				sourceMap: sourcemap,
-				mangle: true,
-				compress,
-				module: true,
-				ecma: 9,
-				safari10: true,
-				output: {
-					comments: false
-				}
-			});
+		async renderChunk(code, chunk) {
+			let out, duration;
+			try {
+				// We only time the synhronous region here, because Terser is actually synchronous.
+				// (measuring `await` would return the cumulative time taken by all minify() calls).
+				const start = Date.now();
+				const p = minify(code, {
+					sourceMap: sourcemap,
+					mangle: true,
+					compress,
+					module: true,
+					ecma: 2018,
+					safari10: true,
+					parse: {
+						bare_returns: false,
+						html5_comments: false,
+						shebang: false
+					},
+					output: {
+						comments: false
+					}
+				});
+				duration = Date.now() - start;
+				out = await p;
+			} catch (err) {
+				return this.error(err);
+			}
 
-			// TODO: Check if tersers typings are wrong
-			if (!out.code) out.code = '';
+			if (!out.code) out.code = code;
 
-			const duration = Date.now() - start;
-			if (out.error) this.error(out.error);
-			if (out.warnings) for (const warn of out.warnings) this.warn(warn);
 			if (duration > warnThreshold && hasDebugFlag()) {
 				this.warn(`minify(${chunk.fileName}) took ${duration}ms`);
 			}

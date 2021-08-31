@@ -1,24 +1,9 @@
 import { promises as fs } from 'fs';
 import MagicString from 'magic-string';
+import path from 'path';
 import { ESM_KEYWORDS } from '../fast-cjs-plugin.js';
 
 const BYPASS_HMR = process.env.BYPASS_HMR === 'true';
-
-const PREFRESH = `
-import '@prefresh/core';
-if (import.meta.hot) {
-  let a=0, m=import(import.meta.url);
-  import.meta.hot.accept(async ({module}) => {
-    m = await m;
-    try {
-      if (!a++) for (let i in module) self.__PREFRESH__.replaceComponent(m[i], module[i]);
-    } catch (e) {
-      import.meta.hot.invalidate();
-      throw e;
-    }
-  });
-}
-`;
 
 // @ts-ignore
 const __filename = import.meta.url;
@@ -35,9 +20,11 @@ export function getWmrClient({ hot = true } = {}) {
  * Implements Hot Module Replacement.
  * Conforms to the {@link esm-hmr https://github.com/pikapkg/esm-hmr} spec.
  * @param {object} options
+ * @param {boolean} [options.hot]
+ * @param {boolean} [options.sourcemap]
  * @returns {import('rollup').Plugin}
  */
-export default function wmrPlugin({ hot = true, preact } = {}) {
+export default function wmrPlugin({ hot = true, sourcemap } = {}) {
 	if (BYPASS_HMR) hot = false;
 
 	return {
@@ -68,14 +55,6 @@ export default function wmrPlugin({ hot = true, preact } = {}) {
 			}
 
 			const hasEsmKeywords = ESM_KEYWORDS.test(code);
-			const hasExport = code.match(/\bexport\b/);
-
-			// Detect modules that appear to have both JSX and an export, and inject prefresh:
-			// @todo: move to separate plugin.
-			if (code.match(/html`[^`]*<([a-zA-Z][a-zA-Z0-9.:-]*|\$\{.+?\})[^>]*>/) && hasExport && preact) {
-				hasHot = true;
-				after += '\n' + PREFRESH;
-			}
 
 			if ((!hasHot && !hot) || !hasEsmKeywords) return null;
 
@@ -88,11 +67,11 @@ export default function wmrPlugin({ hot = true, preact } = {}) {
 
 			if (hot) {
 				if (!hasHot) {
-					s.append(`\nimport { createHotContext as $w_h$ } from 'wmr'; $w_h$(import.meta.url);`);
+					s.append(`\nimport { createHotContext as $w_h$ } from 'wmr'; $w_h$(import.meta.url);\n`);
 				} else {
 					s.append(after);
 					s.prepend(
-						`import { createHotContext as $w_h$ } from 'wmr';const $IMPORT_META_HOT$ = $w_h$(import.meta.url);${before}`
+						`import { createHotContext as $w_h$ } from 'wmr';\nconst $IMPORT_META_HOT$ = $w_h$(import.meta.url);\n${before}`
 					);
 				}
 			} else if (!BYPASS_HMR) {
@@ -102,7 +81,7 @@ export default function wmrPlugin({ hot = true, preact } = {}) {
 
 			return {
 				code: s.toString(),
-				map: s.generateMap({ includeContent: false })
+				map: sourcemap ? s.generateMap({ source: id, file: path.posix.basename(id), includeContent: true }) : null
 			};
 		}
 	};

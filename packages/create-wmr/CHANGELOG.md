@@ -1,5 +1,29 @@
 # create-wmr
 
+## 0.3.8
+
+### Patch Changes
+
+- [`5712956`](https://github.com/preactjs/wmr/commit/571295648739580910b156daa6cb7e6b77ef48ff) [#741](https://github.com/preactjs/wmr/pull/741) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Move alias declaration to config file + add docs link
+
+## 0.3.7
+
+### Patch Changes
+
+- [`5e57376`](https://github.com/preactjs/wmr/commit/5e573761fe5abbc880a8447b452b727d993fe61d) [#683](https://github.com/preactjs/wmr/pull/683) Thanks [@developit](https://github.com/developit)! - Use <link rel=modulepreload>
+
+## 0.3.6
+
+### Patch Changes
+
+- [`eac7994`](https://github.com/preactjs/wmr/commit/eac7994804ee17e474ccaac4b9d16beb55068522) [#661](https://github.com/preactjs/wmr/pull/661) Thanks [@rschristian](https://github.com/rschristian)! - Marks newly created apps as private
+
+## 0.3.5
+
+### Patch Changes
+
+- [`6b59a90`](https://github.com/preactjs/wmr/commit/6b59a903f898c86fb1395aec2e2617aa134542f8) [#601](https://github.com/preactjs/wmr/pull/601) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix unable to load default template file
+
 ## 0.3.4
 
 ### Patch Changes

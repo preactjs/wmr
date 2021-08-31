@@ -1,7 +1,7 @@
 import path from 'path';
 import { promises as fs } from 'fs';
 import { setupTest, teardown, runWmr, loadFixture, get } from './test-helpers.js';
-import { modularizeCss } from '../src/plugins/wmr/styles-plugin.js';
+import { modularizeCss } from '../src/plugins/wmr/styles/css-modules.js';
 
 const runWmrFast = (cwd, ...args) => runWmr(cwd, '--no-optimize', '--no-compress', ...args);
 

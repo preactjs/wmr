@@ -1,0 +1,7 @@
+.className {
+	color: red;
+}
+
+h1 {
+	composes: className;
+}

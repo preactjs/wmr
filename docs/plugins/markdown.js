@@ -14,19 +14,21 @@ marked.use({
 			const escapedText = text
 				.toLowerCase()
 				.replace(/<[^>]*>/g, '')
+				// Turn `resolveId(id, importer)` into just `resolveId`
+				.replace(/\(.+\)/g, '')
 				.replace(/[^\w]+/g, '-')
 				.replace(/[-]+$/g, '');
 
-			return `<h${level}>
-			<a id="${escapedText}" class="anchor" href="#${escapedText}">#</a>
+			return `<h${level} id="${escapedText}">
+			<a class="anchor" href="#${escapedText}">#</a>
 			${text}
 		</h${level}>`;
 		}
 	}
 });
 
-export default function markdownPlugin({ plugins, cwd, prod }, opts) {
-	plugins.push(markdownRollupPlugin({ cwd, prod, ...opts }));
+export default function markdownPlugin({ plugins, root, prod }, opts) {
+	plugins.push(markdownRollupPlugin({ root, prod, ...opts }));
 }
 markdownPlugin.rollup = markdownRollupPlugin;
 
@@ -56,7 +58,7 @@ async function processMarkdown(filename, opts) {
  *  markdown plugin for Rollup / WMR
  *  @example import html from 'markdown:./pages';
  */
-function markdownRollupPlugin({ cwd, prod, ...opts }) {
+function markdownRollupPlugin({ root, prod, ...opts }) {
 	return {
 		name: 'markdown',
 		async resolveId(id, importer) {
@@ -68,13 +70,13 @@ function markdownRollupPlugin({ cwd, prod, ...opts }) {
 		},
 		async load(id) {
 			if (!id.startsWith('\0markdown:')) return;
-			id = path.resolve(cwd || '.', id.slice(10));
+			id = path.resolve(root || '.', id.slice(10));
 			this.addWatchFile(id);
 
 			const fileId = this.emitFile({
 				type: 'asset',
-				name: path.relative(cwd || '.', id),
-				fileName: path.relative(cwd || '.', id),
+				name: path.relative(root || '.', id),
+				fileName: path.relative(root || '.', id),
 				source: await processMarkdown(id, opts)
 			});
 			return `export default import.meta.ROLLUP_FILE_URL_${fileId}`;

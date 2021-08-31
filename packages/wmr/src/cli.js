@@ -9,14 +9,15 @@ import * as kl from 'kolorist';
 
 const prog = sade('wmr');
 
+// This variable will be replaced during build
+prog.version(process.env.VERSION);
+
 function bool(v) {
 	return v !== false && !/false|0/.test(v);
 }
 
 // global options
 prog
-	.option('--public', 'Your web app root directory (default: ./public)')
-	.option('--out', 'Where to store generated files (default: ./dist)')
 	.option('--cwd', 'The working directory - equivalent to "(cd FOO && wmr)"')
 	// Setting env variables isn't common knowledege for many windows users. Much
 	// easier to pass a flag to our binary instead.
@@ -24,6 +25,8 @@ prog
 
 prog
 	.command('build', 'make a production build')
+	.option('--public', 'Your web app root directory (default: ./public)')
+	.option('--out', 'Where to store generated files (default: ./dist)')
 	.option('--prerender', 'Pre-render the application to HTML')
 	.option('--sourcemap', 'Enable Source Maps')
 	.option('--visualize', 'Launch interactive bundle visualizer')
@@ -46,6 +49,7 @@ prog
 
 prog
 	.command('start', 'Start a development server', { default: true })
+	.option('--public', 'Your web app root directory (default: ./public)')
 	.option('--port, -p', 'HTTP port to listen on (default: $PORT or 8080)')
 	.option('--host', 'HTTP host to listen on (default: localhost)')
 	.option('--http2', 'Use HTTP/2 (default: false)')

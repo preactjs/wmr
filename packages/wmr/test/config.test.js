@@ -26,6 +26,13 @@ describe('config', () => {
 			await waitForMessage(instance.output, /name: ["']foo["']/);
 		});
 
+		it('should support setting options via object arg (ts)', async () => {
+			await loadFixture('define-config-typescript', env);
+			instance = await runWmrFast(env.tmp.path);
+			await instance.address;
+			await waitForMessage(instance.output, /name: ["']foo["']/);
+		});
+
 		it('should support setting options via function', async () => {
 			await loadFixture('define-config-fn', env);
 			instance = await runWmrFast(env.tmp.path);

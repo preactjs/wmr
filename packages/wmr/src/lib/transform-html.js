@@ -61,6 +61,27 @@ export async function transformHtml(html, { transformUrl }) {
 	return result.html;
 }
 
+/**
+ *
+ * @param {string} html
+ * @param {{tag: string, attrs: Record<string, string>, content: string[]}} element
+ * @returns
+ */
+export async function injectHead(html, element) {
+	const transformer = posthtml([
+		tree => {
+			tree.walk(node => {
+				if (node.tag === 'head') {
+					node.content.push('\n\t\t', element, '\n');
+				}
+				return node;
+			});
+		}
+	]);
+	const result = await transformer.process(html);
+	return result.html;
+}
+
 const transformInjectWmr = async tree => {
 	tree.walk(node => {
 		if (node.tag === 'head') {

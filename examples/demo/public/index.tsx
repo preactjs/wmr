@@ -1,5 +1,4 @@
-import { LocationProvider, Router, lazy, ErrorBoundary, hydrate, prerender as ssr } from 'preact-iso';
-import { toStatic } from 'hoofd/preact';
+import { LocationProvider, Router, lazy, ErrorBoundary, hydrate } from 'preact-iso';
 import Home from './pages/home.js';
 // import About from './pages/about/index.js';
 import NotFound from './pages/_404.js';
@@ -8,14 +7,17 @@ import Header from './header.tsx';
 
 const sleep = t => new Promise(r => setTimeout(r, t));
 
+const IS_CLIENT = typeof window !== 'undefined';
+
 const About = lazy(() => import('./pages/about/index.js'));
-const LazyAndLate = lazy(async () => (await sleep(1500), import('./pages/about/index.js')));
+const LazyAndLate = lazy(async () => (IS_CLIENT && (await sleep(1500)), import('./pages/about/index.js')));
 const CompatPage = lazy(() => import('./pages/compat.js'));
-const ClassFields = lazy(async () => (await sleep(1500), import('./pages/class-fields.js')));
+const ClassFields = lazy(async () => (IS_CLIENT && (await sleep(1500)), import('./pages/class-fields.js')));
 const Files = lazy(() => import('./pages/files/index.js'));
 const Environment = lazy(async () => (await import('./pages/environment/index.js')).Environment);
 const JSONView = lazy(async () => (await import('./pages/json.js')).JSONView);
 const MetaTags = lazy(async () => (await import('./pages/meta-tags.js')).MetaTags);
+const AliasOutside = lazy(async () => await import('./pages/alias-outside.js'));
 
 function showLoading() {
 	document.body.classList.add('loading');
@@ -40,6 +42,7 @@ export function App() {
 						<Environment path="/env" />
 						<JSONView path="/json" />
 						<MetaTags path="/meta-tags" />
+						<AliasOutside path="/alias-outside" />
 						<NotFound default />
 					</Router>
 				</ErrorBoundary>
@@ -53,26 +56,7 @@ if (typeof window !== 'undefined') {
 }
 
 export async function prerender(data) {
-	const res = await ssr(<App {...data} />);
-
-	const head = toStatic();
-	const elements = new Set([
-		...head.links.map(props => ({ type: 'link', props })),
-		...head.metas.map(props => ({ type: 'meta', props })),
-		...head.scripts.map(props => ({ type: 'script', props }))
-	]);
-
-	return {
-		...res,
-		data: {
-			hello: 'world',
-		},
-		head: {
-			title: head.title,
-			lang: head.lang,
-			elements
-		}
-	};
+	return (await import('./prerender.js')).prerender(<App {...data} />);
 }
 
 // @ts-ignore

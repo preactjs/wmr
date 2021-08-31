@@ -1,4 +1,5 @@
 {
+	"private": true,
 	"scripts": {
 		"start": "wmr",
 		"build": "wmr build --prerender",
@@ -6,10 +7,6 @@
 	},
 	"eslintConfig": {
 		"extends": "preact"
-	},
-	"alias": {
-		"react": "preact/compat",
-		"react-dom": "preact/compat"
 	},
 	"dependencies": {
 		"preact": "latest",

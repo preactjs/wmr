@@ -7,6 +7,7 @@ import { promisify } from 'util';
 import { get as httpGet } from 'http';
 import polka from 'polka';
 import sirv from 'sirv';
+import { isDirectory } from '../src/lib/fs-utils.js';
 
 export function dent(str) {
 	str = String(str);
@@ -50,9 +51,22 @@ export async function teardown(env) {
  */
 export async function loadFixture(name, env) {
 	const fixture = path.join(__dirname, 'fixtures', name);
+
+	// Ensure fixture name is included for parent alias tests
+	env.tmp.path = path.join(env.tmp.path, path.basename(name));
+	await fs.mkdir(env.tmp.path, { recursive: true });
+
 	await ncp(fixture, env.tmp.path);
+
+	// Delete copied .cache folder in case tests are run locally
+	const cacheDir = path.join(env.tmp.path, '.cache');
+	if (await isDirectory(cacheDir)) {
+		await fs.rmdir(cacheDir, { recursive: true });
+	}
+
 	try {
 		await fs.mkdir(path.join(env.tmp.path, 'node_modules', 'wmr'), { recursive: true });
+		await fs.mkdir(path.join(env.tmp.path, 'node_modules', '@wmrjs', 'directory-import', 'src'), { recursive: true });
 	} catch (err) {
 		if (!/EEXIST/.test(err.message)) {
 			throw err;
@@ -65,11 +79,20 @@ export async function loadFixture(name, env) {
 		path.join(__dirname, '..', 'package.json'),
 		path.join(env.tmp.path, 'node_modules', 'wmr', 'package.json')
 	);
+
+	await fs.copyFile(
+		path.join(__dirname, '..', '..', 'directory-plugin', 'src', 'index.js'),
+		path.join(env.tmp.path, 'node_modules', '@wmrjs', 'directory-import', 'src', 'index.js')
+	);
+	await fs.copyFile(
+		path.join(__dirname, '..', '..', 'directory-plugin', 'package.json'),
+		path.join(env.tmp.path, 'node_modules', '@wmrjs', 'directory-import', 'package.json')
+	);
 }
 
 /**
  * @param {string} cwd
- * @param {...string} args
+ * @param {[...string[], string | Record<string, any>]} args
  * @returns {Promise<WmrInstance>}
  */
 export async function runWmr(cwd, ...args) {
@@ -142,7 +165,9 @@ export async function getOutput(env, instance) {
 		addrs.set(instance, address);
 	}
 
-	await env.page.goto(address);
+	await waitForPass(async () => {
+		await env.page.goto(address);
+	}, 5000);
 	return await env.page.content();
 }
 
@@ -189,6 +214,33 @@ export async function waitFor(fn, timeout = 2000) {
 	}
 
 	return false;
+}
+
+/**
+ * Wait until a function doesn't throw anymmore
+ * @param {() => any} fn
+ * @param {number} timeout
+ * @returns {Promise<void>}
+ */
+export async function waitForPass(fn, timeout = 2000) {
+	const start = Date.now();
+
+	let error;
+	while (start + timeout >= Date.now()) {
+		try {
+			await fn();
+			return;
+		} catch (err) {
+			if (!ignoreError(err)) {
+				error = err;
+			}
+		}
+
+		// Wait a little before the next iteration
+		await wait(10);
+	}
+
+	throw error ? error : new Error(`waitForPass timed out. Waited ${timeout}ms`);
 }
 
 /**
@@ -241,9 +293,23 @@ export async function withLog(haystack, fn) {
 	try {
 		await fn();
 	} catch (err) {
-		console.log(haystack);
+		// eslint-disable-next-line no-console
+		console.log(haystack.join('\n'));
 		throw err;
 	}
+}
+
+/**
+ * Update the contents of a file. Useful for HMR or watch tests
+ * @param {string} tempDir Path to the temporary fixture directory
+ * @param {string} file filename or fiel path
+ * @param {(content: string) => string} replacer callback to replace content
+ * @returns {Promise<void>}
+ */
+export async function updateFile(tempDir, file, replacer) {
+	const compPath = path.join(tempDir, file);
+	const content = await fs.readFile(compPath, 'utf-8');
+	await fs.writeFile(compPath, replacer(content));
 }
 
 /**

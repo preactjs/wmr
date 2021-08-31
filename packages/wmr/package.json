@@ -1,6 +1,6 @@
 {
 	"name": "wmr",
-	"version": "2.0.0",
+	"version": "3.6.0",
 	"bin": "wmr.cjs",
 	"type": "module",
 	"main": "index.js",
@@ -11,7 +11,7 @@
 		"postpack": "mv -f .package.json package.json",
 		"test-e2e": "cross-env JEST_PUPPETEER_CONFIG=jest-puppeteer.config.cjs jest",
 		"test-prod": "cross-env PRODUCTION_BUILD=true JEST_PUPPETEER_CONFIG=jest-puppeteer.config.cjs jest",
-		"test": "eslint src test && npm run test-e2e",
+		"test": "npm run test-e2e",
 		"fixture": "node tools/run-fixture.js"
 	},
 	"author": "The Preact Authors (https://preactjs.com)",
@@ -29,127 +29,66 @@
 			"@babel/plugin-transform-modules-commonjs"
 		]
 	},
-	"eslintConfig": {
-		"extends": [
-			"developit",
-			"prettier",
-			"plugin:prettier/recommended"
-		],
-		"plugins": [
-			"prettier",
-			"import"
-		],
-		"rules": {
-			"no-console": "off",
-			"prefer-rest-params": "off",
-			"prefer-spread": "off",
-			"no-prototype-builtins": "off",
-			"function-call-argument-newline": [
-				"error",
-				"consistent"
-			],
-			"react/jsx-no-bind": "off",
-			"import/extensions": [
-				"error",
-				"always",
-				{
-					"ignorePackages": true
-				}
-			]
-		},
-		"globals": {
-			"jestPuppeteer": "readonly",
-			"browser": "readonly",
-			"page": "readonly"
-		}
-	},
-	"eslintIgnore": [
-		"wmr.cjs",
-		"test/fixtures/**/*.expected.*",
-		"test/fixtures/*/dist",
-		"test/fixtures/*/.cache"
-	],
-	"prettier": {
-		"singleQuote": true,
-		"trailingComma": "none",
-		"useTabs": true,
-		"printWidth": 120,
-		"arrowParens": "avoid"
-	},
-	"lint-staged": {
-		"{src,test}/**/*.js": [
-			"eslint --fix",
-			"prettier --write"
-		],
-		"*.md": [
-			"prettier --write"
-		]
-	},
-	"husky": {
-		"hooks": {
-			"pre-commit": "lint-staged"
-		}
-	},
 	"jest": {
 		"preset": "jest-puppeteer"
 	},
 	"devDependencies": {
 		"@babel/core": "^7.13.10",
 		"@babel/plugin-transform-modules-commonjs": "^7.13.8",
-		"@rollup/plugin-alias": "^3.1.1",
-		"@rollup/plugin-commonjs": "^14.0.0",
-		"@rollup/plugin-dynamic-import-vars": "^1.1.1",
+		"@rollup/plugin-alias": "^3.1.5",
+		"@rollup/plugin-commonjs": "^20.0.0",
+		"@rollup/plugin-dynamic-import-vars": "^1.4.0",
 		"@rollup/plugin-json": "^4.1.0",
-		"@rollup/plugin-node-resolve": "^8.1.0",
+		"@rollup/plugin-node-resolve": "^13.0.4",
+		"@rollup/plugin-replace": "^3.0.0",
 		"@rollup/plugin-virtual": "^2.0.3",
 		"@types/jest": "^26.0.4",
 		"acorn-class-fields": "^1.0.0",
+		"acorn-import-assertions": "^1.7.2",
 		"acorn-jsx": "^5.3.1",
 		"acorn-jsx-walk": "^2.0.0",
+		"acorn-logical-assignment": "^0.1.4",
+		"acorn-private-methods": "^1.0.0",
 		"acorn-walk": "^8.0.0",
 		"astring": "^1.7.0",
 		"async-disk-cache": "^2.1.0",
 		"babel-jest": "^26.1.0",
-		"babel-plugin-transform-jsx-to-htm": "^2.1.0",
+		"babel-plugin-transform-jsx-to-htm": "^2.2.0",
 		"bufferutil": "^4.0.1",
 		"chokidar": "^3.4.0",
 		"cross-env": "^7.0.2",
-		"cssnano": "^4.1.10",
+		"cssnano": "^5.0.8",
 		"devcert": "^1.1.2",
 		"errorstacks": "^2.3.2",
-		"es-module-lexer": "^0.4.1",
-		"eslint": "^7.4.0",
-		"eslint-config-developit": "^1.2.0",
-		"eslint-config-prettier": "^6.11.0",
-		"eslint-plugin-import": "^2.22.0",
-		"eslint-plugin-prettier": "^3.1.4",
-		"husky": "^4.2.5",
+		"es-module-lexer": "^0.7.0",
 		"jest": "^26.1.0",
-		"jest-puppeteer": "^4.4.0",
-		"kolorist": "^1.3.2",
-		"lint-staged": "^10.2.11",
+		"jest-puppeteer": "^5.0.4",
+		"kolorist": "^1.5.0",
+		"less": "^4.1.1",
 		"magic-string": "^0.25.7",
+		"mime": "^2.5.2",
 		"ncp": "^2.0.0",
 		"node-fetch": "^2.6.1",
 		"npm-merge-driver-install": "^1.1.1",
 		"polka": "^0.5.2",
-		"postcss": "^7.0.32",
-		"postcss-es6": "github:postcss/postcss#7.0.32",
+		"postcss": "^8.3.6",
+		"postcss-es6": "github:postcss/postcss#8.3.6",
 		"posthtml": "0.13.1",
-		"prettier": "^2.0.5",
-		"puppeteer": "^3.3.0",
+		"puppeteer": "^10.0.0",
 		"resolve.exports": "^1.0.2",
-		"rollup": "^2.43.1",
+		"rollup": "^2.52.7",
 		"rollup-plugin-preserve-shebang": "^1.0.1",
-		"rollup-plugin-visualizer": "^4.2.2",
+		"rollup-plugin-visualizer": "^5.5.2",
 		"sade": "^1.7.3",
+		"sass": "^1.34.1",
 		"semver": "^7.3.2",
 		"simple-code-frame": "^1.1.1",
 		"sirv": "^1.0.6",
+		"sourcemap-codec": "^1.4.8",
 		"stylis": "^4.0.10",
-		"sucrase": "^3.17.0",
+		"sucrase": "^3.20.0",
 		"tar-stream": "^2.1.3",
-		"terser": "^4.8.0",
+		"terser": "^5.7.0",
 		"tmp-promise": "^3.0.2",
 		"totalist": "^1.1.0",
 		"utf-8-validate": "^5.0.2",

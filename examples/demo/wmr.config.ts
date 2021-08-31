@@ -1,3 +1,7 @@
-export default function (config) {
-	return config;
+export default function () {
+	return {
+		alias: {
+			'src/*': 'src'
+		}
+	};
 }

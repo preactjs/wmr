@@ -1,8 +1,12 @@
 function log(...args) {
+	// eslint-disable-next-line no-console
 	console.info('[wmr] ', ...args);
 }
 
-const strip = url => url.replace(/\?t=\d+/g, '');
+const strip = url => url.replace(/[?&]t=\d+/g, '');
+const addTimestamp = (url, time) => url + (/\?/.test(url) ? '&' : '?') + 't=' + time;
+
+const HAS_DOM = typeof document !== 'undefined';
 
 const resolve = url => new URL(url, location.origin).href;
 let ws;
@@ -20,7 +24,7 @@ function connect(needsReload) {
 	ws.addEventListener('open', () => {
 		log(`Connected to server.`);
 		if (needsReload) {
-			window.location.reload();
+			location.reload();
 		} else {
 			queue.forEach(sendSocketMessage);
 			queue = [];
@@ -42,7 +46,7 @@ function handleMessage(e) {
 	const data = JSON.parse(e.data);
 	switch (data.type) {
 		case 'reload':
-			window.location.reload();
+			location.reload();
 			break;
 		case 'update':
 			if (errorOverlay) {
@@ -52,9 +56,9 @@ function handleMessage(e) {
 			data.changes.forEach(url => {
 				url = resolve(url);
 				if (!mods.get(url)) {
-					if (/\.(css|s[ac]ss)$/.test(url)) {
-						if (mods.has(url + '.js')) {
-							url += '.js';
+					if (/\.(css|s[ac]ss|less)$/.test(url)) {
+						if (mods.has(url + '?module')) {
+							url += '?module';
 						} else {
 							updateStyleSheet(url);
 							return;
@@ -62,10 +66,11 @@ function handleMessage(e) {
 					} else if (url.replace(URL_SUFFIX, '') === resolve(location.pathname).replace(URL_SUFFIX, '')) {
 						return location.reload();
 					} else {
+						if (!HAS_DOM) return;
 						for (const el of document.querySelectorAll('[src],[href]')) {
 							// @ts-ignore-next
 							const p = el.src ? 'src' : 'href';
-							if (el[p] && strip(resolve(el[p])) === url) el[p] = strip(el[p]) + '?t=' + Date.now();
+							if (el[p] && strip(resolve(el[p])) === url) el[p] = addTimestamp(strip(el[p]), Date.now());
 						}
 						return;
 					}
@@ -139,7 +144,7 @@ function update(url, date) {
 	const mod = getMod(url);
 	const dispose = Array.from(mod.dispose);
 	const accept = Array.from(mod.accept);
-	const newUrl = url + '?t=' + date;
+	const newUrl = addTimestamp(url, date);
 	const p = mod.import ? mod.import(newUrl) : import(newUrl);
 
 	return p
@@ -192,8 +197,8 @@ export function style(filename, id) {
 	id = resolve(id || filename);
 	let node = styles.get(id);
 	if (node) {
-		node.href = filename + '?t=' + Date.now();
-	} else {
+		node.href = addTimestamp(filename, Date.now());
+	} else if (HAS_DOM) {
 		const node = document.createElement('link');
 		node.rel = 'stylesheet';
 		node.href = filename;
@@ -214,19 +219,20 @@ function traverseSheet(sheet, target) {
 
 // Update a non-imported stylesheet
 function updateStyleSheet(url) {
+	if (!HAS_DOM) return;
 	const sheets = document.styleSheets;
 
 	for (let i = 0; i < sheets.length; i++) {
 		if (sheets[i].href && strip(sheets[i].href) === url) {
 			// @ts-ignore
-			sheets[i].ownerNode.href = strip(url) + '?t=' + Date.now();
+			sheets[i].ownerNode.href = addTimestamp(strip(url), Date.now());
 			return true;
 		}
 
 		const found = traverseSheet(sheets[i], url);
 		if (found) {
 			const index = [].indexOf.call(found.parentStyleSheet.rules, found);
-			const urlStr = JSON.stringify(strip(url) + '?t=' + Date.now());
+			const urlStr = JSON.stringify(addTimestamp(strip(url), Date.now()));
 			const css = found.cssText.replace(/^(@import|@use)\s*(?:url\([^)]*\)|(['"]).*?\2)/, '$1 ' + urlStr);
 			found.parentStyleSheet.insertRule(css, index);
 			found.parentStyleSheet.deleteRule(index + 1);
@@ -242,6 +248,7 @@ function updateStyleSheet(url) {
  * @param {{type: "error", error: string, codeFrame: string, stack: import('errorstacks').StackFrame[]}} data
  */
 function createErrorOverlay(data) {
+	if (!HAS_DOM) return;
 	if (errorOverlay) errorOverlay.remove();
 
 	const iframe = document.createElement('iframe');
@@ -404,4 +411,19 @@ function createErrorOverlay(data) {
 
 	document.body.appendChild(iframe);
 	return iframe;
+}
+
+/**
+ * Removes the debug SW installed by Preact-CLI if it is active.
+ * Overlap between WMR and Preact-CLI users shows this is a semi-common
+ * and recurring issue.
+ */
+if ('serviceWorker' in navigator) {
+	navigator.serviceWorker.getRegistrations().then(registrations => {
+		for (const registration of registrations) {
+			if (registration.active?.scriptURL.endsWith('/sw-debug.js')) {
+				registration.unregister();
+			}
+		}
+	});
 }

@@ -6,7 +6,7 @@ import npmPlugin, { normalizeSpecifier } from '../plugins/npm-plugin/index.js';
 import { resolvePackageVersion, loadPackageFile } from '../plugins/npm-plugin/registry.js';
 import { getCachedBundle, setCachedBundle, sendCachedBundle, enqueueCompress } from './npm-middleware-cache.js';
 import processGlobalPlugin from '../plugins/process-global-plugin.js';
-import aliasesPlugin from '../plugins/aliases-plugin.js';
+import aliasPlugin from '../plugins/aliases-plugin.js';
 import { getMimeType } from './mimetypes.js';
 import nodeBuiltinsPlugin from '../plugins/node-builtins-plugin.js';
 import * as kl from 'kolorist';
@@ -14,16 +14,20 @@ import { hasDebugFlag } from './output-utils.js';
 
 /**
  * Serve a "proxy module" that uses the WMR runtime to load CSS.
- * @param {ReturnType<normalizeSpecifier>} meta
+ * @param {ReturnType<typeof normalizeSpecifier>} meta
  * @param {import('http').ServerResponse} res
+ * @param {boolean} [isModule]
  */
-async function handleAsset(meta, res) {
-	let code = '',
-		type = getMimeType(meta.path);
-	if (/\.css\.js$/.test(meta.path)) {
-		const specifier = JSON.stringify('/@npm/' + meta.specifier.replace(/\.js$/, ''));
+async function handleAsset(meta, res, isModule) {
+	let code = '';
+	let type = null;
+
+	if (isModule) {
+		type = 'application/javascript;charset=utf-8';
+		const specifier = JSON.stringify('/@npm/' + meta.specifier + '?asset');
 		code = `import{style}from '/_wmr.js';\nstyle(${specifier});`;
 	} else {
+		type = getMimeType(meta.path);
 		code = await loadPackageFile(meta);
 	}
 	res.writeHead(200, {
@@ -36,15 +40,16 @@ async function handleAsset(meta, res) {
 /**
  * @param {object} [options]
  * @param {'npm'|'unpkg'} [options.source = 'npm'] How to fetch package files
- * @param {Record<string,string>} [options.aliases]
+ * @param {Record<string,string>} [options.alias]
  * @param {boolean} [options.optimize = true] Progressively minify and compress dependency bundles?
  * @param {string} [options.cwd] Virtual cwd
  * @returns {import('polka').Middleware}
  */
-export default function npmMiddleware({ source = 'npm', aliases, optimize, cwd } = {}) {
+export default function npmMiddleware({ source = 'npm', alias, optimize, cwd } = {}) {
 	return async (req, res, next) => {
+		const url = new URL(req.url, 'https://localhost');
 		// @ts-ignore
-		const mod = req.path.replace(/^\//, '');
+		const mod = url.pathname.replace(/^\//, '');
 
 		const meta = normalizeSpecifier(mod);
 
@@ -64,12 +69,13 @@ export default function npmMiddleware({ source = 'npm', aliases, optimize, cwd }
 			res.setHeader('etag', etag);
 
 			// CSS files and proxy modules don't use Rollup.
-			if (/\.((css|s[ac]ss)(\.js)?|wasm|txt|json)$/.test(meta.path)) {
-				return handleAsset(meta, res);
+			if (/\.((css|s[ac]ss|less)|wasm|txt|json)$/.test(meta.path)) {
+				return handleAsset(meta, res, url.searchParams.has('module'));
 			}
 
 			res.setHeader('content-type', 'application/javascript;charset=utf-8');
 			if (hasDebugFlag()) {
+				// eslint-disable-next-line no-console
 				console.log(`  ${kl.dim('middleware:') + kl.bold(kl.magenta('npm'))}  ${JSON.stringify(meta.specifier)}`);
 			}
 			// serve from memory and disk caches:
@@ -77,7 +83,7 @@ export default function npmMiddleware({ source = 'npm', aliases, optimize, cwd }
 			if (cached) return sendCachedBundle(req, res, cached);
 
 			// const start = Date.now();
-			const code = await bundleNpmModule(mod, { source, aliases, cwd });
+			const code = await bundleNpmModule(mod, { source, alias, cwd });
 			// console.log(`Bundle dep: ${mod}: ${Date.now() - start}ms`);
 
 			// send it!
@@ -104,10 +110,10 @@ let npmCache;
  * @param {string} mod The module to bundle, including subpackage/path
  * @param {object} options
  * @param {'npm'|'unpkg'} [options.source]
- * @param {Record<string,string>} [options.aliases]
+ * @param {Record<string,string>} [options.alias]
  * @param {string} [options.cwd]
  */
-async function bundleNpmModule(mod, { source, aliases, cwd }) {
+async function bundleNpmModule(mod, { source, alias, cwd }) {
 	let npmProviderPlugin;
 
 	if (source === 'unpkg') {
@@ -133,9 +139,10 @@ async function bundleNpmModule(mod, { source, aliases, cwd }) {
 		preserveEntrySignatures: 'allow-extension',
 		plugins: [
 			nodeBuiltinsPlugin({}),
-			aliasesPlugin({ aliases, cwd }),
+			aliasPlugin({ alias, cwd }),
 			npmProviderPlugin,
 			processGlobalPlugin({
+				sourcemap: false,
 				NODE_ENV: 'development'
 			}),
 			commonjs({

@@ -2,11 +2,39 @@
 
 declare module 'wmr' {
 	import { Plugin as RollupPlugin, OutputOptions, RollupError, RollupWatcherEvent } from 'rollup';
-	import { Middleware } from 'polka';
+	import { ServerResponse, IncomingMessage } from 'http';
 
 	export type Mode = 'start' | 'serve' | 'build';
 
-	export { Middleware };
+	export interface Request extends IncomingMessage {
+		/**
+		 * The originally-requested URL, including parent router segments.
+		 */
+		originalUrl: string;
+
+		/**
+		 * The path portion of the requested URL.
+		 */
+		path: string;
+
+		/**
+		 * The values of named parameters within your route pattern
+		 */
+		params: Record<string, string>;
+
+		/**
+		 * The un-parsed querystring
+		 */
+		search: string | null;
+
+		/**
+		 * The parsed querystring
+		 */
+		query: Record<string, string | string[]>;
+	}
+
+	export type Next = (err?: string | Error) => void;
+	export type Middleware = (req: Request, res: ServerResponse, next: Next) => void;
 
 	export type OutputOption = OutputOptions | ((opts: OutputOptions) => OutputOptions);
 
@@ -38,7 +66,11 @@ declare module 'wmr' {
 		out: string;
 		overlayDir: string;
 		sourcemap: boolean;
+		/**
+		 * @deprecated Please use `alias` instead
+		 */
 		aliases: Record<string, string>;
+		alias: Record<string, string>;
 		env: Record<string, string>;
 		middleware: Middleware[];
 		plugins: Plugin[];
@@ -46,6 +78,7 @@ declare module 'wmr' {
 		features: Features;
 		visualize: boolean;
 		debug: boolean;
+		customRoutes: string[];
 	}
 
 	export type BuildError = RollupError & { clientMessage?: string };
@@ -100,6 +133,10 @@ declare module '*.module.sass' {
 	const mapping: Mapping;
 	export default mapping;
 }
+declare module '*.module.less' {
+	const mapping: Mapping;
+	export default mapping;
+}
 declare module '*.module.styl' {
 	const mapping: Mapping;
 	export default mapping;
@@ -114,6 +151,10 @@ declare module '*.scss' {
 	export default url;
 }
 declare module '*.sass' {
+	const url: string;
+	export default url;
+}
+declare module '*.less' {
 	const url: string;
 	export default url;
 }

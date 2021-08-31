@@ -1,16 +1,16 @@
 ---
 nav: 'Getting Started'
-title: 'Getting Started with WMR'
+title: 'Get Started with WMR'
 description: 'Get up and running with WMR in a few seconds.'
 ---
 
 You can run `npx wmr` in any directory to serve it, just like you would use a static file server.
 
-However, it's often useful to start with a bit of structure. You can create this yourself, or use our quickstart method.
+However, it's often useful to start with a bit of structure. You can create this yourself, or use our [quickstart method](#quickstart).
 
 ## Quickstart _(recommended)_
 
-Create a new project in seconds using [create-wmr](https://npm.im/create-wmr). This tiny tool scaffolds a new project for you, with npm scripts for dev and prod builds, type checking and a simple demo application to start from.
+Create a new project in seconds using [create-wmr](https://npm.im/create-wmr). This tiny tool instantly scaffolds a new project for you, with npm scripts for development and production builds, convenient type checking and a simple demo application to start from.
 
 ```sh
 npm init wmr your-project-name
@@ -22,8 +22,13 @@ or
 yarn create wmr your-project-name
 ```
 
+<!--
 <p>
-<img width="400" src="https://user-images.githubusercontent.com/105127/100917537-4661e100-34a5-11eb-89bd-565b7bc31919.gif">
+<img width="400" height="277" src="https://user-images.githubusercontent.com/105127/100917537-4661e100-34a5-11eb-89bd-565b7bc31919.gif">
+</p>
+-->
+<p align="center">
+	<video width="556" height="385" autoplay muted src="https://user-images.githubusercontent.com/105127/124965579-494f2200-dff0-11eb-8732-26eb3ca5daa0.mov"></video>
 </p>
 
 > 💁 If you'd like ESLint to be set up for you, add `--eslint` to the command. _Note: this will use 150mb of disk space._
@@ -44,7 +49,7 @@ yarn add -D wmr
 
 > 🔥 _You can also use `npx wmr` anywhere!_
 
-**2.** Next you'll want to create a `public/index.html` file. You can use [this example](https://github.com/preactjs/wmr/blob/main/packages/wmr/demo/public/index.html), though there's really nothing special about this HTML file. Just make sure your scripts are ES Modules by including `type="module"`:
+**2.** Next you'll want to create a `public/index.html` file. You can use [this example](https://github.com/preactjs/wmr/blob/main/packages/create-wmr/tpl/public/index.html), though there's really nothing special about this HTML file. Just make sure your scripts are ES Modules by including `type="module"`:
 
 ```html
 <!DOCTYPE html>
@@ -85,18 +90,21 @@ render(<App />, document.body);
 }
 ```
 
-`preact/compat` is our compatibility layer that allows you to leverage the many libraries of the React ecosystem and use them with Preact. If this is something you'd like to use with WMR you can add an `alias` section as well to your `package.json`:
+`preact/compat` is our compatibility layer that allows you to leverage the many libraries of the React ecosystem and use them with Preact. If this is something you'd like to use with WMR you can add an `alias` section as well to your `wmr.config.mjs`:
 
-```json
-{
-	"alias": {
-		"react": "preact/compat",
-		"react-dom": "preact/compat"
+```js
+import { defineConfig } from 'wmr';
+
+// Full list of options: https://wmr.dev/docs/configuration
+export default defineConfig({
+	alias: {
+		react: 'preact/compat',
+		'react-dom': 'preact/compat'
 	}
-}
+});
 ```
 
-**5.** You're all set! As an extra step, if you'd like WMR to prerender your application to static HTML during production builds, replace `render()` with [preact-iso](https://www.npmjs.com/package/preact-iso):
+**5.** You're all set! As an extra step, if you'd like WMR to prerender your application to static HTML during production builds, replace `render()` with [preact-iso](https://github.com/preactjs/wmr/tree/main/packages/preact-iso#readme):
 
 ```diff
 -import { render } from 'preact';
@@ -118,47 +126,40 @@ function App() {
 
 WMR supports a `wmr.config.js` _(or `wmr.config.mjs`)_ configuration file, which can be used to set [WMR's options](https://github.com/preactjs/wmr/blob/main/packages/wmr/types.d.ts) and inject [Rollup plugins](https://github.com/rollup/plugins) or [Polka/Express middleware](https://github.com/lukeed/polka#middleware).
 
-You can export a `default` config function applied to all WMR commands, or individual functions for `start`, `build` and `serve`:
+You can export a `default` config function applied to all WMR commands, or conditionally for `start`, `build` and `serve`:
 
 ```js
 // wmr.config.mjs
+import { defineConfig } from 'wmr';
 import someRollupPlugin from '@rollup/plugin-xyz';
 
-/** @param {import('wmr').Options} config */
-export default async function (config) {
+export default defineConfig(async config => {
 	if (config.mode === 'build') {
-		config.plugins.push(
-			// add any Rollup plugins:
-			someRollupPlugin()
-		);
+		return {
+			plugins: [
+				// add any Rollup plugins:
+				someRollupPlugin()
+			]
+		};
 	}
 
 	if (config.mode === 'serve') {
-		config.middleware.push(
-			// add any Polka middleware:
-			function myPolkaMiddleware(req, res, next) {
-				res.setHeader('X-Foo', 'bar');
-				next();
-			}
-		);
+		return {
+			middleware: [
+				// add any Polka middleware:
+				function myPolkaMiddleware(req, res, next) {
+					res.setHeader('X-Foo', 'bar');
+					next();
+				}
+			]
+		};
 	}
-}
-
-// Or configure each WMR command separately:
-export async function start(config) {
-	// equivalent to `config.mode === 'start'`
-}
-export async function build(config) {
-	// equivalent to `config.mode === 'build'`
-}
-export async function serve(config) {
-	// equivalent to `config.mode === 'serve'`
-}
+});
 ```
 
 > **Note:** remember to add `"type":"module"` to your package.json _or_ use the `.mjs` file extension to make the file a JS module.
 
-See [the full list of options](https://github.com/preactjs/wmr/blob/main/packages/wmr/types.d.ts).
+See [the full list of options](/docs/configuration).
 
 ## Recipes
 

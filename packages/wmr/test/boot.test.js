@@ -1,6 +1,15 @@
 import path from 'path';
 import { promises as fs } from 'fs';
-import { setupTest, teardown, runWmr, loadFixture, waitForMessage, getOutput, runWmrFast } from './test-helpers.js';
+import {
+	setupTest,
+	teardown,
+	runWmr,
+	loadFixture,
+	waitForMessage,
+	getOutput,
+	runWmrFast,
+	withLog
+} from './test-helpers.js';
 
 jest.setTimeout(30000);
 
@@ -44,14 +53,16 @@ describe('boot', () => {
 		await loadFixture('simple', env);
 		instance = await runWmrFast(env.tmp.path, 'build');
 
-		await waitForMessage(instance.output, /Wrote/);
+		await withLog(instance.output, async () => {
+			await waitForMessage(instance.output, /Wrote/);
 
-		const files = (await fs.readdir(env.tmp.path)).filter(
-			file => !file.startsWith('.env') && !file.includes('node_modules')
-		);
-		expect(files).toEqual(['dist', 'public']);
+			const files = (await fs.readdir(env.tmp.path)).filter(
+				file => !file.startsWith('.env') && !file.includes('node_modules')
+			);
+			expect(files).toEqual(['dist', 'public']);
 
-		const dist = await fs.readdir(path.join(env.tmp.path, 'dist'));
-		expect(dist).toContainEqual(expect.stringMatching(/^index\.[a-z0-9]+\.js$/));
+			const dist = await fs.readdir(path.join(env.tmp.path, 'dist'));
+			expect(dist).toContainEqual(expect.stringMatching(/^index\.[a-z0-9]+\.js$/));
+		});
 	});
 });

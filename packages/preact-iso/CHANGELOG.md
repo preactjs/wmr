@@ -1,5 +1,23 @@
 # preact-iso
 
+## 2.0.3
+
+### Patch Changes
+
+- [`62840d8`](https://github.com/preactjs/wmr/commit/62840d82eddf1bda9447c08750fe6886751edee7) [#665](https://github.com/preactjs/wmr/pull/665) Thanks [@rschristian](https://github.com/rschristian)! - Removing unused imports (and associated console warnings) in preact-iso
+
+## 2.0.2
+
+### Patch Changes
+
+- [`c1f3f0e`](https://github.com/preactjs/wmr/commit/c1f3f0e42a053811fe894f91a7bd702247e550d5) [#608](https://github.com/preactjs/wmr/pull/608) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix `useRoute` missing in main entry exports
+
+## 2.0.1
+
+### Patch Changes
+
+- [`79c7fd6`](https://github.com/preactjs/wmr/commit/79c7fd6a5cd46904779a630ac42207e9bf918f1c) [#594](https://github.com/preactjs/wmr/pull/594) Thanks [@developit](https://github.com/developit)! - Fixes a race condition in preact-iso `Router` by registering the link click handler immediately.
+
 ## 2.0.0
 
 ### Major Changes

@@ -1,6 +1,8 @@
+/* eslint-disable no-console */
 import path from 'path';
 import { promises as fs } from 'fs';
-import { setupTest, teardown, runWmr, loadFixture, serveStatic, withLog } from './test-helpers.js';
+import { setupTest, teardown, runWmr, loadFixture, serveStatic, withLog, updateFile } from './test-helpers.js';
+import { pathToFileURL } from 'url';
 import { printCoverage, analyzeTrace } from './tracing-helpers.js';
 
 jest.setTimeout(30000);
@@ -27,20 +29,20 @@ describe('production', () => {
 	it('should allow overwriting json loader', async () => {
 		await loadFixture('overwrite-loader-json', env);
 		instance = await runWmr(env.tmp.path, 'build');
-		const code = await instance.done;
-		const output = instance.output.join('\n');
-		console.log(output);
 
-		expect(code).toEqual(0);
+		await withLog(instance.output, async () => {
+			const code = await instance.done;
+			expect(code).toEqual(0);
 
-		const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
-		cleanup.push(stop);
+			const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+			cleanup.push(stop);
 
-		await env.page.goto(address, {
-			waitUntil: ['networkidle0', 'load']
+			await env.page.goto(address, {
+				waitUntil: ['networkidle0', 'load']
+			});
+
+			expect(await env.page.content()).toMatch(/foobarbaz/);
 		});
-
-		expect(await env.page.content()).toMatch(/foobarbaz/);
 	});
 
 	it('should throw error on missing module type', async () => {
@@ -90,6 +92,26 @@ describe('production', () => {
 		expect(stats.join('\n')).toMatch(/img\..*\.jpg/);
 	});
 
+	it('should support base64 in HTML', async () => {
+		await loadFixture('base64-html', env);
+		instance = await runWmr(env.tmp.path, 'build');
+		const code = await instance.done;
+
+		await withLog(instance.output, async () => {
+			expect(code).toEqual(0);
+
+			const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+			cleanup.push(stop);
+
+			await env.page.goto(address, {
+				waitUntil: ['networkidle0', 'load']
+			});
+
+			const text = await env.page.content();
+			expect(text).toMatch(/it works/);
+		});
+	});
+
 	it('should support virtual ids', async () => {
 		await loadFixture('virtual-id', env);
 		instance = await runWmr(env.tmp.path, 'build');
@@ -105,6 +127,279 @@ describe('production', () => {
 
 		const text = await env.page.content();
 		expect(text).toMatch(/it works/);
+	});
+
+	// Issue #811
+	it('should support virtual ids starting with /@', async () => {
+		await loadFixture('virtual-id-at', env);
+		instance = await runWmr(env.tmp.path, 'build');
+		const code = await instance.done;
+		expect(code).toEqual(0);
+
+		const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+		cleanup.push(stop);
+
+		await env.page.goto(address, {
+			waitUntil: ['networkidle0', 'load']
+		});
+
+		const color = await env.page.$eval('h1', el => getComputedStyle(el).color);
+		expect(color).toBe('rgb(255, 0, 0)');
+	});
+
+	it("should preserve './' for relative specifiers", async () => {
+		await loadFixture('plugin-resolve', env);
+		instance = await runWmr(env.tmp.path, 'build');
+
+		await withLog(instance.output, async () => {
+			const code = await instance.done;
+			expect(code).toEqual(0);
+
+			const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+			cleanup.push(stop);
+
+			await env.page.goto(address, {
+				waitUntil: ['networkidle0', 'load']
+			});
+
+			const output = await env.page.content();
+			expect(output).toMatch(/Resolved: \.\/foo\.js/);
+		});
+	});
+
+	it("should preserve './' for relative specifiers with prefixes", async () => {
+		await loadFixture('plugin-resolve-prefix', env);
+		instance = await runWmr(env.tmp.path, 'build');
+
+		await withLog(instance.output, async () => {
+			const code = await instance.done;
+			expect(code).toEqual(0);
+
+			const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+			cleanup.push(stop);
+
+			await env.page.goto(address, {
+				waitUntil: ['networkidle0', 'load']
+			});
+
+			const output = await env.page.content();
+			expect(output).toMatch(/Resolved: url:\.\/foo\.js/);
+		});
+	});
+
+	it('should support class-fields', async () => {
+		await loadFixture('class-fields', env);
+		instance = await runWmr(env.tmp.path, 'build');
+
+		await withLog(instance.output, async () => {
+			const code = await instance.done;
+			expect(code).toEqual(0);
+
+			const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+			cleanup.push(stop);
+
+			await env.page.goto(address, {
+				waitUntil: ['networkidle0', 'load']
+			});
+
+			const output = await env.page.content();
+			expect(output).toMatch(/class fields work/);
+		});
+	});
+
+	it('should support private class-fields', async () => {
+		await loadFixture('class-fields-private', env);
+		instance = await runWmr(env.tmp.path, 'build');
+
+		await withLog(instance.output, async () => {
+			const code = await instance.done;
+			expect(code).toEqual(0);
+
+			const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+			cleanup.push(stop);
+
+			await env.page.goto(address, {
+				waitUntil: ['networkidle0', 'load']
+			});
+
+			const output = await env.page.content();
+			expect(output).toMatch(/class fields work/);
+		});
+	});
+
+	it('should support markdown', async () => {
+		await loadFixture('markdown', env);
+		instance = await runWmr(env.tmp.path, 'build');
+
+		await withLog(instance.output, async () => {
+			const code = await instance.done;
+			expect(code).toEqual(0);
+
+			const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+			cleanup.push(stop);
+
+			await env.page.goto(address, {
+				waitUntil: ['networkidle0', 'load']
+			});
+
+			const output = await env.page.content();
+			expect(output).toMatch(/it works/);
+		});
+	});
+
+	describe('import assertions', () => {
+		it('should support .json assertion', async () => {
+			await loadFixture('import-assertions', env);
+			instance = await runWmr(env.tmp.path, 'build');
+
+			await withLog(instance.output, async () => {
+				const code = await instance.done;
+				expect(code).toEqual(0);
+
+				const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+				cleanup.push(stop);
+
+				await env.page.goto(address, {
+					waitUntil: ['networkidle0', 'load']
+				});
+
+				const output = await env.page.content();
+				expect(output).toMatch(/{"foo":"bar"}/);
+			});
+		});
+
+		it('should support dynamic .json assertion', async () => {
+			await loadFixture('import-assertions-dynamic', env);
+			instance = await runWmr(env.tmp.path, 'build');
+
+			await withLog(instance.output, async () => {
+				const code = await instance.done;
+				expect(code).toEqual(0);
+
+				const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+				cleanup.push(stop);
+
+				await env.page.goto(address, {
+					waitUntil: ['networkidle0', 'load']
+				});
+
+				const output = await env.page.content();
+				expect(output).toMatch(/{"default":{"foo":"bar"}}/);
+			});
+		});
+	});
+
+	describe('alias', () => {
+		it('should alias directories', async () => {
+			await loadFixture('alias-outside', env);
+			instance = await runWmr(env.tmp.path, 'build');
+			const code = await instance.done;
+			await withLog(instance.output, async () => {
+				expect(code).toEqual(0);
+
+				const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+				cleanup.push(stop);
+
+				await env.page.goto(address, {
+					waitUntil: ['networkidle0', 'load']
+				});
+
+				const text = await env.page.content();
+				expect(text).toMatch(/it works/);
+			});
+		});
+
+		it('should alias src by default', async () => {
+			await loadFixture('alias-src', env);
+			instance = await runWmr(env.tmp.path, 'build');
+			const code = await instance.done;
+			await withLog(instance.output, async () => {
+				expect(code).toEqual(0);
+
+				const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+				cleanup.push(stop);
+
+				await env.page.goto(address, {
+					waitUntil: ['networkidle0', 'load']
+				});
+
+				const text = await env.page.content();
+				expect(text).toMatch(/it works/);
+			});
+		});
+
+		it('should pick up scss from the html file', async () => {
+			await loadFixture('css-sass-html', env);
+			instance = await runWmr(env.tmp.path, 'build');
+
+			const code = await instance.done;
+			const dir = await fs.readdir(path.join(env.tmp.path, 'dist', 'assets'));
+			expect(dir.some(x => x.endsWith('.css'))).toBeTruthy();
+			expect(code).toEqual(0);
+			const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+			cleanup.push(stop);
+			await env.page.goto(address, {
+				waitUntil: ['networkidle0', 'load']
+			});
+			expect(await env.page.$eval('div', el => getComputedStyle(el).color)).toBe('rgb(255, 0, 0)');
+		});
+
+		it('should correctly hash imported files', async () => {
+			await loadFixture('css-sass-import-hash', env);
+			instance = await runWmr(env.tmp.path, 'build');
+
+			await instance.done;
+			const dir = await fs.readdir(path.join(env.tmp.path, 'dist'));
+			const [cssFile] = await fs.readdir(path.join(env.tmp.path, 'dist', 'assets'));
+			expect(dir.some(x => x.endsWith('.css'))).toBeFalsy();
+			const hash = cssFile.split('.')[1];
+
+			await updateFile(path.join(env.tmp.path, 'public'), '2.scss', content => content.replace('green', 'red'));
+			instance = await runWmr(env.tmp.path, 'build');
+			await instance.done;
+			const [newCssFile] = await fs.readdir(path.join(env.tmp.path, 'dist', 'assets'));
+			const newHash = newCssFile.split('.')[1];
+
+			expect(hash === newHash).toBeFalsy();
+		});
+
+		it('should correctly hash imported files from html', async () => {
+			await loadFixture('css-sass-import-hash-html', env);
+			instance = await runWmr(env.tmp.path, 'build');
+
+			await instance.done;
+			const dir = await fs.readdir(path.join(env.tmp.path, 'dist'));
+			const [cssFile] = await fs.readdir(path.join(env.tmp.path, 'dist', 'assets'));
+			expect(dir.some(x => x.endsWith('.css'))).toBeFalsy();
+			const hash = cssFile.split('.')[1];
+
+			await updateFile(path.join(env.tmp.path, 'public'), '2.scss', content => content.replace('green', 'red'));
+			instance = await runWmr(env.tmp.path, 'build');
+			await instance.done;
+			const [newCssFile] = await fs.readdir(path.join(env.tmp.path, 'dist', 'assets'));
+			const newHash = newCssFile.split('.')[1];
+
+			expect(hash === newHash).toBeFalsy();
+		});
+
+		it('should alias CSS', async () => {
+			await loadFixture('alias-css', env);
+			instance = await runWmr(env.tmp.path, 'build');
+			const code = await instance.done;
+			await withLog(instance.output, async () => {
+				expect(code).toEqual(0);
+
+				const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+				cleanup.push(stop);
+
+				await env.page.goto(address, {
+					waitUntil: ['networkidle0', 'load']
+				});
+
+				const color = await env.page.$eval('h1', el => getComputedStyle(el).color);
+				expect(color).toBe('rgb(255, 218, 185)');
+			});
+		});
 	});
 
 	describe('CSS', () => {
@@ -143,6 +438,32 @@ describe('production', () => {
 			});
 
 			expect(await env.page.content()).toMatch(/production/);
+		});
+
+		it('should contain all env variables starting with WMR_', async () => {
+			await loadFixture('env-vars', env);
+			instance = await runWmr(env.tmp.path, 'build', {
+				env: {
+					FOO: 'fail',
+					WMR_FOO: 'foo',
+					WMR_BAR: 'bar'
+				}
+			});
+
+			await withLog(instance.output, async () => {
+				expect(await instance.done).toEqual(0);
+
+				const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+				cleanup.push(stop);
+
+				await env.page.goto(address, {
+					waitUntil: ['networkidle0', 'load']
+				});
+
+				const output = await env.page.content();
+				expect(output).not.toMatch(/fail/i);
+				expect(output).toMatch(/foo bar/i);
+			});
 		});
 	});
 
@@ -199,7 +520,7 @@ describe('production', () => {
 			await cdp.send('Emulation.setCPUThrottlingRate', { rate: 6 });
 
 			// Nexus 5 viewport + mobile, disable caching:
-			await env.page.emulate(require('puppeteer/DeviceDescriptors').devicesMap['Nexus 5']);
+			await env.page.emulate(require('puppeteer/lib/cjs/puppeteer/common/DeviceDescriptors').devicesMap['Nexus 5']);
 			await env.page.setCacheEnabled(false);
 
 			await page.coverage.startJSCoverage();
@@ -337,6 +658,28 @@ describe('production', () => {
 
 			const index = await readfile('dist/' + dist.find(f => f.match(/^index\.\w+\.js$/)));
 			expect(index).toContain(`("/assets/${assets[0]}")`);
+		});
+
+		it('should hoist entry CSS into HTML <link> tag', async () => {
+			await loadFixture('css-entry', env);
+			instance = await runWmr(env.tmp.path, 'build');
+			const code = await instance.done;
+
+			await withLog(instance.output, async () => {
+				expect(code).toBe(0);
+
+				const files = (await fs.readdir(path.join(env.tmp.path, 'dist', 'assets'))).filter(f => f[0] !== '.');
+				const css = files.find(f => f.endsWith('.css'));
+
+				const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+				cleanup.push(stop);
+
+				await env.page.goto(address, {
+					waitUntil: ['networkidle0', 'load']
+				});
+
+				expect(await env.page.content()).toContain(`<link rel="stylesheet" href="/assets/${css}">`);
+			});
 		});
 	});
 
@@ -502,6 +845,28 @@ describe('production', () => {
 			expect(instance.output.join('\n')).toMatch(/^\s+at\s\w+/gm);
 			expect(code).toBe(1);
 		});
+
+		it('config should support supplying additional links to prerender', async () => {
+			await loadFixture('prerender-additional-links', env);
+			instance = await runWmr(env.tmp.path, 'build', '--prerender');
+			const code = await instance.done;
+			console.info(instance.output.join('\n'));
+			expect(instance.output.join('\n')).toMatch(/Prerendered 2 pages/i);
+			expect(code).toBe(0);
+
+			expect(await fs.access(path.join(env.tmp.path, 'dist', 'non-existent-link', 'index.html'))).toBeUndefined();
+		});
+
+		it('config should throw if no prerender function is exported', async () => {
+			await loadFixture('prerender-missing-export', env);
+			instance = await runWmr(env.tmp.path, 'build', '--prerender');
+			const code = await instance.done;
+
+			await withLog(instance.output, async () => {
+				expect(code).toBe(1);
+				expect(instance.output.join('\n')).toMatch(/No prerender\(\) function/i);
+			});
+		});
 	});
 
 	describe('Code Splitting', () => {
@@ -562,6 +927,27 @@ describe('production', () => {
 
 			const chunks = await readdir('dist/about');
 			expect(chunks).toEqual(['index.html']);
+		});
+	});
+
+	describe('--visualize', () => {
+		it('should create stats.html', async () => {
+			await loadFixture('simple', env);
+			instance = await runWmr(env.tmp.path, 'build', '--visualize');
+			const code = await instance.done;
+
+			await withLog(instance.output, async () => {
+				expect(code).toBe(0);
+
+				const stats = path.join(env.tmp.path, 'stats.html');
+				const statsUrl = pathToFileURL(stats);
+
+				await env.page.goto(statsUrl.href, {
+					waitUntil: ['networkidle0', 'load']
+				});
+
+				expect(await env.page.content()).toMatch(/RollUp Visualizer/);
+			});
 		});
 	});
 });

@@ -27,3 +27,13 @@ export function isFile(path) {
 		.then(s => s.isFile())
 		.catch(() => false);
 }
+
+/**
+ * Check if an id contains a custom prefix
+ * @param {string} id
+ * @returns {boolean}
+ */
+export function hasCustomPrefix(id) {
+	// Windows disk letters are not prefixes: C:/foo
+	return !/^\0?(?:file|https?):\/\//.test(id) && /^\0?[-\w]{2,}:/.test(id);
+}

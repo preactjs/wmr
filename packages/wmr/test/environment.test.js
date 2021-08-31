@@ -1,5 +1,5 @@
 import { parseEnvFile } from '../src/lib/environment.js';
-import { setupTest, teardown, loadFixture, runWmrFast, getOutput } from './test-helpers.js';
+import { setupTest, teardown, loadFixture, runWmrFast, getOutput, withLog } from './test-helpers.js';
 
 describe('.env files', () => {
 	describe('parseEnvFiles', () => {
@@ -51,11 +51,27 @@ describe('.env files', () => {
 		it('should load env files into process.env', async () => {
 			await loadFixture('env', env);
 			instance = await runWmrFast(env.tmp.path);
-			const values = { FOO: 'bar', OVERRIDE: '11', EMPTY: '', FOO_LOCAL: 'bar', NODE_ENV: 'development' };
-			const expected = Object.keys(values)
-				.map(key => `${key}=${JSON.stringify(values[key])}`)
-				.join(', ');
-			expect(await getOutput(env, instance)).toContain(expected);
+			await withLog(instance.output, async () => {
+				const values = { FOO: 'bar', OVERRIDE: '11', EMPTY: '', FOO_LOCAL: 'bar', NODE_ENV: 'development' };
+				const expected = Object.keys(values)
+					.map(key => `${key}=${JSON.stringify(values[key])}`)
+					.join(', ');
+				expect(await getOutput(env, instance)).toContain(expected);
+			});
+		});
+
+		it('should give env variables precedence over env files', async () => {
+			await loadFixture('env-precedence', env);
+			instance = await runWmrFast(env.tmp.path, { env: { WMR_FOO: 'it works' } });
+			await getOutput(env, instance);
+
+			await withLog(instance.output, async () => {
+				const foo = await page.$eval('#foo', el => el.textContent);
+				const bar = await page.$eval('#bar', el => el.textContent);
+
+				expect(foo).toEqual('it works');
+				expect(bar).toEqual('it works');
+			});
 		});
 	});
 });
