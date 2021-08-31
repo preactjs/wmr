@@ -80,10 +80,17 @@ export async function transformImports(code, id, { resolveImportMeta, resolveId,
 			// `slice(item.d, item.s)` gives us "import(" to implement this.
 
 			// Strip comments - these are usually Webpack magic comments.
+			let originalSpec = spec;
 			spec = spec
 				.replace(/\/\*[\s\S]*\*\//g, '')
 				.replace(/^\s*\/\/.*$/gm, '')
 				.trim();
+
+			// Update start position if we stripped leading characters
+			if (originalSpec.length !== spec.length) {
+				// @ts-ignore
+				item.s += originalSpec.indexOf(spec);
+			}
 
 			// For dynamic imports, spec is a JavaScript expression.
 			// We need to try to convert it to a specifier, or bail if it's not static.
