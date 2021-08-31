@@ -156,6 +156,16 @@ export function createPluginContainer(plugins, opts = {}) {
 		warn(...args) {
 			// eslint-disable-next-line no-console
 			console.log(`[${plugin.name}]`, ...args);
+		},
+		// Rollup has typed the return value as `never` because they
+		// throw and abort the build. Doing that in "development"
+		// mode would be very annoying so we intentionally have a
+		// type mismatch.
+		// @ts-ignore
+		error(err) {
+			if (typeof err === 'string') err = { message: err };
+			// eslint-disable-next-line no-console
+			console.log(`[${plugin.name}]`, err.message);
 		}
 	};
 
