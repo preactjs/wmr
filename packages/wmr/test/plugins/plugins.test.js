@@ -55,4 +55,14 @@ describe('config', () => {
 			await waitForMessage(instance.output, /oh no #3/);
 		});
 	});
+
+	it('should allow calls to emitFile without name', async () => {
+		await loadFixture('plugin-emit', env);
+		instance = await runWmrFast(env.tmp.path);
+		await getOutput(env, instance);
+		await withLog(instance.output, async () => {
+			await env.page.goto(await instance.address, { waitUntil: ['domcontentloaded', 'networkidle2'] });
+			expect(await env.page.content()).toMatch(/it works/);
+		});
+	});
 });
