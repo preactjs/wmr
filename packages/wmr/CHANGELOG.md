@@ -1,5 +1,25 @@
 # wmr
 
+## 3.6.1
+
+### Patch Changes
+
+- [`ab9ceee`](https://github.com/preactjs/wmr/commit/ab9ceeec53da3a86f33b5e29706037a998136c60) [#819](https://github.com/preactjs/wmr/pull/819) Thanks [@developit](https://github.com/developit)! - Fix complex `process.env` usage (ex: `let {A}=process.env`, but not `process.env.A`) generating invalid code.
+
+* [`9c7be51`](https://github.com/preactjs/wmr/commit/9c7be51861d6778e8b33bee6b47679f5e2d5a62e) [#821](https://github.com/preactjs/wmr/pull/821) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix missing `this.error()` method in Rollup plugins
+
+- [`0c62f25`](https://github.com/preactjs/wmr/commit/0c62f258d5bc5776bcbe89ae7506f0d8ef1925d0) [#822](https://github.com/preactjs/wmr/pull/822) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix crash when calling `emitFile` for chunks without a name
+
+* [`416451c`](https://github.com/preactjs/wmr/commit/416451cc7ea3e916223ab138778d12a81182bf5b) [#816](https://github.com/preactjs/wmr/pull/816) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Print file which triggered warning when the `composes` keyword is attempted to be used outside of a CSS-Module file
+
+- [`778ee03`](https://github.com/preactjs/wmr/commit/778ee0392ca25cbfea044ed6f3cf2db62dacfdc1) [#823](https://github.com/preactjs/wmr/pull/823) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix incorrectly transformed dynamic import statements when there was a comment in front of the specifier (`import(/* foo */ 'my-module')`)
+
+* [`980b3d9`](https://github.com/preactjs/wmr/commit/980b3d9c3092882f5e27b955b66144d46fbd15b6) [#820](https://github.com/preactjs/wmr/pull/820) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Add support for Rollup `outputOptions` hook
+
+- [`abafe8c`](https://github.com/preactjs/wmr/commit/abafe8cf7c7c99b81040caf0b3d324f62e171b79) [#810](https://github.com/preactjs/wmr/pull/810) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix unable to load json files from outside project public directory.
+
+* [`cbc98be`](https://github.com/preactjs/wmr/commit/cbc98beb4861a4f93ffe7f2417f885b5689b8268) [#815](https://github.com/preactjs/wmr/pull/815) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix nested relative `.less` file resolved as npm package in production
+
 ## 3.6.0
 
 ### Minor Changes

@@ -1,5 +1,13 @@
 # preact-iso
 
+## 2.1.0
+
+### Minor Changes
+
+- [`c963fbe`](https://github.com/preactjs/wmr/commit/c963fbec5cac7d45a65ffa9cd05d937e56fc5aa6) [#586](https://github.com/preactjs/wmr/pull/586) Thanks [@developit](https://github.com/developit)! - Pass route paramters as props when no prop exists with that name.
+
+* [`095ddde`](https://github.com/preactjs/wmr/commit/095dddefbb5b56d0a897716513977a99f38665bf) [#824](https://github.com/preactjs/wmr/pull/824) Thanks [@developit](https://github.com/developit)! - - Bugfix for Router: "splat" parameters (`/:x*` and `/:y*`) should be passed in the `params` prop instead of directly on props
+
 ## 2.0.3
 
 ### Patch Changes
