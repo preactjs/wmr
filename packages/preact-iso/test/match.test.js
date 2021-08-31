@@ -39,10 +39,15 @@ describe('match', () => {
 
 	it('Rest param route "/:x+"', () => {
 		const matchedResult = execPath('/user/foo', '/user/:id+');
-		expect(matchedResult).toEqual({ path: '/user/foo', params: { id: 'foo' } });
+		expect(matchedResult).toEqual({ path: '/user/foo', params: { id: 'foo' }, id: 'foo', query: {} });
 
 		const matchedResultWithSlash = execPath('/user/foo/bar', '/user/:id+');
-		expect(matchedResultWithSlash).toEqual({ path: '/user/foo/bar', params: { id: 'foo/bar' }, id: 'foo/bar' });
+		expect(matchedResultWithSlash).toEqual({
+			path: '/user/foo/bar',
+			params: { id: 'foo/bar' },
+			id: 'foo/bar',
+			query: {}
+		});
 
 		const emptyResult = execPath('/user', '/user/:id+');
 		expect(emptyResult).toEqual(undefined);
@@ -61,7 +66,7 @@ describe('match', () => {
 			},
 			seg1: '_SEGMENT1_',
 			seg2: '_SEGMENT2_',
-			query: {},
+			query: {}
 		});
 	});
 
