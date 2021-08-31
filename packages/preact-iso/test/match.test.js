@@ -1,13 +1,13 @@
 import { exec } from '../router.js';
 
-function execPath(path, pattern) {
-	return exec(path, pattern, { path });
+function execPath(path, pattern, opts) {
+	return exec(path, pattern, { path, query: {}, params: {}, ...(opts || {}) });
 }
 
 describe('match', () => {
 	it('Base route', () => {
 		const accurateResult = execPath('/', '/');
-		expect(accurateResult).toEqual({ path: '/', params: {} });
+		expect(accurateResult).toEqual({ path: '/', params: {}, query: {} });
 
 		const inaccurateResult = execPath('/user/1', '/');
 		expect(inaccurateResult).toEqual(undefined);
@@ -15,7 +15,7 @@ describe('match', () => {
 
 	it('Param route', () => {
 		const accurateResult = execPath('/user/2', '/user/:id');
-		expect(accurateResult).toEqual({ path: '/user/2', params: { id: '2' } });
+		expect(accurateResult).toEqual({ path: '/user/2', params: { id: '2' }, id: '2', query: {} });
 
 		const inaccurateResult = execPath('/', '/user/:id');
 		expect(inaccurateResult).toEqual(undefined);
@@ -23,7 +23,7 @@ describe('match', () => {
 
 	it('Optional param route', () => {
 		const accurateResult = execPath('/user', '/user/:id?');
-		expect(accurateResult).toEqual({ path: '/user', params: { id: undefined } });
+		expect(accurateResult).toEqual({ path: '/user', params: { id: undefined }, id: undefined, query: {} });
 
 		const inaccurateResult = execPath('/', '/user/:id?');
 		expect(inaccurateResult).toEqual(undefined);
@@ -31,7 +31,7 @@ describe('match', () => {
 
 	it('Optional rest param route "/:x*"', () => {
 		const accurateResult = execPath('/user', '/user/:id?');
-		expect(accurateResult).toEqual({ path: '/user', params: { id: undefined } });
+		expect(accurateResult).toEqual({ path: '/user', params: { id: undefined }, id: undefined, query: {} });
 
 		const inaccurateResult = execPath('/', '/user/:id?');
 		expect(inaccurateResult).toEqual(undefined);
@@ -39,10 +39,15 @@ describe('match', () => {
 
 	it('Rest param route "/:x+"', () => {
 		const matchedResult = execPath('/user/foo', '/user/:id+');
-		expect(matchedResult).toEqual({ path: '/user/foo', params: { id: 'foo' } });
+		expect(matchedResult).toEqual({ path: '/user/foo', params: { id: 'foo' }, id: 'foo', query: {} });
 
 		const matchedResultWithSlash = execPath('/user/foo/bar', '/user/:id+');
-		expect(matchedResultWithSlash).toEqual({ path: '/user/foo/bar', params: { id: 'foo/bar' } });
+		expect(matchedResultWithSlash).toEqual({
+			path: '/user/foo/bar',
+			params: { id: 'foo/bar' },
+			id: 'foo/bar',
+			query: {}
+		});
 
 		const emptyResult = execPath('/user', '/user/:id+');
 		expect(emptyResult).toEqual(undefined);
@@ -58,15 +63,19 @@ describe('match', () => {
 			params: {
 				seg1: '_SEGMENT1_',
 				seg2: '_SEGMENT2_'
-			}
+			},
+			seg1: '_SEGMENT1_',
+			seg2: '_SEGMENT2_',
+			query: {}
 		});
 	});
 
 	it('should not overwrite existing properties', () => {
-		const result = exec('/foo/bar', '/:path/:query', { path: '/custom-path' });
+		const result = execPath('/foo/bar', '/:path/:query', { path: '/custom-path' });
 		expect(result).toEqual({
 			params: { path: 'foo', query: 'bar' },
-			path: '/custom-path'
+			path: '/custom-path',
+			query: {}
 		});
 	});
 });

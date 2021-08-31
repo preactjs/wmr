@@ -82,7 +82,7 @@ describe('Router', () => {
 		expect(Home).not.toHaveBeenCalled();
 		expect(Profiles).not.toHaveBeenCalled();
 		expect(Profile).toHaveBeenCalledWith(
-			{ path: '/profiles/bob', query: {}, params: { id: 'bob' } },
+			{ path: '/profiles/bob', query: {}, params: { id: 'bob' }, id: 'bob' },
 			expect.anything()
 		);
 		expect(Fallback).not.toHaveBeenCalled();
