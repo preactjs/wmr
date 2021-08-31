@@ -45,7 +45,7 @@ export const exec = (url, route, matches) => {
 		// normal/optional field:
 		if (flag >= '?' || flag === '') continue;
 		// rest (+/*) match:
-		matches[param] = url.slice(i).map(decodeURIComponent).join('/');
+		params[param] = url.slice(i).map(decodeURIComponent).join('/');
 		break;
 	}
 
