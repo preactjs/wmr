@@ -92,6 +92,19 @@ describe('transformImports', () => {
 			});
 			expect(result.code).toEqual(expected);
 		});
+
+		it('should transform imports with comments', async () => {
+			const code = await readFile('dynamic-import-comment.js');
+			const expected = await readFile('dynamic-import-comment.expected.js');
+			const result = await transformImports(code, 'my-test', {
+				resolveDynamicImport(id) {
+					if (id === 'foo') {
+						return 'it_works';
+					}
+				}
+			});
+			expect(result.code).toEqual(expected);
+		});
 	});
 
 	describe('import.meta', () => {
