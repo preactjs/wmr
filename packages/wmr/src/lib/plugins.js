@@ -91,7 +91,6 @@ export function getPlugins(options) {
 		}),
 		// Nested workers are not supported at the moment
 		!isWorker && workerPlugin(options),
-		//!isWorker && workerPlugin(options),
 		htmPlugin({ production, sourcemap: options.sourcemap }),
 		!isWorker && wmrPlugin({ hot: !production, sourcemap: options.sourcemap }),
 		fastCjsPlugin({

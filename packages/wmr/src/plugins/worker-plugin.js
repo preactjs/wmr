@@ -126,8 +126,7 @@ export function workerPlugin(options) {
 						code: s.toString(),
 						map: options.sourcemap
 							? s.generateMap({ source: id, file: path.posix.basename(id), includeContent: true })
-							: null,
-						meta: { worker: { moduleWorkers: ['foo'] } }
+							: null
 					};
 				}
 			}
