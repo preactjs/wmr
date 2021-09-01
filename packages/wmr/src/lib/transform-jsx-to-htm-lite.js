@@ -61,6 +61,41 @@ export default function transformJsxToHtmLite({ types: t }, options = {}) {
 					name.appendString('}');
 				}
 
+				// Remove all JS-style comments in between JSXAttributes.
+				// This includes both single line comments and multi line ones.
+				//   <A /* comment */ foo="a" /* other comment */ />
+				//   <div
+				//     // comment
+				//     id="foo"
+				//     // other comment
+				//   />
+				//
+				// Result:
+				//   <A  foo="a"  />
+				//   <div
+				//     id="foo"
+				//   />
+				const attrs = path.get('attributes');
+				if (Array.isArray(attrs.node) && attrs.node.length > 0) {
+					let ms = path.ctx.out;
+
+					let i = name.end;
+					for (const attr of attrs.node) {
+						const comments = parseMaybeComments(ms.original, i);
+						for (const comment of comments) {
+							ms.remove(comment.start, comment.end);
+						}
+
+						i = attr.end;
+					}
+
+					// Remove potential comment before closing the opening tag
+					const comments = parseMaybeComments(ms.original, i);
+					for (const comment of comments) {
+						ms.remove(comment.start, comment.end);
+					}
+				}
+
 				if (isRootElement(path)) {
 					path.prependString(tagString + '`');
 
@@ -148,4 +183,78 @@ export default function transformJsxToHtmLite({ types: t }, options = {}) {
 			}
 		}
 	};
+}
+
+/**
+ * Parse comments and return the start and end offset of all comments
+ * that were found. This includes sibling comments.
+ * @param {string} code
+ * @param {number} start
+ */
+function parseMaybeComments(code, start) {
+	/** @type {Array<{start: number, end: number}>} */
+	const out = [];
+
+	const NONE = 0;
+	const SINGLE = 1;
+	const MULTI = 2;
+
+	let commentStart = 0;
+	let lineStart = start;
+
+	let type = NONE;
+	for (let i = start; i < code.length; i++) {
+		let char = code.charAt(i);
+
+		if (type === SINGLE) {
+			if (char === '\n' || char === '\r') {
+				if (lineStart < commentStart) {
+					const leading = code.slice(lineStart, commentStart).match(/^\s+/);
+					if (leading) {
+						commentStart = lineStart;
+					}
+				}
+
+				out.push({ start: commentStart, end: i });
+				lineStart = i;
+				type = NONE;
+			} else {
+				continue;
+			}
+		} else if (type === MULTI) {
+			if (char === '*' && code.charAt(i + 1) === '/') {
+				if (lineStart < commentStart) {
+					const leading = code.slice(lineStart, commentStart).match(/^\n\s+/);
+					if (leading) {
+						commentStart = lineStart;
+					}
+				}
+
+				let end = i + 2;
+				out.push({ start: commentStart, end });
+				type = NONE;
+				i = end;
+			} else {
+				continue;
+			}
+		} else if (char === '/') {
+			if (code.charAt(i + 1) === '/') {
+				type = SINGLE;
+				commentStart = i;
+				i++;
+			} else if (code.charAt(i + 1) === '*') {
+				commentStart = i;
+				type = MULTI;
+				i++;
+			}
+		} else if (char === '\n') {
+			lineStart = i;
+		} else if (/\s/.test(char)) {
+			commentStart++;
+		} else {
+			break;
+		}
+	}
+
+	return out;
 }
