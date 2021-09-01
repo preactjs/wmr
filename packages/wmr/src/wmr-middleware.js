@@ -542,7 +542,7 @@ export const TRANSFORMS = {
 
 			const rewritten = await transformImports(code, id, {
 				resolveImportMeta(property) {
-					return NonRollup.resolveImportMeta(property);
+					return NonRollup.resolveImportMeta(property, id);
 				},
 				async resolveId(spec, importer) {
 					if (spec === 'wmr') return '/_wmr.js';

@@ -246,10 +246,10 @@ export function createPluginContainer(plugins, opts = {}) {
 		},
 
 		/** @param {string} property */
-		resolveImportMeta(property) {
+		resolveImportMeta(property, id) {
 			for (plugin of plugins) {
 				if (!plugin.resolveImportMeta) continue;
-				const result = plugin.resolveImportMeta.call(ctx, property);
+				const result = plugin.resolveImportMeta.call(ctx, property, { moduleId: id });
 				if (result) return result;
 			}
 

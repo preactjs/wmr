@@ -79,6 +79,12 @@ declare module 'wmr' {
 		visualize: boolean;
 		debug: boolean;
 		customRoutes: string[];
+		/**
+		 * Define which module type workers should be compiled to. Using ES Modules
+		 * in web workers is currently not supported in Firefox, which is why
+		 * we default to "script". See: https://bugzilla.mozilla.org/show_bug.cgi?id=1247687
+		 */
+		workerType: 'script' | 'module';
 	}
 
 	export type BuildError = RollupError & { clientMessage?: string };
