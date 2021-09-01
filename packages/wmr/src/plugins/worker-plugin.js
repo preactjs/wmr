@@ -2,6 +2,7 @@ import MagicString from 'magic-string';
 import * as rollup from 'rollup';
 import path from 'path';
 import { getPlugins } from '../lib/plugins.js';
+import * as kl from 'kolorist';
 
 /**
  * @param {import("wmr").Options} options
@@ -10,13 +11,34 @@ import { getPlugins } from '../lib/plugins.js';
 export function workerPlugin(options) {
 	const plugins = getPlugins({ ...options, runtimeEnv: 'worker' });
 
+	/** @type {Map<string, number>} */
+	const moduleWorkers = new Map();
+	let didWarnESM = false;
+
 	return {
 		name: 'worker',
 		async transform(code, id) {
 			// Transpile worker file if we're dealing with a worker
 			if (/\.worker\.(?:[tj]sx?|mjs)$/.test(id)) {
-				// ..but not in module mode
-				if (options.workerType === 'module') return;
+				const resolved = await this.resolve(id);
+				const resolvedId = resolved ? resolved.id : id;
+
+				if (moduleWorkers.has(resolvedId)) {
+					if (!didWarnESM) {
+						const relativeId = path.relative(options.root, resolvedId);
+						this.warn(
+							kl.yellow(
+								`Warning: Module workers are not widely supported yet. Use at your own risk. This warning occurs, because file `
+							) +
+								kl.cyan(relativeId) +
+								kl.yellow(` was loaded as a Web Worker with type "module"`)
+						);
+						didWarnESM = true;
+					}
+
+					// ..but not in module mode
+					return;
+				}
 
 				// TODO: Add support for HMR inside a worker.
 
@@ -61,7 +83,7 @@ export function workerPlugin(options) {
 			}
 			// Check if a worker is referenced anywhere in the file
 			else if (/\.(?:[tj]sx?|mjs|cjs)$/.test(id)) {
-				const WORKER_REG = /new URL\(\s*['"]([\w.-/:~]+)['"],\s*import\.meta\.url\s*\)/g;
+				const WORKER_REG = /new URL\(\s*['"]([\w.-/:~]+)['"],\s*import\.meta\.url\s*\)(,\s*{.*?["']module["'].*?})?/gm;
 
 				if (WORKER_REG.test(code)) {
 					const s = new MagicString(code, {
@@ -85,6 +107,16 @@ export function workerPlugin(options) {
 							id: spec
 						});
 
+						const resolved = await this.resolve(spec, id);
+						const resolvedId = resolved ? resolved.id : spec;
+
+						let usageCount = moduleWorkers.get(resolvedId) || 0;
+						if (match[2]) {
+							moduleWorkers.set(resolvedId, usageCount + 1);
+						} else if (usageCount === 0) {
+							moduleWorkers.delete(resolvedId);
+						}
+
 						const start = match.index + match[0].indexOf(spec);
 						// Account for quoting characters
 						s.overwrite(start - 1, start + spec.length + 1, `import.meta.ROLLUP_FILE_URL_${ref}`);
@@ -94,7 +126,8 @@ export function workerPlugin(options) {
 						code: s.toString(),
 						map: options.sourcemap
 							? s.generateMap({ source: id, file: path.posix.basename(id), includeContent: true })
-							: null
+							: null,
+						meta: { worker: { moduleWorkers: ['foo'] } }
 					};
 				}
 			}

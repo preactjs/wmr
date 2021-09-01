@@ -7,6 +7,7 @@ import {
 	serveStatic,
 	setupTest,
 	teardown,
+	waitForMessage,
 	waitForPass,
 	withLog
 } from './test-helpers.js';
@@ -74,6 +75,8 @@ describe('Workers', () => {
 					expect(h1).toMatch('it works');
 					expect(h2).toMatch('it works');
 				});
+
+				await waitForMessage(instance.output, /Module workers are not widely supported/);
 			});
 		});
 	});
@@ -160,6 +163,8 @@ describe('Workers', () => {
 					expect(h1).toMatch('it works');
 					expect(h2).toMatch('it works');
 				});
+
+				await waitForMessage(instance.output, /Module workers are not widely supported/);
 			});
 		});
 	});
