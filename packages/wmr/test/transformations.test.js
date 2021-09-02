@@ -50,10 +50,17 @@ describe('transformations', () => {
 			expect((await get(instance, 'jsx-self-closed.js')).body).toEqual(expected);
 		});
 
-		it('should remove single line comments between props', async () => {
+		it('should remove JS comments between props', async () => {
 			const expected = await readFile(env, 'jsx-comment.expected.js');
 			await withLog(instance.output, async () => {
 				expect((await get(instance, 'jsx-comment.js')).body).toEqual(expected);
+			});
+		});
+
+		it('should remove JS comments between props #2', async () => {
+			const expected = await readFile(env, 'jsx-comment-2.expected.js');
+			await withLog(instance.output, async () => {
+				expect((await get(instance, 'jsx-comment-2.js')).body).toEqual(expected);
 			});
 		});
 	});
