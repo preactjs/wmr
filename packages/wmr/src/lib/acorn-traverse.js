@@ -1148,13 +1148,40 @@ function visit(root, visitors, state) {
  * @param {{ compact?: boolean, filename?: string }} options.generatorOpts
  */
 function createContext({ code, out, parse, generatorOpts, filename }) {
+	let isInitialParse = true;
+	let comments = [];
+
 	const ctx = {
 		paths: new WeakMap(),
 		/** @type {Set<Path>} */
 		queue: new Set(),
 		code,
 		out,
-		parse,
+		parse(code, opts) {
+			if (isInitialParse) {
+				opts = Object.assign({}, opts || {});
+				let onComment = opts && opts.onComment;
+				if (!Array.isArray(onComment)) {
+					opts.onComment = [];
+				}
+				opts.onComment.push = function (comment) {
+					comments.push(comment);
+					if (typeof onComment === 'function') {
+						onComment(
+							comment.type === 'Block',
+							comment.value,
+							comment.start,
+							comment.end,
+							comment.loc && comment.loc.start,
+							comment.loc && comment.loc.end
+						);
+					}
+					return Array.prototype.push.call(this, comment);
+				};
+				isInitialParse = false;
+			}
+			return parse(code, opts);
+		},
 		generatorOpts,
 		types,
 		visit,
@@ -1165,7 +1192,7 @@ function createContext({ code, out, parse, generatorOpts, filename }) {
 			file: {
 				ast: {
 					// TODO: use acorn's `onComment()` hook
-					comments: []
+					comments
 				},
 				opts: {
 					filename
@@ -1218,7 +1245,8 @@ export function transform(
 	parse = parse || DEFAULTS.parse;
 	generatorOpts = generatorOpts || {};
 	const out = new MagicString(code);
-	const { types, template, visit } = createContext({ code, out, parse, generatorOpts, filename });
+	const ctx = createContext({ code, out, parse, generatorOpts, filename });
+	const { types, template, visit } = ctx;
 
 	const allPlugins = [];
 	resolvePreset({ presets, plugins }, allPlugins);
@@ -1259,7 +1287,7 @@ export function transform(
 	// let start = Date.now();
 	let parsed;
 	try {
-		parsed = parse(code);
+		parsed = ctx.parse(code);
 	} catch (err) {
 		throw Object.assign(Error(), buildError(err, code, filename));
 	}
