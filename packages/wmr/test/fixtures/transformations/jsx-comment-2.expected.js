@@ -5,6 +5,7 @@ export default function ContentRegion({ content, ...props }) {
 		$$html`<content-region name=${props.name} data-page-nav=${hasNav}>
 			${content && (
 				$$html`<${Markup}
+
 					markup=${content}
 					type="html"
 					trim=${false}
