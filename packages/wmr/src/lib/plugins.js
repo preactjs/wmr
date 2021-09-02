@@ -26,13 +26,26 @@ import { acornDefaultPlugins } from './acorn-default-plugins.js';
 import { prefreshPlugin } from '../plugins/preact/prefresh.js';
 import { absolutePathPlugin } from '../plugins/absolute-path-plugin.js';
 import { lessPlugin } from '../plugins/less-plugin.js';
+import { workerPlugin } from '../plugins/worker-plugin.js';
 
 /**
- * @param {import("wmr").Options} options
+ * @param {import("wmr").Options & { runtimeEnv: "default" | "worker"}} options
  * @returns {import("wmr").Plugin[]}
  */
 export function getPlugins(options) {
-	const { plugins, publicPath, alias, root, env, minify, mode, sourcemap, features, visualize } = options;
+	const {
+		plugins,
+		publicPath,
+		alias,
+		root,
+		env,
+		minify,
+		mode,
+		runtimeEnv = 'default',
+		sourcemap,
+		features,
+		visualize
+	} = options;
 
 	// Plugins are pre-sorted
 	let split = plugins.findIndex(p => p.enforce === 'post');
@@ -40,6 +53,8 @@ export function getPlugins(options) {
 
 	const production = mode === 'build';
 	const mergedAssets = new Set();
+
+	const isWorker = runtimeEnv === 'worker';
 
 	return [
 		acornDefaultPlugins(),
@@ -74,13 +89,15 @@ export function getPlugins(options) {
 			env,
 			NODE_ENV: production ? 'production' : 'development'
 		}),
+		// Nested workers are not supported at the moment
+		!isWorker && workerPlugin(options),
 		htmPlugin({ production, sourcemap: options.sourcemap }),
 		wmrPlugin({ hot: !production, sourcemap: options.sourcemap }),
 		fastCjsPlugin({
 			// Only transpile CommonJS in node_modules and explicit .cjs files:
 			include: /(^npm\/|[/\\]node_modules[/\\]|\.cjs$)/
 		}),
-		production && npmPlugin({ external: false }),
+		(production || isWorker) && npmPlugin({ external: false }),
 		resolveExtensionsPlugin({
 			extensions: ['.ts', '.tsx', '.js', '.cjs'],
 			index: true

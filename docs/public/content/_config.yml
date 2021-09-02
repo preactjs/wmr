@@ -8,5 +8,6 @@ collections:
       - configuration
       - plugins
       - prerendering
+      - web-workers
       - { heading: 'API' }
       - plugin-api

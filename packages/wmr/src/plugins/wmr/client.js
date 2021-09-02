@@ -46,7 +46,9 @@ function handleMessage(e) {
 	const data = JSON.parse(e.data);
 	switch (data.type) {
 		case 'reload':
-			location.reload();
+			if (HAS_DOM) {
+				location.reload();
+			}
 			break;
 		case 'update':
 			if (errorOverlay) {
@@ -64,7 +66,10 @@ function handleMessage(e) {
 							return;
 						}
 					} else if (url.replace(URL_SUFFIX, '') === resolve(location.pathname).replace(URL_SUFFIX, '')) {
-						return location.reload();
+						if (HAS_DOM) {
+							location.reload();
+						}
+						return;
 					} else {
 						if (!HAS_DOM) return;
 						for (const el of document.querySelectorAll('[src],[href]')) {
