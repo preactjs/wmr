@@ -42,6 +42,8 @@ export const exec = (url, route, matches) => {
 		val = url[i];
 		// segment match:
 		if (!m && param == val) continue;
+		// /foo/* match
+		if (val && flag == '*') continue;
 		// segment mismatch / missing required field:
 		if (!m || (!val && flag != '?' && flag != '*')) return;
 		rest = flag == '+' || flag == '*';
