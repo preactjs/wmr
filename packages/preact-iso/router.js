@@ -5,6 +5,11 @@ let push;
 const UPDATE = (state, url) => {
 	push = undefined;
 	if (url && url.type === 'click') {
+		// ignore events the browser takes care of already:
+		if (url.ctrlKey || url.metaKey || url.altKey || url.shiftKey || url.button !== 0) {
+			return state;
+		}
+
 		const link = url.target.closest('a[href]');
 		if (
 			!link ||
