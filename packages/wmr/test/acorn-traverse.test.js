@@ -1058,7 +1058,7 @@ describe('acorn-traverse', () => {
 		});
 
 		describe('JSX Comments', () => {
-			it('should preserve leading comments in JSX attributes in development', () => {
+			it('should remove leading comments in JSX attributes in development', () => {
 				const str = transformWithPlugin(
 					dent`
 						<div
@@ -1070,13 +1070,13 @@ describe('acorn-traverse', () => {
 				);
 				expect(str).toMatchInlineSnapshot(`
 					"html\`<div
-						<!-- comment-->
+						
 						id=\\"foo\\"
 					/>\`"
 				`);
 			});
 
-			it('should preserve trailing comments in JSX attributes in development', () => {
+			it('should remove trailing comments in JSX attributes in development', () => {
 				const str = transformWithPlugin(
 					dent`
 						<div
@@ -1089,12 +1089,12 @@ describe('acorn-traverse', () => {
 				expect(str).toMatchInlineSnapshot(`
 					"html\`<div
 						id=\\"foo\\"
-						<!-- comment-->
+						
 					/>\`"
 				`);
 			});
 
-			it('should preserve commented-out JSXAttributes in development', () => {
+			it('should remove commented-out JSXAttributes in development', () => {
 				const str = transformWithPlugin(
 					dent`
 						<div
@@ -1109,16 +1109,16 @@ describe('acorn-traverse', () => {
 				);
 				expect(str).toMatchInlineSnapshot(`
 					"html\`<div
-						<!--id=\\"foo\\"-->
-						<!-- class=\\"bar\\"-->
-						<!-- style={{-->
-						<!--  color: 'red',-->
-						<!-- }}-->
+						
+						
+						
+						
+						
 					/>\`"
 				`);
 			});
 
-			it('should preserve multiple comments in JSX attributes in development', () => {
+			it('should remove multiple comments in JSX attributes in development', () => {
 				const str = transformWithPlugin(
 					dent`
 						<div
@@ -1133,16 +1133,16 @@ describe('acorn-traverse', () => {
 				);
 				expect(str).toMatchInlineSnapshot(`
 					"html\`<div
-						<!-- block comment -->
-						id=\\"foo\\"<!--A-->
-						<!-- line comment-->
-						class=\\"bar\\"<!--B-->
-						<!-- additional comment-->
+						
+						id=\\"foo\\"
+						
+						class=\\"bar\\"
+						
 					/>\`"
 				`);
 			});
 
-			it('should ignore comments within JSXExpressions', () => {
+			it('should remove comments within JSXExpressions', () => {
 				const str = transformWithPlugin(
 					dent`
 						<div

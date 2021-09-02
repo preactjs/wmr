@@ -27,14 +27,6 @@ export default function transformJsxToHtmLite({ types: t }, options = {}) {
 	const tagString = options.tag || 'html';
 	const tagImport = options.import || false;
 
-	const commentToHtml = (path, comment, ifStart = 0, ifEnd = Infinity) => {
-		if (comment.start >= ifStart && comment.end <= ifEnd) {
-			path.ctx.out.overwrite(comment.start, comment.start + 2, '<!--');
-			if (comment.type === 'Block') path.ctx.out.overwrite(comment.end - 2, comment.end, '-->');
-			else path.ctx.out.appendRight(comment.end, '-->');
-		}
-	};
-
 	return {
 		name: 'transform-jsx-to-htm-lite',
 		visitor: {
@@ -69,6 +61,14 @@ export default function transformJsxToHtmLite({ types: t }, options = {}) {
 					name.appendString('}');
 				}
 
+				if (isRootElement(path)) {
+					path.prependString(tagString + '`');
+
+					if (path.node.selfClosing) {
+						path.appendString('`');
+					}
+				}
+
 				// Remove all JS-style comments in between JSXAttributes.
 				// This includes both single line comments and multi line ones.
 				//   <A /* comment */ foo="a" /* other comment */ />
@@ -83,36 +83,6 @@ export default function transformJsxToHtmLite({ types: t }, options = {}) {
 				//   <div
 				//     id="foo"
 				//   />
-				const attrs = path.get('attributes');
-				if (Array.isArray(attrs.node) && attrs.node.length > 0) {
-					let ms = path.ctx.out;
-
-					let i = name.end;
-					for (const attr of attrs.node) {
-						const comments = parseMaybeComments(ms.original, i);
-						for (const comment of comments) {
-							ms.remove(comment.start, comment.end);
-						}
-
-						i = attr.end;
-					}
-
-					// Remove potential comment before closing the opening tag
-					const comments = parseMaybeComments(ms.original, i);
-					for (const comment of comments) {
-						ms.remove(comment.start, comment.end);
-					}
-				}
-
-				if (isRootElement(path)) {
-					path.prependString(tagString + '`');
-
-					if (path.node.selfClosing) {
-						path.appendString('`');
-					}
-				}
-
-				// Convert Line + Block comments within JSXOpeningElement into HTML comments:
 				let last = name.end;
 				let comments = path.hub.file.ast.comments;
 
@@ -123,7 +93,7 @@ export default function transformJsxToHtmLite({ types: t }, options = {}) {
 							// Don't transform comments to HTML if they're within a JSXExpression
 							let inExpression = attrs.some(attr => comment.start >= attr.start && comment.end <= attr.end);
 							if (!inExpression) {
-								commentToHtml(path, comment);
+								path.ctx.out.remove(comment.start, comment.end);
 							}
 						}
 					}
@@ -208,82 +178,4 @@ export default function transformJsxToHtmLite({ types: t }, options = {}) {
 			}
 		}
 	};
-}
-
-/**
- * Parse comments and return the start and end offset of all comments
- * that were found. This includes sibling comments.
- * @param {string} code
- * @param {number} start
- */
-function parseMaybeComments(code, start) {
-	/** @type {Array<{start: number, end: number}>} */
-	const out = [];
-
-	const NONE = 0;
-	const SINGLE = 1;
-	const MULTI = 2;
-
-	let commentStart = 0;
-	let lineStart = start;
-
-	let type = NONE;
-	for (let i = start; i < code.length; i++) {
-		let char = code.charAt(i);
-
-		if (type === SINGLE) {
-			if (char === '\n' || char === '\r') {
-				if (lineStart < commentStart) {
-					const leading = code.slice(lineStart, commentStart).match(/^\s+/);
-					if (leading) {
-						commentStart = lineStart + 1;
-					}
-				}
-
-				const end = i + 1;
-				out.push({ start: commentStart, end });
-				lineStart = i;
-				i = end;
-				type = NONE;
-			} else {
-				continue;
-			}
-		} else if (type === MULTI) {
-			if (char === '*' && code.charAt(i + 1) === '/') {
-				if (lineStart < commentStart) {
-					const leading = code.slice(lineStart, commentStart).match(/^\n\s+/);
-					if (leading) {
-						commentStart = lineStart + 1;
-					}
-				}
-
-				let end = i + 2;
-				const next = code.charAt(i + 2);
-				if (next === '\n' || next === '\r') end++;
-				out.push({ start: commentStart, end });
-				type = NONE;
-				i = end;
-			} else {
-				continue;
-			}
-		} else if (char === '/') {
-			if (code.charAt(i + 1) === '/') {
-				type = SINGLE;
-				commentStart = i;
-				i++;
-			} else if (code.charAt(i + 1) === '*') {
-				commentStart = i;
-				type = MULTI;
-				i++;
-			}
-		} else if (char === '\n') {
-			lineStart = i;
-		} else if (/\s/.test(char)) {
-			commentStart++;
-		} else {
-			break;
-		}
-	}
-
-	return out;
 }

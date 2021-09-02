@@ -53,14 +53,20 @@ describe('transformations', () => {
 		it('should remove JS comments between props', async () => {
 			const expected = await readFile(env, 'jsx-comment.expected.js');
 			await withLog(instance.output, async () => {
-				expect((await get(instance, 'jsx-comment.js')).body).toEqual(expected);
+				let actual = (await get(instance, 'jsx-comment.js')).body;
+				// avoid tests failing due to trimmed whitespace lines
+				actual = actual.replace(/^\s+?$/gm, '');
+				expect(actual).toEqual(expected);
 			});
 		});
 
 		it('should remove JS comments between props #2', async () => {
 			const expected = await readFile(env, 'jsx-comment-2.expected.js');
 			await withLog(instance.output, async () => {
-				expect((await get(instance, 'jsx-comment-2.js')).body).toEqual(expected);
+				let actual = (await get(instance, 'jsx-comment-2.js')).body;
+				// avoid tests failing due to trimmed whitespace lines
+				actual = actual.replace(/^\s+?$/gm, '');
+				expect(actual).toEqual(expected);
 			});
 		});
 	});
