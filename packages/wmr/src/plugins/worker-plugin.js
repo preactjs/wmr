@@ -118,8 +118,9 @@ export function workerPlugin(options) {
 						}
 
 						const start = match.index + match[0].indexOf(spec);
-						// Account for quoting characters
-						s.overwrite(start - 1, start + spec.length + 1, `import.meta.ROLLUP_FILE_URL_${ref}`);
+						// Account for quoting characters and force URL to be
+						// relative.
+						s.overwrite(start - 1, start + spec.length + 1, `'.' + import.meta.ROLLUP_FILE_URL_${ref}`);
 					}
 
 					return {
