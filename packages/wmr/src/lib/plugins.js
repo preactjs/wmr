@@ -92,7 +92,7 @@ export function getPlugins(options) {
 		// Nested workers are not supported at the moment
 		!isWorker && workerPlugin(options),
 		htmPlugin({ production, sourcemap: options.sourcemap }),
-		!isWorker && wmrPlugin({ hot: !production, sourcemap: options.sourcemap }),
+		wmrPlugin({ hot: !production, sourcemap: options.sourcemap }),
 		fastCjsPlugin({
 			// Only transpile CommonJS in node_modules and explicit .cjs files:
 			include: /(^npm\/|[/\\]node_modules[/\\]|\.cjs$)/
