@@ -1,6 +1,6 @@
 import path from 'path';
 import { promises as fs } from 'fs';
-import { setupTest, teardown, runWmr, loadFixture, get } from './test-helpers.js';
+import { setupTest, teardown, runWmr, loadFixture, get, withLog } from './test-helpers.js';
 import { modularizeCss } from '../src/plugins/wmr/styles/css-modules.js';
 
 const runWmrFast = (cwd, ...args) => runWmr(cwd, '--no-optimize', '--no-compress', ...args);
@@ -48,6 +48,13 @@ describe('transformations', () => {
 		it('should transform self-closed components', async () => {
 			const expected = await readFile(env, 'jsx-self-closed.expected.js');
 			expect((await get(instance, 'jsx-self-closed.js')).body).toEqual(expected);
+		});
+
+		it('should remove single line comments between props', async () => {
+			const expected = await readFile(env, 'jsx-comment.expected.js');
+			await withLog(instance.output, async () => {
+				expect((await get(instance, 'jsx-comment.js')).body).toEqual(expected);
+			});
 		});
 	});
 
