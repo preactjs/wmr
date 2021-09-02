@@ -5,7 +5,7 @@ import * as acorn from 'acorn';
 import acornJsx from 'acorn-jsx';
 import { transform, generate } from '../src/lib/acorn-traverse.js';
 import transformJsxToHtm from 'babel-plugin-transform-jsx-to-htm';
-// import transformJsxToHtmLite from '../src/lib/transform-jsx-to-htm-lite.js';
+import transformJsxToHtmLite from '../src/lib/transform-jsx-to-htm-lite.js';
 
 const fixtures = path.join(__dirname, 'fixtures/_unit');
 
@@ -1055,6 +1055,128 @@ describe('acorn-traverse', () => {
 			});
 
 			expect(str).toMatchInlineSnapshot(`"<div foo=\\"bar\\"/>"`);
+		});
+
+		describe('JSX Comments', () => {
+			it('should preserve leading comments in JSX attributes in development', () => {
+				const str = transformWithPlugin(
+					dent`
+						<div
+							// comment
+							id="foo"
+						/>
+					`,
+					transformJsxToHtmLite
+				);
+				expect(str).toMatchInlineSnapshot(`
+					"html\`<div
+						<!-- comment-->
+						id=\\"foo\\"
+					/>\`"
+				`);
+			});
+
+			it('should preserve trailing comments in JSX attributes in development', () => {
+				const str = transformWithPlugin(
+					dent`
+						<div
+							id="foo"
+							// comment
+						/>
+					`,
+					transformJsxToHtmLite
+				);
+				expect(str).toMatchInlineSnapshot(`
+					"html\`<div
+						id=\\"foo\\"
+						<!-- comment-->
+					/>\`"
+				`);
+			});
+
+			it('should preserve commented-out JSXAttributes in development', () => {
+				const str = transformWithPlugin(
+					dent`
+						<div
+							//id="foo"
+							// class="bar"
+							// style={{
+							//  color: 'red',
+							// }}
+						/>
+					`,
+					transformJsxToHtmLite
+				);
+				expect(str).toMatchInlineSnapshot(`
+					"html\`<div
+						<!--id=\\"foo\\"-->
+						<!-- class=\\"bar\\"-->
+						<!-- style={{-->
+						<!--  color: 'red',-->
+						<!-- }}-->
+					/>\`"
+				`);
+			});
+
+			it('should preserve multiple comments in JSX attributes in development', () => {
+				const str = transformWithPlugin(
+					dent`
+						<div
+							/* block comment */
+							id="foo"//A
+							// line comment
+							class="bar"/*B*/
+							// additional comment
+						/>
+					`,
+					transformJsxToHtmLite
+				);
+				expect(str).toMatchInlineSnapshot(`
+					"html\`<div
+						<!-- block comment -->
+						id=\\"foo\\"<!--A-->
+						<!-- line comment-->
+						class=\\"bar\\"<!--B-->
+						<!-- additional comment-->
+					/>\`"
+				`);
+			});
+
+			it('should ignore comments within JSXExpressions', () => {
+				const str = transformWithPlugin(
+					dent`
+						<div
+							id={/* A */"foo"}
+							class={
+								// B
+								"bar"
+							}
+							ref={/*before*/ref/*after*/}
+							style={{
+								// before
+								color: 'red',
+								// after
+							}}
+						/>
+					`,
+					transformJsxToHtmLite
+				);
+				expect(str).toMatchInlineSnapshot(`
+					"html\`<div
+						id=\${/* A */\\"foo\\"}
+						class=\${
+							// B
+							\\"bar\\"
+						}
+						ref=\${/*before*/ref/*after*/}
+						style=\${{
+							// before
+							color: 'red',
+							// after
+						}}
+					/>\`"
+				`);
+			});
 		});
 	});
 
