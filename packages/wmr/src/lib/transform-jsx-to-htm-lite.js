@@ -211,12 +211,14 @@ function parseMaybeComments(code, start) {
 				if (lineStart < commentStart) {
 					const leading = code.slice(lineStart, commentStart).match(/^\s+/);
 					if (leading) {
-						commentStart = lineStart;
+						commentStart = lineStart + 1;
 					}
 				}
 
-				out.push({ start: commentStart, end: i });
+				const end = i + 1;
+				out.push({ start: commentStart, end });
 				lineStart = i;
+				i = end;
 				type = NONE;
 			} else {
 				continue;
@@ -226,11 +228,13 @@ function parseMaybeComments(code, start) {
 				if (lineStart < commentStart) {
 					const leading = code.slice(lineStart, commentStart).match(/^\n\s+/);
 					if (leading) {
-						commentStart = lineStart;
+						commentStart = lineStart + 1;
 					}
 				}
 
 				let end = i + 2;
+				const next = code.charAt(i + 2);
+				if (next === '\n' || next === '\r') end++;
 				out.push({ start: commentStart, end });
 				type = NONE;
 				i = end;

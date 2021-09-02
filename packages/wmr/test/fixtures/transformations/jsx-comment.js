@@ -9,11 +9,11 @@ export const a = <div
 
 // prettier-ignore
 export const b = <div
-	// comment 1
-	// comment 2
+	// comment 1.1
+	// comment 2.2
 	id="foo"
-	// comment 3
-	// comment 3
+	// comment 3.3
+	// comment 3.4
 	/>
 
 const Foo = () => null;
