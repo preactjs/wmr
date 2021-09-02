@@ -27,6 +27,14 @@ export default function transformJsxToHtmLite({ types: t }, options = {}) {
 	const tagString = options.tag || 'html';
 	const tagImport = options.import || false;
 
+	const commentToHtml = (path, comment, ifStart = 0, ifEnd = Infinity) => {
+		if (comment.start >= ifStart && comment.end <= ifEnd) {
+			path.ctx.out.overwrite(comment.start, comment.start + 2, '<!--');
+			if (comment.type === 'Block') path.ctx.out.overwrite(comment.end - 2, comment.end, '-->');
+			else path.ctx.out.appendRight(comment.end, '-->');
+		}
+	};
+
 	return {
 		name: 'transform-jsx-to-htm-lite',
 		visitor: {
@@ -66,6 +74,23 @@ export default function transformJsxToHtmLite({ types: t }, options = {}) {
 
 					if (path.node.selfClosing) {
 						path.appendString('`');
+					}
+				}
+
+				// Convert Line + Block comments within JSXOpeningElement into HTML comments:
+				let last = name.end;
+				let comments = path.hub.file.ast.comments;
+
+				if (comments.length > 0) {
+					let attrs = path.node.attributes || [];
+					for (let comment of comments) {
+						if (comment.start >= last && comment.end < path.end) {
+							// Don't transform comments to HTML if they're within a JSXExpression
+							let inExpression = attrs.some(attr => comment.start >= attr.start && comment.end <= attr.end);
+							if (!inExpression) {
+								commentToHtml(path, comment);
+							}
+						}
 					}
 				}
 			},
