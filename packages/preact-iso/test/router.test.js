@@ -1,7 +1,7 @@
 import { jest, describe, it, beforeEach, expect } from '@jest/globals';
 import { h, render } from 'preact';
 import { html } from 'htm/preact';
-import { LocationProvider, Router, useLocation } from '../router.js';
+import { LocationProvider, Router, useLocation, Route, useRoute } from '../router.js';
 import lazy, { ErrorBoundary } from '../lazy.js';
 
 Object.defineProperty(window, 'scrollTo', { value() {} });
@@ -47,7 +47,7 @@ describe('Router', () => {
 		);
 
 		expect(scratch).toHaveProperty('textContent', 'Home');
-		expect(Home).toHaveBeenCalledWith({ path: '/', query: {}, params: {} }, expect.anything());
+		expect(Home).toHaveBeenCalledWith({ path: '/', query: {}, params: {}, rest: '' }, expect.anything());
 		expect(Profiles).not.toHaveBeenCalled();
 		expect(Profile).not.toHaveBeenCalled();
 		expect(Fallback).not.toHaveBeenCalled();
@@ -64,7 +64,7 @@ describe('Router', () => {
 
 		expect(scratch).toHaveProperty('textContent', 'Profiles');
 		expect(Home).not.toHaveBeenCalled();
-		expect(Profiles).toHaveBeenCalledWith({ path: '/profiles', query: {}, params: {} }, expect.anything());
+		expect(Profiles).toHaveBeenCalledWith({ path: '/profiles', query: {}, params: {}, rest: '' }, expect.anything());
 		expect(Profile).not.toHaveBeenCalled();
 		expect(Fallback).not.toHaveBeenCalled();
 
@@ -82,7 +82,7 @@ describe('Router', () => {
 		expect(Home).not.toHaveBeenCalled();
 		expect(Profiles).not.toHaveBeenCalled();
 		expect(Profile).toHaveBeenCalledWith(
-			{ path: '/profiles/bob', query: {}, params: { id: 'bob' }, id: 'bob' },
+			{ path: '/profiles/bob', query: {}, params: { id: 'bob' }, id: 'bob', rest: '' },
 			expect.anything()
 		);
 		expect(Fallback).not.toHaveBeenCalled();
@@ -102,7 +102,7 @@ describe('Router', () => {
 		expect(Profiles).not.toHaveBeenCalled();
 		expect(Profile).not.toHaveBeenCalled();
 		expect(Fallback).toHaveBeenCalledWith(
-			{ default: true, path: '/other', query: { a: 'b', c: 'd' }, params: {} },
+			{ default: true, path: '/other', query: { a: 'b', c: 'd' }, params: {}, rest: '' },
 			expect.anything()
 		);
 
@@ -141,13 +141,13 @@ describe('Router', () => {
 		);
 
 		expect(scratch).toHaveProperty('innerHTML', '');
-		expect(A).toHaveBeenCalledWith({ path: '/', query: {}, params: {} }, expect.anything());
+		expect(A).toHaveBeenCalledWith({ path: '/', query: {}, params: {}, rest: '' }, expect.anything());
 
 		A.mockClear();
 		await sleep(10);
 
 		expect(scratch).toHaveProperty('innerHTML', '<h1>A</h1><p>hello</p>');
-		expect(A).toHaveBeenCalledWith({ path: '/', query: {}, params: {} }, expect.anything());
+		expect(A).toHaveBeenCalledWith({ path: '/', query: {}, params: {}, rest: '' }, expect.anything());
 
 		A.mockClear();
 		loc.route('/b');
@@ -160,14 +160,14 @@ describe('Router', () => {
 		expect(scratch).toHaveProperty('innerHTML', '<h1>A</h1><p>hello</p>');
 		// We should never re-invoke <A /> while loading <B /> (that would be a remount of the old route):
 		expect(A).not.toHaveBeenCalled();
-		expect(B).toHaveBeenCalledWith({ path: '/b', query: {}, params: {} }, expect.anything());
+		expect(B).toHaveBeenCalledWith({ path: '/b', query: {}, params: {}, rest: '' }, expect.anything());
 
 		B.mockClear();
 		await sleep(10);
 
 		expect(scratch).toHaveProperty('innerHTML', '<h1>B</h1><p>hello</p>');
 		expect(A).not.toHaveBeenCalled();
-		expect(B).toHaveBeenCalledWith({ path: '/b', query: {}, params: {} }, expect.anything());
+		expect(B).toHaveBeenCalledWith({ path: '/b', query: {}, params: {}, rest: '' }, expect.anything());
 
 		B.mockClear();
 		loc.route('/c');
@@ -186,14 +186,14 @@ describe('Router', () => {
 		expect(scratch).toHaveProperty('innerHTML', '<h1>B</h1><p>hello</p>');
 		// We should never re-invoke <A /> while loading <B /> (that would be a remount of the old route):
 		expect(B).not.toHaveBeenCalled();
-		expect(C).toHaveBeenCalledWith({ path: '/c', query: {}, params: {} }, expect.anything());
+		expect(C).toHaveBeenCalledWith({ path: '/c', query: {}, params: {}, rest: '' }, expect.anything());
 
 		C.mockClear();
 		await sleep(10);
 
 		expect(scratch).toHaveProperty('innerHTML', '<h1>C</h1>');
 		expect(B).not.toHaveBeenCalled();
-		expect(C).toHaveBeenCalledWith({ path: '/c', query: {}, params: {} }, expect.anything());
+		expect(C).toHaveBeenCalledWith({ path: '/c', query: {}, params: {}, rest: '' }, expect.anything());
 
 		// "instant" routing to already-loaded routes
 
@@ -205,7 +205,7 @@ describe('Router', () => {
 		expect(scratch).toHaveProperty('innerHTML', '<h1>B</h1><p>hello</p>');
 		expect(C).not.toHaveBeenCalled();
 		// expect(B).toHaveBeenCalledTimes(1);
-		expect(B).toHaveBeenCalledWith({ path: '/b', query: {}, params: {} }, expect.anything());
+		expect(B).toHaveBeenCalledWith({ path: '/b', query: {}, params: {}, rest: '' }, expect.anything());
 
 		B.mockClear();
 		loc.route('/');
@@ -214,7 +214,7 @@ describe('Router', () => {
 		expect(scratch).toHaveProperty('innerHTML', '<h1>A</h1><p>hello</p>');
 		expect(B).not.toHaveBeenCalled();
 		// expect(A).toHaveBeenCalledTimes(1);
-		expect(A).toHaveBeenCalledWith({ path: '/', query: {}, params: {} }, expect.anything());
+		expect(A).toHaveBeenCalledWith({ path: '/', query: {}, params: {}, rest: '' }, expect.anything());
 	});
 
 	describe('intercepted VS external links', () => {
@@ -435,5 +435,67 @@ describe('Router', () => {
 		expect(pushState).toHaveBeenCalled();
 
 		pushState.mockRestore();
+	});
+
+	it('should match nested routes', async () => {
+		let route;
+		const Inner = () => html`
+			<${Router}>
+				<${Route}
+					path="/bob"
+					component=${() => {
+						route = useRoute();
+						return null;
+					}}
+				/>
+			<//>
+		`;
+
+		render(
+			html`
+				<${LocationProvider}>
+					<${Router}>
+						<${Route} path="/foo/:id/*" component=${Inner} />
+					<//>
+					<a href="/foo/bar/bob"></a>
+				<//>
+			`,
+			scratch
+		);
+
+		scratch.querySelector('a[href="/foo/bar/bob"]').click();
+		await sleep(20);
+		expect(route).toMatchObject({ path: '/bob', params: { id: 'bar' } });
+	});
+
+	it('should append params in nested routes', async () => {
+		let params;
+		const Inner = () => html`
+			<${Router}>
+				<${Route}
+					path="/bob"
+					component=${() => {
+						params = useRoute().params;
+						return null;
+					}}
+				/>
+			<//>
+		`;
+
+		render(
+			html`
+				<${LocationProvider}>
+					<${Router}>
+						<${Route} path="/foo/:id/*" component=${Inner} />
+					<//>
+					<a href="/foo/bar/bob"></a>
+				<//>
+			`,
+			scratch
+		);
+
+		scratch.querySelector('a[href="/foo/bar/bob"]').click();
+		await sleep(20);
+		expect(params).toMatchObject({ id: 'bar' });
 	});
 });

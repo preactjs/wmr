@@ -43,7 +43,10 @@ export const exec = (url, route, matches) => {
 		// segment match:
 		if (!m && param == val) continue;
 		// /foo/* match
-		if (!m && val && flag == '*') break;
+		if (!m && val && flag == '*') {
+			matches.rest = '/' + url.slice(i).map(decodeURIComponent).join('/');
+			break;
+		}
 		// segment mismatch / missing required field:
 		if (!m || (!val && flag != '?' && flag != '*')) return;
 		rest = flag == '+' || flag == '*';
@@ -88,7 +91,8 @@ const RESOLVED = Promise.resolve();
 export function Router(props) {
 	const [, update] = useReducer(c => c + 1, 0);
 
-	const { url, path, query, wasPush } = useLocation();
+	const { url, query, wasPush, path } = useLocation();
+	const { rest = path, params = {} } = useContext(RouteContext);
 
 	// Monotonic counter used to check if an un-suspending route is still the current route:
 	const count = useRef(0);
@@ -114,13 +118,13 @@ export function Router(props) {
 
 		let p, d, m;
 		toChildArray(props.children).some(vnode => {
-			const matches = exec(path, vnode.props.path, (m = { path, query, params: {} }));
+			const matches = exec(rest, vnode.props.path, (m = { path: rest, query, params, rest: '' }));
 			if (matches) return (p = cloneElement(vnode, m));
 			if (vnode.props.default) d = cloneElement(vnode, m);
 		});
 
 		return h(RouteContext.Provider, { value: m }, p || d);
-	}, [url]);
+	}, [rest, params]);
 
 	// Reset previous children - if rendering succeeds synchronously, we shouldn't render the previous children.
 	const p = prev.current;
