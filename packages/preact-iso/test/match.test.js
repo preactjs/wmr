@@ -33,6 +33,9 @@ describe('match', () => {
 		const accurateResult = execPath('/user/2/foo', '/user/:id/*');
 		expect(accurateResult).toEqual({ path: '/user/2/foo', params: { id: '2' }, id: '2', query: {} });
 
+		const accurateResult2 = execPath('/user/2/foo/bar/bob', '/user/:id/*');
+		expect(accurateResult2).toEqual({ path: '/user/2/foo/bar/bob', params: { id: '2' }, id: '2', query: {} });
+
 		const inaccurateResult = execPath('/', '/user/:id/*');
 		expect(inaccurateResult).toEqual(undefined);
 	});
