@@ -59,7 +59,8 @@ export function getPlugins(options) {
 	return [
 		acornDefaultPlugins(),
 		...plugins.slice(0, split),
-		features.preact && !production && prefreshPlugin({ sourcemap }),
+		// Skip injecting a client for iife workers
+		!isWorker && features.preact && !production && prefreshPlugin({ sourcemap }),
 		production && htmlEntriesPlugin({ root, publicPath, mergedAssets, sourcemap }),
 		externalUrlsPlugin(),
 		nodeBuiltinsPlugin({ production }),
@@ -92,7 +93,8 @@ export function getPlugins(options) {
 		// Nested workers are not supported at the moment
 		!isWorker && workerPlugin(options),
 		htmPlugin({ production, sourcemap: options.sourcemap }),
-		wmrPlugin({ hot: !production, sourcemap: options.sourcemap }),
+		// Skip injecting a client for iife workers
+		!isWorker && wmrPlugin({ hot: !production, sourcemap: options.sourcemap }),
 		fastCjsPlugin({
 			// Only transpile CommonJS in node_modules and explicit .cjs files:
 			include: /(^npm\/|[/\\]node_modules[/\\]|\.cjs$)/
