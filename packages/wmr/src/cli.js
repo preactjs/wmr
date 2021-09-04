@@ -30,8 +30,9 @@ prog
 	.option('--prerender', 'Pre-render the application to HTML')
 	.option('--sourcemap', 'Enable Source Maps')
 	.option('--visualize', 'Launch interactive bundle visualizer')
+	.option('--minify', 'Enable minification of generated code (default: true)', true)
 	.action(opts => {
-		opts.minify = opts.minify !== false && !/false|0/.test(opts.minify);
+		opts.minify = bool(opts.minify);
 		run(build(opts));
 	});
 
