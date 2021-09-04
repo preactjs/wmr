@@ -29,7 +29,7 @@ import { lessPlugin } from '../plugins/less-plugin.js';
 import { workerPlugin } from '../plugins/worker-plugin.js';
 
 /**
- * @param {import("wmr").Options & { runtimeEnv: "default" | "worker"}} options
+ * @param {import("wmr").Options & { isIIFEWorker?: boolean}} options
  * @returns {import("wmr").Plugin[]}
  */
 export function getPlugins(options) {
@@ -41,7 +41,7 @@ export function getPlugins(options) {
 		env,
 		minify,
 		mode,
-		runtimeEnv = 'default',
+		isIIFEWorker = false,
 		sourcemap,
 		features,
 		visualize
@@ -54,12 +54,11 @@ export function getPlugins(options) {
 	const production = mode === 'build';
 	const mergedAssets = new Set();
 
-	const isWorker = runtimeEnv === 'worker';
-
 	return [
 		acornDefaultPlugins(),
 		...plugins.slice(0, split),
-		features.preact && !production && prefreshPlugin({ sourcemap }),
+		// Skip injecting a client for iife workers
+		!isIIFEWorker && features.preact && !production && prefreshPlugin({ sourcemap }),
 		production && htmlEntriesPlugin({ root, publicPath, mergedAssets, sourcemap }),
 		externalUrlsPlugin(),
 		nodeBuiltinsPlugin({ production }),
@@ -90,14 +89,15 @@ export function getPlugins(options) {
 			NODE_ENV: production ? 'production' : 'development'
 		}),
 		// Nested workers are not supported at the moment
-		!isWorker && workerPlugin(options),
+		!isIIFEWorker && workerPlugin(options),
 		htmPlugin({ production, sourcemap: options.sourcemap }),
-		wmrPlugin({ hot: !production, sourcemap: options.sourcemap }),
+		// Skip injecting a client for iife workers
+		!isIIFEWorker && wmrPlugin({ hot: !production, sourcemap: options.sourcemap }),
 		fastCjsPlugin({
 			// Only transpile CommonJS in node_modules and explicit .cjs files:
 			include: /(^npm\/|[/\\]node_modules[/\\]|\.cjs$)/
 		}),
-		(production || isWorker) && npmPlugin({ external: false }),
+		(production || isIIFEWorker) && npmPlugin({ external: false }),
 		resolveExtensionsPlugin({
 			extensions: ['.ts', '.tsx', '.js', '.cjs'],
 			index: true
