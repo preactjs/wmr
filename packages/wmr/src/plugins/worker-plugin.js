@@ -9,7 +9,7 @@ import * as kl from 'kolorist';
  * @returns {import('rollup').Plugin}
  */
 export function workerPlugin(options) {
-	const plugins = getPlugins({ ...options, runtimeEnv: 'worker' });
+	const plugins = getPlugins({ ...options, isIIFEWorker: true });
 
 	/** @type {Map<string, number>} */
 	const moduleWorkers = new Map();
