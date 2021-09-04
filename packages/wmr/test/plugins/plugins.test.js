@@ -65,4 +65,15 @@ describe('config', () => {
 			expect(await env.page.content()).toMatch(/it works/);
 		});
 	});
+
+	it('should call config() and configResolved() of all plugins', async () => {
+		await loadFixture('plugin-config-multiple', env);
+		instance = await runWmrFast(env.tmp.path);
+		await getOutput(env, instance);
+
+		await waitForMessage(instance.output, 'config() A');
+		await waitForMessage(instance.output, 'config() C');
+		await waitForMessage(instance.output, 'configResolved() A');
+		await waitForMessage(instance.output, 'configResolved() C');
+	});
 });

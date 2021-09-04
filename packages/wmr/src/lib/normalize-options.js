@@ -153,7 +153,7 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 	 */
 	const runConfigHook = async (name, plugins) => {
 		for (const plugin of plugins) {
-			if (!plugin[name]) return;
+			if (!plugin[name]) continue;
 
 			const res = await plugin[name](options);
 			if (res) {
