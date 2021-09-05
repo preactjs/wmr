@@ -104,7 +104,8 @@ export function workerPlugin(options) {
 
 						const ref = this.emitFile({
 							type: 'chunk',
-							id: spec
+							id: spec,
+							importer: id
 						});
 
 						const resolved = await this.resolve(spec, id);

@@ -79,6 +79,19 @@ describe('Workers', () => {
 				await waitForMessage(instance.output, /Module workers are not widely supported/);
 			});
 		});
+
+		it('should load worker in nested path', async () => {
+			await loadFixture('worker-relative', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			await withLog(instance.output, async () => {
+				await waitForPass(async () => {
+					const h1 = await env.page.evaluate('document.querySelector("h1").textContent');
+					expect(h1).toMatch('it works');
+				});
+			});
+		});
 	});
 
 	describe('production', () => {
@@ -165,6 +178,25 @@ describe('Workers', () => {
 				});
 
 				await waitForMessage(instance.output, /Module workers are not widely supported/);
+			});
+		});
+
+		it('should load worker in nested path', async () => {
+			await loadFixture('worker-relative', env);
+			instance = await runWmr(env.tmp.path, 'build');
+
+			expect(await instance.done).toEqual(0);
+			const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+			cleanup.push(stop);
+			await env.page.goto(address, {
+				waitUntil: ['networkidle0', 'load']
+			});
+
+			await withLog(instance.output, async () => {
+				await waitForPass(async () => {
+					const h1 = await env.page.evaluate('document.querySelector("h1").textContent');
+					expect(h1).toMatch('it works');
+				});
 			});
 		});
 	});
