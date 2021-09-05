@@ -103,7 +103,7 @@ export default async function serve(options = {}) {
 	app.listen(port, host, () => {
 		const addresses = getServerAddresses(app.server.address(), { https: app.http2, host: options.host });
 
-		const message = `dev server running at:`;
+		const message = `server running at:`;
 		process.stdout.write(formatBootMessage(message, addresses));
 	});
 }

@@ -125,7 +125,7 @@ async function bootServer(options, configWatchFiles) {
 			https: app.http2
 		});
 
-		const message = `server running at:`;
+		const message = `dev server running at:`;
 		process.stdout.write(formatBootMessage(message, addresses));
 
 		// If the port was `0` than the OS picks a random
