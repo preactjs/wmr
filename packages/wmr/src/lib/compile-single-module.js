@@ -2,6 +2,7 @@ import * as rollup from 'rollup';
 import wmrPlugin from '../plugins/wmr/plugin.js';
 import htmPlugin from '../plugins/htm-plugin.js';
 import sucrasePlugin from '../plugins/sucrase-plugin.js';
+import { onWarn } from './output-utils.js';
 // import localNpmPlugin from './plugins/local-npm-plugin.js';
 
 // disabled for now
@@ -36,6 +37,7 @@ export const compileSingleModule = withCache(
 		// console.log('compiling ' + input);
 		const bundle = await rollup.rollup({
 			input,
+			onwarn: onWarn,
 			treeshake: false,
 			preserveModules: true,
 			// these should theroetically improve performance:

@@ -232,3 +232,43 @@ export function formatBootMessage(message, addresses) {
 
 	return `${intro}${local}${network}\n`;
 }
+
+function formatWarnMessage(str) {
+	return str !== kl.stripColors(str) ? kl.yellow('(!) ') + str : kl.yellow('(!) ' + str);
+}
+
+/** @type {import('rollup').WarningHandlerWithDefault} */
+export function onWarn(warning) {
+	if (typeof warning === 'string') {
+		// eslint-disable-next-line no-console
+		console.log(formatWarnMessage(warning));
+		return;
+	}
+
+	const { message, loc, frame } = warning;
+	let msg = formatWarnMessage(message) + '\n';
+
+	if (loc && loc.file) {
+		msg += `${kl.cyan(`${loc.file}:${loc.line}:${loc.column}`)}\n`;
+	}
+
+	// Reformat code frame to match our format
+	if (frame) {
+		const lines = frame.split('\n');
+		const max = Math.max(...lines.map(x => x.indexOf(':')).filter(x => x >= 0));
+
+		const reformatted = lines
+			.map(line => {
+				if (/\s+\^/.test(line)) {
+					return kl.red('> ') + ' '.repeat(max) + kl.dim(' |') + kl.red(line.slice(max + 1));
+				}
+
+				return line.replace(/^(\d+): /, (_, g) => '  ' + kl.dim(g) + kl.dim(' | '));
+			})
+			.join('\n');
+		msg += `${reformatted}\n`;
+	}
+
+	// eslint-disable-next-line no-console
+	console.log(msg);
+}
