@@ -3,6 +3,7 @@ import * as rollup from 'rollup';
 import path from 'path';
 import { getPlugins } from '../lib/plugins.js';
 import * as kl from 'kolorist';
+import { onWarn } from '../lib/output-utils.js';
 
 /**
  * @param {import("wmr").Options} options
@@ -51,6 +52,7 @@ export function workerPlugin(options) {
 				// See: https://bugzilla.mozilla.org/show_bug.cgi?id=1247687
 				const bundle = await rollup.rollup({
 					input: id,
+					onwarn: onWarn,
 					plugins: [
 						{
 							name: 'worker-meta',

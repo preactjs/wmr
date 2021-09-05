@@ -10,7 +10,7 @@ import aliasPlugin from '../plugins/aliases-plugin.js';
 import { getMimeType } from './mimetypes.js';
 import nodeBuiltinsPlugin from '../plugins/node-builtins-plugin.js';
 import * as kl from 'kolorist';
-import { hasDebugFlag } from './output-utils.js';
+import { hasDebugFlag, onWarn } from './output-utils.js';
 
 /**
  * Serve a "proxy module" that uses the WMR runtime to load CSS.
@@ -130,6 +130,7 @@ async function bundleNpmModule(mod, { source, alias, cwd }) {
 
 	const bundle = await rollup.rollup({
 		input: mod,
+		onwarn: onWarn,
 		// input: '\0entry',
 		cache: npmCache,
 		shimMissingExports: true,

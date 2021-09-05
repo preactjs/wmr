@@ -3,6 +3,7 @@ import * as rollup from 'rollup';
 import terser from './plugins/fast-minify.js';
 import totalist from 'totalist';
 import { getPlugins } from './lib/plugins.js';
+import { onWarn } from './lib/output-utils.js';
 
 /** @param {string} p */
 const pathToPosix = p => p.split(sep).join(posix.sep);
@@ -23,6 +24,7 @@ export async function bundleProd(options) {
 
 	const bundle = await rollup.rollup({
 		input,
+		onwarn: onWarn,
 		perf: !!profile,
 		preserveEntrySignatures: 'allow-extension',
 		manualChunks: npmChunks ? extractNpmChunks : undefined,
