@@ -1,5 +1,17 @@
 # preact-iso
 
+## 2.2.0
+
+### Minor Changes
+
+- [`9a814a9`](https://github.com/preactjs/wmr/commit/9a814a95e76883254c3e9861170259ddd6d9ac0c) [#832](https://github.com/preactjs/wmr/pull/832) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Add support for partial route matching via `/foo/*`
+
+* [`439768e`](https://github.com/preactjs/wmr/commit/439768e6ef3e0a69fe872196f2b3f05bd3bbfcb6) [#835](https://github.com/preactjs/wmr/pull/835) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Add support for nested routes matching
+
+### Patch Changes
+
+- [`21bbeb9`](https://github.com/preactjs/wmr/commit/21bbeb9a9a58e2c3c59f9db2cec1c651e5bbf5f8) [#831](https://github.com/preactjs/wmr/pull/831) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix `preact-iso` intercepting `cmd/ctrl+click` and other native browser behaviors.
+
 ## 2.1.0
 
 ### Minor Changes
