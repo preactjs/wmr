@@ -132,6 +132,8 @@ describe('Workers', () => {
 					expect(h1).toMatch('it works');
 					expect(h2).toMatch('it works');
 				});
+
+				expect(instance.output.join('\n')).not.toMatch(/you may not be able to access the exports of an IIFE bundle/);
 			});
 		});
 

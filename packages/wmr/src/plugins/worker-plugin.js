@@ -69,7 +69,7 @@ export function workerPlugin(options) {
 
 				const res = await bundle.generate({
 					format: 'iife',
-
+					name: path.basename(id, path.extname(id)).replace(/[-.]\w/g, m => m[1].toUpperCase()),
 					sourcemap: options.sourcemap,
 					inlineDynamicImports: true
 				});
