@@ -28,4 +28,4 @@ const normalized = {
 	types,
 	files
 };
-write('package.json', JSON.stringify(normalized, null, 2));
+write('package.json', JSON.stringify(normalized, null, 2) + '\n');
