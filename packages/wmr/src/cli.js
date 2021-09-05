@@ -6,6 +6,9 @@ import start from './start.js';
 import serve from './serve.js';
 import * as errorstacks from 'errorstacks';
 import * as kl from 'kolorist';
+import { fileURLToPath } from 'url';
+import { promises as fs } from 'fs';
+import { wmrCodeFrame } from './lib/output-utils.js';
 
 const prog = sade('wmr');
 
@@ -73,21 +76,39 @@ function run(p) {
 /**
  * @param {Error} err
  */
-function catchException(err) {
+async function catchException(err) {
+	// TODO: Unhandled exceptions originating in workers will
+	// end up here too. Find a way to tag prerender errors somehow.
+
 	let text = '';
 	let stack = '';
+	let codeFrame = '';
 	if (err.stack) {
 		const formattedStack = errorstacks.parseStackTrace(err.stack);
 		if (formattedStack.length > 0) {
 			const idx = err.stack.indexOf(formattedStack[0].raw);
 			text = err.stack.slice(0, idx).trim() + '\n';
 			stack = formattedStack.map(frame => frame.raw).join('\n');
+
+			// Find first non-internal frame of the stack
+			const frame = formattedStack.find(frame => !frame.fileName.startsWith('node:') && frame.type !== 'native');
+			if (frame) {
+				let file = frame.fileName;
+				file = file.startsWith('file://') ? fileURLToPath(file) : file;
+				try {
+					const code = await fs.readFile(file, 'utf-8');
+					codeFrame = wmrCodeFrame(code, frame.line - 1, frame.column);
+				} catch (err) {}
+			}
 		}
 	}
 
 	if (!text) text = err.message || err + '';
 
-	process.stderr.write(`\n${kl.red(text)}\n${stack ? kl.dim(stack + '\n\n') : ''}`);
+	const printFrame = codeFrame ? codeFrame + '\n' : '';
+	const printStack = stack ? kl.dim(stack + '\n\n') : '';
+
+	process.stderr.write(`\n${kl.red(text)}${printFrame || '\n'}${printStack}`);
 	process.exit(1);
 }
 
