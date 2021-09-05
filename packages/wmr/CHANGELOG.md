@@ -1,5 +1,23 @@
 # wmr
 
+## 3.7.0
+
+### Minor Changes
+
+- [`585bcb2`](https://github.com/preactjs/wmr/commit/585bcb2dceb32da43a03c0345a142dbff400513f) [#842](https://github.com/preactjs/wmr/pull/842) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Add `--minify` option to the `build` command. That way one can disable minifcation for production builds by passing `--no-minify` or `--minify false`
+
+* [`27a41df`](https://github.com/preactjs/wmr/commit/27a41df4d44f68ab3bddf8d920437488ce5744ad) [#827](https://github.com/preactjs/wmr/pull/827) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Add built-in support for [Web Workers](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers) based on browser APIs. Example on how to use Web Workers with WMR: https://wmr.dev/docs/web-workers
+
+### Patch Changes
+
+- [`71d02e0`](https://github.com/preactjs/wmr/commit/71d02e04ed5854dd646f477b974a3a6ff7bc0ce6) [#840](https://github.com/preactjs/wmr/pull/840) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix `config()` and `configResolved()` plugin hooks being skipped when the previous plugin didn't have those hooks
+
+* [`cd17272`](https://github.com/preactjs/wmr/commit/cd172727f99f09f7db40cf10b204769b6ca0dfea) [#844](https://github.com/preactjs/wmr/pull/844) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Distinguish dev server from normal server ("serve" command) in cli output
+
+- [`b072d94`](https://github.com/preactjs/wmr/commit/b072d9457bacc7932981311dca953db3cab8915a) [#843](https://github.com/preactjs/wmr/pull/843) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Sort list of outputted files by size within a group
+
+* [`221c8fe`](https://github.com/preactjs/wmr/commit/221c8fe8b77813cb4622c7d7e9601e5c20f1a3d3) [#828](https://github.com/preactjs/wmr/pull/828) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix missing props when there were comments between attributes in JSX
+
 ## 3.6.1
 
 ### Patch Changes
