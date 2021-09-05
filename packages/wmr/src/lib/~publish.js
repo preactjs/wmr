@@ -37,12 +37,11 @@ const normalized = {
 	contributors,
 	repository,
 	dependencies,
-	engines,
 	scripts: {
 		postpack: 'mv -f .package.json package.json'
 	},
-	// engines: pkg.engines,
 	types,
-	files
+	files,
+	engines
 };
 write('package.json', JSON.stringify(normalized, null, 2) + '\n');
