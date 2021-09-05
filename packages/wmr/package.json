@@ -4,6 +4,7 @@
 	"bin": "wmr.cjs",
 	"type": "module",
 	"main": "index.js",
+	"description": "The tiny all-in-one development tool for modern web apps, in a single 2mb file with no dependencies.",
 	"scripts": {
 		"build": "rollup -c",
 		"prepublishOnly": "yarn build",
