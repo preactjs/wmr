@@ -1,9 +1,8 @@
 import path from 'path';
 import { promisify } from 'util';
-import { debug } from '../lib/output-utils.js';
+import { wmrCodeFrame, debug } from '../lib/output-utils.js';
 import * as kl from 'kolorist';
 import { promises as fs } from 'fs';
-import { createCodeFrame } from 'simple-code-frame';
 
 const log = debug('sass');
 
@@ -120,7 +119,7 @@ export default function sassPlugin({ production, sourcemap, root, mergedAssets }
 	async function handleError(err) {
 		if (err.file) {
 			const code = await fs.readFile(err.file, 'utf-8');
-			err.codeFrame = createCodeFrame(code, err.line - 1, err.column);
+			err.codeFrame = wmrCodeFrame(code, err.line - 1, err.column);
 		}
 		// Sass mixes stack in message, therefore we need to extract
 		// just the message

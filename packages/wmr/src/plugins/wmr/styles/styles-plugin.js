@@ -5,7 +5,7 @@ import { transformCssImports } from '../../../lib/transform-css-imports.js';
 import { transformCss } from '../../../lib/transform-css.js';
 import { matchAlias } from '../../../lib/aliasing.js';
 import { modularizeCss } from './css-modules.js';
-import { createCodeFrame } from 'simple-code-frame';
+import { wmrCodeFrame } from '../../../lib/output-utils.js';
 
 export const STYLE_REG = /\.(?:css|s[ac]ss|less)$/;
 
@@ -48,7 +48,7 @@ export default function wmrStylesPlugin({ root, hot, production, alias, sourcema
 					const lines = source.slice(0, match.index).split('\n');
 					const line = lines.length - 1;
 					const column = lines[lines.length - 1].length;
-					const codeFrame = createCodeFrame(source, line, column);
+					const codeFrame = wmrCodeFrame(source, line, column);
 
 					const originalName = basename(idRelative);
 					const nameHint = basename(idRelative, extname(idRelative)) + '.module' + extname(idRelative);
