@@ -11,7 +11,18 @@ export function bundleStats(bundle, outDir) {
 	let total = 0;
 	const assets = bundle.output
 		.filter(asset => !/\.map$/.test(asset.fileName))
-		.sort((a, b) => scoreAsset(b) - scoreAsset(a));
+		.sort((a, b) => {
+			const scoreB = scoreAsset(b);
+			const scoreA = scoreAsset(a);
+
+			if (scoreA === scoreB) {
+				const contentA = a.type === 'asset' ? a.source : a.code;
+				const contentB = b.type === 'asset' ? b.source : b.code;
+				return contentB.length - contentA.length;
+			}
+
+			return scoreB - scoreA;
+		});
 
 	let nonCssAsset = false;
 	const assetsText = assets.reduce((str, output) => {
@@ -55,7 +66,7 @@ function scoreAsset(asset) {
 	}
 	// ...then CSS files
 	else if (/\.css$/.test(asset.fileName)) {
-		return 10;
+		return 9;
 	}
 
 	// ...and everything else after that
