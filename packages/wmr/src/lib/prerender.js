@@ -57,7 +57,8 @@ async function workerCode({ cwd, out, publicPath, customRoutes }) {
 	}
 
 	globalThis.location = /** @type {object} */ ({});
-
+	globalThis.Worker = require('worker_threads').Worker;
+	// FIXME: This doesn't work when we load a worker during prerendering
 	globalThis.self = /** @type {any} */ (globalThis);
 
 	// Inject a {type:module} package.json into the dist directory to enable Node's ESM loader:
