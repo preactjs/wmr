@@ -77,9 +77,6 @@ function run(p) {
  * @param {Error} err
  */
 async function catchException(err) {
-	// TODO: Unhandled exceptions originating in workers will
-	// end up here too. Find a way to tag prerender errors somehow.
-
 	let text = '';
 	let stack = '';
 	let codeFrame = '';
@@ -108,7 +105,8 @@ async function catchException(err) {
 	const printFrame = codeFrame ? codeFrame + '\n' : '';
 	const printStack = stack ? kl.dim(stack + '\n\n') : '';
 
-	process.stderr.write(`\n${kl.red(text)}${printFrame || '\n'}${printStack}`);
+	const hint = err.hint ? err.hint + '\n\n' : '';
+	process.stderr.write(`\n${kl.cyan(hint)}${kl.red(text)}${printFrame || '\n'}${printStack}`);
 	process.exit(1);
 }
 

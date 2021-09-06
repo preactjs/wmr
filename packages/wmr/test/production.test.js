@@ -867,6 +867,17 @@ describe('production', () => {
 				expect(instance.output.join('\n')).toMatch(/No prerender\(\) function/i);
 			});
 		});
+
+		it('should catch uncaught exceptions during prerendering', async () => {
+			await loadFixture('prerender-error', env);
+			instance = await runWmr(env.tmp.path, 'build', '--prerender');
+			const code = await instance.done;
+
+			await withLog(instance.output, async () => {
+				expect(code).toBe(1);
+				expect(instance.output.join('\n')).toMatch(/The following error was thrown during prerendering/i);
+			});
+		});
 	});
 
 	describe('Code Splitting', () => {
