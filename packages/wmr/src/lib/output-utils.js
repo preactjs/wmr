@@ -3,6 +3,10 @@ import { createCodeFrame } from 'simple-code-frame';
 import * as util from 'util';
 import path from 'path';
 
+export function wmrCodeFrame(code, line, column, options = {}) {
+	return createCodeFrame(code, line, column, { maxWidth: Math.min(80, process.stdout.columns - 4), ...options });
+}
+
 /**
  * @param {import('rollup').RollupOutput} bundle
  * @param {string} outDir
@@ -105,7 +109,7 @@ export function codeFrame(code, loc, { before = 2, after = 3 } = {}) {
 		({ line, column } = loc);
 	}
 
-	return createCodeFrame(code, line - 1, column, { before, after, colors: true });
+	return wmrCodeFrame(code, line - 1, column, { before, after, colors: true });
 }
 
 // Taken from https://github.com/visionmedia/debug/blob/e47f96de3de5921584364b4ac91e2769d22a3b1f/src/node.js#L35

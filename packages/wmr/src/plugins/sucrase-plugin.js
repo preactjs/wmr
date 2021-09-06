@@ -1,5 +1,5 @@
 import * as sucrase from 'sucrase';
-import { createCodeFrame } from 'simple-code-frame';
+import { wmrCodeFrame } from '../lib/output-utils.js';
 
 const cjsDefault = m => ('default' in m ? m.default : m);
 
@@ -68,7 +68,7 @@ export default function sucrasePlugin(opts = {}) {
 				};
 			} catch (err) {
 				// Enhance error with code frame
-				err.codeFrame = createCodeFrame(code, err.loc.line - 1, err.loc.column);
+				err.codeFrame = wmrCodeFrame(code, err.loc.line - 1, err.loc.column);
 				throw err;
 			}
 		}

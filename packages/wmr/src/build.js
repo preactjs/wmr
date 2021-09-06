@@ -30,11 +30,18 @@ export default async function build(options) {
 
 	if (!options.prerender) return;
 
-	const { routes } = await prerender(options);
-	const routeMap = routes.reduce((s, r) => {
-		s += `\n  ${r.url}`;
-		if (r._discoveredBy) s += kl.dim(` [from ${r._discoveredBy.url}]`);
-		return s;
-	}, '');
-	process.stdout.write(kl.bold(`Prerendered ${routes.length} page${routes.length == 1 ? '' : 's'}:`) + routeMap + '\n');
+	try {
+		const { routes } = await prerender(options);
+		const routeMap = routes.reduce((s, r) => {
+			s += `\n  ${r.url}`;
+			if (r._discoveredBy) s += kl.dim(` [from ${r._discoveredBy.url}]`);
+			return s;
+		}, '');
+		process.stdout.write(
+			kl.bold(`Prerendered ${routes.length} page${routes.length == 1 ? '' : 's'}:`) + routeMap + '\n'
+		);
+	} catch (err) {
+		err.hint = 'The following error was thrown during prerendering:';
+		throw err;
+	}
 }

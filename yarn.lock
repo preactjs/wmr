@@ -8229,10 +8229,10 @@ signal-exit@^3.0.0, signal-exit@^3.0.2, signal-exit@^3.0.3:
   resolved "https://registry.yarnpkg.com/signal-exit/-/signal-exit-3.0.3.tgz#a1410c2edd8f077b08b4e253c8eacfcaf057461c"
   integrity sha512-VUJ49FC8U1OxwZLxIbTTrDvLnf/6TDgxZcK8wxR8zs13xpx7xbG60ndBlhNrFi2EMuFRoeDoJO7wthSLq42EjA==
 
-simple-code-frame@^1.1.1:
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/simple-code-frame/-/simple-code-frame-1.1.1.tgz#f5c87a8d68a5d9b0df95081589a19e5ac79f6c2b"
-  integrity sha512-Xi3wMZQScdiJbg9+nuSIp3aG5FIBd+GMvxPf9tOB1v102/yfngTgQU9aSnULgtYSGqrSqqdMOKunMy+Jhx871g==
+simple-code-frame@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/simple-code-frame/-/simple-code-frame-1.2.0.tgz#91e077f306bb6b939c5b77351eb73aa647dd36fb"
+  integrity sha512-/c0dj+4mp7Og6SZV3vVjWAYVKW1bwq+3zsMOQqkRcIE9CTG6P5Wo/utexgT0jEMG+feTht4H9G3s6ybMlbeA8g==
   dependencies:
     kolorist "^1.4.0"
 

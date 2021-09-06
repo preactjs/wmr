@@ -1,7 +1,7 @@
 import path from 'path';
-import { createCodeFrame } from 'simple-code-frame';
 import { resolveAlias } from '../lib/aliasing.js';
 import { isFile } from '../lib/fs-utils.js';
+import { wmrCodeFrame } from '../lib/output-utils.js';
 
 /** @type {import('less') | undefined} */
 let less;
@@ -71,7 +71,7 @@ export async function renderLess(code, { id, resolve, sourcemap }) {
 	} catch (err) {
 		if (err.extract && 'line' in err && 'column' in err) {
 			const code = err.extract.filter(l => l !== undefined).join('\n');
-			err.codeFrame = createCodeFrame(code, err.line - 1, err.column);
+			err.codeFrame = wmrCodeFrame(code, err.line - 1, err.column);
 		}
 
 		throw err;
