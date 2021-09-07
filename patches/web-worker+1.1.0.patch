@@ -1,0 +1,30 @@
+diff --git a/node_modules/web-worker/cjs/node.js b/node_modules/web-worker/cjs/node.js
+index adb9d19..03a06c1 100644
+--- a/node_modules/web-worker/cjs/node.js
++++ b/node_modules/web-worker/cjs/node.js
+@@ -76,7 +76,10 @@ function Event(type, target) {
+ // thread boundary, but behaves differently in each context.
+ 
+ 
+-module.exports = threads.isMainThread ? mainThread() : workerThread();
++module.exports = {
++  mainThread,
++  workerThread
++};
+ const baseUrl = URL.pathToFileURL(process.cwd() + '/');
+ 
+ function mainThread() {
+diff --git a/node_modules/web-worker/index.d.ts b/node_modules/web-worker/index.d.ts
+index f1c9550..6119abe 100644
+--- a/node_modules/web-worker/index.d.ts
++++ b/node_modules/web-worker/index.d.ts
+@@ -1,4 +1,8 @@
+ type ConstructorOf<C> = { new (...args: any[]): C }
+ 
+ declare const _default: ConstructorOf<Worker>
+-export default _default
++// export default _default
++
++export function mainThread(): ConstructorOf<Worker>;
++export function workerThread(): void;
++

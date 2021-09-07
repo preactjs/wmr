@@ -2,7 +2,7 @@ import { spawn } from 'child_process';
 
 spawn(
 	process.execPath,
-	['src/cli.js', 'start', '--cwd', 'test/fixtures/' + process.argv.slice(2)[0], ...process.argv.slice(3)],
+	['src/cli.js', 'build', '--cwd', 'test/fixtures/' + process.argv.slice(2)[0], ...process.argv.slice(3)],
 	{
 		stdio: 'inherit',
 		env: {

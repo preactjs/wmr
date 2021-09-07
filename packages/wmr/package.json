@@ -13,7 +13,8 @@
 		"test-e2e": "cross-env JEST_PUPPETEER_CONFIG=jest-puppeteer.config.cjs jest",
 		"test-prod": "cross-env PRODUCTION_BUILD=true JEST_PUPPETEER_CONFIG=jest-puppeteer.config.cjs jest",
 		"test": "npm run test-e2e",
-		"fixture": "node tools/run-fixture.js"
+		"fixture": "node tools/run-fixture.js",
+		"postinstall": "patch-package"
 	},
 	"author": "The Preact Authors (https://preactjs.com)",
 	"license": "MIT",
@@ -71,6 +72,7 @@
 		"ncp": "^2.0.0",
 		"node-fetch": "^2.6.1",
 		"npm-merge-driver-install": "^1.1.1",
+		"patch-package": "^6.4.7",
 		"polka": "^0.5.2",
 		"postcss": "^8.3.6",
 		"postcss-es6": "github:postcss/postcss#8.3.6",
@@ -93,6 +95,7 @@
 		"tmp-promise": "^3.0.2",
 		"totalist": "^1.1.0",
 		"utf-8-validate": "^5.0.2",
+		"web-worker": "^1.1.0",
 		"ws": "^7.3.1"
 	},
 	"optionalDependencies": {

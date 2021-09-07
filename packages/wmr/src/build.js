@@ -31,7 +31,9 @@ export default async function build(options) {
 	if (!options.prerender) return;
 
 	try {
-		const { routes } = await prerender(options);
+		const res = await prerender(options);
+		console.log('after', res);
+		const { routes } = res;
 		const routeMap = routes.reduce((s, r) => {
 			s += `\n  ${r.url}`;
 			if (r._discoveredBy) s += kl.dim(` [from ${r._discoveredBy.url}]`);

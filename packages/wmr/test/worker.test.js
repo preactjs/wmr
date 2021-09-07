@@ -201,5 +201,28 @@ describe('Workers', () => {
 				});
 			});
 		});
+
+		it.only('should build workers with --prerender', async () => {
+			await loadFixture('worker-prerender', env);
+			instance = await runWmr(env.tmp.path, 'build', '--prerender');
+			await withLog(instance.output, async () => {
+				expect(await instance.done).toEqual(0);
+				const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+				cleanup.push(stop);
+				await env.page.goto(address, {
+					waitUntil: ['networkidle0', 'load']
+				});
+
+				await waitForPass(async () => {
+					const h1 = await env.page.evaluate('document.querySelector("h1").textContent');
+					const h2 = await env.page.evaluate('document.querySelector("h2").textContent');
+
+					expect(h1).toMatch('it works');
+					expect(h2).toMatch('it works');
+				});
+
+				expect(instance.output.join('\n')).not.toMatch(/you may not be able to access the exports of an IIFE bundle/);
+			});
+		});
 	});
 });
