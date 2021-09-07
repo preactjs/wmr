@@ -37,3 +37,13 @@ export function hasCustomPrefix(id) {
 	// Windows disk letters are not prefixes: C:/foo
 	return !/^\0?(?:file|https?):\/\//.test(id) && /^\0?[-\w]{2,}:/.test(id);
 }
+
+/**
+ * Convert a file path to a valid URL path. For example, it replaces windows
+ * path separators with URL path separators.
+ * @param {string} p
+ * @returns {string}
+ */
+export function pathToUrl(p) {
+	return p.replace(/\\/g, '/');
+}
