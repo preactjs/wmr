@@ -3,6 +3,7 @@ import { promises as fs } from 'fs';
 import * as kl from 'kolorist';
 import { matchAlias } from '../lib/aliasing.js';
 import { debug } from '../lib/output-utils.js';
+import { pathToUrl } from '../lib/fs-utils.js';
 
 export const IMPLICIT_URL = /\.(?:png|jpe?g|gif|webp|svg|mp4|webm|ogg|mp3|wav|flac|aac|woff2?|eot|ttf|otf)$/i;
 
@@ -34,7 +35,7 @@ export default function urlPlugin({ inline, root, alias }) {
 			// In dev mode, we turn the import into an inline module that avoids a network request:
 			if (inline) {
 				const aliased = matchAlias(alias, resolved.id);
-				const url = (aliased || '/' + relative(root, resolved.id)) + '?asset';
+				const url = pathToUrl(aliased || '/' + relative(root, resolved.id)) + '?asset';
 				log(`${kl.green('inline')} ${kl.dim(url)} <- ${kl.dim(resolved.id)}`);
 				return {
 					id: escapeUrl(`data:text/javascript,export default${JSON.stringify(url)}`),
