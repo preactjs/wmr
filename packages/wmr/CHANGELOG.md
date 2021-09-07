@@ -1,5 +1,21 @@
 # wmr
 
+## 3.7.1
+
+### Patch Changes
+
+- [`dddb03a`](https://github.com/preactjs/wmr/commit/dddb03a156b21ae3725ee3fea73a3bad7c217876) [#849](https://github.com/preactjs/wmr/pull/849) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix `iife`-warning for workers with exports when creating a production build.
+
+* [`1d9791f`](https://github.com/preactjs/wmr/commit/1d9791f75fd1c0142a985f6e0b276dc97d5fe5de) [#852](https://github.com/preactjs/wmr/pull/852) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Add code frame to uncaught exceptions if possible
+
+- [`d75a2da`](https://github.com/preactjs/wmr/commit/d75a2da70508cd125374d2c202336525770428c6) [#850](https://github.com/preactjs/wmr/pull/850) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix error when `plugins` or `middleware` array contains falsy values in the parsed configuration. This typically happens due to conditionally setting items. All falsy values are now filtered out by default.
+
+* [`69b4e1c`](https://github.com/preactjs/wmr/commit/69b4e1c1173b1bb98518647c4c412c88542148ea) [#856](https://github.com/preactjs/wmr/pull/856) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix `debug: true` option from config file not being set
+
+- [`504af20`](https://github.com/preactjs/wmr/commit/504af2072e1e04f8ad946f64a191a813ae28ea3f) [#851](https://github.com/preactjs/wmr/pull/851) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Improve CLI output for compilation warnings
+
+* [`8064c88`](https://github.com/preactjs/wmr/commit/8064c88b2d23d882ccf706410751c947cc33bf25) [#846](https://github.com/preactjs/wmr/pull/846) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix missing `description` and `license` field in published wmr `package.json`
+
 ## 3.7.0
 
 ### Minor Changes
