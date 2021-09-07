@@ -17,8 +17,6 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 	options.cwd = resolve(options.cwd || '');
 	process.chdir(options.cwd);
 
-	if (options.debug) setDebugCliArg(true);
-
 	options.root = options.cwd;
 
 	options.plugins = [];
@@ -248,6 +246,8 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 			options.alias[name] = resolve(options.cwd, value);
 		}
 	}
+
+	if (options.debug) setDebugCliArg(true);
 
 	debug('wmr:config')(options);
 
