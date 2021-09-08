@@ -249,6 +249,11 @@ export function onWarn(warning) {
 		return;
 	}
 
+	// Hide `this is undefined` warning coming from libraries in
+	// `node_modules`. It's mostly caused by polyfills and Rollup deals
+	// with that automatically, so let's avoid flooding our user's terminal.
+	if (warning.code === 'THIS_IS_UNDEFINED') return;
+
 	const { message, loc, frame } = warning;
 	let msg = formatWarnMessage(message) + '\n';
 
