@@ -50,6 +50,7 @@
 		"acorn-jsx-walk": "^2.0.0",
 		"acorn-logical-assignment": "^0.1.4",
 		"acorn-private-methods": "^1.0.0",
+		"acorn-static-class-features": "^1.0.0",
 		"acorn-walk": "^8.0.0",
 		"astring": "^1.7.0",
 		"async-disk-cache": "^2.1.0",

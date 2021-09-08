@@ -1,6 +1,7 @@
 import acornClassFields from 'acorn-class-fields';
 import acornPrivateMethods from 'acorn-private-methods';
 import acornLogicalAssignment from 'acorn-logical-assignment';
+import acornStaticClass from 'acorn-static-class-features';
 
 /**
  * Use a plugin to inject acorn plugins in both development and
@@ -13,6 +14,7 @@ export function acornDefaultPlugins() {
 		options(opts) {
 			// @ts-ignore
 			opts.acornInjectPlugins = [
+				acornStaticClass,
 				acornClassFields,
 				acornPrivateMethods,
 				acornLogicalAssignment,
