@@ -150,7 +150,7 @@ export function Router(props) {
 
 			// Successful route transition: un-suspend after a tick and stop rendering the old route:
 			prev.current = null;
-			RESOLVED.then(function() {
+			RESOLVED.then(() => {
 				setIsLoading(false);
 			});
 		});
