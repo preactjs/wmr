@@ -72,6 +72,15 @@ describe('fixtures', () => {
 		expect(await getOutput(env, instance)).toMatch(`{"foo":"foo","baz":"qux"}`);
 	});
 
+	it('should hide "this is undefined" warning', async () => {
+		await loadFixture('this-undefined', env);
+
+		instance = await runWmrFast(env.tmp.path);
+		await getOutput(env, instance);
+
+		expect(instance.output.join('\n')).not.toMatch(/The 'this' keyword is/);
+	});
+
 	it('should not if sub-import is not in export map', async () => {
 		await loadFixture('empty', env);
 		instance = await runWmrFast(env.tmp.path);

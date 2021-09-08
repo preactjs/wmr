@@ -88,6 +88,15 @@ export async function loadFixture(name, env) {
 		path.join(__dirname, '..', '..', 'directory-plugin', 'package.json'),
 		path.join(env.tmp.path, 'node_modules', '@wmrjs', 'directory-import', 'package.json')
 	);
+
+	// If there is a `-node_modules` directory, copy that over too
+	const fakeDir = path.join(fixture, '-node_modules');
+	if (await isDirectory(fakeDir)) {
+		const dirs = await fs.readdir(fakeDir);
+		for (const dir of dirs) {
+			await ncp(path.join(fakeDir, dir), path.join(env.tmp.path, 'node_modules', dir));
+		}
+	}
 }
 
 /**
