@@ -1342,9 +1342,9 @@ acorn-globals@^6.0.0:
     acorn-walk "^7.1.1"
 
 acorn-import-assertions@^1.7.2:
-  version "1.7.2"
-  resolved "https://registry.yarnpkg.com/acorn-import-assertions/-/acorn-import-assertions-1.7.2.tgz#4406083ea36e046e9cdb6cc9abdc0ddb16e7fbe5"
-  integrity sha512-BIhFcmW/EvvT4noRG3yC2LSGhTYbf7rIsUmCgVOP+4HDX12kVwrmk9Un9qfqBD4s9MXASzN075E8PQ4E/sa9Lw==
+  version "1.7.6"
+  resolved "https://registry.yarnpkg.com/acorn-import-assertions/-/acorn-import-assertions-1.7.6.tgz#580e3ffcae6770eebeec76c3b9723201e9d01f78"
+  integrity sha512-FlVvVFA1TX6l3lp8VjDnYYq7R1nyW6x3svAt4nDgrWQ9SBaSh9CnbwgSUTasgfNfOG5HlM1ehugCvM+hjo56LA==
 
 acorn-jsx-walk@^2.0.0:
   version "2.0.0"
@@ -1370,6 +1370,13 @@ acorn-private-methods@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/acorn-private-methods/-/acorn-private-methods-1.0.0.tgz#b48f4c03a151cc8262f6f5ca8f57f7c5ac245184"
   integrity sha512-Jou2L3nfwfPpFdmmHObI3yUpVPM1bPohTUAZCyVDw5Efyn9LSS6E36neRLCRfIr8QjskAfdxRdABOrvP4c/gwQ==
+  dependencies:
+    acorn-private-class-elements "^1.0.0"
+
+acorn-static-class-features@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/acorn-static-class-features/-/acorn-static-class-features-1.0.0.tgz#ab9d862d5b184007ed509f5a8d031b837694ace2"
+  integrity sha512-XZJECjbmMOKvMHiNzbiPXuXpLAJfN3dAKtfIYbk1eHiWdsutlek+gS7ND4B8yJ3oqvHo1NxfafnezVmq7NXK0A==
   dependencies:
     acorn-private-class-elements "^1.0.0"
 
