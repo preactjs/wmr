@@ -855,6 +855,33 @@ describe('fixtures', () => {
 				expect(output).toMatch(/it works/i);
 			});
 		});
+
+		it('should not replace false positives in import namespace', async () => {
+			await loadFixture('process-present-import-ns', env);
+			instance = await runWmrFast(env.tmp.path);
+			await withLog(instance.output, async () => {
+				const output = await getOutput(env, instance);
+				expect(output).toMatch(/it works/i);
+			});
+		});
+
+		it('should not replace false positives in import default', async () => {
+			await loadFixture('process-present-import-default', env);
+			instance = await runWmrFast(env.tmp.path);
+			await withLog(instance.output, async () => {
+				const output = await getOutput(env, instance);
+				expect(output).toMatch(/it works/i);
+			});
+		});
+
+		it('should not replace false positives in import specifier', async () => {
+			await loadFixture('process-present-import-id', env);
+			instance = await runWmrFast(env.tmp.path);
+			await withLog(instance.output, async () => {
+				const output = await getOutput(env, instance);
+				expect(output).toMatch(/it works/i);
+			});
+		});
 	});
 
 	describe('import.meta.env', () => {

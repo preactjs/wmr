@@ -10,17 +10,25 @@ import { mergeSourceMaps } from '../lib/sourcemap.js';
  * @param {{falsePositive: boolean}} ctx
  */
 function acornEnvPlugin(env, ctx) {
-	return () => {
+	return ({ types: t }) => {
 		return {
 			name: 'transform-env',
 			visitor: {
-				MemberExpression(path) {
-					// False positive: When a binding is in scope with `process` as name.
-					// Example: `import * as process from "./process.js";`
-					if (path.scope.hasBinding('process')) {
-						ctx.falsePositive = true;
-						return;
+				// False positive: When a binding is in scope with `process` as name.
+				// Example: `import * as process from "./process.js";`
+				ImportDeclaration(path) {
+					for (let i = 0; i < path.node.specifiers.length; i++) {
+						const spec = path.node.specifiers[i];
+						if (t.isImportNamespaceSpecifier(spec) || t.isImportDefaultSpecifier(spec) || t.importSpecifier(spec)) {
+							if (t.isIdentifier(spec.local) && spec.local.name === 'process') {
+								ctx.falsePositive = true;
+								return;
+							}
+						}
 					}
+				},
+				MemberExpression(path) {
+					if (ctx.falsePositive) return;
 
 					const source = path.getSource();
 					const match = source.match(/^(?:import\.meta|process)\.env\.(.+)/);
