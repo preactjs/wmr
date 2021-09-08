@@ -2,7 +2,7 @@ import withoutFullAccess from './other.js';
 
 const { WMR_A, WMR_B } = process.env;
 const NODE_ENV = process.env.NODE_ENV;
-const keys = Object.keys(process.env);
+const keys = Object.keys(process.env).sort();
 const type = typeof process;
 const typeofEnv = typeof process.env;
 const typeofWMR_A = typeof process.env.WMR_A;

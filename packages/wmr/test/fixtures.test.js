@@ -813,22 +813,25 @@ describe('fixtures', () => {
 				}
 			});
 			await getOutput(env, instance);
-			const result = JSON.parse((await env.page.$eval('#out', node => node.textContent)) || 'undefined');
-			expect(result).toEqual({
-				WMR_A: 'wmr-a',
-				WMR_B: 'wmr-b',
-				NODE_ENV: 'development',
-				keys: ['WMR_A', 'WMR_B', 'WMR_C', 'NODE_ENV'],
-				withFullAccess: {
-					type: 'object',
-					typeofEnv: 'object',
-					typeofWMR_A: 'string'
-				},
-				withoutFullAccess: {
-					type: 'object',
-					typeofEnv: 'object',
-					typeofWMR_A: 'string'
-				}
+
+			await withLog(instance.output, async () => {
+				const result = JSON.parse((await env.page.$eval('#out', node => node.textContent)) || 'undefined');
+				expect(result).toEqual({
+					WMR_A: 'wmr-a',
+					WMR_B: 'wmr-b',
+					NODE_ENV: 'development',
+					keys: ['NODE_ENV', 'WMR_A', 'WMR_B', 'WMR_C'],
+					withFullAccess: {
+						type: 'object',
+						typeofEnv: 'object',
+						typeofWMR_A: 'string'
+					},
+					withoutFullAccess: {
+						type: 'object',
+						typeofEnv: 'object',
+						typeofWMR_A: 'string'
+					}
+				});
 			});
 		});
 	});
