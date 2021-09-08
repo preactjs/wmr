@@ -89,7 +89,7 @@ export function LocationProvider(props) {
 const RESOLVED = Promise.resolve();
 
 export function Router(props) {
-	const [c, update] = useReducer(c => c + 1, 0);
+	const [, update] = useReducer(c => c + 1, 0);
 
 	const { url, query, wasPush, path } = useLocation();
 	const { rest = path, params = {} } = useContext(RouteContext);
@@ -180,7 +180,7 @@ export function Router(props) {
 		if (wasPush) scrollTo(0, 0);
 		if (props.onLoadEnd && isLoading.current) props.onLoadEnd(url);
 		isLoading.current = false;
-	}, [c]);
+	});
 
 	// Note: curChildren MUST render first in order to set didSuspend & prev.
 	return [h(RenderRef, { r: cur }), h(RenderRef, { r: prev })];
