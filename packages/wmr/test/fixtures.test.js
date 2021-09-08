@@ -837,6 +837,15 @@ describe('fixtures', () => {
 				}
 			});
 		});
+
+		it('should not replace false positives', async () => {
+			await loadFixture('process-present', env);
+			instance = await runWmrFast(env.tmp.path);
+			await withLog(instance.output, async () => {
+				const output = await getOutput(env, instance);
+				expect(output).toMatch(/it works/i);
+			});
+		});
 	});
 
 	describe('import.meta.env', () => {

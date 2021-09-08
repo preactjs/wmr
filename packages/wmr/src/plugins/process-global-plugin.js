@@ -7,13 +7,21 @@ import { mergeSourceMaps } from '../lib/sourcemap.js';
  * Plugin to replace `process.env.MY_VAR` or `import.meta.env.MY_VAR` with
  * the actual value.
  * @param {Record<string, string>} env
+ * @param {{falsePositive: boolean}} ctx
  */
-function acornEnvPlugin(env) {
+function acornEnvPlugin(env, ctx) {
 	return () => {
 		return {
 			name: 'transform-env',
 			visitor: {
 				MemberExpression(path) {
+					// False positive: When a binding is in scope with `process` as name.
+					// Example: `import * as process from "./process.js";`
+					if (path.scope.hasBinding('process')) {
+						ctx.falsePositive = true;
+						return;
+					}
+
 					const source = path.getSource();
 					const match = source.match(/^(?:import\.meta|process)\.env\.(.+)/);
 
@@ -59,14 +67,19 @@ export default function processGlobalPlugin({ NODE_ENV = 'development', env = {}
 		transform(code, id) {
 			if (!/\.([tj]sx?|mjs)$/.test(id)) return;
 
+			const ctx = { falsePositive: false };
 			const result = transform(code, {
-				plugins: [acornEnvPlugin({ ...env, NODE_ENV })],
+				plugins: [acornEnvPlugin({ ...env, NODE_ENV }, ctx)],
 				parse: this.parse,
 				filename: id,
 				// Default is to generate sourcemaps, needs an explicit
 				// boolean
 				sourceMaps: !!sourcemap
 			});
+
+			if (ctx.falsePositive) {
+				return;
+			}
 
 			code = result.code;
 			const s = new MagicString(code);
