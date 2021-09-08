@@ -1,5 +1,5 @@
 import { h, createContext, cloneElement, toChildArray } from 'preact';
-import { useContext, useMemo, useReducer, useLayoutEffect, useRef } from 'preact/hooks';
+import { useContext, useMemo, useReducer, useLayoutEffect, useRef, useState } from 'preact/hooks';
 
 let push;
 const UPDATE = (state, url) => {
@@ -89,12 +89,11 @@ export function LocationProvider(props) {
 const RESOLVED = Promise.resolve();
 
 export function Router(props) {
-	const [, update] = useReducer(c => c + 1, 0);
+	const [isLoading, setIsLoading] = useState(false);
 
 	const { url, query, wasPush, path } = useLocation();
 	const { rest = path, params = {} } = useContext(RouteContext);
 
-	const isLoading = useRef(false);
 	// Monotonic counter used to check if an un-suspending route is still the current route:
 	const count = useRef(0);
 	// The current route:
@@ -139,9 +138,9 @@ export function Router(props) {
 		// The new route suspended, so keep the previous route around while it loads:
 		prev.current = p;
 
+		setIsLoading(true);
 		// Fire an event saying we're waiting for the route:
 		if (props.onLoadStart) props.onLoadStart(url);
-		isLoading.current = true;
 
 		// Re-render on unsuspend:
 		let c = count.current;
@@ -151,7 +150,9 @@ export function Router(props) {
 
 			// Successful route transition: un-suspend after a tick and stop rendering the old route:
 			prev.current = null;
-			RESOLVED.then(update);
+			RESOLVED.then(function() {
+				setIsLoading(false);
+			});
 		});
 	};
 
@@ -178,9 +179,8 @@ export function Router(props) {
 
 		// The route is loaded and rendered.
 		if (wasPush) scrollTo(0, 0);
-		if (props.onLoadEnd && isLoading.current) props.onLoadEnd(url);
-		isLoading.current = false;
-	});
+		if (props.onLoadEnd) props.onLoadEnd(url);
+	}, [isLoading]);
 
 	// Note: curChildren MUST render first in order to set didSuspend & prev.
 	return [h(RenderRef, { r: cur }), h(RenderRef, { r: prev })];
