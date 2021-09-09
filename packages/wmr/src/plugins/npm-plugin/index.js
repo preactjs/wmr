@@ -4,15 +4,17 @@ import { memo } from './utils.js';
 import { resolvePackageVersion, loadPackageFile, getPackageVersionFromDeps } from './registry.js';
 import { resolveModule } from './resolve.js';
 import { debug, formatPath } from '../../lib/output-utils.js';
+import { promises as fs } from 'fs';
 
 /**
  * @param {Object} options
  * @param {string} [options.publicPath] URL path prefix to use for npm module scripts
+ * @param {string} options.cwd
  * @param {string} [options.prefix] Import prefix to use internally for representing npm modules
  * @param {boolean} [options.external] If `false`, resolved npm dependencies will be inlined by Rollup.
  * @returns {import('rollup').Plugin}
  */
-export default function npmPlugin({ publicPath = '/@npm', prefix = 'npm/', external = true } = {}) {
+export default function npmPlugin({ publicPath = '/@npm', prefix = 'npm/', external = true, cwd }) {
 	const log = debug('npm:plugin');
 
 	return {
@@ -128,12 +130,29 @@ export default function npmPlugin({ publicPath = '/@npm', prefix = 'npm/', exter
 			let res;
 			// CSS files are not handled by this plugin.
 			if (/\.css$/.test(id) && (await hasFile(resolvedPath))) {
+				// return id;
+				// const file = path.join(cwd, `./node_modules/${meta.module}/${resolvedPath}`);
+				// const fileId = this.emitFile({
+				// 	type: 'asset',
+				// 	name: path.basename(resolvedPath),
+				// 	source: await fs.readFile(file, 'utf-8')
+				// });
+				// return;
 				res = `./node_modules/${meta.module}/${resolvedPath}`;
 				log(`${kl.cyan(formatPath(id))} -> ${kl.dim(formatPath(res))}`);
 				return res;
+				// return `url:/@npm/${meta.module}/${resolvedPath}`;
+				// return res;
+				// console.log(res);
+				// return {
+				// 	id: './' + res.slice(prefix.length),
+				// 	// id: '.' + res,
+				// 	external: true
+				// };
 			}
 
 			res = `${prefix}${meta.module}${meta.version ? '@' + meta.version : ''}/${resolvedPath}`;
+
 			log(`${kl.cyan(formatPath(id))} -> ${kl.dim(formatPath(res))}`);
 			return res;
 		},

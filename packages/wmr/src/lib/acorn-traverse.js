@@ -817,6 +817,7 @@ const TYPES = {
 	numericLiteral: value => ({ type: 'NumericLiteral', value }),
 	nullLiteral: () => ({ type: 'NullLiteral', value: null }),
 	// end babel compat
+	metaProperty: (meta, property) => ({ type: 'MetaProperty', meta, property }),
 
 	classDeclaration: (id, superClass, body) => ({ type: 'ClassDeclaration', id, superClass, body }),
 	classBody: body => ({ type: 'ClassBody', body }),

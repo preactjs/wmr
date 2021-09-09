@@ -94,12 +94,26 @@ function compressBackground() {
 }
 
 /**
+ * @param {object} meta
+ * @param {string} meta.module
+ * @param {string} [meta.version]
+ * @param {string} [meta.path]
+ * @returns {string}
+ */
+export function getEtag({ module, version, path }) {
+	const str = `${module}${version ? '@' + version : ''}${path ? '/' + path : ''}`;
+	console.log('ETAG', JSON.stringify(str));
+	return Buffer.from(str).toString('base64');
+}
+
+/**
  * Get cached code for a bundle from the in-memory or disk caches
  * @param {string} etag the ETag is also used as the in-memory cache key
  * @param {Meta} meta
  * @param {string} [cwd]
  */
 export async function getCachedBundle(etag, { module, path, version }, cwd) {
+	console.log(BUNDLE_CACHE, etag, BUNDLE_CACHE.keys(), BUNDLE_CACHE.has(etag));
 	if (BUNDLE_CACHE.has(etag)) {
 		const mem = BUNDLE_CACHE.get(etag);
 		if (Date.now() - mem.modified > CACHE_TTL) return;

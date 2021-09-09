@@ -247,6 +247,7 @@ export async function loadPackageFile({ module, version, path = '' }) {
 		// );
 		if (packageExists) {
 			// the package has been streamed to disk, but it doesn't contain this file.
+			console.trace();
 			throw Error(`File not found ${e.message}`);
 		}
 	}
