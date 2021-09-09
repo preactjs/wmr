@@ -2,8 +2,9 @@ import { spawn } from 'child_process';
 import path from 'path';
 import * as kl from 'kolorist';
 import ncp from 'ncp';
-import { isFile } from '../src/lib/fs-utils.js';
+import { isDirectory, rm } from '../src/lib/fs-utils.js';
 import { fileURLToPath } from 'url';
+import { promises as fs } from 'fs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -26,12 +27,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 	const rest = process.argv.slice(4);
 	const fixture = path.join(__dirname, '..', 'test', 'fixtures', name);
-	const fakeModDir = path.join('fixture', '-node_modules');
+	const fakeModDir = path.join(fixture, '-node_modules');
 
-	if (await isFile(fakeModDir)) {
-		await new Promise((resolve, reject) =>
-			ncp(fakeModDir, path.join(fixture, 'node_modules'), err => (err ? reject(err) : resolve()))
-		);
+	if (await isDirectory(fakeModDir)) {
+		const modDir = path.join(fixture, 'node_modules');
+		try {
+			await rm(modDir, { recursive: true });
+		} catch (err) {}
+		await fs.mkdir(modDir, { recursive: true });
+
+		await new Promise((resolve, reject) => ncp(fakeModDir, modDir, err => (err ? reject(err) : resolve())));
 	}
 
 	spawn(process.execPath, ['src/cli.js', command, '--cwd', 'test/fixtures/' + name, ...rest], {
