@@ -87,14 +87,14 @@ export function LocationProvider(props) {
 }
 
 const RESOLVED = Promise.resolve();
-
 export function Router(props) {
-	const [, update] = useReducer(c => c + 1, 0);
+	const [c, update] = useReducer(c => c + 1, 0);
 
 	const { url, query, wasPush, path } = useLocation();
 	const { rest = path, params = {} } = useContext(RouteContext);
 
 	const isLoading = useRef(false);
+	const prevRoute = useRef(path);
 	// Monotonic counter used to check if an un-suspending route is still the current route:
 	const count = useRef(0);
 	// The current route:
@@ -177,10 +177,14 @@ export function Router(props) {
 		hasEverCommitted.current = true;
 
 		// The route is loaded and rendered.
-		if (wasPush) scrollTo(0, 0);
-		if (props.onLoadEnd && isLoading.current) props.onLoadEnd(url);
-		isLoading.current = false;
-	});
+		if (prevRoute.current !== path) {
+			if (wasPush) scrollTo(0, 0);
+			if (props.onLoadEnd && isLoading.current) props.onLoadEnd(url);
+			if (props.onRouteChange && !isLoading.current) props.onRouteChange(url);
+			isLoading.current = false;
+			prevRoute.current = path;
+		}
+	}, [path, wasPush, c]);
 
 	// Note: curChildren MUST render first in order to set didSuspend & prev.
 	return [h(RenderRef, { r: cur }), h(RenderRef, { r: prev })];
