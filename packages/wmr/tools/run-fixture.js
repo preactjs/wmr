@@ -27,6 +27,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 	const rest = process.argv.slice(4);
 	const fixture = path.join(__dirname, '..', 'test', 'fixtures', name);
+
+	// Delete .cache folder
+	try {
+		await rm(path.join(fixture, '.cache'), { recursive: true });
+	} catch (err) {}
+
 	const fakeModDir = path.join(fixture, '-node_modules');
 
 	if (await isDirectory(fakeModDir)) {

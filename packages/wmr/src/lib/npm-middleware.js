@@ -168,31 +168,29 @@ async function bundleNpmModule(mod, { source, alias, cwd }) {
 				}
 			},
 			wmrStylesPlugin({ alias, root: cwd, hot: false, production: true, sourcemap: false }),
-			urlPlugin({ inline: false, root: cwd, alias }),
-			defaultLoaders({ matchStyles: false }),
+			// urlPlugin({ inline: false, root: cwd, alias }),
+			// defaultLoaders({ matchStyles: false }),
 			{
 				name: 'npm-asset',
+				async resolveId(id, importer) {
+					console.log('resovle', id);
+					if (!/\.([tj]sx?|mjs)$/.test(id)) return;
+					const resolved = await this.resolve(id, importer, { skipSelf: true });
+					return resolved ? resolved.id : id;
+				},
 				async transform(code, id) {
+					console.log('TRR', id);
 					if (!/\.([tj]sx?|mjs)$/.test(id)) return;
 
+					console.log(code);
 					return await transformImports(code, id, {
 						resolveId(specifier) {
 							if (!hasCustomPrefix(specifier) && (IMPLICIT_URL.test(specifier) || !/\.([sa]?css|less)$/.test(id))) {
-								return `url:${specifier}`;
+								// return `url:${specifier}`;
 							}
 							return null;
 						}
 					});
-				}
-				async load(id) {
-					const file = path.join(cwd, id);
-					if (file.startsWith(cwd)) {
-						// return await fs$1.promises.readFile(file, 'utf-8');
-						const spec = id.replace(/^\0?\.\.?\/node_modules/, '/@npm');
-						return `export default "${spec}";`;
-					} else {
-						console.log('DONT LOAD', id);
-					}
 				}
 			},
 			{
@@ -216,7 +214,7 @@ async function bundleNpmModule(mod, { source, alias, cwd }) {
 		paths: String
 	});
 
-	console.log(output);
+	console.log('OUT', output);
 
 	return output[0].code;
 }
