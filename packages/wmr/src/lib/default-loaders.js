@@ -5,9 +5,10 @@ import { transformImports } from './transform-imports.js';
 /**
  * Add default loaders to import specifiers if none are
  * present already.
+ * @param {{ matchStyles: boolean }} options
  * @returns {import("wmr").Plugin}
  */
-export function defaultLoaders() {
+export function defaultLoaders({ matchStyles }) {
 	return {
 		name: 'default-loaders',
 		async transform(code, id) {
@@ -15,7 +16,10 @@ export function defaultLoaders() {
 
 			return await transformImports(code, id, {
 				resolveId(specifier) {
-					if (!hasCustomPrefix(specifier) && IMPLICIT_URL.test(specifier)) {
+					if (
+						!hasCustomPrefix(specifier) &&
+						(IMPLICIT_URL.test(specifier) || (matchStyles && /\.([sa]?css|less)$/.test(specifier)))
+					) {
 						return `url:${specifier}`;
 					}
 					return null;

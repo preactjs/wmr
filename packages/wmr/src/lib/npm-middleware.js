@@ -11,6 +11,13 @@ import { getMimeType } from './mimetypes.js';
 import nodeBuiltinsPlugin from '../plugins/node-builtins-plugin.js';
 import * as kl from 'kolorist';
 import { hasDebugFlag, onWarn } from './output-utils.js';
+import path from 'path';
+import { promises as fs } from 'fs';
+import { defaultLoaders } from './default-loaders.js';
+import { IMPLICIT_URL, urlPlugin } from '../plugins/url-plugin.js';
+import { hasCustomPrefix } from './fs-utils.js';
+import { transformImports } from './transform-imports.js';
+import wmrStylesPlugin from '../plugins/wmr/styles/styles-plugin.js';
 
 /**
  * Serve a "proxy module" that uses the WMR runtime to load CSS.
@@ -110,8 +117,8 @@ let npmCache;
  * @param {string} mod The module to bundle, including subpackage/path
  * @param {object} options
  * @param {'npm'|'unpkg'} [options.source]
- * @param {Record<string,string>} [options.alias]
- * @param {string} [options.cwd]
+ * @param {Record<string,string>} options.alias
+ * @param {string} options.cwd
  */
 async function bundleNpmModule(mod, { source, alias, cwd }) {
 	let npmProviderPlugin;
@@ -140,7 +147,7 @@ async function bundleNpmModule(mod, { source, alias, cwd }) {
 		preserveEntrySignatures: 'allow-extension',
 		plugins: [
 			nodeBuiltinsPlugin({}),
-			aliasPlugin({ alias, cwd }),
+			aliasPlugin({ alias }),
 			npmProviderPlugin,
 			processGlobalPlugin({
 				sourcemap: false,
@@ -160,9 +167,38 @@ async function bundleNpmModule(mod, { source, alias, cwd }) {
 					}
 				}
 			},
+			wmrStylesPlugin({ alias, root: cwd, hot: false, production: true, sourcemap: false }),
+			urlPlugin({ inline: false, root: cwd, alias }),
+			defaultLoaders({ matchStyles: false }),
+			{
+				name: 'npm-asset',
+				async transform(code, id) {
+					if (!/\.([tj]sx?|mjs)$/.test(id)) return;
+
+					return await transformImports(code, id, {
+						resolveId(specifier) {
+							if (!hasCustomPrefix(specifier) && (IMPLICIT_URL.test(specifier) || !/\.([sa]?css|less)$/.test(id))) {
+								return `url:${specifier}`;
+							}
+							return null;
+						}
+					});
+				}
+				async load(id) {
+					const file = path.join(cwd, id);
+					if (file.startsWith(cwd)) {
+						// return await fs$1.promises.readFile(file, 'utf-8');
+						const spec = id.replace(/^\0?\.\.?\/node_modules/, '/@npm');
+						return `export default "${spec}";`;
+					} else {
+						console.log('DONT LOAD', id);
+					}
+				}
+			},
 			{
 				name: 'never-disk',
 				load(s) {
+					console.log('LOADING', JSON.stringify(s));
 					throw Error('local access not allowed');
 				}
 			}
@@ -179,6 +215,8 @@ async function bundleNpmModule(mod, { source, alias, cwd }) {
 		// Don't transform paths at all:
 		paths: String
 	});
+
+	console.log(output);
 
 	return output[0].code;
 }

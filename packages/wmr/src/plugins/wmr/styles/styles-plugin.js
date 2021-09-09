@@ -32,8 +32,11 @@ export default function wmrStylesPlugin({ root, hot, production, alias, sourcema
 	return {
 		name: 'wmr-styles',
 		async transform(source, id) {
+			console.log('Ss', id);
 			if (!STYLE_REG.test(id)) return;
 			if (id[0] === '\0') return;
+
+			console.log('TRANS', source, id);
 
 			let idRelative = id;
 			let aliased = matchAlias(alias, id);

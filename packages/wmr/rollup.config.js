@@ -26,7 +26,7 @@ const config = {
 		externalLiveBindings: false,
 		preferConst: true,
 		plugins: [
-			{
+			/*{
 				name: 'minify',
 				async renderChunk(code) {
 					const result = await minify(code, {
@@ -48,7 +48,7 @@ const config = {
 					if (typeof result.code === 'string') code = result.code;
 					return { code };
 				}
-			}
+			}*/
 		]
 	},
 	external: [...builtins, 'less'],

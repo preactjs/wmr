@@ -16,7 +16,7 @@ const escapeUrl = url => url.replace(/#/g, '%23').replace(/'/g, "\\'").replace(/
  * @param {Record<string, string>} options.alias
  * @returns {import('rollup').Plugin}
  */
-export default function urlPlugin({ inline, root, alias }) {
+export function urlPlugin({ inline, root, alias }) {
 	const PREFIX = 'url:';
 	const INTERNAL_PREFIX = '\0url:';
 
@@ -49,11 +49,12 @@ export default function urlPlugin({ inline, root, alias }) {
 			if (!id.startsWith(INTERNAL_PREFIX)) return;
 
 			id = id.slice(INTERNAL_PREFIX.length);
+			console.log('LAOD', JSON.stringify(id), await fs.readFile(id, 'utf-8'));
 
 			const fileId = this.emitFile({
 				type: 'asset',
 				name: basename(id),
-				source: await fs.readFile(id)
+				source: /\.([sa]?css|less)$/.test(id) ? await fs.readFile(id, 'utf-8') : await fs.readFile(id)
 			});
 			this.addWatchFile(id);
 			return `export default import.meta.ROLLUP_FILE_URL_${fileId}`;
