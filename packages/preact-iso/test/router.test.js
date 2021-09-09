@@ -28,11 +28,16 @@ describe('Router', () => {
 		const Profiles = jest.fn(() => html`<h1>Profiles</h1>`);
 		const Profile = jest.fn(({ params }) => html`<h1>Profile: ${params.id}</h1>`);
 		const Fallback = jest.fn(() => html`<h1>Fallback</h1>`);
+		const stack = [];
 		let loc;
 		render(
 			html`
 				<${LocationProvider}>
-					<${Router}>
+					<${Router}
+						onRouteChange=${url => {
+							stack.push(url);
+						}}
+					>
 						<${Home} path="/" />
 						<${Profiles} path="/profiles" />
 						<${Profile} path="/profiles/:id" />
@@ -111,6 +116,7 @@ describe('Router', () => {
 			path: '/other',
 			query: { a: 'b', c: 'd' }
 		});
+		expect(stack).toEqual(['/profiles', '/profiles/bob', '/other?a=b&c=d']);
 	});
 
 	it('should wait for asynchronous routes', async () => {

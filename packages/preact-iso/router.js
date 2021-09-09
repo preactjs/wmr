@@ -180,7 +180,8 @@ export function Router(props) {
 		if (prevRoute.current !== path) {
 			if (wasPush) scrollTo(0, 0);
 			if (props.onLoadEnd && isLoading.current) props.onLoadEnd(url);
-			if (props.onRouteChange && !isLoading.current) props.onRouteChange(url);
+			if (props.onRouteChange) props.onRouteChange(url);
+
 			isLoading.current = false;
 			prevRoute.current = path;
 		}
