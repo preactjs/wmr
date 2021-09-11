@@ -3,7 +3,6 @@ import sucrasePlugin from '../plugins/sucrase-plugin.js';
 import wmrPlugin from '../plugins/wmr/plugin.js';
 import wmrStylesPlugin from '../plugins/wmr/styles/styles-plugin.js';
 import sassPlugin from '../plugins/sass-plugin.js';
-import npmPlugin from '../plugins/npm-plugin/index.js';
 import publicPathPlugin from '../plugins/public-path-plugin.js';
 import minifyCssPlugin from '../plugins/minify-css-plugin.js';
 import htmlEntriesPlugin from '../plugins/html-entries-plugin.js';
@@ -27,6 +26,7 @@ import { prefreshPlugin } from '../plugins/preact/prefresh.js';
 import { absolutePathPlugin } from '../plugins/absolute-path-plugin.js';
 import { lessPlugin } from '../plugins/less-plugin.js';
 import { workerPlugin } from '../plugins/worker-plugin.js';
+import { npmPlugin2 } from '../plugins/npm-plugin-2/index.js';
 import tsConfigPathsPlugin from '../plugins/tsconfig-paths-plugin.js';
 
 /**
@@ -99,7 +99,7 @@ export function getPlugins(options) {
 			// Only transpile CommonJS in node_modules and explicit .cjs files:
 			include: /(^npm\/|[/\\]node_modules[/\\]|\.cjs$)/
 		}),
-		(production || isIIFEWorker) && npmPlugin({ external: false }),
+		npmPlugin2({ root }),
 		resolveExtensionsPlugin({
 			extensions: ['.ts', '.tsx', '.js', '.cjs'],
 			index: true

@@ -5,7 +5,6 @@ import { createHttp2Server } from './lib/http2.js';
 import polka from 'polka';
 import sirv from 'sirv';
 import compression from './lib/polkompress.js';
-import npmMiddleware from './lib/npm-middleware.js';
 import WebSocketServer from './lib/websocket-server.js';
 import * as kl from 'kolorist';
 import * as errorstacks from 'errorstacks';
@@ -108,8 +107,6 @@ export default async function server({ cwd, root, overlayDir, middleware, http2,
 	if (middleware) {
 		app.use(...middleware);
 	}
-
-	app.use('/@npm', npmMiddleware({ alias, optimize, cwd }));
 
 	// Chrome devtools often adds `?%20[sm]` to the url
 	// to differentiate between sourcemaps

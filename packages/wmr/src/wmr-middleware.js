@@ -4,7 +4,6 @@ import * as kl from 'kolorist';
 import { getWmrClient } from './plugins/wmr/plugin.js';
 import { createPluginContainer } from './lib/rollup-plugin-container.js';
 import { transformImports } from './lib/transform-imports.js';
-import { normalizeSpecifier } from './plugins/npm-plugin/index.js';
 import { getMimeType } from './lib/mimetypes.js';
 import { debug, formatPath } from './lib/output-utils.js';
 import { getPlugins } from './lib/plugins.js';
@@ -242,10 +241,6 @@ export default function wmrMiddleware(options) {
 		let path = posix.normalize(req.path);
 
 		const queryParams = new URL(req.url, 'file://').searchParams;
-
-		if (path.startsWith('/@npm/')) {
-			return next();
-		}
 
 		let prefix = '';
 
@@ -619,29 +614,7 @@ export const TRANSFORMS = {
 						if (aliased) spec = aliased;
 
 						if (!spec.startsWith('/@alias/')) {
-							// Check if this is a virtual module path from a plugin. If
-							// no plugin loads the id, then we know that the bare specifier
-							// must refer to an npm plugin.
-							// TODO: Cache the result to avoid having to load an id twice.
-							const res = await NonRollup.load(spec);
-
-							if (res === null) {
-								// Bare specifiers are npm packages:
-								const meta = normalizeSpecifier(spec);
-
-								// // Option 1: resolve all package verions (note: adds non-trivial delay to imports)
-								// await resolvePackageVersion(meta);
-								// // Option 2: omit package versions that resolve to the root
-								// // if ((await resolvePackageVersion({ module: meta.module, version: '' })).version === meta.version) {
-								// // 	meta.version = '';
-								// // }
-								// spec = `/@npm/${meta.module}${meta.version ? '@' + meta.version : ''}${meta.path ? '/' + meta.path : ''}`;
-
-								// Option 3: omit root package versions
-								spec = `/@npm/${meta.module}${meta.path ? '/' + meta.path : ''}`;
-							} else {
-								spec = `/@id/${spec}`;
-							}
+							spec = `/@id/${spec}`;
 						}
 					}
 
