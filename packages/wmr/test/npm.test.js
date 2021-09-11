@@ -101,6 +101,17 @@ describe('node modules', () => {
 				});
 			});
 		});
+
+		describe('commonjs', () => {
+			it('should resolve "module.exports = ..."', async () => {
+				await loadFixture('npm-commonjs-default', env);
+				instance = await runWmrFast(env.tmp.path);
+				await withLog(instance.output, async () => {
+					const text = await getOutput(env, instance);
+					expect(text).toMatch(/it works/);
+				});
+			});
+		});
 	});
 
 	describe('production', () => {

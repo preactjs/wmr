@@ -17,6 +17,10 @@ export function npmPlugin2({ root }) {
 
 	const PREFIX = '\0npm:';
 
+	// FIXME: Buffer for assets
+	/** @type {Map<string, { code: string, map: any }>} */
+	const chunkCache = new Map();
+
 	return {
 		name: 'npm-plugin-2',
 		async resolveId(id, importer) {
@@ -92,12 +96,30 @@ export function npmPlugin2({ root }) {
 
 			const result = await npmBundle(modDir, pkgName, id);
 
-			if (!result.output.length) {
-				throw new Error('fail');
+			result.output.forEach(chunkOrAsset => {
+				if (chunkOrAsset.fileName === 'virtual-entry.js') {
+					return;
+				}
+
+				// FIXME: assets
+				if (chunkOrAsset.type === 'chunk') {
+					const match = chunkOrAsset.fileName.match(/(.*)-[a-z0-9]+$/);
+					if (!match) {
+						throw new Error(`Unable to determine chunk from "${chunkOrAsset.fileName}" for package "${pkgName}"`);
+					}
+					const name = match[1];
+					chunkCache.set(name, { code: chunkOrAsset.code, map: chunkOrAsset.map || null });
+				}
+			});
+
+			const chunk = chunkCache.get(pkgName);
+			if (!chunk) {
+				throw new Error(`Compiled chunk for package "${pkgName}" not found.`);
 			}
 
 			return {
-				code: result.output[0].code
+				code: chunk.code,
+				map: chunk.map
 			};
 		}
 	};

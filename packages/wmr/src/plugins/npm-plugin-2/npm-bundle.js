@@ -2,6 +2,7 @@ import * as rollup from 'rollup';
 import path from 'path';
 import { promises as fs } from 'fs';
 import { browserFieldPlugin } from './browser-field.js';
+import { commonjsPlugin } from './commonjs.js';
 
 /**
  * @param {string} modDir
@@ -30,6 +31,7 @@ export async function npmBundle(modDir, pkgName, id) {
 
 		plugins: [
 			browserFieldPlugin({ modDir, browser: pkg.browser || {} }),
+			commonjsPlugin(),
 			{
 				name: 'virtual-entry',
 				resolveId(id) {
@@ -40,15 +42,14 @@ export async function npmBundle(modDir, pkgName, id) {
 
 					// TODO: Is picking a name a good idea?
 					// or should we use dynamic imports everywhere instead?
-					const code = entries.map(entry => `export * from "${entry}";`).join('\n');
-
-					return code;
+					return entries.map(entry => `export const ${pkgName} = import("${entry}");`).join('\n');
 				}
 			}
 		]
 	});
 
 	const result = await bundle.generate({
+		chunkFileNames: `${pkgName}-[hash]`,
 		format: 'esm'
 	});
 
