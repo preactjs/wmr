@@ -90,15 +90,17 @@ function acornCjs(options) {
 							const actual = options.production ? 'production' : 'development';
 							const expected = literal.node.value;
 
-							let replacement = null;
+							let replacement;
 							if ((operator === '===' && actual === expected) || (operator === '!==' && actual !== expected)) {
 								replacement = path.node.consequent;
 							} else {
 								replacement = path.node.alternate;
 							}
 
-							if (replacement !== null) {
-								if (t.isBlockStatement(replacement)) {
+							if (replacement !== undefined) {
+								if (replacement === null) {
+									path.remove();
+								} else if (t.isBlockStatement(replacement)) {
 									// TODO: Once we have a more stable parser
 									// in place we can prependItems
 									path.replaceWith(t.cloneDeep(replacement.body[0]));
