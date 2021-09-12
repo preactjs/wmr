@@ -1,50 +1,35 @@
 import * as rollup from 'rollup';
-import path from 'path';
-import { promises as fs } from 'fs';
 import { browserFieldPlugin } from './browser-field.js';
 import { commonjsPlugin } from './commonjs.js';
+import { subPackageLegacy } from './sub-package-legacy.js';
+import { npmExternalDeps } from './npm-external-deps.js';
+import { npmLocalPackage } from './npm-local-package.js';
+import { npmLoad } from './npm-load.js';
+import { getPackageInfo } from './utils.js';
+import { npmAutoInstall } from './npm-auto-install.js';
 
 /**
- * @param {string} modDir
- * @param {string} pkgName
+ * @param {string} root
  * @param {string} id
  */
-export async function npmBundle(modDir, pkgName, id) {
-	// Now we can attempt to resolve the package entry point.
-	// Load `package.json` to resolve package entry points
-	const pkg = JSON.parse(await fs.readFile(path.join(modDir, 'package.json'), 'utf-8'));
+export async function npmBundle(root, id) {
+	const meta = getPackageInfo(id);
+	const pkgName = meta.name;
 
-	const isMainEntry = pkgName === id;
-	let entries = [];
-	if (pkg.exports) {
-		// FIXME
-		throw new Error('TODO');
-	} else if (isMainEntry) {
-		entries.push(path.join(modDir, pkg.module ? pkg.module : pkg.main));
-	} else {
-		// Legacy deep import
-		entries.push(path.join(modDir, id.slice(id.indexOf('/'))));
-	}
+	/** @type {Map<string, string>} */
+	const browserReplacement = new Map();
 
 	const bundle = await rollup.rollup({
-		input: 'virtual-entry',
+		input: id,
 
 		plugins: [
-			browserFieldPlugin({ modDir, browser: pkg.browser || {} }),
+			browserFieldPlugin({ browserReplacement }),
+			npmExternalDeps({ pkgName }),
+			npmLocalPackage({ root }),
+			npmAutoInstall(),
+			npmLoad({ browserReplacement }),
 			commonjsPlugin(),
-			{
-				name: 'virtual-entry',
-				resolveId(id) {
-					if (id === 'virtual-entry') return id;
-				},
-				async load(id) {
-					if (id !== 'virtual-entry') return;
-
-					// TODO: Is picking a name a good idea?
-					// or should we use dynamic imports everywhere instead?
-					return entries.map(entry => `export const ${pkgName} = import("${entry}");`).join('\n');
-				}
-			}
+			subPackageLegacy({ rootId: id })
 		]
 	});
 

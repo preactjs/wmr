@@ -1,0 +1,81 @@
+import path from 'path';
+import { promises as fs } from 'fs';
+import { getPackageInfo, isValidPackageName } from './utils.js';
+import { readJson } from '../../lib/fs-utils.js';
+
+/**
+ * @param {object} options
+ * @param {Map<string, string>} options.browserReplacement
+ * @returns {import('rollup').Plugin}
+ */
+export function npmLoad({ browserReplacement }) {
+	return {
+		name: 'npm-load',
+		async load(id) {
+			if (!isValidPackageName(id)) return;
+
+			const info = this.getModuleInfo(id);
+
+			const { modDir } = info?.meta?.wmr;
+			const pkg = await readJson(path.join(modDir, 'package.json'));
+			const { pathname } = getPackageInfo(id);
+
+			if (typeof pkg.browser === 'object') {
+				for (let [spec, replacement] of Object.entries(pkg.browser)) {
+					// Formats:
+					//   "foo" -> Can be `foo` or `<pkg>/foo.js`
+					//   "foo/bar" -> Can be `foo/bar` or `<pkg>/foo/bar.js`
+					//   "./foo/bar" -> `<pkg>/foo/bar.js`
+					//   "../foo" -> INVALID
+					//   "." -> INVALID
+					spec = path.posix.normalize(spec);
+					const idPrefix = replacement.startsWith('./') ? './' : '';
+					replacement = idPrefix + path.posix.normalize(replacement);
+
+					// Check for invalid paths
+					if (spec.startsWith('..') || spec === '.' || replacement.startsWith('..') || replacement === '.') {
+						continue;
+					}
+
+					// Add bare entry as is, in case it refers to a package
+					if (!spec.startsWith('./')) {
+						browserReplacement.set(spec, replacement);
+					}
+
+					browserReplacement.set(path.join(modDir, spec), replacement);
+				}
+			}
+
+			let entry = '';
+			// FIXME: Package exports
+			if (!pathname) {
+				entry = path.join(modDir, pkg.module || pkg.main);
+			} else {
+				// Special case: Deep import may itself be a replaced path
+				const replaced = browserReplacement.get(pathname);
+				if (replaced) {
+					const resolved = await this.resolve(`./${replaced}`, path.join(modDir, pkg.name), { skipSelf: true });
+
+					entry = resolved ? resolved.id : path.join(modDir, replaced);
+				} else {
+					// Check if the package is a legacy sub-package. This
+					// was used before the "export" field became a thing.
+					try {
+						const subPkg = await readJson(path.join(modDir, pathname, 'package.json'));
+						entry = path.join(modDir, pathname, subPkg.module || subPkg.main);
+					} catch (err) {
+						entry = pathname;
+					}
+				}
+			}
+
+			const code = await fs.readFile(entry, 'utf-8');
+
+			return {
+				code,
+				// FIXME: Load existing sourcemap if any
+				map: null
+			};
+		}
+	};
+}

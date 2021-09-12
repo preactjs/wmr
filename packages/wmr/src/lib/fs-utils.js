@@ -47,3 +47,12 @@ export function hasCustomPrefix(id) {
 export function pathToUrl(p) {
 	return p.replace(/\\/g, '/');
 }
+
+/**
+ * Read a file as JSON
+ * @param {string} file
+ */
+export async function readJson(file) {
+	const raw = await fs.readFile(file, 'utf-8');
+	return JSON.parse(raw);
+}

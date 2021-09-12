@@ -46,6 +46,35 @@ describe('node modules', () => {
 			});
 		});
 
+		describe('legacy', () => {
+			it('should resolve deep "main" field', async () => {
+				await loadFixture('npm-deep-main', env);
+				instance = await runWmrFast(env.tmp.path);
+				await withLog(instance.output, async () => {
+					const text = await getOutput(env, instance);
+					expect(text).toMatch(/it works/);
+				});
+			});
+
+			it('should resolve deep "module" field', async () => {
+				await loadFixture('npm-deep-module', env);
+				instance = await runWmrFast(env.tmp.path);
+				await withLog(instance.output, async () => {
+					const text = await getOutput(env, instance);
+					expect(text).toMatch(/it works/);
+				});
+			});
+
+			it('should resolve deep sub packages as package', async () => {
+				await loadFixture('npm-deep-nested', env);
+				instance = await runWmrFast(env.tmp.path);
+				await withLog(instance.output, async () => {
+					const text = await getOutput(env, instance);
+					expect(text).toMatch(/it works/);
+				});
+			});
+		});
+
 		describe('browser field', () => {
 			it('should resolve relative "browser" field', async () => {
 				await loadFixture('npm-browser-bare-relative', env);
