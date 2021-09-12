@@ -101,7 +101,7 @@ export function getPlugins(options) {
 			// Only transpile CommonJS in node_modules and explicit .cjs files:
 			include: /(^npm\/|[/\\]node_modules[/\\]|\.cjs$)/
 		}),
-		npmPlugin2({ cwd, autoInstall }),
+		npmPlugin2({ cwd, autoInstall, production }),
 		resolveExtensionsPlugin({
 			extensions: ['.ts', '.tsx', '.js', '.cjs'],
 			index: true

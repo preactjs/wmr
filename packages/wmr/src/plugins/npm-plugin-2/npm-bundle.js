@@ -13,8 +13,9 @@ import { npmAutoInstall } from './npm-auto-install.js';
  * @param {string} requestId
  * @param {object} options
  * @param {boolean} options.autoInstall
+ * @param {boolean} options.production
  */
-export async function npmBundle(cwd, requestId, { autoInstall }) {
+export async function npmBundle(cwd, requestId, { autoInstall, production }) {
 	const meta = getPackageInfo(requestId);
 	const pkgName = meta.name;
 
@@ -41,7 +42,7 @@ export async function npmBundle(cwd, requestId, { autoInstall }) {
 			!process.env.DISABLE_LOCAL_NPM && npmLocalPackage({ root: cwd }),
 			autoInstall && npmAutoInstall({ cwd }),
 			npmLoad({ browserReplacement }),
-			commonjsPlugin(),
+			commonjsPlugin({ production }),
 			subPackageLegacy({ rootId: requestId })
 		]
 	});

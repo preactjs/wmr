@@ -196,6 +196,15 @@ describe('node modules', () => {
 					expect(text).toMatch(/it works/);
 				});
 			});
+
+			it('should inline proxy modules based on `process.env.NODE_ENV`', async () => {
+				await loadFixture('npm-commonjs-proxy', env);
+				instance = await runWmrFast(env.tmp.path);
+				await withLog(instance.output, async () => {
+					const text = await getOutput(env, instance);
+					expect(text).toMatch(/This is development/);
+				});
+			});
 		});
 
 		describe('auto install', () => {
