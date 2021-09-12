@@ -79,6 +79,11 @@ declare module 'wmr' {
 		visualize: boolean;
 		debug: boolean;
 		customRoutes: string[];
+		/**
+		 * Automatically fetch missing npm packages from npm registry.
+		 * This is only intended for quick prototyping.
+		 */
+		autoInstall: boolean;
 	}
 
 	export type BuildError = RollupError & { clientMessage?: string };

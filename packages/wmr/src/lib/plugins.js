@@ -45,7 +45,8 @@ export function getPlugins(options) {
 		isIIFEWorker = false,
 		sourcemap,
 		features,
-		visualize
+		visualize,
+		autoInstall
 	} = options;
 
 	// Plugins are pre-sorted
@@ -99,7 +100,7 @@ export function getPlugins(options) {
 			// Only transpile CommonJS in node_modules and explicit .cjs files:
 			include: /(^npm\/|[/\\]node_modules[/\\]|\.cjs$)/
 		}),
-		npmPlugin2({ root }),
+		npmPlugin2({ root, autoInstall }),
 		resolveExtensionsPlugin({
 			extensions: ['.ts', '.tsx', '.js', '.cjs'],
 			index: true

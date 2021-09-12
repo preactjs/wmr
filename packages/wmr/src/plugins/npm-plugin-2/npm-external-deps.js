@@ -1,7 +1,7 @@
 import { isValidPackageName, getPackageInfo } from './utils.js';
 
 /**
- * Detect if an id is an npm package
+ * Detect if an id is an npm package and mark it as external
  * @param {object} options
  * @param {string} options.pkgName
  * @returns {import('rollup').Plugin}
@@ -20,7 +20,7 @@ export function npmExternalDeps({ pkgName }) {
 				};
 			}
 
-			return await this.resolve(id, importer, { skipSelf: true });
+			// return await this.resolve(id, importer, { skipSelf: true });
 		}
 	};
 }

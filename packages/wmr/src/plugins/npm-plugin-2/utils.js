@@ -87,3 +87,12 @@ export async function findInstalledPackage(root, name) {
 		return;
 	}
 }
+
+export class Deferred {
+	constructor() {
+		this.promise = new Promise((resolve, reject) => {
+			this.resolve = resolve;
+			this.reject = reject;
+		});
+	}
+}

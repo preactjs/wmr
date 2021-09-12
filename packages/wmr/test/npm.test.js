@@ -141,6 +141,17 @@ describe('node modules', () => {
 				});
 			});
 		});
+
+		describe('auto install', () => {
+			it('should install package', async () => {
+				await loadFixture('npm-auto-install', env);
+				instance = await runWmrFast(env.tmp.path, '--autoInstall', { env: { DISABLE_LOCAL_NPM: true } });
+				await withLog(instance.output, async () => {
+					const text = await getOutput(env, instance);
+					expect(text).toMatch(/it works/);
+				});
+			});
+		});
 	});
 
 	describe('production', () => {
