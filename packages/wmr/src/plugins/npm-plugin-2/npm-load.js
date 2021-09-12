@@ -1,6 +1,6 @@
 import path from 'path';
 import { promises as fs } from 'fs';
-import { getPackageInfo, isValidPackageName } from './utils.js';
+import { getPackageInfo, isValidPackageName, resolvePackageExport } from './utils.js';
 import { readJson } from '../../lib/fs-utils.js';
 
 /**
@@ -47,8 +47,15 @@ export function npmLoad({ browserReplacement }) {
 			}
 
 			let entry = '';
-			// FIXME: Package exports
-			if (!pathname) {
+			// Package exports
+			if (pkg.exports) {
+				const found = resolvePackageExport(pkg, pathname);
+				if (!found) {
+					throw new Error(`Unable to resolve entry in module "${pkg.name}"`);
+				}
+
+				entry = path.join(modDir, found);
+			} else if (!pathname) {
 				entry = path.join(modDir, pkg.module || pkg.main);
 			} else {
 				// Special case: Deep import may itself be a replaced path

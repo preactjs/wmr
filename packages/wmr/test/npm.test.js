@@ -131,6 +131,53 @@ describe('node modules', () => {
 			});
 		});
 
+		describe('"exports" field', () => {
+			it('should resolve `exports: "./foo.js"`', async () => {
+				await loadFixture('npm-export-sugar', env);
+				instance = await runWmrFast(env.tmp.path);
+				await withLog(instance.output, async () => {
+					const text = await getOutput(env, instance);
+					expect(text).toMatch(/it works/);
+				});
+			});
+
+			it('should resolve `exports: { node: "./foo.js" }`', async () => {
+				await loadFixture('npm-export-node', env);
+				instance = await runWmrFast(env.tmp.path);
+				await withLog(instance.output, async () => {
+					const text = await getOutput(env, instance);
+					expect(text).toMatch(/it works/);
+				});
+			});
+
+			it('should resolve `exports: { import: "./foo.js" }`', async () => {
+				await loadFixture('npm-export-import', env);
+				instance = await runWmrFast(env.tmp.path);
+				await withLog(instance.output, async () => {
+					const text = await getOutput(env, instance);
+					expect(text).toMatch(/it works/);
+				});
+			});
+
+			it('should resolve `exports: { default: "./foo.js" }`', async () => {
+				await loadFixture('npm-export-default', env);
+				instance = await runWmrFast(env.tmp.path);
+				await withLog(instance.output, async () => {
+					const text = await getOutput(env, instance);
+					expect(text).toMatch(/it works/);
+				});
+			});
+
+			it('should resolve "import" first', async () => {
+				await loadFixture('npm-export-import-first', env);
+				instance = await runWmrFast(env.tmp.path);
+				await withLog(instance.output, async () => {
+					const text = await getOutput(env, instance);
+					expect(text).toMatch(/it works/);
+				});
+			});
+		});
+
 		describe('commonjs', () => {
 			it('should resolve "module.exports = ..."', async () => {
 				await loadFixture('npm-commonjs-default', env);

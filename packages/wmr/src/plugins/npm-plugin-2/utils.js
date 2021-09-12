@@ -88,6 +88,51 @@ export async function findInstalledPackage(root, name) {
 	}
 }
 
+function resolveExportsValue(obj) {
+	const order = ['import', 'node', 'require', 'default'];
+
+	for (let i = 0; i < order.length; i++) {
+		const key = order[i];
+		if (key in obj) return obj[key];
+	}
+}
+
+/**
+ * Resolve "exports" field in `package.json`.
+ * @param {Record<string, any>} pkg Package JSON
+ * @param {string} pathname
+ * @returns {string | undefined}
+ */
+export function resolvePackageExport(pkg, pathname) {
+	// Main entry
+	if (!pathname) {
+		if (typeof pkg.exports === 'string') {
+			return pkg.exports;
+		}
+
+		if ('.' in pkg.exports) {
+			const info = pkg.exports['.'];
+			if (typeof info === 'string') {
+				return info;
+			}
+
+			return resolveExportsValue(info);
+		}
+
+		return resolveExportsValue(pkg.exports);
+	}
+
+	// Non-main entry
+	const maybeEntry = pkg.exports['./' + pathname];
+	if (maybeEntry) {
+		if (typeof maybeEntry === 'string') {
+			return maybeEntry;
+		}
+
+		return resolveExportsValue(maybeEntry);
+	}
+}
+
 export class Deferred {
 	constructor() {
 		this.promise = new Promise((resolve, reject) => {
