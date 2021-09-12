@@ -6,6 +6,21 @@ export const ESM_KEYWORDS =
 	/(\bimport\s*(\{.*?\}\s*from|\s[\w$]+\s+from)?\s*['"]|[\s;]export(\s+(default|const|var|let|function|class)[^\w$]|\s*\{))/;
 
 /**
+ * Detect if a node represents an IIFE function
+ * @param {any} t
+ * @param {any} node
+ * @returns {boolean}
+ */
+function isIIFE(t, node) {
+	return (
+		t.isExpressionStatement(node) &&
+		t.isCallExpression(node.expression) &&
+		node.expression.arguments.length === 0 &&
+		t.isFunctionExpression(node.expression.callee)
+	);
+}
+
+/**
  * @param {{ production: boolean}} options
  */
 function acornCjs(options) {
@@ -15,9 +30,29 @@ function acornCjs(options) {
 			visitor: {
 				Program: {
 					exit(path) {
-						for (let i = 0; i < path.node.body.length; i++) {
-							const stmt = path.node.body[i];
+						const body = path.node.body;
 
+						// Inline if the whole program is an IIFE
+						if (body.length === 1 && isIIFE(t, body[0])) {
+							const fnBody = body[0].expression.callee.body.body;
+
+							for (let i = 0; i < fnBody.length; i++) {
+								const stmt = fnBody[i];
+
+								// TODO: Use prepend functions with a proper
+								// parser.
+								if (i === 0) {
+									path.get(`body.${i}`).replaceWith(t.cloneDeep(stmt));
+								} else {
+									path.unshiftContainer('body', t.cloneDeep(stmt));
+								}
+							}
+						}
+
+						for (let i = 0; i < body.length; i++) {
+							const stmt = body[i];
+
+							// Detect: `module.exports = ...`
 							if (
 								t.isExpressionStatement(stmt) &&
 								t.isAssignmentExpression(stmt.expression) &&

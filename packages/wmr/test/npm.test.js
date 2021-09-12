@@ -205,6 +205,15 @@ describe('node modules', () => {
 					expect(text).toMatch(/This is development/);
 				});
 			});
+
+			it('should inline single top level function iife', async () => {
+				await loadFixture('npm-commonjs-iife', env);
+				instance = await runWmrFast(env.tmp.path);
+				await withLog(instance.output, async () => {
+					const text = await getOutput(env, instance);
+					expect(text).toMatch(/it works/);
+				});
+			});
 		});
 
 		describe('auto install', () => {
