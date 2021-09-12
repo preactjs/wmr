@@ -77,7 +77,7 @@ export default function wmrMiddleware(options) {
 		cwd,
 		disableGlobbing: true,
 		ignoreInitial: true,
-		ignored: [/(^|[/\\])(node_modules|\.git|\.DS_Store)([/\\]|$)/, resolve(cwd, out), resolve(cwd, distDir)]
+		ignored: [/(^|[/\\])(node_modules|\.git|\.DS_Store|\.cache)([/\\]|$)/, resolve(cwd, out), resolve(cwd, distDir)]
 	});
 	const pendingChanges = new Set();
 
