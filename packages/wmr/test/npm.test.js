@@ -46,6 +46,15 @@ describe('node modules', () => {
 			});
 		});
 
+		it('should resolve scoped pacakges field', async () => {
+			await loadFixture('npm-main-scoped', env);
+			instance = await runWmrFast(env.tmp.path);
+			await withLog(instance.output, async () => {
+				const text = await getOutput(env, instance);
+				expect(text).toMatch(/it works/);
+			});
+		});
+
 		describe('legacy', () => {
 			it('should resolve deep "main" field', async () => {
 				await loadFixture('npm-deep-main', env);

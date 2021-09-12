@@ -20,7 +20,7 @@ export function isValidPackageName(id) {
 		// Must be lowercase
 		id.toLowerCase() === id &&
 		// Must not contain special characters
-		!/[~'!()*;,?:@&=+$]/.test(id) &&
+		!/[~'!()*;,?:&=+$]/.test(id) &&
 		// Must contain a second path segment if scoped
 		((id[0] === '@' && id.indexOf('/') > 0) || true);
 
