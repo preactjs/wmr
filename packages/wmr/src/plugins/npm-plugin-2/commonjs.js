@@ -15,7 +15,8 @@ function acornCjs({ types: t }) {
 					if (
 						t.isExpressionStatement(stmt) &&
 						t.isAssignmentExpression(stmt.expression) &&
-						t.isMemberExpression(stmt.expression.left)
+						t.isMemberExpression(stmt.expression.left) &&
+						path.get(`body.${i}.expression.left`).getSource() === 'module.exports'
 					) {
 						path
 							.get(`body.${i}`)
