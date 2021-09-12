@@ -1,8 +1,5 @@
-import { debug } from '../../lib/output-utils.js';
 import { npmBundle } from './npm-bundle.js';
 import { isValidPackageName } from './utils.js';
-
-const log = debug('npm-plugin-2');
 
 /**
  * @param {object} options
@@ -19,7 +16,7 @@ export function npmPlugin2({ root, autoInstall }) {
 
 	return {
 		name: 'npm-plugin-2',
-		async resolveId(id, importer) {
+		async resolveId(id) {
 			if (!isValidPackageName(id)) return;
 			return PREFIX + id;
 		},
@@ -45,12 +42,9 @@ export function npmPlugin2({ root, autoInstall }) {
 				}
 			});
 
-			log(result);
-			log(chunkCache);
-
 			const chunk = chunkCache.get(id);
 			if (!chunk) {
-				throw new Error(`Compiled chunk for package "${name}" not found.`);
+				throw new Error(`Compiled chunk for package "${id}" not found.`);
 			}
 
 			return {
