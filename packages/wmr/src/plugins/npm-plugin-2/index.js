@@ -3,11 +3,11 @@ import { isValidPackageName } from './utils.js';
 
 /**
  * @param {object} options
- * @param {string} options.root
+ * @param {string} options.cwd
  * @param {boolean} options.autoInstall
  * @returns {import('rollup').Plugin}
  */
-export function npmPlugin2({ root, autoInstall }) {
+export function npmPlugin2({ cwd, autoInstall }) {
 	const PREFIX = '\0npm:';
 
 	// FIXME: Buffer for assets
@@ -26,7 +26,7 @@ export function npmPlugin2({ root, autoInstall }) {
 
 			// TODO: Caching
 
-			let result = await npmBundle(root, id, { autoInstall });
+			let result = await npmBundle(cwd, id, { autoInstall });
 
 			result.output.forEach(chunkOrAsset => {
 				if (chunkOrAsset.fileName === 'virtual-entry.js') {

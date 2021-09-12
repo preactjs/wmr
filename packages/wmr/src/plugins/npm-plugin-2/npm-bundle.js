@@ -9,12 +9,12 @@ import { getPackageInfo } from './utils.js';
 import { npmAutoInstall } from './npm-auto-install.js';
 
 /**
- * @param {string} root
+ * @param {string} cwd
  * @param {string} requestId
  * @param {object} options
  * @param {boolean} options.autoInstall
  */
-export async function npmBundle(root, requestId, { autoInstall }) {
+export async function npmBundle(cwd, requestId, { autoInstall }) {
 	const meta = getPackageInfo(requestId);
 	const pkgName = meta.name;
 
@@ -38,8 +38,8 @@ export async function npmBundle(root, requestId, { autoInstall }) {
 			},
 			browserFieldPlugin({ browserReplacement }),
 			npmExternalDeps({ requestId }),
-			!process.env.DISABLE_LOCAL_NPM && npmLocalPackage({ root }),
-			autoInstall && npmAutoInstall({ root }),
+			!process.env.DISABLE_LOCAL_NPM && npmLocalPackage({ root: cwd }),
+			autoInstall && npmAutoInstall({ cwd }),
 			npmLoad({ browserReplacement }),
 			commonjsPlugin(),
 			subPackageLegacy({ rootId: requestId })

@@ -97,13 +97,13 @@ async function parseTarball(bodyStream, onFile, { include, exclude }) {
  * registry. Note that this should only ever be enabled for
  * prototyping.
  * @param {object} options
- * @param {string} options.root
+ * @param {string} options.cwd
  * @returns {import('rollup').Plugin}
  */
-export function npmAutoInstall({ root }) {
+export function npmAutoInstall({ cwd }) {
 	// TODO: Detect from `.npmrc`
 	const registryUrl = 'https://registry.npmjs.org';
-	const cacheDir = path.join(root, '.cache', 'npm');
+	const cacheDir = path.join(cwd, '.cache', '@npm');
 
 	/** Files that should always be ignored when storing packages */
 	const FILES_EXCLUDE = /([._-]test\.|__tests?|\/tests?\/|\/node_modules\/|\.d\.ts$)/i;
