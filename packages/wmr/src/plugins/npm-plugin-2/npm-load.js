@@ -1,7 +1,11 @@
 import path from 'path';
 import { promises as fs } from 'fs';
+import * as kl from 'kolorist';
 import { getPackageInfo, isValidPackageName, resolvePackageExport } from './utils.js';
 import { readJson } from '../../lib/fs-utils.js';
+import { debug } from '../../lib/output-utils.js';
+
+const log = debug('npm-load');
 
 /**
  * @param {object} options
@@ -11,6 +15,12 @@ import { readJson } from '../../lib/fs-utils.js';
 export function npmLoad({ browserReplacement }) {
 	return {
 		name: 'npm-load',
+		async resolveId(id, importer) {
+			if (importer && isValidPackageName(importer)) {
+				const info = this.getModuleInfo(importer);
+				return this.resolve(id, info?.meta.wmr.entry, { skipSelf: true });
+			}
+		},
 		async load(id) {
 			if (!isValidPackageName(id)) return;
 
@@ -18,7 +28,7 @@ export function npmLoad({ browserReplacement }) {
 
 			const { modDir } = info?.meta?.wmr;
 			const pkg = await readJson(path.join(modDir, 'package.json'));
-			const { pathname } = getPackageInfo(id);
+			const { pathname, name } = getPackageInfo(id);
 
 			if (typeof pkg.browser === 'object') {
 				for (let [spec, replacement] of Object.entries(pkg.browser)) {
@@ -78,10 +88,20 @@ export function npmLoad({ browserReplacement }) {
 
 			const code = await fs.readFile(entry, 'utf-8');
 
+			log(`loaded ${kl.cyan(id)} ${kl.dim(`from ${entry}`)}`);
+
 			return {
 				code,
 				// FIXME: Load existing sourcemap if any
-				map: null
+				map: null,
+				moduleSideEffect: false,
+				meta: {
+					wmr: {
+						entry,
+						modName: name,
+						modDir
+					}
+				}
 			};
 		}
 	};

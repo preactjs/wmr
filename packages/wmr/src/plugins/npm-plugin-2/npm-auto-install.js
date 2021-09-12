@@ -12,6 +12,15 @@ import { Deferred, getPackageInfo, isValidPackageName } from './utils.js';
 const log = debug('npm-auto-install');
 
 /**
+ * Escape special characters for filename
+ * @param {string} str
+ * @returns {string}
+ */
+export function escapeFilename(str) {
+	return str.replace('/', '__');
+}
+
+/**
  * Fetch package from npm registry
  * @param {string} url
  */
@@ -151,14 +160,15 @@ export function npmAutoInstall({ root }) {
 				const { tarball } = info.dist;
 
 				// Download tarball to disk
-				const tarPath = path.join(downloadDir, `${meta.name}-${version}.tgz`);
+				const safeName = escapeFilename(meta.name);
+				const tarPath = path.join(downloadDir, `${safeName}-${version}.tgz`);
 				await streamToDisk(tarball, tarPath);
 
 				// TODO: Check tarball integrity?
 
 				// Extract tar file
 				log(`extracting... ${tarPath}`);
-				const extractPath = path.join(downloadDir, `${meta.name}-${version}`);
+				const extractPath = path.join(downloadDir, `${safeName}@${version}`);
 
 				await parseTarball(
 					fs.createReadStream(tarPath),

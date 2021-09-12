@@ -10,28 +10,39 @@ import { npmAutoInstall } from './npm-auto-install.js';
 
 /**
  * @param {string} root
- * @param {string} id
+ * @param {string} requestId
  * @param {object} options
  * @param {boolean} options.autoInstall
  */
-export async function npmBundle(root, id, { autoInstall }) {
-	const meta = getPackageInfo(id);
+export async function npmBundle(root, requestId, { autoInstall }) {
+	const meta = getPackageInfo(requestId);
 	const pkgName = meta.name;
 
 	/** @type {Map<string, string>} */
 	const browserReplacement = new Map();
 
 	const bundle = await rollup.rollup({
-		input: id,
+		input: 'virtual-entry',
 
 		plugins: [
+			{
+				name: 'virtual-entry',
+				resolveId(id) {
+					if (id === 'virtual-entry') return id;
+				},
+				load(id) {
+					if (id === 'virtual-entry') {
+						return `const _foo = import('${requestId}');\nexport default _foo;\n`;
+					}
+				}
+			},
 			browserFieldPlugin({ browserReplacement }),
-			npmExternalDeps({ pkgName }),
+			npmExternalDeps({ requestId }),
 			!process.env.DISABLE_LOCAL_NPM && npmLocalPackage({ root }),
 			autoInstall && npmAutoInstall({ root }),
 			npmLoad({ browserReplacement }),
 			commonjsPlugin(),
-			subPackageLegacy({ rootId: id })
+			subPackageLegacy({ rootId: requestId })
 		]
 	});
 

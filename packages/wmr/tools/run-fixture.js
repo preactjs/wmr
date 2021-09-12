@@ -48,6 +48,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 	spawn(process.execPath, ['src/cli.js', command, '--cwd', 'test/fixtures/' + name, ...rest], {
 		stdio: 'inherit',
 		env: {
+			...process.env,
 			// Package "application-config-path" needs this (required by devcert)
 			HOME: process.env.HOME,
 			FORCE_COLOR: '1',
