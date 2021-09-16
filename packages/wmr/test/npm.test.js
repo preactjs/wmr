@@ -214,6 +214,15 @@ describe('node modules', () => {
 					expect(text).toMatch(/it works/);
 				});
 			});
+
+			it('should inline single top level function iife #2', async () => {
+				await loadFixture('npm-commonjs-iife-2', env);
+				instance = await runWmrFast(env.tmp.path);
+				await withLog(instance.output, async () => {
+					const text = await getOutput(env, instance);
+					expect(text).toMatch(/it works/);
+				});
+			});
 		});
 
 		describe('auto install', () => {

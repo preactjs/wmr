@@ -1,6 +1,6 @@
 import { transform, replace, optimize, commonjsToEsm, runtime } from 'escorn';
 
-const CJS_KEYWORDS = /\b(module\.exports|exports)\b/;
+const CJS_KEYWORDS = /\b(module\.exports|exports|require)\b/;
 
 export const ESM_KEYWORDS =
 	/(\bimport\s*(\{.*?\}\s*from|\s[\w$]+\s+from)?\s*['"]|[\s;]export(\s+(default|const|var|let|function|class)[^\w$]|\s*\{))/;
@@ -17,7 +17,8 @@ export function commonjsPlugin({ production }) {
 		async transform(code, id) {
 			const hasCjsKeywords = CJS_KEYWORDS.test(code);
 			const hasEsmKeywords = ESM_KEYWORDS.test(code);
-			if (!hasCjsKeywords || hasEsmKeywords) return;
+
+			if (!hasCjsKeywords && hasEsmKeywords) return;
 
 			const result = transform(code, {
 				parse: this.parse,
