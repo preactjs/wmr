@@ -18,7 +18,7 @@ export function App() {
 			<LocationProvider>
 				<Header />
 				<main tabIndex={0} id="page">
-					<Router onLoadEnd={loaded}>
+					<Router onRouteChange={loaded}>
 						<Home path="/" />
 						<Docs path="/docs/:slug*" />
 					</Router>
