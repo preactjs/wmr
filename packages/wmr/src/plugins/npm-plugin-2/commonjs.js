@@ -1,4 +1,4 @@
-import { transform, replace, optimize, commonjsToEsm, runtime } from 'escorn';
+import { transform, replace, optimize, commonjsToEsm } from 'escorn';
 
 const CJS_KEYWORDS = /\b(module\.exports|exports|require)\b/;
 
@@ -24,7 +24,6 @@ export function commonjsPlugin({ production }) {
 				parse: this.parse,
 				plugins: [
 					replace({ 'process.env.NODE_ENV': 'development', __DEV__: !!production }),
-					runtime({ runtime: 'browser' }),
 					optimize(),
 					commonjsToEsm()
 				]

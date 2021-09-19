@@ -15,6 +15,8 @@ export function npmPlugin2({ cwd, autoInstall, production }) {
 	/** @type {Map<string, { code: string, map: any }>} */
 	const chunkCache = new Map();
 
+	const entryToChunk = new Map();
+
 	/** @type {Map<string, import('./utils').Deferred>} */
 	const pending = new Map();
 
@@ -46,22 +48,22 @@ export function npmPlugin2({ cwd, autoInstall, production }) {
 			let result = await npmBundle(cwd, id, { autoInstall, production });
 
 			result.output.forEach(chunkOrAsset => {
-				if (chunkOrAsset.fileName === 'virtual-entry.js') {
-					return;
-				}
-
 				// FIXME: assets
 				if (chunkOrAsset.type === 'chunk') {
-					if (!chunkOrAsset.facadeModuleId) {
-						throw new Error(`Missing facadeModuleId for "${id}"`);
+					if (chunkOrAsset.isEntry) {
+						entryToChunk.set(id, chunkOrAsset.fileName);
 					}
-					chunkCache.set(chunkOrAsset.facadeModuleId, { code: chunkOrAsset.code, map: chunkOrAsset.map || null });
+
+					chunkCache.set(chunkOrAsset.fileName, { code: chunkOrAsset.code, map: chunkOrAsset.map || null });
 				}
 			});
 
-			const chunk = chunkCache.get(id);
+			const entryReq = entryToChunk.get(id);
+			let chunkId = entryReq ? entryReq : id;
+
+			const chunk = chunkCache.get(chunkId);
 			if (!chunk) {
-				throw new Error(`Compiled chunk for package "${id}" not found.`);
+				throw new Error(`Compiled chunk for package "${chunkId}" not found.`);
 			}
 
 			deferred.resolve(chunk);

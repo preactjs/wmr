@@ -1,4 +1,5 @@
 import * as rollup from 'rollup';
+import { builtinModules } from 'module';
 import { browserFieldPlugin } from './browser-field.js';
 import { commonjsPlugin } from './commonjs.js';
 import { subPackageLegacy } from './sub-package-legacy.js';
@@ -24,20 +25,9 @@ export async function npmBundle(cwd, requestId, { autoInstall, production }) {
 	const browserReplacement = new Map();
 
 	const bundle = await rollup.rollup({
-		input: 'virtual-entry',
-
+		input: requestId,
+		external: [...builtinModules],
 		plugins: [
-			{
-				name: 'virtual-entry',
-				resolveId(id) {
-					if (id === 'virtual-entry') return id;
-				},
-				load(id) {
-					if (id === 'virtual-entry') {
-						return `const _foo = import('${requestId}');\nexport default _foo;\n`;
-					}
-				}
-			},
 			browserFieldPlugin({ browserReplacement }),
 			npmExternalDeps({ requestId }),
 			!process.env.DISABLE_LOCAL_NPM && npmLocalPackage({ root: cwd }),
