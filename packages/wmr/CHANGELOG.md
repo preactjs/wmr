@@ -1,5 +1,17 @@
 # wmr
 
+## 3.7.2
+
+### Patch Changes
+
+- [`8771444`](https://github.com/preactjs/wmr/commit/8771444b21ae7261c6bad583cb9716bd3d7c9f3d) [#862](https://github.com/preactjs/wmr/pull/862) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Don't flood terminal with harmless `The 'this' keyword is equivalent to 'undefined' at the top level of an ES module, and has been rewritten.` warnings.
+
+* [`9fbafb1`](https://github.com/preactjs/wmr/commit/9fbafb12620435b35e2fa5b20b7dc8b9b623b34d) [#858](https://github.com/preactjs/wmr/pull/858) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Fix compilation error when using `static` class fields
+
+- [`6b36713`](https://github.com/preactjs/wmr/commit/6b36713ecf870b9572e24a6d1c1a3cefa65e591b) [#861](https://github.com/preactjs/wmr/pull/861) Thanks [@marvinhagemeister](https://github.com/marvinhagemeister)! - Resolve a wrongly replaced `process.env` variable when a binding with the name `process` is already in scope. This was encountered when bundling vscode's monaco-editor.
+
+* [`1cfa4a1`](https://github.com/preactjs/wmr/commit/1cfa4a1bc93a1553f84e4da553354dd980ea2f4d) [#872](https://github.com/preactjs/wmr/pull/872) Thanks [@JoviDeCroock](https://github.com/JoviDeCroock)! - Normalize the cacheKey in wmr-midddleware so it always corresponds to the WRITE_CACHE map where we store in native-path format keys
+
 ## 3.7.1
 
 ### Patch Changes

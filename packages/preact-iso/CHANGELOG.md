@@ -1,5 +1,17 @@
 # preact-iso
 
+## 2.3.0
+
+### Minor Changes
+
+- [`22a8a18`](https://github.com/preactjs/wmr/commit/22a8a186fa45b64bb1349ba6998b12498d05d503) [#864](https://github.com/preactjs/wmr/pull/864) Thanks [@JoviDeCroock](https://github.com/JoviDeCroock)! - Add `onRouteChange` prop to the Router to observe synchronous route changes
+
+### Patch Changes
+
+- [`5780fc9`](https://github.com/preactjs/wmr/commit/5780fc929fa2bab222e3b3d11be2250aefe19cfe) [#864](https://github.com/preactjs/wmr/pull/864) Thanks [@JoviDeCroock](https://github.com/JoviDeCroock)! - Avoid calling onLoadEnd on every render
+
+* [`69d291f`](https://github.com/preactjs/wmr/commit/69d291fbf2644b5c774672f4846f30e0e453af57) [#870](https://github.com/preactjs/wmr/pull/870) Thanks [@developit](https://github.com/developit)! - Fix `<Router>` accidentally un-rendering incoming routes that happen to resolve to the same component as the outgoing route.
+
 ## 2.2.0
 
 ### Minor Changes
