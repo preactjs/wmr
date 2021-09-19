@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [12.18, 14.x]
+        node-version: [12.18, 14.x, 16.x]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -65,7 +65,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [12.18, 14.x]
+        node-version: [12.18, 14.x, 16.x]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -96,7 +96,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [12.18, 14.x]
+        node-version: [12.18, 14.x, 16.x]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
