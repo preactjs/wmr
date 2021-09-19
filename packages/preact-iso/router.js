@@ -125,7 +125,7 @@ export function Router(props) {
 		});
 
 		return h(RouteContext.Provider, { value: m }, p || d);
-	}, [rest, params]);
+	}, [url]);
 
 	// Reset previous children - if rendering succeeds synchronously, we shouldn't render the previous children.
 	const p = prev.current;
