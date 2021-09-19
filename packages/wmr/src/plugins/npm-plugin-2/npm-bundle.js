@@ -11,13 +11,14 @@ import { npmAutoInstall } from './npm-auto-install.js';
 import jsonPlugin from '../json-plugin.js';
 
 /**
- * @param {string} cwd
  * @param {string} requestId
  * @param {object} options
  * @param {boolean} options.autoInstall
  * @param {boolean} options.production
+ * @param {string} options.cacheDir
+ * @param {string} options.cwd
  */
-export async function npmBundle(cwd, requestId, { autoInstall, production }) {
+export async function npmBundle(requestId, { autoInstall, production, cacheDir, cwd }) {
 	const meta = getPackageInfo(requestId);
 	const pkgName = meta.name;
 
@@ -31,7 +32,7 @@ export async function npmBundle(cwd, requestId, { autoInstall, production }) {
 			browserFieldPlugin({ browserReplacement }),
 			npmExternalDeps({ requestId }),
 			!process.env.DISABLE_LOCAL_NPM && npmLocalPackage({ root: cwd }),
-			autoInstall && npmAutoInstall({ cwd }),
+			autoInstall && npmAutoInstall({ cacheDir }),
 			npmLoad({ browserReplacement }),
 			jsonPlugin({ root: cwd }),
 			commonjsPlugin({ production }),

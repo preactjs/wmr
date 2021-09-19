@@ -7,18 +7,9 @@ import zlib from 'zlib';
 import { writeFile } from '../../lib/fs-utils.js';
 import { debug } from '../../lib/output-utils.js';
 import { friendlyNetworkError, streamToString } from '../npm-plugin/utils.js';
-import { Deferred, getPackageInfo, isValidPackageName } from './utils.js';
+import { Deferred, escapeFilename, getPackageInfo, isValidPackageName } from './utils.js';
 
 const log = debug('npm-auto-install');
-
-/**
- * Escape special characters for filename
- * @param {string} str
- * @returns {string}
- */
-export function escapeFilename(str) {
-	return str.replace('/', '__');
-}
 
 /**
  * Fetch package from npm registry
@@ -97,13 +88,12 @@ async function parseTarball(bodyStream, onFile, { include, exclude }) {
  * registry. Note that this should only ever be enabled for
  * prototyping.
  * @param {object} options
- * @param {string} options.cwd
+ * @param {string} options.cacheDir
  * @returns {import('rollup').Plugin}
  */
-export function npmAutoInstall({ cwd }) {
+export function npmAutoInstall({ cacheDir }) {
 	// TODO: Detect from `.npmrc`
 	const registryUrl = 'https://registry.npmjs.org';
-	const cacheDir = path.join(cwd, '.cache', '@npm');
 
 	/** Files that should always be ignored when storing packages */
 	const FILES_EXCLUDE = /([._-]test\.|__tests?|\/tests?\/|\/node_modules\/|\.d\.ts$)/i;
@@ -146,7 +136,7 @@ export function npmAutoInstall({ cwd }) {
 			pending.set(deferredKey, deferred);
 
 			log(`downloading... ${id}`);
-			const downloadDir = path.join(cacheDir, 'download');
+			const downloadDir = path.join(cacheDir, '_download');
 
 			try {
 				const pkg = await fetchNpmPkgInfo(`${registryUrl}/${meta.name}`);

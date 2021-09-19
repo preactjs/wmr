@@ -133,6 +133,15 @@ export function resolvePackageExport(pkg, pathname) {
 	}
 }
 
+/**
+ * Escape special characters of npm names for filename
+ * @param {string} str
+ * @returns {string}
+ */
+export function escapeFilename(str) {
+	return str.replace('/', '__');
+}
+
 export class Deferred {
 	constructor() {
 		this.promise = new Promise((resolve, reject) => {
