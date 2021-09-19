@@ -31,7 +31,6 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # Change the condition for ESM Dist Test below when changing this.
         node-version: [12.18, 14.x]
     steps:
       - name: Checkout
@@ -52,7 +51,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-yarn-
       - name: Install
-        if: ${{ needs.changes.outputs.wmr == 'true' || needs.changes.outputs.preact-iso == 'true' }}
+        if: ${{ needs.changes.outputs.wmr == 'true' }}
         run: yarn --prefer-offline --frozen-lockfile --non-interactive --silent
       - name: Build
         if: ${{ needs.changes.outputs.wmr == 'true' }}
@@ -66,7 +65,6 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # Change the condition for ESM Dist Test below when changing this.
         node-version: [12.18, 14.x]
     steps:
       - name: Checkout
@@ -87,7 +85,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-yarn-
       - name: Install
-        if: ${{ needs.changes.outputs.wmr == 'true' || needs.changes.outputs.preact-iso == 'true' }}
+        if: ${{ needs.changes.outputs.wmr == 'true' }}
         run: yarn --prefer-offline --frozen-lockfile --non-interactive --silent
       - name: Test wmr
         if: ${{ needs.changes.outputs.wmr == 'true' }}
@@ -98,7 +96,6 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # Change the condition for ESM Dist Test below when changing this.
         node-version: [12.18, 14.x]
     steps:
       - name: Checkout
@@ -119,7 +116,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-yarn-
       - name: Install
-        if: ${{ needs.changes.outputs.wmr == 'true' || needs.changes.outputs.preact-iso == 'true' }}
+        if: ${{ needs.changes.outputs.preact-iso == 'true' }}
         run: yarn --prefer-offline --frozen-lockfile --non-interactive --silent
       - name: Test preact-iso
         if: ${{ needs.changes.outputs.preact-iso == 'true' }}
