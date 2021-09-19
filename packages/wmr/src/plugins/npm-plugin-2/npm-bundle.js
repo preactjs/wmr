@@ -7,6 +7,7 @@ import { npmLocalPackage } from './npm-local-package.js';
 import { npmLoad } from './npm-load.js';
 import { getPackageInfo } from './utils.js';
 import { npmAutoInstall } from './npm-auto-install.js';
+import jsonPlugin from '../json-plugin.js';
 
 /**
  * @param {string} cwd
@@ -42,6 +43,7 @@ export async function npmBundle(cwd, requestId, { autoInstall, production }) {
 			!process.env.DISABLE_LOCAL_NPM && npmLocalPackage({ root: cwd }),
 			autoInstall && npmAutoInstall({ cwd }),
 			npmLoad({ browserReplacement }),
+			jsonPlugin({ root: cwd }),
 			commonjsPlugin({ production }),
 			subPackageLegacy({ rootId: requestId })
 		]
