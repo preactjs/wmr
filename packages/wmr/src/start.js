@@ -5,7 +5,6 @@ import server from './server.js';
 import wmrMiddleware from './wmr-middleware.js';
 import { getServerAddresses, supportsSearchParams } from './lib/net-utils.js';
 import { normalizeOptions } from './lib/normalize-options.js';
-import { setCwd } from './plugins/npm-plugin/registry.js';
 import { formatBootMessage, debug } from './lib/output-utils.js';
 import { watch } from './lib/fs-watcher.js';
 import { injectWmr } from './lib/transform-html.js';
@@ -27,9 +26,6 @@ const deepCloneJSON = obj => JSON.parse(JSON.stringify(obj));
  * @param {Parameters<typeof server>[0] & OtherOptions} options
  */
 export default async function start(options = {}) {
-	// @todo remove this hack once registry.js is instantiable
-	setCwd(options.cwd);
-
 	// TODO: We seem to mutate our config object somewhere
 	const cloned = deepCloneJSON(options);
 
