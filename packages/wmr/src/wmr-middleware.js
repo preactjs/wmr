@@ -298,6 +298,8 @@ export default function wmrMiddleware(options) {
 
 			// TODO: Vefify prefix mappings in write cache
 			cacheKey = prefix + id;
+			// Normalize the cacheKey so it matches what will be in the WRITE_CACHE, where we store in native paths
+			cacheKey = cacheKey.split(posix.sep).join(sep);
 
 			if (!hasIdPrefix) {
 				id = `./${id}`;
