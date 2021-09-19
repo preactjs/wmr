@@ -1,4 +1,4 @@
-import { transform, replace, optimize, commonjsToEsm } from 'escorn';
+import { transform, replace, optimize, commonjsToEsm } from 'zecorn';
 
 const CJS_KEYWORDS = /\b(module\.exports|exports|require)\b/;
 

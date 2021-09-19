@@ -63,7 +63,6 @@
 		"devcert": "^1.1.2",
 		"errorstacks": "^2.3.2",
 		"es-module-lexer": "^0.7.0",
-		"escorn": "^0.7.0",
 		"jest": "^26.1.0",
 		"jest-puppeteer": "^5.0.4",
 		"kolorist": "^1.5.0",
@@ -96,7 +95,8 @@
 		"totalist": "^1.1.0",
 		"tsconfig-paths": "^3.11.0",
 		"utf-8-validate": "^5.0.2",
-		"ws": "^7.3.1"
+		"ws": "^7.3.1",
+		"zecorn": "^0.8.1"
 	},
 	"optionalDependencies": {
 		"fsevents": "^2.1.3"

@@ -3299,22 +3299,6 @@ escodegen@^1.14.1:
   optionalDependencies:
     source-map "~0.6.1"
 
-escorn@^0.7.0:
-  version "0.7.0"
-  resolved "https://registry.yarnpkg.com/escorn/-/escorn-0.7.0.tgz#ef923d041b5fe78d84d1e296ad378800632442c7"
-  integrity sha512-FsjXnD7if+faGY25eURg2AQ6Ln3s6zRzbhjqJS5NdjVeCoPQQaiH3eAXM8lqHqskjtKlk8yfcWQpMVEnjWBqcg==
-  dependencies:
-    acorn "^8.4.1"
-    acorn-class-fields "^1.0.0"
-    acorn-import-assertions "^1.7.5"
-    acorn-jsx "^5.3.2"
-    acorn-logical-assignment "^0.1.4"
-    acorn-private-methods "^1.0.0"
-    acorn-static-class-features "^1.0.0"
-    astring "^1.7.5"
-    glob "^7.1.7"
-    sourcemap-codec "^1.4.8"
-
 eslint-config-developit@^1.2.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/eslint-config-developit/-/eslint-config-developit-1.2.0.tgz#798e28cf132f218bd15c3c5b295ddf59e5b2034d"
@@ -9685,3 +9669,19 @@ yocto-queue@^0.1.0:
   version "0.1.0"
   resolved "https://registry.yarnpkg.com/yocto-queue/-/yocto-queue-0.1.0.tgz#0294eb3dee05028d31ee1a5fa2c556a6aaf10a1b"
   integrity sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==
+
+zecorn@^0.8.1:
+  version "0.8.1"
+  resolved "https://registry.yarnpkg.com/zecorn/-/zecorn-0.8.1.tgz#dc105287c07b90008e16d1e2ec642280f3012ca8"
+  integrity sha512-gkBvLXZfrcUdd5Hs1chsQCCm0jZpTzGsm/PudDweeQV+fY18WNQpH0JeOGNq27wlbcFb6FS2/XSzMx6y/7ZECQ==
+  dependencies:
+    acorn "^8.4.1"
+    acorn-class-fields "^1.0.0"
+    acorn-import-assertions "^1.7.5"
+    acorn-jsx "^5.3.2"
+    acorn-logical-assignment "^0.1.4"
+    acorn-private-methods "^1.0.0"
+    acorn-static-class-features "^1.0.0"
+    astring "^1.7.5"
+    glob "^7.1.7"
+    sourcemap-codec "^1.4.8"
