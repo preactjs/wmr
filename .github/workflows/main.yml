@@ -57,6 +57,8 @@ jobs:
       - name: Build
         if: ${{ needs.changes.outputs.wmr == 'true' }}
         run: yarn wmr build
+      - name: Test production
+        if: ${{ needs.changes.outputs.wmr == 'true' }}
         run: yarn wmr test-prod
 
   wmr-dev-test:
