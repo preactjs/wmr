@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import * as kl from 'kolorist';
-import { isFile } from '../../lib/fs-utils.js';
+import { isFile, writeFile } from '../../lib/fs-utils.js';
 import { debug } from '../../lib/output-utils.js';
 import { npmBundle } from './npm-bundle.js';
 import { Deferred, escapeFilename, getPackageInfo, isValidPackageName } from './utils.js';
@@ -85,8 +85,7 @@ export function npmPlugin2({ cwd, autoInstall, production }) {
 
 						const hasExt = path.extname(fileName);
 						const diskCachePath = path.join(diskCacheDir, hasExt ? fileName : fileName + '.js');
-						await fs.mkdir(path.dirname(diskCachePath), { recursive: true });
-						await fs.writeFile(diskCachePath, code);
+						await writeFile(diskCachePath, code);
 
 						chunkCache.set(fileName, { code, map: map || null });
 					}
