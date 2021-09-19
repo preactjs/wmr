@@ -37,6 +37,7 @@ export default async function build(options) {
 			if (r._discoveredBy) s += kl.dim(` [from ${r._discoveredBy.url}]`);
 			return s;
 		}, '');
+
 		process.stdout.write(
 			kl.bold(`Prerendered ${routes.length} page${routes.length == 1 ? '' : 's'}:`) + routeMap + '\n'
 		);
