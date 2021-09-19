@@ -83,6 +83,5 @@ export async function modularizeCss(css, id, mappings = [], idAbsolute) {
 		const mapped = Array.from(value).join(' ');
 		mappings.push(`${q + key + q}:'${mapped}'`);
 	});
-
 	return result;
 }
