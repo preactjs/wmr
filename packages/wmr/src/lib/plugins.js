@@ -27,6 +27,7 @@ import { prefreshPlugin } from '../plugins/preact/prefresh.js';
 import { absolutePathPlugin } from '../plugins/absolute-path-plugin.js';
 import { lessPlugin } from '../plugins/less-plugin.js';
 import { workerPlugin } from '../plugins/worker-plugin.js';
+import tsConfigPathsPlugin from '../plugins/tsconfig-paths-plugin.js';
 
 /**
  * @param {import("wmr").Options & { isIIFEWorker?: boolean}} options
@@ -66,6 +67,7 @@ export function getPlugins(options) {
 		jsonPlugin({ root }),
 		bundlePlugin({ inline: !production, cwd: root }),
 		absolutePathPlugin({ root }),
+		tsConfigPathsPlugin({ cwd: root }),
 		aliasPlugin({ alias }),
 		sucrasePlugin({
 			typescript: true,
