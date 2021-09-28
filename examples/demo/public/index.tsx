@@ -1,5 +1,5 @@
 import { LocationProvider, Router, lazy, ErrorBoundary, hydrate } from 'preact-iso';
-import { test } from 'lib/test.ts';
+// import { test } from 'lib/test.ts';
 import Home from './pages/home.js';
 // import About from './pages/about/index.js';
 import NotFound from './pages/_404.js';
@@ -9,8 +9,6 @@ import Header from './header.tsx';
 const sleep = t => new Promise(r => setTimeout(r, t));
 
 const IS_CLIENT = typeof window !== 'undefined';
-
-console.log(test);
 
 const About = lazy(() => import('./pages/about/index.js'));
 const LazyAndLate = lazy(async () => (IS_CLIENT && (await sleep(1500)), import('./pages/about/index.js')));
@@ -30,6 +28,7 @@ function hideLoading() {
 }
 
 export function App() {
+
 	return (
 		<LocationProvider>
 			<div class="app">
