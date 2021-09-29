@@ -9,6 +9,7 @@ import { npmLoad } from './npm-load.js';
 import { getPackageInfo } from './utils.js';
 import { npmAutoInstall } from './npm-auto-install.js';
 import jsonPlugin from '../json-plugin.js';
+import sizeWarningPlugin from './size-warning-plugin.js';
 
 /**
  * @param {string} requestId
@@ -36,7 +37,8 @@ export async function npmBundle(requestId, { autoInstall, production, cacheDir, 
 			npmLoad({ browserReplacement }),
 			jsonPlugin({ root: cwd }),
 			commonjsPlugin({ production }),
-			subPackageLegacy({ rootId: requestId })
+			subPackageLegacy({ rootId: requestId }),
+			sizeWarningPlugin()
 		]
 	});
 

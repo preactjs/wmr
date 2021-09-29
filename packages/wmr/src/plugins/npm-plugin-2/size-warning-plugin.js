@@ -3,7 +3,7 @@ const DEFAULT_THRESHOLD = 100000;
 
 /**
  * Warn when huge files are getting piped into node_modules.
- * @returns {import("./registry").Plugin}
+ * @returns {import("rollup").Plugin}
  */
 export default function sizeWarningPlugin({ threshold = DEFAULT_THRESHOLD, factor = 3 } = {}) {
 	return {

@@ -5,7 +5,7 @@ import zlib from 'zlib';
 import semverMaxSatisfying from 'semver/ranges/max-satisfying.js';
 import { getJson, getStream, memo, streamToString, friendlyNetworkError } from './utils.js';
 import stripPackageJsonProperties from './package-strip-plugin.js';
-import sizeWarningPlugin from './size-warning-plugin.js';
+import sizeWarningPlugin from '../npm-plugin-2/size-warning-plugin.js';
 
 // @TODO: this whole module should be instantiable
 
