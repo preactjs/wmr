@@ -4,7 +4,7 @@ import * as kl from 'kolorist';
 import { isFile, writeFile } from '../../lib/fs-utils.js';
 import { debug } from '../../lib/output-utils.js';
 import { npmBundle } from './npm-bundle.js';
-import { Deferred, escapeFilename, getPackageInfo, isValidPackageName } from './utils.js';
+import { Deferred, escapeFilename, findInstalledPackage, getPackageInfo, isValidPackageName } from './utils.js';
 
 const log = debug('npm', 196);
 
@@ -29,10 +29,106 @@ export function npmPlugin2({ cwd, autoInstall, production }) {
 	/** @type {Map<string, import('./utils').Deferred>} */
 	const pending = new Map();
 
+	const assetDeferredId = '::asset';
+
+	/**
+	 * Bundle an npm package and update build caches
+	 * @param {string} id
+	 * @param {object} options
+	 * @param {string} options.packageName
+	 * @param {string} options.diskCacheDir
+	 * @returns {Promise<{ code: string, map: any }>}
+	 */
+	async function bundleNpmPackage(id, { packageName, diskCacheDir }) {
+		const deferred = new Deferred();
+		pending.set(id, deferred);
+
+		// Also add package name itself so that assets can wait on it
+		let assetDeferred;
+		if (id !== packageName) {
+			assetDeferred = new Deferred();
+			pending.set(packageName + assetDeferredId, assetDeferred);
+		}
+
+		log(kl.dim(`bundle: `) + kl.cyan(id));
+		let result = await npmBundle(id, { autoInstall, production, cacheDir, cwd });
+
+		await Promise.all(
+			result.output.map(async chunkOrAsset => {
+				// FIXME: assets
+				if (chunkOrAsset.type === 'chunk') {
+					const { isEntry, fileName, code, map } = chunkOrAsset;
+					if (isEntry) {
+						entryToChunk.set(id, fileName);
+					}
+
+					const hasExt = path.extname(fileName);
+					const diskCachePath = path.join(diskCacheDir, hasExt ? fileName : fileName + '.js');
+					await writeFile(diskCachePath, code);
+
+					chunkCache.set(fileName, { code, map: map || null });
+				}
+			})
+		);
+
+		const entryReq = entryToChunk.get(id);
+		let chunkId = entryReq ? entryReq : id;
+
+		const chunk = chunkCache.get(chunkId);
+		if (!chunk) {
+			throw new Error(`Compiled chunk for package "${chunkId}" not found.`);
+		}
+
+		deferred.resolve(chunk);
+		if (assetDeferred) {
+			assetDeferred.resolve(chunk);
+		}
+
+		return chunk;
+	}
+
 	return {
 		name: 'npm-plugin-2',
 		async resolveId(id) {
 			if (!isValidPackageName(id)) return;
+
+			// Assets require special handling as other plugins need to deal with
+			// non-js files during their `load()` method. To work around this
+			// limitation in rollup's plugin system we'll pretend that we'd requested
+			// the bare package instead of the asset and bundle that during the
+			// resolution step. When that's done we can ensure that the file
+			// exists on disk and can resolve to that. That way the "style" plugin
+			// can load it like usual in their `load()` method.
+			const { name, pathname } = getPackageInfo(id);
+			const isAsset = pathname && !/\.[tj]sx?$/.test(path.basename(pathname)) && path.extname(pathname) !== '';
+
+			if (isAsset) {
+				let deferred = pending.get(name + assetDeferredId);
+				log(kl.dim(`asset ${id}, wait for bundling `) + kl.cyan(name));
+				const diskCacheDir = path.join(cacheDir, escapeFilename(name));
+				if (!deferred) {
+					await bundleNpmPackage(name, { packageName: name, diskCacheDir });
+				} else {
+					await deferred;
+				}
+
+				// Check if the package is local
+				const modDir = await findInstalledPackage(cwd, name);
+				if (modDir) {
+					const resolved = path.join(modDir, pathname);
+					log(kl.dim(`asset found locally at `) + kl.cyan(resolved));
+					return resolved;
+				}
+
+				// Check bundle cache in case the package was auto-installed
+				const cachePath = path.join(cacheDir, pathname);
+				if (await isFile(cachePath)) {
+					return cachePath;
+				}
+
+				throw new Error(`Could not resolve asset ${id}`);
+			}
+
 			return PREFIX + id;
 		},
 		async load(id) {
@@ -68,39 +164,7 @@ export function npmPlugin2({ cwd, autoInstall, production }) {
 				return deferred.promise;
 			}
 
-			deferred = new Deferred();
-			pending.set(id, deferred);
-
-			log(kl.dim(`bundle: `) + kl.cyan(id));
-			let result = await npmBundle(id, { autoInstall, production, cacheDir, cwd });
-
-			await Promise.all(
-				result.output.map(async chunkOrAsset => {
-					// FIXME: assets
-					if (chunkOrAsset.type === 'chunk') {
-						const { isEntry, fileName, code, map } = chunkOrAsset;
-						if (isEntry) {
-							entryToChunk.set(id, fileName);
-						}
-
-						const hasExt = path.extname(fileName);
-						const diskCachePath = path.join(diskCacheDir, hasExt ? fileName : fileName + '.js');
-						await writeFile(diskCachePath, code);
-
-						chunkCache.set(fileName, { code, map: map || null });
-					}
-				})
-			);
-
-			const entryReq = entryToChunk.get(id);
-			let chunkId = entryReq ? entryReq : id;
-
-			const chunk = chunkCache.get(chunkId);
-			if (!chunk) {
-				throw new Error(`Compiled chunk for package "${chunkId}" not found.`);
-			}
-
-			deferred.resolve(chunk);
+			const chunk = await bundleNpmPackage(id, { packageName: meta.name, diskCacheDir });
 
 			return {
 				code: chunk.code,

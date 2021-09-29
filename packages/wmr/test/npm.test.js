@@ -7,6 +7,7 @@ import {
 	serveStatic,
 	setupTest,
 	teardown,
+	waitForPass,
 	withLog
 } from './test-helpers.js';
 
@@ -61,6 +62,19 @@ describe('node modules', () => {
 			await withLog(instance.output, async () => {
 				const text = await getOutput(env, instance);
 				expect(text).toMatch(/it works/);
+			});
+		});
+
+		it('should resolve assets', async () => {
+			await loadFixture('npm-styles', env);
+			instance = await runWmrFast(env.tmp.path);
+			await getOutput(env, instance);
+
+			await withLog(instance.output, async () => {
+				await waitForPass(async () => {
+					const color = await env.page.$eval('h1', el => getComputedStyle(el).color);
+					expect(color).toBe('rgb(255, 0, 0)');
+				});
 			});
 		});
 
@@ -279,6 +293,25 @@ describe('node modules', () => {
 			await withLog(instance.output, async () => {
 				const text = await env.page.content();
 				expect(text).toMatch(/it works/);
+			});
+		});
+
+		it('should load assets', async () => {
+			await loadFixture('npm-styles', env);
+			instance = await runWmr(env.tmp.path, 'build');
+
+			expect(await instance.done).toEqual(0);
+			const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+			cleanup.push(stop);
+			await env.page.goto(address, {
+				waitUntil: ['networkidle0', 'load']
+			});
+
+			await withLog(instance.output, async () => {
+				await waitForPass(async () => {
+					const color = await env.page.$eval('h1', el => getComputedStyle(el).color);
+					expect(color).toBe('rgb(255, 0, 0)');
+				});
 			});
 		});
 	});
