@@ -9,6 +9,7 @@ import WebSocketServer from './lib/websocket-server.js';
 import * as kl from 'kolorist';
 import * as errorstacks from 'errorstacks';
 import { hasDebugFlag } from './lib/output-utils.js';
+import { npmEtagCache } from './lib/npm-middleware.js';
 
 /**
  * @typedef CustomServer
@@ -17,8 +18,8 @@ import { hasDebugFlag } from './lib/output-utils.js';
 
 /**
  * @param {object} options
- * @param {string} [options.cwd = ''] Directory to serve
- * @param {string} [options.root] Virtual process.cwd
+ * @param {string} options.cwd Directory to serve
+ * @param {string} options.root Virtual process.cwd
  * @param {string} [options.publicDir] A directory containing public files, relative to cwd
  * @param {string} [options.overlayDir] A directory of generated files to serve if present, relative to cwd
  * @param {polka.Middleware[]} [options.middleware] Additional Polka middlewares to inject
@@ -96,6 +97,8 @@ export default async function server({ cwd, root, overlayDir, middleware, http2,
 	}
 
 	app.ws = new WebSocketServer(app.server, '/_hmr');
+
+	app.use(npmEtagCache());
 
 	if (compress) {
 		// @TODO: reconsider now that npm deps are compressed AOT

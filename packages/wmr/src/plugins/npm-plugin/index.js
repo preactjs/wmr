@@ -24,6 +24,7 @@ export function npmPlugin({ cwd, autoInstall, production }) {
 	/** @type {Map<string, { code: string, map: any }>} */
 	const chunkCache = new Map();
 
+	/** @type {Map<string, string>} */
 	const entryToChunk = new Map();
 
 	/** @type {Map<string, import('./utils').Deferred>} */
