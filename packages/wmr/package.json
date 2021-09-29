@@ -93,6 +93,7 @@
 		"terser": "^5.7.0",
 		"tmp-promise": "^3.0.2",
 		"totalist": "^1.1.0",
+		"tsconfig-paths": "^3.11.0",
 		"utf-8-validate": "^5.0.2",
 		"ws": "^7.3.1"
 	},

@@ -1,4 +1,5 @@
 import { LocationProvider, Router, lazy, ErrorBoundary, hydrate } from 'preact-iso';
+// import { test } from 'lib/test.ts';
 import Home from './pages/home.js';
 // import About from './pages/about/index.js';
 import NotFound from './pages/_404.js';
@@ -27,6 +28,7 @@ function hideLoading() {
 }
 
 export function App() {
+
 	return (
 		<LocationProvider>
 			<div class="app">

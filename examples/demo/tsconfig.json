@@ -1,0 +1,9 @@
+{
+	"compilerOptions": {
+		"baseUrl": "./public",
+		"paths": {
+			"lib/*": ["foo/lib/*"]
+		}
+	},
+	"include": ["**/*.ts", "**/*.tsx"]
+}
