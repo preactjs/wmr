@@ -26,7 +26,7 @@ import { prefreshPlugin } from '../plugins/preact/prefresh.js';
 import { absolutePathPlugin } from '../plugins/absolute-path-plugin.js';
 import { lessPlugin } from '../plugins/less-plugin.js';
 import { workerPlugin } from '../plugins/worker-plugin.js';
-import { npmPlugin2 } from '../plugins/npm-plugin-2/index.js';
+import { npmPlugin } from '../plugins/npm-plugin/index.js';
 import tsConfigPathsPlugin from '../plugins/tsconfig-paths-plugin.js';
 
 /**
@@ -101,7 +101,7 @@ export function getPlugins(options) {
 			// Only transpile CommonJS in node_modules and explicit .cjs files:
 			include: /(^npm\/|[/\\]node_modules[/\\]|\.cjs$)/
 		}),
-		npmPlugin2({ cwd, autoInstall, production }),
+		npmPlugin({ cwd, autoInstall, production }),
 		resolveExtensionsPlugin({
 			extensions: ['.ts', '.tsx', '.js', '.cjs'],
 			index: true
