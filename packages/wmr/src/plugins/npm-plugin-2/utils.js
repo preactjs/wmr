@@ -5,6 +5,38 @@ import { builtinModules } from 'module';
 const builtins = new Set(builtinModules);
 
 /**
+ * User-friendly registry/network error messages.
+ * @param {Error & { code: any }} err
+ * @param {string} text
+ */
+export function friendlyNetworkError(err, text) {
+	let help = err.message;
+	if (err.code === 'ENOTFOUND') help = `It looks like you're offline.`;
+	else if (err.code === 404) help = `Package doesn't exist.`;
+	const friendlyErr = Error(`${text}: ${help}`);
+	throw Object.assign(friendlyErr, { code: err.code });
+}
+
+/**
+ * @param {import('stream').Readable} stream
+ * @returns {Promise<string>}
+ */
+export function streamToString(stream) {
+	return new Promise((resolve, reject) => {
+		let buffer = '';
+		stream.setEncoding('utf-8');
+		stream.on('data', data => {
+			if (typeof data !== 'string') data = data.toString('utf-8');
+			buffer += data;
+		});
+		stream.once('end', () => {
+			resolve(buffer);
+		});
+		stream.once('error', reject);
+	});
+}
+
+/**
  * Check if id is a valid npm package name
  * @param {string} id
  * @returns {boolean}

@@ -6,8 +6,14 @@ import tar from 'tar-stream';
 import zlib from 'zlib';
 import { writeFile } from '../../lib/fs-utils.js';
 import { debug } from '../../lib/output-utils.js';
-import { friendlyNetworkError, streamToString } from '../npm-plugin/utils.js';
-import { Deferred, escapeFilename, getPackageInfo, isValidPackageName } from './utils.js';
+import {
+	Deferred,
+	escapeFilename,
+	getPackageInfo,
+	isValidPackageName,
+	friendlyNetworkError,
+	streamToString
+} from './utils.js';
 
 const log = debug('npm-auto-install');
 
