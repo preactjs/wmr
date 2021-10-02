@@ -7,7 +7,7 @@ import { promisify } from 'util';
 import { get as httpGet } from 'http';
 import polka from 'polka';
 import sirv from 'sirv';
-import { isDirectory } from '../src/lib/fs-utils.js';
+import { isDirectory, rm } from '../src/lib/fs-utils.js';
 
 export function dent(str) {
 	str = String(str);
@@ -42,7 +42,9 @@ export async function setupTest() {
  * @param {TestEnv} env
  */
 export async function teardown(env) {
-	await env.tmp.cleanup();
+	try {
+		await env.tmp.cleanup();
+	} catch (err) {}
 }
 
 /**
@@ -61,7 +63,7 @@ export async function loadFixture(name, env) {
 	// Delete copied .cache folder in case tests are run locally
 	const cacheDir = path.join(env.tmp.path, '.cache');
 	if (await isDirectory(cacheDir)) {
-		await fs.rmdir(cacheDir, { recursive: true });
+		await rm(cacheDir, { recursive: true });
 	}
 
 	try {

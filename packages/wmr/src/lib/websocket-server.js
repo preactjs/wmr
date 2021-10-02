@@ -19,6 +19,7 @@ export default class WebSocketServer extends ws.Server {
 	registerListener(client) {
 		client.on('message', function (data) {
 			const message = JSON.parse(data.toString());
+			console.log('=== SERVER', message);
 			if (message.type === 'hotAccepted') {
 				let [id] = message.id.split('?');
 				id = id.startsWith('/') ? id.slice(1) : id;
@@ -27,6 +28,7 @@ export default class WebSocketServer extends ws.Server {
 				}
 
 				const entry = moduleGraph.get(id);
+				console.log('ACCEPTING', id, entry);
 				entry.acceptingUpdates = true;
 				entry.stale = false;
 			}
@@ -34,10 +36,12 @@ export default class WebSocketServer extends ws.Server {
 	}
 
 	broadcast(data) {
+		console.log('BROADCAST', data, this.clients.size);
 		// We may receive events during before the client is connected.
 		// Queue them and flush as soon as the first connection is established.
 		if (!this.clients.size) {
 			this.queue.push(data);
+			console.log('=== QUEUE');
 			return;
 		}
 
@@ -53,6 +57,7 @@ export default class WebSocketServer extends ws.Server {
 		}
 
 		const pathname = parse(req).pathname;
+		console.log('===UPGRADE', this.clients.size, pathname, this.mountPath);
 		if (pathname == this.mountPath) {
 			this.handleUpgrade(req, socket, head, client => {
 				client.emit('connection', client, req);
@@ -61,11 +66,13 @@ export default class WebSocketServer extends ws.Server {
 
 			// Flush initially buffered messages
 			this.queue.forEach(msg => {
-				this.clients.forEach(client => {
+				this.clients.forEach(async client => {
 					if (client.readyState !== ws.OPEN) return;
+					await new Promise(r => setTimeout(r, 1000));
 					client.send(JSON.stringify(msg));
 				});
 			});
+			console.log('UPGRADED?????', this.clients.size);
 		} else {
 			socket.destroy();
 		}

@@ -95,7 +95,7 @@
 		"totalist": "^1.1.0",
 		"tsconfig-paths": "^3.11.0",
 		"utf-8-validate": "^5.0.2",
-		"ws": "^7.3.1"
+		"ws": "^7.5.4"
 	},
 	"optionalDependencies": {
 		"fsevents": "^2.1.3"

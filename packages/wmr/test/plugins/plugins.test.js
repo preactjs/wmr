@@ -32,8 +32,8 @@ describe('config', () => {
 				expect(configHook < configResolvedHook).toEqual(true);
 
 				// Check that both "cwd" and "root" are correct
-				expect(instance.output[configHook]).toMatch(/cwd:.*, root:.*\/public/);
-				expect(instance.output[configResolvedHook]).toMatch(/cwd:.*, root:.*\/public/);
+				expect(instance.output[configHook]).toMatch(/cwd:.*, root:.*[\\/]public/);
+				expect(instance.output[configResolvedHook]).toMatch(/cwd:.*, root:.*[\\/]public/);
 			});
 		});
 

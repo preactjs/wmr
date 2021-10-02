@@ -200,6 +200,7 @@ export default function wmrStylesPlugin({ root, hot, production, alias, sourcema
 		},
 		watchChange(id) {
 			const importer = moduleMap.get(id);
+			console.log('=== CSS', id, moduleMap);
 			if (importer) return Array.from(importer);
 		}
 	};

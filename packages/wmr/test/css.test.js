@@ -5,11 +5,13 @@ import {
 	setupTest,
 	teardown,
 	updateFile,
+	wait,
 	waitForMessage,
 	waitForPass,
 	withLog
 } from './test-helpers.js';
 import path from 'path';
+import { promises as fs } from 'fs';
 
 jest.setTimeout(30000);
 
@@ -60,7 +62,7 @@ describe('CSS', () => {
 			});
 		});
 
-		it('should hot reload a module css-file when new class is added', async () => {
+		it.only('should hot reload a module css-file when new class is added', async () => {
 			await loadFixture('css-module-hmr', env);
 			instance = await runWmrFast(env.tmp.path);
 			await getOutput(env, instance);
@@ -69,11 +71,18 @@ describe('CSS', () => {
 				const h1 = await page.$('h1');
 				expect(await env.page.evaluate(e => getComputedStyle(e).color, h1)).toBe('rgb(0, 0, 0)');
 
+				// await wait(1000);
+
 				await updateFile(env.tmp.path, 'styles/foo.module.css', () => `.foo { color: red; }`);
 
-				await waitForPass(async () => {
-					expect(await env.page.evaluate(e => getComputedStyle(e).color, h1)).toBe('rgb(255, 0, 0)');
-				});
+				try {
+					await waitForPass(async () => {
+						expect(await env.page.evaluate(e => getComputedStyle(e).color, h1)).toBe('rgb(255, 0, 0)');
+					});
+				} catch (err) {
+					// await wait(30000);
+					throw err;
+				}
 			});
 		});
 

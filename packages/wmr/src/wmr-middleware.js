@@ -95,6 +95,7 @@ export default function wmrMiddleware(options) {
 		// Delete file from the in-memory cache:
 		WRITE_CACHE.delete(filename);
 
+		console.log('BUBBLE', moduleGraph, filename);
 		const mod = moduleGraph.get(filename);
 		if (!mod) return false;
 
@@ -104,6 +105,7 @@ export default function wmrMiddleware(options) {
 		}
 
 		if (mod.acceptingUpdates) {
+			console.log('ACCEPTING #1', mod, filename);
 			mod.stale = true;
 			pendingChanges.add(filename);
 			return true;
@@ -128,6 +130,7 @@ export default function wmrMiddleware(options) {
 	 */
 	function applyWatchChanges(absoluteId, changeType) {
 		const event = { event: changeType };
+		console.log('----> WATCHER', absoluteId, event);
 
 		const seen = new Set();
 		const items = [absoluteId];
@@ -192,6 +195,7 @@ export default function wmrMiddleware(options) {
 
 			if (!pendingChanges.size) timeout = setTimeout(flushChanges, 60);
 
+			console.log(file, moduleGraph);
 			if (moduleGraph.has(file + '?module')) {
 				pendingChanges.add('/' + file + '?module');
 

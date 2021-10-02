@@ -10,7 +10,17 @@ export async function rm(path, options) {
 	if (fs.rm) return fs.rm(path, options);
 	options = options || {};
 	const stats = await fs.stat(path);
-	if (stats.isDirectory()) return fs.rmdir(path, options);
+	if (stats.isDirectory()) {
+		// Windows often throws "EBUSY" during tests
+		console.log('NODE_ENV', process.env.NODE_ENV);
+		try {
+			return fs.rmdir(path, options);
+		} catch (err) {
+			if (!/EBUSY/.test(err.message)) {
+				throw err;
+			}
+		}
+	}
 	return fs.unlink(path);
 }
 
