@@ -10,6 +10,7 @@ export default class WebSocketServer extends ws.Server {
 	constructor(server, mountPath) {
 		super({ noServer: true });
 		this.mountPath = mountPath;
+		this.queue = [];
 
 		server.on('connection', this.registerListener.bind(this));
 		server.on('upgrade', this._handleUpgrade.bind(this));
@@ -33,6 +34,13 @@ export default class WebSocketServer extends ws.Server {
 	}
 
 	broadcast(data) {
+		// We may receive events during before the client is connected.
+		// Queue them and flush as soon as the first connection is established.
+		if (!this.clients.size) {
+			this.queue.push(data);
+			return;
+		}
+
 		this.clients.forEach(client => {
 			if (client.readyState !== ws.OPEN) return;
 			client.send(JSON.stringify(data));
@@ -49,6 +57,14 @@ export default class WebSocketServer extends ws.Server {
 			this.handleUpgrade(req, socket, head, client => {
 				client.emit('connection', client, req);
 				this.registerListener(client);
+			});
+
+			// Flush initially buffered messages
+			this.queue.forEach(msg => {
+				this.clients.forEach(client => {
+					if (client.readyState !== ws.OPEN) return;
+					client.send(JSON.stringify(msg));
+				});
 			});
 		} else {
 			socket.destroy();
