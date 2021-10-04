@@ -192,6 +192,7 @@ export default function wmrMiddleware(options) {
 
 			if (!pendingChanges.size) timeout = setTimeout(flushChanges, 60);
 
+			console.log(file, moduleGraph, pendingChanges);
 			if (moduleGraph.has(file + '?module')) {
 				pendingChanges.add('/' + file + '?module');
 

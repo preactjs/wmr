@@ -60,7 +60,7 @@ describe('CSS', () => {
 			});
 		});
 
-		it('should hot reload a module css-file when new class is added', async () => {
+		it.only('should hot reload a module css-file when new class is added', async () => {
 			await loadFixture('css-module-hmr', env);
 			instance = await runWmrFast(env.tmp.path);
 			await getOutput(env, instance);
@@ -74,6 +74,8 @@ describe('CSS', () => {
 				await waitForPass(async () => {
 					expect(await env.page.evaluate(e => getComputedStyle(e).color, h1)).toBe('rgb(255, 0, 0)');
 				});
+
+				throw 'poop';
 			});
 		});
 

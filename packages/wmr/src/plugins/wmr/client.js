@@ -22,6 +22,7 @@ function connect(needsReload) {
 	}
 
 	ws.addEventListener('open', () => {
+		console.log('OPEN');
 		log(`Connected to server.`);
 		if (needsReload) {
 			location.reload();
@@ -44,6 +45,7 @@ const URL_SUFFIX = /\/(index\.html)?$/;
 
 function handleMessage(e) {
 	const data = JSON.parse(e.data);
+	console.log('message', e.data, mods);
 	switch (data.type) {
 		case 'reload':
 			if (HAS_DOM) {
@@ -57,11 +59,13 @@ function handleMessage(e) {
 			}
 			data.changes.forEach(url => {
 				url = resolve(url);
+				console.log('   resolved', url);
 				if (!mods.get(url)) {
 					if (/\.(css|s[ac]ss|less)$/.test(url)) {
 						if (mods.has(url + '?module')) {
 							url += '?module';
 						} else {
+							console.log('UPDATE STYLESHEET');
 							updateStyleSheet(url);
 							return;
 						}
@@ -150,6 +154,7 @@ function update(url, date) {
 	const dispose = Array.from(mod.dispose);
 	const accept = Array.from(mod.accept);
 	const newUrl = addTimestamp(url, date);
+	console.log('UDPATE', url, newUrl, mod);
 	const p = mod.import ? mod.import(newUrl) : import(newUrl);
 
 	return p
@@ -199,7 +204,9 @@ export function createHotContext(url) {
 // CSS HMR API (for sheets imported via proxy modules)
 const styles = new Map();
 export function style(filename, id) {
+	console.log('SHEET', filename, id);
 	id = resolve(id || filename);
+	console.log('SHEET resolved', id, styles);
 	let node = styles.get(id);
 	if (node) {
 		node.href = addTimestamp(filename, Date.now());
@@ -224,6 +231,7 @@ function traverseSheet(sheet, target) {
 
 // Update a non-imported stylesheet
 function updateStyleSheet(url) {
+	console.log('UPDAT ESTY', url);
 	if (!HAS_DOM) return;
 	const sheets = document.styleSheets;
 
