@@ -1400,7 +1400,7 @@ acorn@^7.1.1, acorn@^7.4.0:
   resolved "https://registry.yarnpkg.com/acorn/-/acorn-7.4.1.tgz#feaed255973d2e77555b83dbc08851a6c63520fa"
   integrity sha512-nQyp0o1/mNdbTO1PO6kHkwSrmgZ0MT/jCCpNiwbUjGoRN4dlBhqJtoQuCnEOKzgTVwg0ZWiCoQy6SxMebQVh8A==
 
-acorn@^8.4.1:
+acorn@^8.5.0:
   version "8.5.0"
   resolved "https://registry.yarnpkg.com/acorn/-/acorn-8.5.0.tgz#4512ccb99b3698c752591e9bb4472e38ad43cee2"
   integrity sha512-yXbYeFy+jUuYd3/CDcg2NkIYE991XYX/bje7LmjJigUciaeO1JR4XxXgCIV1/Zc/dRuFEyw1L0pbA+qynJkW5Q==
@@ -1644,11 +1644,6 @@ astring@^1.7.0:
   version "1.7.0"
   resolved "https://registry.yarnpkg.com/astring/-/astring-1.7.0.tgz#bbc5ab165537765d03c103ff496004d1e4a89e1c"
   integrity sha512-43bervUZNvahG1v74a+POdGlAWcOUGSvP9fJVj6sywzM/SquwDkA+CdP938e8tWHUV77fStCiqzaQHAt0u6MVA==
-
-astring@^1.7.5:
-  version "1.7.5"
-  resolved "https://registry.yarnpkg.com/astring/-/astring-1.7.5.tgz#a7d47fceaf32b052d33a3d07c511efeec67447ca"
-  integrity sha512-lobf6RWXb8c4uZ7Mdq0U12efYmpD1UFnyOWVJPTa3ukqZrMopav+2hdNu0hgBF0JIBFK9QgrBDfwYvh3DFJDAA==
 
 async-disk-cache@^2.1.0:
   version "2.1.0"
@@ -4120,18 +4115,6 @@ glob@7.1.6, glob@^7.1.1, glob@^7.1.2, glob@^7.1.3, glob@^7.1.4, glob@^7.1.6:
   version "7.1.6"
   resolved "https://registry.yarnpkg.com/glob/-/glob-7.1.6.tgz#141f33b81a7c2492e125594307480c46679278a6"
   integrity sha512-LwaxwyZ72Lk7vZINtNNrywX0ZuLyStrdDtabefZKAY5ZGJhVtgdznluResxNmPitE0SAO+O26sWTHeKSI2wMBA==
-  dependencies:
-    fs.realpath "^1.0.0"
-    inflight "^1.0.4"
-    inherits "2"
-    minimatch "^3.0.4"
-    once "^1.3.0"
-    path-is-absolute "^1.0.0"
-
-glob@^7.1.7:
-  version "7.1.7"
-  resolved "https://registry.yarnpkg.com/glob/-/glob-7.1.7.tgz#3b193e9233f01d42d0b3f78294bbeeb418f94a90"
-  integrity sha512-OvD9ENzPLbegENnYP5UUfJIirTg4+XwMWGaQfQTY0JenxNvvIKP3U3/tAQSPIu/lHxXYSZmpXlUHeqAIdKzBLQ==
   dependencies:
     fs.realpath "^1.0.0"
     inflight "^1.0.4"
@@ -9670,18 +9653,16 @@ yocto-queue@^0.1.0:
   resolved "https://registry.yarnpkg.com/yocto-queue/-/yocto-queue-0.1.0.tgz#0294eb3dee05028d31ee1a5fa2c556a6aaf10a1b"
   integrity sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==
 
-zecorn@^0.8.1:
-  version "0.8.1"
-  resolved "https://registry.yarnpkg.com/zecorn/-/zecorn-0.8.1.tgz#dc105287c07b90008e16d1e2ec642280f3012ca8"
-  integrity sha512-gkBvLXZfrcUdd5Hs1chsQCCm0jZpTzGsm/PudDweeQV+fY18WNQpH0JeOGNq27wlbcFb6FS2/XSzMx6y/7ZECQ==
+zecorn@^0.9.3:
+  version "0.9.3"
+  resolved "https://registry.yarnpkg.com/zecorn/-/zecorn-0.9.3.tgz#d430083d2f780a1a271f4a55430d4e3d0bf69097"
+  integrity sha512-zT59qDOdIhs2EkLPTzEW+JhtAvsO4elaCfSEQ0j/CjxETIC81XoVMxDLz0MCAKmPtgK+8zJLLjpPmqktptp6Zg==
   dependencies:
-    acorn "^8.4.1"
+    acorn "^8.5.0"
     acorn-class-fields "^1.0.0"
     acorn-import-assertions "^1.7.5"
     acorn-jsx "^5.3.2"
     acorn-logical-assignment "^0.1.4"
     acorn-private-methods "^1.0.0"
     acorn-static-class-features "^1.0.0"
-    astring "^1.7.5"
-    glob "^7.1.7"
     sourcemap-codec "^1.4.8"
