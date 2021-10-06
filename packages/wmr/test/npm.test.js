@@ -106,6 +106,24 @@ describe('node modules', () => {
 					expect(text).toMatch(/it works/);
 				});
 			});
+
+			it('should resolve to "index.js" if neither "main", "module" or "exports" is present', async () => {
+				await loadFixture('npm-incomplete', env);
+				instance = await runWmrFast(env.tmp.path);
+				await withLog(instance.output, async () => {
+					const text = await getOutput(env, instance);
+					expect(text).toMatch(/it works/);
+				});
+			});
+
+			it('should resolve to "index.js" if neither "main", "module" or "exports" is present in deep import', async () => {
+				await loadFixture('npm-incomplete-deep', env);
+				instance = await runWmrFast(env.tmp.path);
+				await withLog(instance.output, async () => {
+					const text = await getOutput(env, instance);
+					expect(text).toMatch(/it works/);
+				});
+			});
 		});
 
 		describe('browser field', () => {

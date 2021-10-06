@@ -67,7 +67,7 @@ export function npmLoad({ browserReplacement, resolutionCache }) {
 
 				entry = path.join(modDir, found);
 			} else if (!pathname) {
-				entry = path.join(modDir, pkg.module || pkg.main);
+				entry = path.join(modDir, pkg.module || pkg.main || 'index.js');
 			} else {
 				// Special case: Deep import may itself be a replaced path
 				const replaced = browserReplacement.get(pathname);
@@ -80,7 +80,7 @@ export function npmLoad({ browserReplacement, resolutionCache }) {
 					// was used before the "export" field became a thing.
 					try {
 						const subPkg = await readJson(path.join(modDir, pathname, 'package.json'));
-						entry = path.join(modDir, pathname, subPkg.module || subPkg.main);
+						entry = path.join(modDir, pathname, subPkg.module || subPkg.main || 'index.js');
 					} catch (err) {
 						entry = pathname;
 					}
