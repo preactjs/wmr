@@ -96,7 +96,7 @@
 		"tsconfig-paths": "^3.11.0",
 		"utf-8-validate": "^5.0.2",
 		"ws": "^7.3.1",
-		"zecorn": "^0.9.3"
+		"zecorn": "^0.9.5"
 	},
 	"optionalDependencies": {
 		"fsevents": "^2.1.3"

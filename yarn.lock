@@ -9653,10 +9653,10 @@ yocto-queue@^0.1.0:
   resolved "https://registry.yarnpkg.com/yocto-queue/-/yocto-queue-0.1.0.tgz#0294eb3dee05028d31ee1a5fa2c556a6aaf10a1b"
   integrity sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==
 
-zecorn@^0.9.3:
-  version "0.9.3"
-  resolved "https://registry.yarnpkg.com/zecorn/-/zecorn-0.9.3.tgz#d430083d2f780a1a271f4a55430d4e3d0bf69097"
-  integrity sha512-zT59qDOdIhs2EkLPTzEW+JhtAvsO4elaCfSEQ0j/CjxETIC81XoVMxDLz0MCAKmPtgK+8zJLLjpPmqktptp6Zg==
+zecorn@^0.9.5:
+  version "0.9.5"
+  resolved "https://registry.yarnpkg.com/zecorn/-/zecorn-0.9.5.tgz#cd8202f38582e3b6ba1738623e13c0307723ef36"
+  integrity sha512-XYSyr8q2UQBXRVWue41LgDGSWrCY1s6quGCk5WjiVyva61Qz1NTpU5/JKHmPWXv5czpj8RydUfJalc/TRNbFgA==
   dependencies:
     acorn "^8.5.0"
     acorn-class-fields "^1.0.0"
