@@ -258,6 +258,15 @@ describe('node modules', () => {
 				});
 			});
 
+			it('should install versioned package', async () => {
+				await loadFixture('npm-auto-install-version', env);
+				instance = await runWmrFast(env.tmp.path, '--autoInstall', { env: { DISABLE_LOCAL_NPM: true } });
+				await withLog(instance.output, async () => {
+					const text = await getOutput(env, instance);
+					expect(text).toMatch(/it works/);
+				});
+			});
+
 			it('should load CSS from installed package', async () => {
 				await loadFixture('npm-auto-install-css', env);
 				instance = await runWmrFast(env.tmp.path, '--autoInstall', { env: { DISABLE_LOCAL_NPM: true } });
