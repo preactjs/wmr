@@ -30,14 +30,13 @@ export async function isPortFree(port) {
  * @returns {Promise<number>} The next free port
  */
 export async function getFreePort(port) {
-	let found = false;
 	let attempts = 0;
 
 	if (typeof port === 'string') port = parseInt(port, 10);
 
 	// Limit to 20 attempts for now
-	while (!found && attempts <= 20) {
-		if (isPortFree(port)) break;
+	while (attempts <= 20) {
+		if (await isPortFree(port)) break;
 
 		port++;
 		attempts++;
