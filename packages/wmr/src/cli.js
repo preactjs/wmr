@@ -61,7 +61,7 @@ prog
 	.option('--compress', 'Enable compression (default: enabled)')
 	.option('--profile', 'Generate build statistics')
 	.option('--reload', 'Switch off hmr and reload on file saves')
-	.option('--auto-install', 'Fetch missing npm packages from npm registry automatically (default: false')
+	.option('--autoInstall', 'Fetch missing npm packages from npm registry automatically (default: false')
 	.action(opts => {
 		opts.optimize = !/false|0/.test(opts.compress);
 		opts.compress = bool(opts.compress);
