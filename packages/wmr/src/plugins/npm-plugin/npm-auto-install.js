@@ -96,12 +96,10 @@ async function parseTarball(bodyStream, onFile, { include, exclude }) {
  * prototyping.
  * @param {object} options
  * @param {string} options.cacheDir
+ * @param {string} options.registryUrl
  * @returns {import('rollup').Plugin}
  */
-export function npmAutoInstall({ cacheDir }) {
-	// TODO: Detect from `.npmrc`
-	const registryUrl = 'https://registry.npmjs.org';
-
+export function npmAutoInstall({ cacheDir, registryUrl }) {
 	/** Files that should always be ignored when storing packages */
 	const FILES_EXCLUDE = /([._-]test\.|__tests?|\/tests?\/|\/node_modules\/|\.d\.ts$)/i;
 

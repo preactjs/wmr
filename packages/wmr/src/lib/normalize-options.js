@@ -25,6 +25,7 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 	options.features = { preact: true };
 	options.alias = options.alias || options.aliases || {};
 	options.customRoutes = options.customRoutes || [];
+	options.registry = options.registry || 'https://registry.npmjs.org';
 
 	// `wmr` / `wmr start` is a development command.
 	// `wmr build` / `wmr serve` are production commands.

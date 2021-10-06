@@ -35,6 +35,7 @@ prog
 	.option('--visualize', 'Launch interactive bundle visualizer')
 	.option('--minify', 'Enable minification of generated code (default: true)', true)
 	.option('--autoInstall', 'Fetch missing npm packages from npm registry automatically (default: false')
+	.option('--registry', 'NPM registry url to fetch if "--autoInstall" is set (default: https://registry.npmjs.org)')
 	.action(opts => {
 		opts.minify = bool(opts.minify);
 		run(build(opts));
@@ -62,6 +63,7 @@ prog
 	.option('--profile', 'Generate build statistics')
 	.option('--reload', 'Switch off hmr and reload on file saves')
 	.option('--autoInstall', 'Fetch missing npm packages from npm registry automatically (default: false')
+	.option('--registry', 'NPM registry url to fetch if "--autoInstall" is set (default: https://registry.npmjs.org)')
 	.action(opts => {
 		opts.optimize = !/false|0/.test(opts.compress);
 		opts.compress = bool(opts.compress);

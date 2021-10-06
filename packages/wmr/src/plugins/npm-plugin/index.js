@@ -13,9 +13,10 @@ const log = debug('npm', 196);
  * @param {string} options.cwd
  * @param {boolean} options.autoInstall
  * @param {boolean} options.production
+ * @param {string} options.registryUrl
  * @returns {import('rollup').Plugin}
  */
-export function npmPlugin({ cwd, autoInstall, production }) {
+export function npmPlugin({ cwd, autoInstall, production, registryUrl }) {
 	const PREFIX = '\0npm:';
 
 	const cacheDir = path.join(cwd, '.cache', '@npm');
@@ -52,7 +53,7 @@ export function npmPlugin({ cwd, autoInstall, production }) {
 		}
 
 		log(kl.dim(`bundle: `) + kl.cyan(id));
-		let result = await npmBundle(id, { autoInstall, production, cacheDir, cwd, resolutionCache });
+		let result = await npmBundle(id, { autoInstall, production, cacheDir, cwd, resolutionCache, registryUrl });
 
 		await Promise.all(
 			result.output.map(async chunkOrAsset => {

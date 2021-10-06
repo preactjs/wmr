@@ -29,9 +29,10 @@ function customWarn(warning) {
  * @param {boolean} options.production
  * @param {string} options.cacheDir
  * @param {string} options.cwd
+ * @param {string} options.registryUrl
  * @param {Map<string, string>} options.resolutionCache
  */
-export async function npmBundle(requestId, { autoInstall, production, cacheDir, cwd, resolutionCache }) {
+export async function npmBundle(requestId, { autoInstall, production, cacheDir, cwd, resolutionCache, registryUrl }) {
 	const meta = getPackageInfo(requestId);
 	const pkgName = meta.name;
 
@@ -46,7 +47,7 @@ export async function npmBundle(requestId, { autoInstall, production, cacheDir, 
 			browserFieldPlugin({ browserReplacement }),
 			npmExternalDeps({ requestId }),
 			!process.env.DISABLE_LOCAL_NPM && npmLocalPackage({ root: cwd }),
-			autoInstall && npmAutoInstall({ cacheDir }),
+			autoInstall && npmAutoInstall({ cacheDir, registryUrl }),
 			npmLoad({ browserReplacement, resolutionCache }),
 			jsonPlugin({ root: cwd }),
 			commonjsPlugin({ production }),

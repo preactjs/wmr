@@ -7,6 +7,7 @@ import {
 	serveStatic,
 	setupTest,
 	teardown,
+	waitForMessage,
 	waitForPass,
 	withLog
 } from './test-helpers.js';
@@ -265,6 +266,16 @@ describe('node modules', () => {
 					const text = await getOutput(env, instance);
 					expect(text).toMatch(/it works/);
 				});
+			});
+
+			// eslint-disable-next-line jest/expect-expect
+			it('should fetch package from --registry', async () => {
+				await loadFixture('npm-auto-install-version', env);
+				instance = await runWmrFast(env.tmp.path, '--autoInstall', '--registry', 'https://example.com', {
+					env: { DISABLE_LOCAL_NPM: true }
+				});
+				await getOutput(env, instance);
+				await waitForMessage(instance.output, /500.*https:\/\/example\.com\/smoldash/);
 			});
 
 			it('should load CSS from installed package', async () => {

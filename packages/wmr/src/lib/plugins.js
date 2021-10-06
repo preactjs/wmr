@@ -47,7 +47,8 @@ export function getPlugins(options) {
 		sourcemap,
 		features,
 		visualize,
-		autoInstall
+		autoInstall,
+		registry
 	} = options;
 
 	// Plugins are pre-sorted
@@ -101,7 +102,7 @@ export function getPlugins(options) {
 			// Only transpile CommonJS in node_modules and explicit .cjs files:
 			include: /(^npm\/|[/\\]node_modules[/\\]|\.cjs$)/
 		}),
-		npmPlugin({ cwd, autoInstall, production }),
+		npmPlugin({ cwd, autoInstall, production, registryUrl: registry }),
 		resolveExtensionsPlugin({
 			extensions: ['.ts', '.tsx', '.js', '.cjs'],
 			index: true
