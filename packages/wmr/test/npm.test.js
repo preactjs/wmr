@@ -257,6 +257,19 @@ describe('node modules', () => {
 					expect(text).toMatch(/it works/);
 				});
 			});
+
+			it('should load CSS from installed package', async () => {
+				await loadFixture('npm-auto-install-css', env);
+				instance = await runWmrFast(env.tmp.path, '--autoInstall', { env: { DISABLE_LOCAL_NPM: true } });
+				await getOutput(env, instance);
+
+				await withLog(instance.output, async () => {
+					await waitForPass(async () => {
+						const color = await env.page.$eval('a', el => getComputedStyle(el).color);
+						expect(color).toBe('rgb(17, 139, 238)');
+					});
+				});
+			});
 		});
 	});
 

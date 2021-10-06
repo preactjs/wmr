@@ -10,9 +10,10 @@ const log = debug('npm-load');
 /**
  * @param {object} options
  * @param {Map<string, string>} options.browserReplacement
+ * @param {Map<string, string>} options.resolutionCache
  * @returns {import('rollup').Plugin}
  */
-export function npmLoad({ browserReplacement }) {
+export function npmLoad({ browserReplacement, resolutionCache }) {
 	return {
 		name: 'npm-load',
 		async resolveId(id, importer) {
@@ -86,9 +87,28 @@ export function npmLoad({ browserReplacement }) {
 				}
 			}
 
-			const code = await fs.readFile(entry, 'utf-8');
-
 			log(`loaded ${kl.cyan(id)} ${kl.dim(`from ${entry}`)}`);
+
+			resolutionCache.set(id, modDir);
+
+			// Some packages use non-js entry files, but rollup only supports js.
+			// So we expect other plugins to handle assets.
+			if (!/\.(?:[tj]sx?|[cm]js|[mc]ts)/.test(path.extname(entry))) {
+				return {
+					code: '',
+					map: null,
+					moduleSideEffect: false,
+					meta: {
+						wmr: {
+							entry,
+							modName: name,
+							modDir
+						}
+					}
+				};
+			}
+
+			const code = await fs.readFile(entry, 'utf-8');
 
 			return {
 				code,
