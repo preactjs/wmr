@@ -4,7 +4,8 @@ import fetch from 'node-fetch';
 import path from 'path';
 import tar from 'tar-stream';
 import zlib from 'zlib';
-import { writeFile } from '../../lib/fs-utils.js';
+import * as kl from 'kolorist';
+import { isDirectory, writeFile } from '../../lib/fs-utils.js';
 import { debug } from '../../lib/output-utils.js';
 import {
 	Deferred,
@@ -141,7 +142,6 @@ export function npmAutoInstall({ cacheDir }) {
 			deferred = new Deferred();
 			pending.set(deferredKey, deferred);
 
-			log(`downloading... ${id}`);
 			const downloadDir = path.join(cacheDir, '_download');
 
 			try {
@@ -155,44 +155,52 @@ export function npmAutoInstall({ cacheDir }) {
 				let info = pkg.versions[version];
 				const { tarball } = info.dist;
 
-				// Download tarball to disk
 				const safeName = escapeFilename(meta.name);
-				const tarPath = path.join(downloadDir, `${safeName}-${version}.tgz`);
-				await streamToDisk(tarball, tarPath);
-
-				// TODO: Check tarball integrity?
-
-				// Extract tar file
-				log(`extracting... ${tarPath}`);
 				const extractPath = path.join(downloadDir, `${safeName}@${version}`);
 
-				await parseTarball(
-					fs.createReadStream(tarPath),
-					async (name, stream) => {
-						// TODO: Support binary formats
-						let data = await streamToString(stream);
+				// Check if the extracted package is already present from a
+				// previous run.
+				if (await isDirectory(extractPath)) {
+					log(kl.dim(`resolved from cache: `) + kl.cyan(extractPath));
+				} else {
+					log(kl.dim(`downloading... `) + kl.cyan(id));
+					// Download tarball to disk
+					const tarPath = path.join(downloadDir, `${safeName}-${version}.tgz`);
+					await streamToDisk(tarball, tarPath);
 
-						if (name.endsWith('package.json')) {
-							try {
-								const json = JSON.parse(data);
-								for (const prop of USELESS_PROPERTIES) {
-									if (prop in json) {
-										delete json[prop];
+					// TODO: Check tarball integrity?
+
+					// Extract tar file
+					log(kl.dim(`extracting... `) + kl.cyan(tarPath));
+
+					await parseTarball(
+						fs.createReadStream(tarPath),
+						async (name, stream) => {
+							// TODO: Support binary formats
+							let data = await streamToString(stream);
+
+							if (name.endsWith('package.json')) {
+								try {
+									const json = JSON.parse(data);
+									for (const prop of USELESS_PROPERTIES) {
+										if (prop in json) {
+											delete json[prop];
+										}
 									}
+									data = JSON.stringify(json, null, 2);
+								} catch (err) {
+									console.warn(`Invalid package.json`);
 								}
-								data = JSON.stringify(json, null, 2);
-							} catch (err) {
-								console.warn(`Invalid package.json`);
 							}
-						}
 
-						await writeFile(path.join(extractPath, name), data);
-					},
-					{ exclude: FILES_EXCLUDE }
-				);
+							await writeFile(path.join(extractPath, name), data);
+						},
+						{ exclude: FILES_EXCLUDE }
+					);
 
-				// Delete tarball after extraction was successful
-				await fs.promises.unlink(tarPath);
+					// Delete tarball after extraction was successful
+					await fs.promises.unlink(tarPath);
+				}
 
 				const out = {
 					id,
