@@ -14,12 +14,13 @@ const log = debug('npm', 196);
  * @param {boolean} options.autoInstall
  * @param {boolean} options.production
  * @param {string} options.registryUrl
+ * @param {string} options.cacheDir
+ * @param {Record<string, string>} options.alias
+ * @param {Map<string, string>} options.resolutionCache
  * @returns {import('rollup').Plugin}
  */
-export function npmPlugin({ cwd, autoInstall, production, registryUrl }) {
+export function npmPlugin({ cwd, cacheDir, autoInstall, production, registryUrl, resolutionCache, alias }) {
 	const PREFIX = '\0npm:';
-
-	const cacheDir = path.join(cwd, '.cache', '@npm');
 
 	/** @type {Map<string, { code: string, map: any }>} */
 	const chunkCache = new Map();
@@ -38,10 +39,11 @@ export function npmPlugin({ cwd, autoInstall, production, registryUrl }) {
 	 * @param {object} options
 	 * @param {string} options.packageName
 	 * @param {string} options.diskCacheDir
+	 * @param {Record<string, string>} options.alias
 	 * @param {Map<string, string>} options.resolutionCache
 	 * @returns {Promise<{ code: string, map: any }>}
 	 */
-	async function bundleNpmPackage(id, { packageName, diskCacheDir, resolutionCache }) {
+	async function bundleNpmPackage(id, { packageName, diskCacheDir, resolutionCache, alias }) {
 		const deferred = new Deferred();
 		pending.set(id, deferred);
 
@@ -53,7 +55,7 @@ export function npmPlugin({ cwd, autoInstall, production, registryUrl }) {
 		}
 
 		log(kl.dim(`bundle: `) + kl.cyan(id));
-		let result = await npmBundle(id, { autoInstall, production, cacheDir, cwd, resolutionCache, registryUrl });
+		let result = await npmBundle(id, { autoInstall, production, cacheDir, cwd, resolutionCache, registryUrl, alias });
 
 		await Promise.all(
 			result.output.map(async chunkOrAsset => {
@@ -88,12 +90,6 @@ export function npmPlugin({ cwd, autoInstall, production, registryUrl }) {
 		return chunk;
 	}
 
-	/**
-	 * Map of package name to folder on disk
-	 * @type {Map<string, string>}
-	 */
-	const resolutionCache = new Map();
-
 	return {
 		name: 'npm-plugin',
 		async resolveId(id) {
@@ -114,7 +110,7 @@ export function npmPlugin({ cwd, autoInstall, production, registryUrl }) {
 				log(kl.dim(`asset ${id}, wait for bundling `) + kl.cyan(name));
 				const diskCacheDir = path.join(cacheDir, escapeFilename(name));
 				if (!deferred) {
-					await bundleNpmPackage(name, { packageName: name, diskCacheDir, resolutionCache });
+					await bundleNpmPackage(name, { packageName: name, diskCacheDir, resolutionCache, alias });
 				} else {
 					await deferred;
 				}

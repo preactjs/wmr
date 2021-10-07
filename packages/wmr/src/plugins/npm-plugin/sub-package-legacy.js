@@ -5,11 +5,9 @@ import { isDirectory } from '../../lib/fs-utils.js';
 /**
  * Legacy way of defining package entry points before the
  * "export" field in `package.json` was a thing.
- * @param {object} options
- * @param {string} options.rootId
  * @returns {import('rollup').Plugin}
  */
-export function subPackageLegacy({ rootId }) {
+export function subPackageLegacy() {
 	return {
 		name: 'legacy-sub-package',
 		async resolveId(id, importer) {

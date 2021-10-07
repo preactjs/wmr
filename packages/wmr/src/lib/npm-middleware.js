@@ -6,11 +6,11 @@ export function npmEtagCache() {
 		const url = new URL(req.url, 'https://localhost');
 		let id = path.posix.normalize(url.pathname);
 
-		if (!id.startsWith('/@npm/@id/')) {
+		if (!id.startsWith('/@npm/')) {
 			return next();
 		}
 
-		id = id.slice('/@npm/@id/'.length);
+		id = id.slice('/@npm/'.length);
 		if (!isValidPackageName(id)) {
 			return next();
 		}

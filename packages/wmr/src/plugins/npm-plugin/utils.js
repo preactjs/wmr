@@ -49,12 +49,11 @@ export function isValidPackageName(id) {
 		!/node_modules|favicon\.ico/.test(id) &&
 		// Must not be a built-in node module
 		!builtins.has(id) &&
-		// Must be lowercase
-		id.toLowerCase() === id &&
+		// Package name must be lowercase and contain path segment
+		// if scoped
+		/^(?:@[^/A-Z]+\/[^/A-Z]+|[^/A-Z]+)/.test(id) &&
 		// Must not contain special characters
-		!/[~'!()*;,?:&=+$]/.test(id) &&
-		// Must contain a second path segment if scoped
-		((id[0] === '@' && id.indexOf('/') > 0) || true);
+		!/[~'!()*;,?:&=+$]/.test(id);
 
 	return isValid;
 }

@@ -11,9 +11,10 @@ const log = debug('npm-load');
  * @param {object} options
  * @param {Map<string, string>} options.browserReplacement
  * @param {Map<string, string>} options.resolutionCache
+ * @param {boolean} options.production
  * @returns {import('rollup').Plugin}
  */
-export function npmLoad({ browserReplacement, resolutionCache }) {
+export function npmLoad({ browserReplacement, resolutionCache, production }) {
 	return {
 		name: 'npm-load',
 		async resolveId(id, importer) {
@@ -82,7 +83,7 @@ export function npmLoad({ browserReplacement, resolutionCache }) {
 						const subPkg = await readJson(path.join(modDir, pathname, 'package.json'));
 						entry = path.join(modDir, pathname, subPkg.module || subPkg.main || 'index.js');
 					} catch (err) {
-						entry = pathname;
+						entry = path.join(modDir, pathname);
 					}
 				}
 			}
@@ -93,7 +94,7 @@ export function npmLoad({ browserReplacement, resolutionCache }) {
 
 			// Some packages use non-js entry files, but rollup only supports js.
 			// So we expect other plugins to handle assets.
-			if (!/\.(?:[tj]sx?|[cm]js|[mc]ts)/.test(path.extname(entry))) {
+			if (!production && !/\.(?:[tj]sx?|[cm]js|[mc]ts)/.test(path.extname(entry))) {
 				return {
 					code: '',
 					map: null,

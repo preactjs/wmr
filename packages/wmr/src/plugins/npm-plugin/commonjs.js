@@ -20,20 +20,28 @@ export function commonjsPlugin({ production }) {
 
 			if (!hasCjsKeywords && hasEsmKeywords) return;
 
-			const result = transform(code, {
-				parse: this.parse,
-				plugins: [
-					replace({ 'process.env.NODE_ENV': 'development', __DEV__: !!production }),
-					optimize(),
-					commonjsToEsm()
-				]
-			});
+			let result;
+			try {
+				result = transform(code, {
+					parse: this.parse,
+					plugins: [
+						replace({ 'process.env.NODE_ENV': 'development', __DEV__: !!production }),
+						optimize(),
+						commonjsToEsm()
+					]
+				});
 
-			return {
-				code: result.code,
-				// FIXME: Sourcemap
-				map: null
-			};
+				if (code !== result.code) {
+					console.log('CJS', id, result.code);
+					return {
+						code: result.code,
+						map: result.map
+					};
+				}
+			} catch (err) {
+				console.log('ERR', code);
+				throw err;
+			}
 		}
 	};
 }

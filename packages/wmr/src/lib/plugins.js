@@ -1,3 +1,4 @@
+import path from 'path';
 import htmPlugin from '../plugins/htm-plugin.js';
 import sucrasePlugin from '../plugins/sucrase-plugin.js';
 import wmrPlugin from '../plugins/wmr/plugin.js';
@@ -28,6 +29,7 @@ import { lessPlugin } from '../plugins/less-plugin.js';
 import { workerPlugin } from '../plugins/worker-plugin.js';
 import { npmPlugin } from '../plugins/npm-plugin/index.js';
 import tsConfigPathsPlugin from '../plugins/tsconfig-paths-plugin.js';
+import { getNpmPlugins } from '../plugins/npm-plugin/npm-bundle.js';
 
 /**
  * @param {import("wmr").Options & { isIIFEWorker?: boolean}} options
@@ -50,6 +52,14 @@ export function getPlugins(options) {
 		autoInstall,
 		registry
 	} = options;
+
+	const npmCacheDir = path.join(cwd, '.cache', '@npm');
+
+	/**
+	 * Map of package name to folder on disk
+	 * @type {Map<string, string>}
+	 */
+	const resolutionCache = new Map();
 
 	// Plugins are pre-sorted
 	let split = plugins.findIndex(p => p.enforce === 'post');
@@ -102,7 +112,20 @@ export function getPlugins(options) {
 			// Only transpile CommonJS in node_modules and explicit .cjs files:
 			include: /(^npm\/|[/\\]node_modules[/\\]|\.cjs$)/
 		}),
-		npmPlugin({ cwd, autoInstall, production, registryUrl: registry }),
+
+		...(production
+			? getNpmPlugins({
+					autoInstall,
+					production,
+					cacheDir: npmCacheDir,
+					cwd,
+					registryUrl: registry,
+					resolutionCache,
+					browserReplacement: new Map()
+			  })
+			: []),
+		!production &&
+			npmPlugin({ cwd, cacheDir: npmCacheDir, autoInstall, production, registryUrl: registry, resolutionCache, alias }),
 		resolveExtensionsPlugin({
 			extensions: ['.ts', '.tsx', '.js', '.cjs'],
 			index: true
