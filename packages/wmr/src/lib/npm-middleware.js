@@ -1,6 +1,8 @@
 import path from 'path';
 import { getPackageInfo, isValidPackageName } from '../plugins/npm-plugin/utils.js';
 
+const startTime = Date.now();
+
 export function npmEtagCache() {
 	return async (req, res, next) => {
 		const url = new URL(req.url, 'https://localhost');
@@ -19,7 +21,7 @@ export function npmEtagCache() {
 
 		try {
 			// The package name + version + pathname is a strong ETag since versions are immutablew
-			const etag = Buffer.from(`${name}${version}${pathname}`).toString('base64');
+			const etag = Buffer.from(`${name}${version}${pathname}-${startTime}`).toString('base64');
 			const ifNoneMatch = String(req.headers['if-none-match']).replace(/-(gz|br)$/g, '');
 
 			if (ifNoneMatch === etag) {
