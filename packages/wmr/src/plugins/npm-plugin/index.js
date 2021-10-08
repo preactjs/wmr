@@ -120,16 +120,16 @@ export function npmPlugin({ cwd, cacheDir, autoInstall, production, registryUrl,
 				if (modDir) {
 					const resolved = path.join(modDir, pathname);
 					log(kl.dim(`asset found locally at `) + kl.cyan(resolved));
-					return resolved;
+					// return resolved;
 				}
 
 				// Check bundle cache in case the package was auto-installed
 				const cachePath = path.join(cacheDir, pathname);
 				if (await isFile(cachePath)) {
-					return cachePath;
+					// return cachePath;
 				}
 
-				throw new Error(`Could not resolve asset ${id}`);
+				// throw new Error(`Could not resolve asset ${id}`);
 			}
 
 			return PREFIX + id;

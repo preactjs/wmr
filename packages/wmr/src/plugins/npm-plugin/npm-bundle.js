@@ -79,8 +79,6 @@ export async function npmBundle(
 	/** @type {Map<string, string>} */
 	const browserReplacement = new Map();
 
-	console.log('REQUEST', requestId);
-
 	const bundle = await rollup.rollup({
 		input: requestId,
 		external: [...builtinModules],
@@ -104,6 +102,8 @@ export async function npmBundle(
 	const result = await bundle.generate({
 		chunkFileNames: `${pkgName}-[hash]`,
 		format: 'esm'
+		// freeze: false,
+		// esModule: true
 	});
 
 	return result;

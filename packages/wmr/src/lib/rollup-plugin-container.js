@@ -1,6 +1,7 @@
 import { resolve, relative, dirname, sep, posix, isAbsolute } from 'path';
 import { createHash } from 'crypto';
 import { promises as fs } from 'fs';
+import path from 'path';
 import * as acorn from 'acorn';
 import * as kl from 'kolorist';
 import { debug, formatResolved, formatPath, hasDebugFlag } from './output-utils.js';
@@ -34,7 +35,7 @@ function identifierPair(id, importer) {
 /**
  * @typedef PluginContainerOptions
  * @property {import('rollup').OutputOptions} [output]
- * @property {string} [cwd]
+ * @property {string} cwd
  * @property {Map<string, { info: import('rollup').ModuleInfo }>} [modules]
  * @property {(name: string, source: string | Uint8Array) => void} [writeFile]
  */
@@ -46,9 +47,9 @@ function identifierPair(id, importer) {
 
 /**
  * @param {Plugin[]} plugins
- * @param {import('rollup').InputOptions & PluginContainerOptions & {sourcemap?: boolean}} [opts]
+ * @param {import('rollup').InputOptions & PluginContainerOptions & {sourcemap?: boolean}} opts
  */
-export function createPluginContainer(plugins, opts = {}) {
+export function createPluginContainer(plugins, opts) {
 	if (!Array.isArray(plugins)) plugins = [plugins];
 
 	const MODULES = opts.modules || new Map();
@@ -110,7 +111,7 @@ export function createPluginContainer(plugins, opts = {}) {
 			if (out.id.match(/^\.\.?[/\\]/)) {
 				out.id = resolve(opts.cwd || '.', importer ? dirname(importer) : '.', out.id);
 			}
-			return out || false;
+			return out;
 		},
 		getModuleInfo(id) {
 			let mod = MODULES.get(id);
@@ -361,6 +362,9 @@ export function createPluginContainer(plugins, opts = {}) {
 				const result = await plugin.load.call(ctx, id);
 				if (result) {
 					logLoad(`${kl.dim(formatPath(id))} [${plugin.name}]`);
+					if (typeof result === 'string') {
+						return { code: result, map: null };
+					}
 					return result;
 				}
 			}

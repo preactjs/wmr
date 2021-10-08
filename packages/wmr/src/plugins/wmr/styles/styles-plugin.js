@@ -29,11 +29,15 @@ export default function wmrStylesPlugin({ root, hot, production, alias, sourcema
 	/** @type {Map<string, Set<string>>} */
 	const moduleMap = new Map();
 
+	const NPM_PREFIX = '\0npm:';
+
 	return {
 		name: 'wmr-styles',
 		async transform(source, id) {
 			if (!STYLE_REG.test(id)) return;
-			if (id[0] === '\0') return;
+			if (id[0] === '\0' && !id.startsWith(NPM_PREFIX)) return;
+
+			id = id.startsWith(NPM_PREFIX) ? '@npm/' + id.slice(NPM_PREFIX.length) : id;
 
 			let idRelative = id;
 			let aliased = matchAlias(alias, id);

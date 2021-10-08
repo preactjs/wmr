@@ -88,7 +88,7 @@ const transformInjectWmr = async tree => {
 			node.content.unshift('\n\t\t', {
 				tag: 'script',
 				attrs: { type: 'module' },
-				content: ["\n\t\t\timport '/_wmr.js';\n\t\t"]
+				content: ["\n\t\t\timport '/id:wmr?module';\n\t\t"]
 			});
 		}
 		return node;

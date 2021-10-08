@@ -1,92 +1,28 @@
-import { promises as fs } from 'fs';
-import { resolve, dirname, join } from 'path';
-
-const MAINFIELDS = ['module', 'main'];
-
-async function fileExists(file) {
-	try {
-		if ((await fs.stat(file)).isFile()) {
-			return true;
-		}
-	} catch (e) {}
-	return false;
-}
-
-async function fstat(file) {
-	try {
-		return await fs.stat(file);
-	} catch (e) {}
-	return false;
-}
+import path from 'path';
+import { isFile } from '../lib/fs-utils.js';
 
 /**
  * Resolve extensionless or directory specifiers by looking them up on the disk.
  * @param {object} options
  * @param {string[]} options.extensions File extensions/suffixes to check for
- * @param {boolean} [options.index] Also check for `/index.*` for all extensions
- * @param {string[]} [options.mainFields=['module','main']] If set, checks for package.json main fields
+ * @param {string} options.root
  * @returns {import('rollup').Plugin}
  */
-export default function resolveExtensionsPlugin({ extensions, index, mainFields = MAINFIELDS }) {
-	if (index) {
-		extensions = extensions.concat(extensions.map(e => `/index${e}`));
-	}
+export default function resolveExtensionsPlugin({ root, extensions }) {
+	extensions = extensions.concat(extensions.map(e => `/index${e}`));
 
 	return {
 		name: 'resolve-extensions-plugin',
 		async resolveId(id, importer) {
-			if (id[0] === '\0') return;
-			if (/\.(tsx?|css|s[ac]ss|less|wasm)$/.test(id)) return;
+			if (!/^\.\.?\//.test(id) || path.posix.extname(id) !== '') return;
 
-			let resolved;
-			try {
-				resolved = await this.resolve(id, importer, { skipSelf: true });
-			} catch (e) {}
-			if (resolved) {
-				id = resolved.id;
-			} else if (importer) {
-				id = resolve(dirname(importer), id);
-			}
+			for (let i = 0; i < extensions.length; i++) {
+				const ext = extensions[i];
+				let file = path.resolve(root, id + ext);
 
-			const stats = await fstat(id);
-			if (stats) {
-				// If the resolved specifier is a file, use it.
-				if (stats.isFile()) {
-					return id;
-				}
-
-				// specifier resolved to a directory: look for package.json or ./index file
-				if (stats.isDirectory()) {
-					let pkgJson, pkg;
-					try {
-						pkgJson = await fs.readFile(resolve(id, 'package.json'), 'utf-8');
-					} catch (e) {}
-					if (pkgJson) {
-						try {
-							pkg = JSON.parse(pkgJson);
-						} catch (e) {
-							console.warn(`Failed to parse package.json: ${id}\n  ${e}`);
-						}
-					}
-					if (pkg) {
-						const field = mainFields.find(f => pkg[f]);
-						if (field) {
-							id = join(id, pkg[field]);
-							if (/\.([mc]?js|jsx?)$/.test(id)) {
-								return id;
-							}
-						} else {
-							// package.json has an implicit "main" field of `index.js`:
-							id = join(id, 'index.js');
-						}
-					}
-				}
-			}
-
-			const p = id.replace(/\.[mc]?js$/, '');
-			for (const suffix of extensions) {
-				if (await fileExists(p + suffix)) {
-					return p + suffix;
+				if (await isFile(file)) {
+					const resolved = await this.resolve(file, importer, { skipSelf: true });
+					return resolved || file;
 				}
 			}
 		}

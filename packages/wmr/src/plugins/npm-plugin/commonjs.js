@@ -18,6 +18,9 @@ export function commonjsPlugin({ production }) {
 			const hasCjsKeywords = CJS_KEYWORDS.test(code);
 			const hasEsmKeywords = ESM_KEYWORDS.test(code);
 
+			if (id.includes('prop-types')) {
+				// console.log('CCS', id, code);
+			}
 			if (!hasCjsKeywords && hasEsmKeywords) return;
 
 			let result;
@@ -32,14 +35,14 @@ export function commonjsPlugin({ production }) {
 				});
 
 				if (code !== result.code) {
-					console.log('CJS', id, result.code);
+					// console.log('CJS', id, result.code);
 					return {
 						code: result.code,
 						map: result.map
 					};
 				}
 			} catch (err) {
-				console.log('ERR', code);
+				// console.log('ERR', code);
 				throw err;
 			}
 		}

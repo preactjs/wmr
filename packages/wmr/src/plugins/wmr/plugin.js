@@ -30,10 +30,10 @@ export default function wmrPlugin({ hot = true, sourcemap } = {}) {
 	return {
 		name: 'wmr',
 		resolveId(s) {
-			if (s == 'wmr') return '\0wmr.js';
+			if (s == 'wmr') return 'wmr.js';
 		},
 		load(s) {
-			if (s == '\0wmr.js') return getWmrClient({ hot });
+			if (s == 'wmr.js') return getWmrClient({ hot });
 		},
 		resolveImportMeta(property) {
 			if (property === 'hot') {

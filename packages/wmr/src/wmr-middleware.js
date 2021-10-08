@@ -1,4 +1,4 @@
-import { resolve, dirname, relative, sep, posix, isAbsolute, normalize, basename } from 'path';
+import path, { resolve, dirname, relative, sep, posix, isAbsolute, normalize, basename } from 'path';
 import { promises as fs, createReadStream } from 'fs';
 import * as kl from 'kolorist';
 import { getWmrClient } from './plugins/wmr/plugin.js';
@@ -236,162 +236,112 @@ export default function wmrMiddleware(options) {
 		applyWatchChanges(absolute, 'update');
 	});
 
+	const SCRIPT_REG = /\.(?:[tj]sx?|[mc][jt]s)(?:\?.*)?$/;
+	const SCRIPT_EXTS = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.mts', '.cts'];
+	const SCRIPT_EXT_INDEX = [...SCRIPT_EXTS, ...SCRIPT_EXTS.map(ext => '/index' + ext)];
+
+	const VIRTUAL = '/id:';
+
 	return async (req, res, next) => {
-		// @ts-ignore
-		let path = posix.normalize(req.path);
-
 		const queryParams = new URL(req.url, 'file://').searchParams;
+		let pathname = posix.normalize(req.path);
+		let id = pathname;
 
-		let prefix = '';
-
-		// Workaround for transform forcing extensionless ids to be
-		// non-js
-		let isVirtual = false;
-
-		let file = '';
-		let id = path;
-
-		// Cache key for write cache. Preserves `@id` and `@alias` prefixes
-		let cacheKey = id.slice(1); // Strip "/" at the beginning
-
-		// Path for virtual modules that refer to an unprefixed id.
-		if (path.startsWith('/@id/')) {
-			// Virtual paths have no exact file match, so we don't set `file`
-			isVirtual = true;
-			id = path.slice('/@id/'.length);
-
-			// Add back leading slash if it was part of the virtual id.
-			// Example: `/@windicss/windi.css`
-			if (req.path.startsWith('/@id//')) {
-				id = '/' + id;
-			}
-		} else if (path.startsWith('/@npm/')) {
-			// Virtual paths have no exact file match, so we don't set `file`
-			id = path.slice('/@npm/'.length);
-			isVirtual = true;
-		} else if (path.startsWith('/@alias/')) {
-			id = posix.normalize(path.slice('/@alias/'.length));
-
-			// Resolve to a file here for non-js Transforms
-			file = resolveAlias(options.alias, id);
-		} else {
-			const prefixMatches = path.match(/^\/?@([a-z-]+)(\/.+)$/);
-			if (prefixMatches) {
-				prefix = '\0' + prefixMatches[1] + ':';
-				path = prefixMatches[2];
-			}
-
-			if (path.startsWith('/@id/')) {
-				// Virtual paths have no exact file match, so we don't set `file`
-				isVirtual = true;
-				path = path.slice('/@id'.length);
-			}
-
-			// convert to OS path:
-			const osPath = path.slice(1).split(posix.sep).join(sep);
-
-			file = resolve(root, osPath);
-
-			// Rollup-style CWD-relative Unix-normalized path "id":
-			id = relative(root, file).replace(/^\.\//, '').replace(/^[\0]/, '').split(sep).join(posix.sep);
-
-			// TODO: Vefify prefix mappings in write cache
-			cacheKey = prefix + id;
-			// Normalize the cacheKey so it matches what will be in the WRITE_CACHE, where we store in native paths
-			cacheKey = cacheKey.split(posix.sep).join(sep);
-
-			if (!isVirtual) {
-				id = `./${id}`;
-			}
-
-			// add back any prefix if there was one:
-			file = prefix + file;
-			id = prefix + id;
-		}
+		// TODO: Ignore dot files
 
 		// Force serving as a js module for proxy modules. Main use
 		// case is CSS-Modules.
-		const isModule = queryParams.has('module');
-		const isAsset = queryParams.has('asset');
+		let isModule = queryParams.has('module');
 
-		let type;
-		if (isModule) type = 'application/javascript;charset=utf-8';
-		else if (isAsset && /\.(?:s[ac]ss|less)$/.test(file)) type = 'text/css';
-		else type = getMimeType(file);
-
-		if (type) {
-			res.setHeader('Content-Type', type);
-		}
-
-		log(`${kl.cyan(formatPath(path))} -> ${kl.dim(id)} file: ${kl.dim(file)}`);
+		// Either strip `virtual:` prefix or make path relative
+		id = id.startsWith(VIRTUAL) ? id.slice(VIRTUAL.length) : '.' + id;
 
 		try {
-			/** @type {(ctx: Context) => Result | Promise<Result>} */
-			let transform;
-			if (path === '/_wmr.js') {
-				transform = getWmrClient.bind(null);
-			} else if (/\.map$/.test(path)) {
-				transform = TRANSFORMS.asset;
-			} else if (queryParams.has('asset')) {
-				cacheKey += '?asset';
-				transform = TRANSFORMS.asset;
-			} else if (prefix || isVirtual || isModule || /\.([mc]js|[tj]sx?)$/.test(file) || STYLE_REG.test(file)) {
-				transform = TRANSFORMS.js;
-			} else if (file.startsWith(root + sep) && (await isFile(file))) {
-				// Ignore dotfiles
-				if (posix.basename(file).startsWith('.')) {
-					throw {
-						message: `File not found`,
-						code: 404
-					};
-				}
-				transform = TRANSFORMS.asset;
-			} else {
-				transform = TRANSFORMS.generic;
+			let startTime = Date.now();
+			const resolved = await NonRollup.resolveId(id);
+			const resolveTime = Date.now() - startTime;
+
+			// Fall back to index html if nobody resolved the url
+			if (
+				pathname === '/' ||
+				(resolved === id && !pathname.startsWith(VIRTUAL) && path.posix.extname(pathname) === '')
+			) {
+				// TODO: Support 200.html
+				next();
+				return;
 			}
 
-			const start = Date.now();
-			let result = await transform({
-				req,
-				res,
-				id,
-				file,
-				path,
-				prefix,
-				root,
-				out,
-				NonRollup,
-				alias: options.alias,
-				cacheKey
-			});
+			// TODO: Should this be configurable?
+			if (!isModule) {
+				isModule = SCRIPT_REG.test(resolved) || path.extname(resolved) === '';
+			}
 
-			// return false to skip handling:
-			if (result === false) return next();
+			log(`${kl.cyan(formatPath(id))} -> ${kl.dim(resolved)}`);
 
-			// return a value to use it as the response:
-			if (result != null) {
-				// Grab the asset id out of the compiled js
-				// TODO: Wire this up into Style-Plugin by passing the
-				// import type through resolution somehow
-				if (!isModule && STYLE_REG.test(file) && typeof result === 'string') {
-					const match = result.match(/style\(["']\/([^"']+?)["'].*?\);/m);
+			startTime = Date.now();
+			let result = await NonRollup.load(resolved);
+			const loadTime = Date.now() - startTime;
+			if (!result) {
+				// Always use the resolved id as the basis for our file
+				let file = resolved.split(posix.sep).join(sep);
+				if (!path.isAbsolute(file)) file = path.resolve(root, file);
+				const code = await fs.readFile(resolveFile(file, root, alias), 'utf-8');
 
-					if (match) {
-						if (WRITE_CACHE.has(match[1])) {
-							result = /** @type {string} */ WRITE_CACHE.get(match[1]);
-							res.setHeader('Content-Type', 'text/css;charset=utf-8');
+				// TODO: Optional: Load sourcemap
+				result = { code, map: null };
+			}
+
+			startTime = Date.now();
+			result = await NonRollup.transform(result.code, resolved);
+			const transformTime = Date.now() - startTime;
+
+			// Detect `Content-Type`
+			const type = isModule ? 'application/javascript;charset=utf-8' : getMimeType(resolved) || 'text/plain';
+
+			console.log('==>', id, isModule);
+			if (isModule) {
+				result = await transformImports(result.code, resolved, {
+					async resolveId(spec, importer) {
+						const match = /(.*)(?:\?(.*))?/.exec(spec);
+						if (!match) return;
+
+						let [, s, query] = match;
+						query = query ? query + '&module' : '?module';
+
+						// Detect virtual paths
+						if (
+							!/^(?:[./]|data:|https?:\/\/)/.test(spec) ||
+							(/^\//.test(spec) && !(await isFile(resolve(root, spec))))
+						) {
+							return VIRTUAL + s + query;
 						}
-					}
-				}
+						// Resolve extension or `/index.js` path for relative browser
+						// imports to resolve from the right folder
+						else if (/^\.\.?/.test(s) && path.posix.extname(spec) === '') {
+							for (let i = 0; i < SCRIPT_EXT_INDEX.length; i++) {
+								const ext = SCRIPT_EXT_INDEX[i];
+								let file = path.resolve(root, s + ext);
+								if (await isFile(file)) {
+									s += ext;
+								}
+							}
+						}
 
-				log(`<-- ${kl.cyan(formatPath(id))} as ${kl.dim('' + res.getHeader('Content-Type'))}`);
-				const time = Date.now() - start;
-				res.writeHead(200, {
-					'Content-Length': Buffer.byteLength(result, 'utf-8'),
-					'Server-Timing': `${transform.name};dur=${time}`
+						return s + (!SCRIPT_REG.test(s) ? query : '');
+					}
 				});
-				res.end(result);
 			}
+
+			log(`<-- ${kl.cyan(formatPath(id))} as ${kl.dim(type)}`);
+
+			const out = result.code;
+
+			res.writeHead(200, {
+				'Content-Type': type,
+				'Content-Length': Buffer.byteLength(out, 'utf-8'),
+				'Server-Timing': `resolve;dur=${resolveTime}, load;dur=${loadTime}, transform;dur=${transformTime}`
+			});
+			res.end(out);
 		} catch (e) {
 			// `throw null` also skips handling
 			if (e == null) return next();
@@ -458,249 +408,6 @@ function resolveFile(file, cwd, alias) {
 
 	return file;
 }
-
-/**
- * @typedef Context
- * @property {ReturnType<typeof createPluginContainer>} NonRollup
- * @property {string} id rollup-style cwd-relative file identifier
- * @property {string} file absolute file path
- * @property {string} path request path
- * @property {string} prefix a Rollup plugin -style path `\0prefix:`, if the URL was `/＠prefix/*`
- * @property {string} root public directory, including ./public if detected
- * @property {string} out output directory
- * @property {Record<string, string>} alias
- * @property {string} cacheKey Key for write cache
- * @property {InstanceType<import('http')['IncomingMessage']>} req HTTP Request object
- * @property {InstanceType<import('http')['ServerResponse']>} res HTTP Response object
- */
-
-const logJsTransform = debug('wmr:transform.js');
-const logAssetTransform = debug('wmr:transform.asset');
-
-/** @typedef {string|false|Buffer|Uint8Array|null|void} Result */
-
-/** @type {{ [key: string]: (ctx: Context) => Result|Promise<Result> }} */
-export const TRANSFORMS = {
-	// Handle direct asset requests (/foo?asset)
-	async asset({ file, root, req, res, id, cacheKey }) {
-		if (WRITE_CACHE.has(cacheKey)) {
-			logAssetTransform(`<-- ${kl.cyan(formatPath(id))} [cached]`);
-			return WRITE_CACHE.get(cacheKey);
-		}
-
-		const filename = resolve(root, file);
-		const stats = await fs.stat(filename);
-
-		if (stats.isDirectory()) {
-			res.writeHead(403);
-			res.end();
-		}
-		const ims = req.headers['if-modified-since'];
-		if (ims && stats.mtime > new Date(ims)) {
-			res.writeHead(304);
-			res.end();
-			return;
-		}
-		res.writeHead(200, {
-			'Content-Length': stats.size,
-			'Last-Modified': stats.mtime.toUTCString()
-		});
-		createReadStream(filename).pipe(res, { end: true });
-	},
-
-	// Handle individual JavaScript modules
-	async js({ id, file, prefix, res, root, out, NonRollup, req, alias, cacheKey }) {
-		let code;
-		try {
-			res.setHeader('Content-Type', 'application/javascript;charset=utf-8');
-
-			if (WRITE_CACHE.has(id)) {
-				logJsTransform(`<-- ${kl.cyan(formatPath(id))} [cached]`);
-				return WRITE_CACHE.get(id);
-			}
-
-			const resolved = await NonRollup.resolveId(id);
-			const resolvedId = typeof resolved == 'object' ? resolved && resolved.id : resolved;
-			let result = resolvedId && (await NonRollup.load(resolvedId));
-
-			code = typeof result == 'object' ? result && result.code : result;
-
-			if (code == null || code === false) {
-				// Always use the resolved id as the basis for our file
-				let file = resolvedId;
-				if (prefix) file = file.replace(prefix, '');
-				file = file.split(posix.sep).join(sep);
-				if (!isAbsolute(file)) file = resolve(root, file);
-				code = await fs.readFile(resolveFile(file, root, alias), 'utf-8');
-
-				// TODO: Optional: Load sourcemap
-			}
-
-			const transformed = await NonRollup.transform(code, id);
-			code = transformed.code;
-			/** @type {import('rollup').ExistingRawSourceMap | null} */
-			let sourceMap = transformed.map;
-
-			const rewritten = await transformImports(code, id, {
-				resolveImportMeta(property) {
-					return NonRollup.resolveImportMeta(property);
-				},
-				async resolveId(spec, importer) {
-					if (spec === 'wmr') return '/_wmr.js';
-					if (/^(data:|https?:|\/\/)/.test(spec)) {
-						logJsTransform(`${kl.cyan(formatPath(spec))} [external]`);
-						return spec;
-					}
-					let graphId = importer.replace(/^\.?\.?\//, '');
-					if (!moduleGraph.has(graphId)) {
-						moduleGraph.set(graphId, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
-					}
-					const mod = moduleGraph.get(graphId);
-					if (mod.hasErrored) mod.hasErrored = false;
-
-					// const resolved = await NonRollup.resolveId(spec, importer);
-					let originalSpec = spec;
-					const resolved = await NonRollup.resolveId(spec, file);
-					if (resolved) {
-						spec = typeof resolved == 'object' ? resolved.id : resolved;
-						// Some rollup plugins use absolute paths as virtual identifiers :/
-						// Example: `/@windicss/windi.css`
-						if (/^\/@/.test(spec)) {
-							spec = `/@id/${spec}`;
-						} else if (/^(\/|\\|[a-z]:\\)/i.test(spec)) {
-							spec = relative(dirname(file), spec).split(sep).join(posix.sep);
-							if (!/^\.?\.?\//.test(spec)) {
-								spec = './' + spec;
-							}
-						}
-						if (typeof resolved == 'object' && resolved.external) {
-							if (/^(data|https?):/.test(spec)) {
-								logJsTransform(`${kl.cyan(formatPath(spec))} [external]`);
-								return spec;
-							}
-
-							spec = relative(root, spec).split(sep).join(posix.sep);
-							if (!/^(\/|[\w-]+:)/.test(spec)) spec = `/${spec}`;
-							return spec;
-						}
-					}
-
-					let hasPrefix = false;
-					// \0abc:foo --> /@abcF/foo
-					spec = spec.replace(/^\0?([a-z-]+):(.+)$/, (s, prefix, spec) => {
-						hasPrefix = true;
-
-						// \0abc:/abs/disk/path --> /@abc/cwd-relative-path
-						if (spec[0] === '/' || spec[0] === sep) {
-							spec = relative(root, spec).split(sep).join(posix.sep);
-						}
-						// Retain bare specifiers when serializing to url
-						else if (!/^\.?\.\//.test(spec) && prefix !== 'npm') {
-							spec = `@id/${spec}`;
-						}
-
-						return '/@' + prefix + '/' + spec;
-					});
-
-					// foo.css --> foo.css?module (import of CSS Modules proxy module)
-					const ext = posix.extname(spec);
-					if (!hasPrefix && ext !== '' && !/[tj]sx?$/.test(ext)) spec += '?module';
-
-					// If file resolves outside of root it may be an aliased path.
-					if (spec.startsWith('.')) {
-						const aliased = matchAlias(alias, posix.resolve(posix.dirname(file), spec));
-						if (aliased) spec = aliased;
-					}
-
-					if (!spec.startsWith('/@id/') && !spec.startsWith('/@alias/') && !/^\0?\.?\.?[/\\]/.test(spec)) {
-						// Check if the spec is an alias
-						const aliased = matchAlias(alias, spec);
-						if (aliased) spec = aliased;
-
-						if (!spec.startsWith('/@alias/')) {
-							spec = `/@id/${spec}`;
-						}
-					}
-
-					// Ensure files are POSIX-style relative for watcher to pick up.
-					const modSpec =
-						/^\.\//.test(spec) && importer ? posix.join(posix.dirname(importer), spec) : spec.replace(/^\.?\.\//, '');
-					mod.dependencies.add(modSpec);
-					if (!moduleGraph.has(modSpec)) {
-						moduleGraph.set(modSpec, { dependencies: new Set(), dependents: new Set(), acceptingUpdates: false });
-					}
-
-					const specModule = moduleGraph.get(modSpec);
-					specModule.dependents.add(graphId);
-					if (specModule.stale) {
-						return addTimestamp(spec, Date.now());
-					}
-
-					if (originalSpec !== spec) {
-						logJsTransform(`${kl.cyan(formatPath(originalSpec))} -> ${kl.dim(formatPath(spec))}`);
-					}
-
-					return spec;
-				}
-			});
-
-			if (rewritten.map !== null) {
-				if (sourceMap !== null) {
-					// @ts-ignore
-					sourceMap = mergeSourceMaps([sourceMap, rewritten.map]);
-				} else {
-					sourceMap = rewritten.map;
-				}
-			}
-			code = rewritten.code;
-
-			if (sourceMap !== null) {
-				writeCacheFile(cacheKey + '.map', JSON.stringify(sourceMap));
-				code = `${code}\n//# sourceMappingURL=${basename(id)}.map`;
-			}
-			writeCacheFile(cacheKey, code);
-
-			return code;
-		} catch (e) {
-			const mod = moduleGraph.get(id);
-			if (mod) {
-				mod.hasErrored = true;
-			}
-			throw e;
-		}
-	},
-
-	// Falls through to sirv
-	async generic(ctx) {
-		// Serve ~/200.html fallback for requests with no extension
-		if (!/\.[a-z]+$/gi.test(ctx.path)) {
-			const fallback = resolve(ctx.root, '200.html');
-			let use200 = false;
-			try {
-				const hasFile = await fs.lstat(ctx.file).catch(() => false);
-				use200 = !hasFile && !!(await fs.lstat(fallback));
-			} catch (e) {}
-			if (use200) {
-				ctx.file = fallback;
-				const mime = getMimeType(ctx.file) || 'text/html;charset=utf-8';
-				ctx.res.setHeader('Content-Type', mime);
-				return TRANSFORMS.asset(ctx);
-			}
-		}
-
-		return false;
-		// return new Promise((resolve, reject) => {
-		// 	if (file.endsWith('/') || !file.match(/[^/]\.[a-z0-9]+$/gi)) {
-		// 		file = file.replace(/\/$/, '') + '/index.html';
-		// 	}
-		// 	const fr = createReadStream(file);
-		// 	// fr.once('data', () => res.writeHead(200));
-		// 	fr.once('data', () => resolve());
-		// 	fr.on('error', reject);
-		// 	fr.pipe(res);
-		// });
-	}
-};
 
 /**
  * Write data to an in-memory cache

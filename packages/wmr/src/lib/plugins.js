@@ -127,8 +127,8 @@ export function getPlugins(options) {
 		!production &&
 			npmPlugin({ cwd, cacheDir: npmCacheDir, autoInstall, production, registryUrl: registry, resolutionCache, alias }),
 		resolveExtensionsPlugin({
-			extensions: ['.ts', '.tsx', '.js', '.cjs'],
-			index: true
+			root,
+			extensions: ['.ts', '.tsx', '.js', '.cjs']
 		}),
 
 		...plugins.slice(split),
