@@ -243,15 +243,14 @@ export default function wmrMiddleware(options) {
 	const VIRTUAL = '/id:';
 
 	return async (req, res, next) => {
-		const queryParams = new URL(req.url, 'file://').searchParams;
-		let pathname = posix.normalize(req.path);
+		const { searchParams, pathname } = new URL(req.url, 'file://');
 		let id = pathname;
 
 		// TODO: Ignore dot files
 
 		// Force serving as a js module for proxy modules. Main use
 		// case is CSS-Modules.
-		let isModule = queryParams.has('module');
+		let isModule = searchParams.has('module');
 
 		// Either strip `virtual:` prefix or make path relative
 		id = id.startsWith(VIRTUAL) ? id.slice(VIRTUAL.length) : '.' + id;
