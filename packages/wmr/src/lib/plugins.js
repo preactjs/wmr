@@ -1,7 +1,7 @@
 import path from 'path';
 import htmPlugin from '../plugins/htm-plugin.js';
 import sucrasePlugin from '../plugins/sucrase-plugin.js';
-import wmrPlugin from '../plugins/wmr/plugin.js';
+import wmrClientPlugin from '../plugins/wmr/plugin.js';
 import wmrStylesPlugin from '../plugins/wmr/styles/styles-plugin.js';
 import sassPlugin from '../plugins/sass-plugin.js';
 import publicPathPlugin from '../plugins/public-path-plugin.js';
@@ -30,6 +30,7 @@ import { workerPlugin } from '../plugins/worker-plugin.js';
 import { npmPlugin } from '../plugins/npm-plugin/index.js';
 import tsConfigPathsPlugin from '../plugins/tsconfig-paths-plugin.js';
 import { getNpmPlugins } from '../plugins/npm-plugin/npm-bundle.js';
+import { finalizeDev } from '../plugins/finalize-dev.js';
 
 /**
  * @param {import("wmr").Options & { isIIFEWorker?: boolean}} options
@@ -107,7 +108,7 @@ export function getPlugins(options) {
 		!isIIFEWorker && workerPlugin(options),
 		htmPlugin({ production, sourcemap: options.sourcemap }),
 		// Skip injecting a client for iife workers
-		!isIIFEWorker && wmrPlugin({ hot: !production, sourcemap: options.sourcemap }),
+		!isIIFEWorker && wmrClientPlugin({ hot: !production, sourcemap: options.sourcemap }),
 		fastCjsPlugin({
 			// Only transpile CommonJS in node_modules and explicit .cjs files:
 			include: /(^npm\/|[/\\]node_modules[/\\]|\.cjs$)/
@@ -135,6 +136,7 @@ export function getPlugins(options) {
 
 		// Apply default loaders to unprefixed paths
 		defaultLoaders(),
+		!production && finalizeDev({ root }),
 
 		production && optimizeGraphPlugin({ publicPath }),
 		minify && minifyCssPlugin({ sourcemap }),

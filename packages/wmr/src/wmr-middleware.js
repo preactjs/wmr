@@ -1,7 +1,6 @@
 import path, { resolve, dirname, relative, sep, posix, isAbsolute, normalize, basename } from 'path';
 import { promises as fs, createReadStream } from 'fs';
 import * as kl from 'kolorist';
-import { getWmrClient } from './plugins/wmr/plugin.js';
 import { createPluginContainer } from './lib/rollup-plugin-container.js';
 import { transformImports } from './lib/transform-imports.js';
 import { getMimeType } from './lib/mimetypes.js';
@@ -9,7 +8,7 @@ import { debug, formatPath } from './lib/output-utils.js';
 import { getPlugins } from './lib/plugins.js';
 import { watch } from './lib/fs-watcher.js';
 import { matchAlias, resolveAlias } from './lib/aliasing.js';
-import { addTimestamp } from './lib/net-utils.js';
+import { addTimestamp, PREFIX_REG } from './lib/net-utils.js';
 import { mergeSourceMaps } from './lib/sourcemap.js';
 import { isFile } from './lib/fs-utils.js';
 import { STYLE_REG } from './plugins/wmr/styles/styles-plugin.js';
@@ -237,34 +236,41 @@ export default function wmrMiddleware(options) {
 	});
 
 	const SCRIPT_REG = /\.(?:[tj]sx?|[mc][jt]s)(?:\?.*)?$/;
-	const SCRIPT_EXTS = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.mts', '.cts'];
-	const SCRIPT_EXT_INDEX = [...SCRIPT_EXTS, ...SCRIPT_EXTS.map(ext => '/index' + ext)];
-
-	const VIRTUAL = '/id:';
 
 	return async (req, res, next) => {
 		const { searchParams, pathname } = new URL(req.url, 'file://');
-		let id = pathname;
+		let id = pathname.slice(1);
 
 		// TODO: Ignore dot files
 
 		// Force serving as a js module for proxy modules. Main use
 		// case is CSS-Modules.
-		let isModule = searchParams.has('module');
+		let isModule = searchParams.has('module') || SCRIPT_REG.test(id);
 
-		// Either strip `virtual:` prefix or make path relative
-		id = id.startsWith(VIRTUAL) ? id.slice(VIRTUAL.length) : '.' + id;
+		// Restore prefix from url
+		let prefix = '';
+		const match = id.match(/^((?!https?:|file:|data:)[^/]+:)/);
+		if (match) {
+			prefix = match[1];
+
+			// The `id:` prefix is special as it's only purpose is to guarantee
+			// proper serialization
+			if (prefix === 'id:') {
+				id = id.slice(prefix.length);
+			} else {
+				id = '\0' + id;
+			}
+		} else {
+			id = './' + id;
+		}
 
 		try {
 			let startTime = Date.now();
-			const resolved = await NonRollup.resolveId(id);
+			const resolved = await NonRollup.resolveId(id, null, { custom: { isModule } });
 			const resolveTime = Date.now() - startTime;
 
 			// Fall back to index html if nobody resolved the url
-			if (
-				pathname === '/' ||
-				(resolved === id && !pathname.startsWith(VIRTUAL) && path.posix.extname(pathname) === '')
-			) {
+			if (pathname === '/' || (!prefix && path.posix.extname(pathname) === '')) {
 				// TODO: Support 200.html
 				next();
 				return;
@@ -298,38 +304,6 @@ export default function wmrMiddleware(options) {
 			const type = isModule ? 'application/javascript;charset=utf-8' : getMimeType(resolved) || 'text/plain';
 
 			console.log('==>', id, isModule);
-			if (isModule) {
-				result = await transformImports(result.code, resolved, {
-					async resolveId(spec, importer) {
-						const match = /(.*)(?:\?(.*))?/.exec(spec);
-						if (!match) return;
-
-						let [, s, query] = match;
-						query = query ? query + '&module' : '?module';
-
-						// Detect virtual paths
-						if (
-							!/^(?:[./]|data:|https?:\/\/)/.test(spec) ||
-							(/^\//.test(spec) && !(await isFile(resolve(root, spec))))
-						) {
-							return VIRTUAL + s + query;
-						}
-						// Resolve extension or `/index.js` path for relative browser
-						// imports to resolve from the right folder
-						else if (/^\.\.?/.test(s) && path.posix.extname(spec) === '') {
-							for (let i = 0; i < SCRIPT_EXT_INDEX.length; i++) {
-								const ext = SCRIPT_EXT_INDEX[i];
-								let file = path.resolve(root, s + ext);
-								if (await isFile(file)) {
-									s += ext;
-								}
-							}
-						}
-
-						return s + (!SCRIPT_REG.test(s) ? query : '');
-					}
-				});
-			}
 
 			log(`<-- ${kl.cyan(formatPath(id))} as ${kl.dim(type)}`);
 

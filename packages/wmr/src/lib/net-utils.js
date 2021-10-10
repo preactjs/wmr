@@ -1,6 +1,8 @@
 import net from 'net';
 import os from 'os';
 
+export const PREFIX_REG = /^(\0[^/]+:)/;
+
 /**
  * Check if a port is free
  * @param {number} port

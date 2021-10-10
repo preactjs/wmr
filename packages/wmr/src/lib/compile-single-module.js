@@ -1,5 +1,5 @@
 import * as rollup from 'rollup';
-import wmrPlugin from '../plugins/wmr/plugin.js';
+import wmrClientPlugin from '../plugins/wmr/plugin.js';
 import htmPlugin from '../plugins/htm-plugin.js';
 import sucrasePlugin from '../plugins/sucrase-plugin.js';
 import { onWarn } from './output-utils.js';
@@ -65,7 +65,7 @@ export const compileSingleModule = withCache(
 					sourcemap: false,
 					production: false
 				}),
-				hmr && wmrPlugin(),
+				hmr && wmrClientPlugin(),
 				htmPlugin()
 			].filter(Boolean)
 		});

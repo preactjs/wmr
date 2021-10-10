@@ -1,7 +1,6 @@
 import { resolve, relative, dirname, sep, posix, isAbsolute } from 'path';
 import { createHash } from 'crypto';
 import { promises as fs } from 'fs';
-import path from 'path';
 import * as acorn from 'acorn';
 import * as kl from 'kolorist';
 import { debug, formatResolved, formatPath, hasDebugFlag } from './output-utils.js';
@@ -265,11 +264,12 @@ export function createPluginContainer(plugins, opts) {
 
 		/**
 		 * @param {string} id
-		 * @param {string} [importer]
+		 * @param {string | undefined} importer
+		 * @param {{ isEntry: boolean, custom: undefined | Record<string, string> }} options
 		 * @param {[Plugin]} [_skip] internal
 		 * @returns {Promise<import('rollup').ResolveIdResult>}
 		 */
-		async resolveId(id, importer, _skip) {
+		async resolveId(id, importer, options, _skip) {
 			let originalId = id;
 			const key = identifierPair(id, importer);
 
@@ -287,7 +287,7 @@ export function createPluginContainer(plugins, opts) {
 
 				let result;
 				try {
-					result = await p.resolveId.call(ctx, id, importer);
+					result = await p.resolveId.call(ctx, id, importer, options);
 				} finally {
 					if (_skip) resolveSkips.delete(p, key);
 				}

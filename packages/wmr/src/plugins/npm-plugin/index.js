@@ -93,6 +93,10 @@ export function npmPlugin({ cwd, cacheDir, autoInstall, production, registryUrl,
 	return {
 		name: 'npm-plugin',
 		async resolveId(id) {
+			// console.log('NPM', id);
+			if (id.startsWith(PREFIX)) {
+				id = id.slice(PREFIX.length);
+			}
 			if (!isValidPackageName(id)) return;
 
 			// Assets require special handling as other plugins need to deal with
@@ -132,6 +136,7 @@ export function npmPlugin({ cwd, cacheDir, autoInstall, production, registryUrl,
 				// throw new Error(`Could not resolve asset ${id}`);
 			}
 
+			console.log('RESOLVE NPM', PREFIX + id);
 			return PREFIX + id;
 		},
 		async load(id) {
