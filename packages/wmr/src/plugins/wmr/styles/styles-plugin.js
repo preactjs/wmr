@@ -152,7 +152,7 @@ export default function wmrStylesPlugin({ root, hot, production, alias, sourcema
 				.join(',');
 
 			let code = `
-				import { style } from 'wmr';
+				import { style } from '\0wmr:client';
 				style(import.meta.ROLLUP_FILE_URL_${ref}, ${JSON.stringify(idRelative)});
 				const styles = {${mappings.join(',')}};
 				export default styles;
@@ -161,7 +161,7 @@ export default function wmrStylesPlugin({ root, hot, production, alias, sourcema
 
 			if (hot) {
 				code += `
-					import { createHotContext } from 'wmr';
+					import { createHotContext } from '\0wmr:client';
 					createHotContext(import.meta.url).accept(({ module: { default: s } }) => {
 						for (let i in s) styles[i] = s[i];
 					});

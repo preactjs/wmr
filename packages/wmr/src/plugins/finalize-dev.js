@@ -31,7 +31,7 @@ export function finalizeDev({ root }) {
 			}
 		},
 		async transform(code, id) {
-			if (!moduleFlag.has(id)) return;
+			if (!moduleFlag.has(id) && path.posix.extname(id) !== '') return;
 
 			/** @type {typeof this.resolve} */
 			const resolver = this.resolve.bind(this);
@@ -50,15 +50,19 @@ export function finalizeDev({ root }) {
 
 					// Return prefix if they have any
 					//   \0foo-bar:asdf -> /foo-bar:asdf
-					if (PREFIX_REG.test(s)) {
+					const prefixMatch = s.match(PREFIX_REG);
+					if (prefixMatch) {
 						return '/' + s.slice(1);
+						const prefix = prefixMatch[1];
+						let pathname = s.slice(prefix.length);
+						pathname = pathname.startsWith('/') ? 'id:' + pathname : pathname;
+						return '/' + prefix.slice(1) + '/' + pathname;
 					}
 
 					// Detect virtual paths
 					if (
 						!/^(?:[./]|data:|https?:\/\/)/.test(spec) ||
-						// FIXME: Root releative detection
-						(/^\//.test(s) && !(await isFile(path.resolve(root, s))))
+						(/^\//.test(s) && !(await isFile(path.resolve(root, s.slice(1)))))
 					) {
 						return VIRTUAL + s + (!SCRIPT_EXTS.includes(path.posix.extname(s)) ? query : '');
 					}
