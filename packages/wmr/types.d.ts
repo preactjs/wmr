@@ -71,6 +71,13 @@ declare module 'wmr' {
 		 */
 		aliases: Record<string, string>;
 		alias: Record<string, string>;
+		resolve: {
+			/**
+			 * Extensions that should be resolved when the file extension has been
+			 * omitted.
+			 */
+			extensions: string[];
+		};
 		env: Record<string, string>;
 		middleware: Middleware[];
 		plugins: Plugin[];

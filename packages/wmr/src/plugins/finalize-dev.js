@@ -1,44 +1,33 @@
 import path from 'path';
 import { transformImports } from '../lib/transform-imports.js';
-import { isFile } from '../lib/fs-utils.js';
 import { PREFIX_REG } from '../lib/net-utils.js';
-
-const SCRIPT_EXTS = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.mts', '.cts'];
-const SCRIPT_EXT_INDEX = [...SCRIPT_EXTS, ...SCRIPT_EXTS.map(ext => '/index' + ext)];
-
-const VIRTUAL = '/id:';
 
 /**
  * @param {object} options
  * @param {string} options.root
+ * @param {Set<string>} options.prefixes
+ * @param {string[]} options.extensions
  * @return {import("rollup").Plugin}
  */
-export function finalizeDev({ root }) {
-	/** @type {Set<string>} */
-	const moduleFlag = new Set();
+export function finalizeDev({ root, prefixes, extensions }) {
+	const resolveExts = new Set(extensions);
 
 	return {
 		name: 'finalize-dev',
-		async resolveId(id, importer, options) {
-			const { custom } = options;
-			console.log(id, custom);
-			if (custom) {
-				if (custom.isModule) {
-					moduleFlag.add(id);
-				} else {
-					moduleFlag.delete(id);
-				}
-			}
-		},
 		async transform(code, id) {
-			if (!moduleFlag.has(id) && path.posix.extname(id) !== '') return;
-
 			/** @type {typeof this.resolve} */
 			const resolver = this.resolve.bind(this);
 
+			console.log(this);
+
 			const out = await transformImports(code, id, {
+				async resolveImportMeta(spec, importer) {
+					const m = spec.match(/^ROLLUP_FILE_URL_(\d+)$/);
+					if (m) {
+						console.log('META', spec, importer, m);
+					}
+				},
 				async resolveId(spec) {
-					// console.log('SPEC', JSON.stringify(spec));
 					const resolved = await resolver(spec, id);
 					const resolvedSpec = resolved ? resolved.id : id;
 					const match = /(.*)(?:\?(.*))?/.exec(resolvedSpec);
@@ -46,39 +35,42 @@ export function finalizeDev({ root }) {
 					if (!match) return;
 
 					let [, s, query] = match;
-					query = query ? query + '&module' : '?module';
 
 					// Return prefix if they have any
 					//   \0foo-bar:asdf -> /foo-bar:asdf
 					const prefixMatch = s.match(PREFIX_REG);
 					if (prefixMatch) {
-						return '/' + s.slice(1);
-						const prefix = prefixMatch[1];
+						let prefix = prefixMatch[1];
 						let pathname = s.slice(prefix.length);
+
 						pathname = pathname.startsWith('/') ? 'id:' + pathname : pathname;
-						return '/' + prefix.slice(1) + '/' + pathname;
+						prefix = prefix.slice(1, -1);
+						prefixes.add(prefix);
+						return '/@' + prefix + '/' + pathname;
 					}
 
-					// Detect virtual paths
-					if (
-						!/^(?:[./]|data:|https?:\/\/)/.test(spec) ||
-						(/^\//.test(s) && !(await isFile(path.resolve(root, s.slice(1)))))
-					) {
-						return VIRTUAL + s + (!SCRIPT_EXTS.includes(path.posix.extname(s)) ? query : '');
+					const param = !resolveExts.has(path.posix.extname(s)) ? (query ? query + '&module' : '?module') : '';
+
+					// Detect absolute urls
+					if (!/^(?:[./]|data:|https?:\/\/)/.test(s)) {
+						return s;
 					}
-					// Resolve extension or `/index.js` path for relative browser
-					// imports to resolve from the right folder
-					else if (/^\.\.?/.test(s) && path.posix.extname(s) === '') {
-						for (let i = 0; i < SCRIPT_EXT_INDEX.length; i++) {
-							const ext = SCRIPT_EXT_INDEX[i];
-							let file = path.resolve(root, s + ext);
-							if (await isFile(file)) {
-								s += ext;
-							}
+					// Detect urls that look like a prefix
+					else if (/^@/.test(s)) {
+						return '/@id/' + s;
+					} else if (/^\//.test(s)) {
+						// ^TODO: Check windows
+						// TODO: Resolve alias
+						const rootRelative = path.relative(root, s);
+						// Check if path is inside root
+						if (!rootRelative.startsWith('..')) {
+							const rel = path.relative(path.dirname(path.join(root, id)), s);
+							return './' + rel + param;
 						}
+						return '/@id' + s + param;
 					}
 
-					return s + (!SCRIPT_EXTS.includes(path.posix.extname(s)) ? query : '');
+					return s + param;
 				}
 			});
 

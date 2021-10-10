@@ -7,6 +7,8 @@ import { compileSingleModule } from './compile-single-module.js';
 import { debug, deprecated, setDebugCliArg } from './output-utils.js';
 import { getPort, supportsSearchParams } from './net-utils.js';
 
+const RESOLVE_EXT = ['.ts', '.tsx', '.js', '.jsx', '.json', '.mjs', '.cjs', '.mts', '.cts'];
+
 /**
  * @param {Partial<Options>} options
  * @param {Mode} mode
@@ -26,6 +28,8 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 	options.alias = options.alias || options.aliases || {};
 	options.customRoutes = options.customRoutes || [];
 	options.registry = options.registry || 'https://registry.npmjs.org';
+	options.resolve = options.resolve || { extensions: RESOLVE_EXT };
+	if (!options.resolve.extensions) options.resolve.extensions = RESOLVE_EXT;
 
 	// `wmr` / `wmr start` is a development command.
 	// `wmr build` / `wmr serve` are production commands.

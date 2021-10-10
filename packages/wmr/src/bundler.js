@@ -28,7 +28,7 @@ export async function bundleProd(options) {
 		perf: !!profile,
 		preserveEntrySignatures: 'allow-extension',
 		manualChunks: npmChunks ? extractNpmChunks : undefined,
-		plugins: getPlugins(options)
+		plugins: getPlugins({ ...options, prefixes: new Set() })
 	});
 
 	/** @type {import('rollup').OutputOptions} */

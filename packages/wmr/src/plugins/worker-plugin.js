@@ -10,7 +10,7 @@ import { onWarn } from '../lib/output-utils.js';
  * @returns {import('rollup').Plugin}
  */
 export function workerPlugin(options) {
-	const plugins = getPlugins({ ...options, isIIFEWorker: true });
+	const plugins = getPlugins({ ...options, isIIFEWorker: true, prefixes: new Set() });
 
 	/** @type {Map<string, number>} */
 	const moduleWorkers = new Map();

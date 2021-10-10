@@ -118,7 +118,9 @@ export function createPluginContainer(plugins, opts) {
 			mod = {
 				/** @type {import('rollup').ModuleInfo} */
 				// @ts-ignore-next
-				info: {}
+				info: {
+					meta: {}
+				}
 			};
 			MODULES.set(id, mod);
 			return mod.info;
@@ -306,7 +308,15 @@ export function createPluginContainer(plugins, opts) {
 			}
 
 			opts.id = id;
-			return Object.keys(opts).length > 1 ? opts : id;
+
+			if (options.custom) {
+				opts.meta = { ...options.custom, ...(opts.meta || {}) };
+			}
+
+			if (opts.meta) {
+				MODULES.set(opts.id, { info: { meta: opts.meta } });
+			}
+			return opts;
 		},
 
 		/**

@@ -33,7 +33,7 @@ import { getNpmPlugins } from '../plugins/npm-plugin/npm-bundle.js';
 import { finalizeDev } from '../plugins/finalize-dev.js';
 
 /**
- * @param {import("wmr").Options & { isIIFEWorker?: boolean}} options
+ * @param {import("wmr").Options & { isIIFEWorker?: boolean, prefixes: Set<string> }} options
  * @returns {import("wmr").Plugin[]}
  */
 export function getPlugins(options) {
@@ -51,7 +51,8 @@ export function getPlugins(options) {
 		features,
 		visualize,
 		autoInstall,
-		registry
+		registry,
+		prefixes
 	} = options;
 
 	const npmCacheDir = path.join(cwd, '.cache', '@npm');
@@ -129,14 +130,14 @@ export function getPlugins(options) {
 			npmPlugin({ cwd, cacheDir: npmCacheDir, autoInstall, production, registryUrl: registry, resolutionCache, alias }),
 		resolveExtensionsPlugin({
 			root,
-			extensions: ['.ts', '.tsx', '.js', '.cjs']
+			extensions: options.resolve.extensions
 		}),
 
 		...plugins.slice(split),
 
 		// Apply default loaders to unprefixed paths
 		defaultLoaders(),
-		!production && finalizeDev({ root }),
+		!production && finalizeDev({ root, prefixes, extensions: options.resolve.extensions }),
 
 		production && optimizeGraphPlugin({ publicPath }),
 		minify && minifyCssPlugin({ sourcemap }),

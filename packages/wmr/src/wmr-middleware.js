@@ -37,7 +37,10 @@ export default function wmrMiddleware(options) {
 
 	distDir = resolve(dirname(out), distDir);
 
-	const NonRollup = createPluginContainer(getPlugins(options), {
+	/** @type {Set<string>} */
+	const prefixes = new Set();
+
+	const NonRollup = createPluginContainer(getPlugins({ ...options, prefixes }), {
 		cwd: root,
 		sourcemap,
 		writeFile: (filename, source) => {
@@ -235,7 +238,7 @@ export default function wmrMiddleware(options) {
 		applyWatchChanges(absolute, 'update');
 	});
 
-	const SCRIPT_REG = /\.(?:[tj]sx?|[mc][jt]s)(?:\?.*)?$/;
+	const resolveExts = new Set(options.resolve.extensions);
 
 	return async (req, res, next) => {
 		const { searchParams, pathname } = new URL(req.url, 'file://');
@@ -245,20 +248,20 @@ export default function wmrMiddleware(options) {
 
 		// Force serving as a js module for proxy modules. Main use
 		// case is CSS-Modules.
-		let isModule = searchParams.has('module') || SCRIPT_REG.test(id);
+		let isModule = searchParams.has('module') || resolveExts.has(path.posix.extname(id));
 
 		// Restore prefix from url
 		let prefix = '';
-		const match = id.match(/^((?!https?:|file:|data:)[^/]+:)/);
+		const match = id.match(/^(@[\w_-]+)\/(.*)/);
 		if (match) {
-			prefix = match[1];
-
+			prefix = '\0' + match[1].slice(1) + ':';
+			id = match[2];
 			// The `id:` prefix is special as it's only purpose is to guarantee
 			// proper serialization
-			if (prefix === 'id:') {
-				id = id.slice(prefix.length);
+			if (prefix === '\0id:') {
+				prefix = '';
 			} else {
-				id = '\0' + id;
+				id = prefix + id;
 			}
 		} else {
 			id = './' + id;
@@ -266,7 +269,8 @@ export default function wmrMiddleware(options) {
 
 		try {
 			let startTime = Date.now();
-			const resolved = await NonRollup.resolveId(id, null, { custom: { isModule } });
+			const resolvedObj = await NonRollup.resolveId(id, null, { custom: { isModule } });
+			const resolved = resolvedObj.id;
 			const resolveTime = Date.now() - startTime;
 
 			// Fall back to index html if nobody resolved the url
@@ -276,9 +280,11 @@ export default function wmrMiddleware(options) {
 				return;
 			}
 
+			const ext = path.extname(resolved);
+
 			// TODO: Should this be configurable?
 			if (!isModule) {
-				isModule = SCRIPT_REG.test(resolved) || path.extname(resolved) === '';
+				isModule = resolveExts.has(ext) || ext === '';
 			}
 
 			log(`${kl.cyan(formatPath(id))} -> ${kl.dim(resolved)}`);
@@ -303,11 +309,29 @@ export default function wmrMiddleware(options) {
 			// Detect `Content-Type`
 			const type = isModule ? 'application/javascript;charset=utf-8' : getMimeType(resolved) || 'text/plain';
 
-			console.log('==>', id, isModule);
-
 			log(`<-- ${kl.cyan(formatPath(id))} as ${kl.dim(type)}`);
 
-			const out = result.code;
+			// Check if we're dealing with a proxy module
+			console.log('CACHE', id, isModule);
+			const cleanId = path.posix.normalize(id);
+			let cacheKey = cleanId;
+
+			let needsModuleFlag = ext !== '' && !resolveExts.has(ext);
+			if (needsModuleFlag) cacheKey += '?module';
+
+			WRITE_CACHE.set(cacheKey, result.code);
+
+			if (id.includes('.css')) {
+				console.log(isModule, id, resolved, cacheKey, result);
+				console.log(
+					Array.from(WRITE_CACHE.keys())
+						.filter(x => x.endsWith('.css'))
+						.map(x => WRITE_CACHE.get(x))
+				);
+			}
+
+			console.log(WRITE_CACHE);
+			const out = WRITE_CACHE.get(isModule ? cacheKey : cleanId);
 
 			res.writeHead(200, {
 				'Content-Type': type,

@@ -37,11 +37,14 @@ export default function wmrStylesPlugin({ root, hot, production, alias, sourcema
 			if (!STYLE_REG.test(id)) return;
 			if (id[0] === '\0' && !id.startsWith(NPM_PREFIX)) return;
 
-			id = id.startsWith(NPM_PREFIX) ? '@npm/' + id.slice(NPM_PREFIX.length) : id;
-
-			let idRelative = id;
-			let aliased = matchAlias(alias, id);
-			idRelative = aliased ? aliased.slice('/@alias/'.length) : relative(root, id);
+			let idRelative;
+			if (id.startsWith(NPM_PREFIX)) {
+				id = '@npm/' + id.slice(NPM_PREFIX.length);
+				idRelative = id;
+			} else {
+				let aliased = matchAlias(alias, id);
+				idRelative = aliased ? aliased.slice('/@alias/'.length) : relative(root, id);
+			}
 
 			const mappings = [];
 			if (/\.module\.(css|s[ac]ss|less)$/.test(id)) {
@@ -123,7 +126,6 @@ export default function wmrStylesPlugin({ root, hot, production, alias, sourcema
 			let fileName;
 			if (!production) {
 				fileName = id.startsWith('/@') ? `@id/${id}` : id;
-				fileName += '?asset';
 			}
 
 			const ref = this.emitFile({
