@@ -30,10 +30,9 @@ import { workerPlugin } from '../plugins/worker-plugin.js';
 import { npmPlugin } from '../plugins/npm-plugin/index.js';
 import tsConfigPathsPlugin from '../plugins/tsconfig-paths-plugin.js';
 import { getNpmPlugins } from '../plugins/npm-plugin/npm-bundle.js';
-import { finalizeDev } from '../plugins/finalize-dev.js';
 
 /**
- * @param {import("wmr").Options & { isIIFEWorker?: boolean, prefixes: Set<string> }} options
+ * @param {import("wmr").Options & { isIIFEWorker?: boolean }} options
  * @returns {import("wmr").Plugin[]}
  */
 export function getPlugins(options) {
@@ -51,8 +50,7 @@ export function getPlugins(options) {
 		features,
 		visualize,
 		autoInstall,
-		registry,
-		prefixes
+		registry
 	} = options;
 
 	const npmCacheDir = path.join(cwd, '.cache', '@npm');
@@ -137,7 +135,6 @@ export function getPlugins(options) {
 
 		// Apply default loaders to unprefixed paths
 		defaultLoaders(),
-		!production && finalizeDev({ root, prefixes, extensions: options.resolve.extensions }),
 
 		production && optimizeGraphPlugin({ publicPath }),
 		minify && minifyCssPlugin({ sourcemap }),

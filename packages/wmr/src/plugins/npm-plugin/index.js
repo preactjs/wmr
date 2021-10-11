@@ -56,11 +56,12 @@ export function npmPlugin({ cwd, cacheDir, autoInstall, production, registryUrl,
 
 		log(kl.dim(`bundle: `) + kl.cyan(id));
 		let result = await npmBundle(id, { autoInstall, production, cacheDir, cwd, resolutionCache, registryUrl, alias });
+		console.log('RESULT', result);
 
 		await Promise.all(
 			result.output.map(async chunkOrAsset => {
 				if (chunkOrAsset.type === 'chunk') {
-					const { isEntry, fileName, code, map } = chunkOrAsset;
+					let { isEntry, fileName, code, map } = chunkOrAsset;
 					if (isEntry) {
 						entryToChunk.set(id, fileName);
 					}
@@ -140,6 +141,7 @@ export function npmPlugin({ cwd, cacheDir, autoInstall, production, registryUrl,
 			return PREFIX + id;
 		},
 		async load(id) {
+			console.log('NPM LOAD', id);
 			if (!id.startsWith(PREFIX)) return;
 			id = id.slice(PREFIX.length);
 
@@ -171,7 +173,9 @@ export function npmPlugin({ cwd, cacheDir, autoInstall, production, registryUrl,
 				return deferred.promise;
 			}
 
-			const chunk = await bundleNpmPackage(id, { packageName: meta.name, diskCacheDir, resolutionCache });
+			const chunk = await bundleNpmPackage(id, { packageName: meta.name, diskCacheDir, resolutionCache, alias });
+
+			console.log('CHUNK', chunk);
 
 			return {
 				code: chunk.code,

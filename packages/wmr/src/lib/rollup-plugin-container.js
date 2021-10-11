@@ -309,7 +309,7 @@ export function createPluginContainer(plugins, opts) {
 
 			opts.id = id;
 
-			if (options.custom) {
+			if (options && options.custom) {
 				opts.meta = { ...options.custom, ...(opts.meta || {}) };
 			}
 
@@ -371,6 +371,7 @@ export function createPluginContainer(plugins, opts) {
 				if (!plugin.load) continue;
 				const result = await plugin.load.call(ctx, id);
 				if (result) {
+					console.log(id, result);
 					logLoad(`${kl.dim(formatPath(id))} [${plugin.name}]`);
 					if (typeof result === 'string') {
 						return { code: result, map: null };
@@ -378,8 +379,18 @@ export function createPluginContainer(plugins, opts) {
 					return result;
 				}
 			}
-			logLoad(`${kl.dim(formatPath(id))} [__fallback__]`);
-			return null;
+
+			if (!/^\0/.test(id)) {
+				logLoad(`${kl.dim(formatPath(id))} [__fallback__]`);
+
+				const file = resolve(opts.cwd, id.split(posix.sep).join(sep));
+				const code = await fs.readFile(file, 'utf-8');
+
+				// TODO: Optional: Load sourcemap
+				return { code, map: null };
+			}
+
+			throw new Error(`No plugin loaded "${JSON.stringify(id)}"`);
 		},
 
 		resolveFileUrl({ referenceId }) {

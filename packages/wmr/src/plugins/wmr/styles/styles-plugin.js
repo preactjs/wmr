@@ -37,6 +37,7 @@ export default function wmrStylesPlugin({ root, hot, production, alias, sourcema
 			if (!STYLE_REG.test(id)) return;
 			if (id[0] === '\0' && !id.startsWith(NPM_PREFIX)) return;
 
+			console.log('Start', source);
 			let idRelative;
 			if (id.startsWith(NPM_PREFIX)) {
 				id = '@npm/' + id.slice(NPM_PREFIX.length);
@@ -103,6 +104,8 @@ export default function wmrStylesPlugin({ root, hot, production, alias, sourcema
 							return ref;
 						}
 
+						console.log('EMIT CSS', spec);
+
 						// This is only viable for development mode, which
 						// doesn't call generateBundle()
 						const ref = _self.emitFile({
@@ -128,6 +131,7 @@ export default function wmrStylesPlugin({ root, hot, production, alias, sourcema
 				fileName = id.startsWith('/@') ? `@id/${id}` : id;
 			}
 
+			console.log('EMIT', fileName, source);
 			const ref = this.emitFile({
 				type: 'asset',
 				name: basename(id).replace(/\.(s[ac]ss|less)$/, '.css'),

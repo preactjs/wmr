@@ -12,6 +12,7 @@ import { addTimestamp, PREFIX_REG } from './lib/net-utils.js';
 import { mergeSourceMaps } from './lib/sourcemap.js';
 import { isFile } from './lib/fs-utils.js';
 import { STYLE_REG } from './plugins/wmr/styles/styles-plugin.js';
+import { getPackageInfo } from './plugins/npm-plugin/utils.js';
 
 const NOOP = () => {};
 
@@ -37,10 +38,7 @@ export default function wmrMiddleware(options) {
 
 	distDir = resolve(dirname(out), distDir);
 
-	/** @type {Set<string>} */
-	const prefixes = new Set();
-
-	const NonRollup = createPluginContainer(getPlugins({ ...options, prefixes }), {
+	const NonRollup = createPluginContainer(getPlugins(options), {
 		cwd: root,
 		sourcemap,
 		writeFile: (filename, source) => {
@@ -59,7 +57,7 @@ export default function wmrMiddleware(options) {
 			// chunkFileNames: '[name][extname]',
 			// Use a hash to prevent collisions between assets with the
 			// same basename.
-			assetFileNames: '[name][extname]?asset',
+			assetFileNames: '[name][extname]',
 			dir: out,
 			format: 'esm'
 		}
@@ -270,9 +268,10 @@ export default function wmrMiddleware(options) {
 		try {
 			let startTime = Date.now();
 			const resolvedObj = await NonRollup.resolveId(id, null, { custom: { isModule } });
-			const resolved = resolvedObj.id;
+			const resolvedId = resolvedObj.id;
 			const resolveTime = Date.now() - startTime;
 
+			console.log(resolvedId);
 			// Fall back to index html if nobody resolved the url
 			if (pathname === '/' || (!prefix && path.posix.extname(pathname) === '')) {
 				// TODO: Support 200.html
@@ -280,34 +279,95 @@ export default function wmrMiddleware(options) {
 				return;
 			}
 
-			const ext = path.extname(resolved);
+			const ext = path.extname(resolvedId);
 
 			// TODO: Should this be configurable?
-			if (!isModule) {
+			check: if (!isModule) {
 				isModule = resolveExts.has(ext) || ext === '';
+				if (/^\0npm:/.test(id)) {
+					const info = getPackageInfo(id.slice('\0npm:'.length));
+					if (!info.pathname) {
+						isModule = true;
+						break check;
+					}
+
+					// TODO: Path extension?
+				}
 			}
 
-			log(`${kl.cyan(formatPath(id))} -> ${kl.dim(resolved)}`);
+			log(`${kl.cyan(formatPath(id))} -> ${kl.dim(resolvedId)}`);
 
 			startTime = Date.now();
-			let result = await NonRollup.load(resolved);
+			let result = await NonRollup.load(resolvedId);
 			const loadTime = Date.now() - startTime;
-			if (!result) {
-				// Always use the resolved id as the basis for our file
-				let file = resolved.split(posix.sep).join(sep);
-				if (!path.isAbsolute(file)) file = path.resolve(root, file);
-				const code = await fs.readFile(resolveFile(file, root, alias), 'utf-8');
-
-				// TODO: Optional: Load sourcemap
-				result = { code, map: null };
-			}
-
 			startTime = Date.now();
-			result = await NonRollup.transform(result.code, resolved);
+			result = await NonRollup.transform(result.code, resolvedId);
+
+			console.log('SERIALIZE', id, resolvedId, isModule);
+			// All plugins have processed the result and now we're
+			// essentially serializing paths for the browser if
+			// necessary.
+			result = await transformImports(result.code, resolvedId, {
+				async resolveImportMeta(property) {
+					return NonRollup.resolveImportMeta(property);
+				},
+				async resolveId(spec) {
+					let original = spec;
+					const resolved = await NonRollup.resolveId(spec, resolvedId);
+					spec = resolved.id;
+
+					console.log('HIHI', original, resolved);
+					const match = /(.*)(?:\?(.*))?/.exec(spec);
+
+					console.log('  --> RR', spec);
+					if (!match) return;
+
+					let [, s, query] = match;
+
+					// Return prefix if they have any
+					//   \0foo-bar:asdf -> /foo-bar:asdf
+					const prefixMatch = s.match(PREFIX_REG);
+					if (prefixMatch) {
+						let prefix = prefixMatch[1];
+						let pathname = s.slice(prefix.length);
+
+						pathname = pathname.startsWith('/') ? 'id:' + pathname : pathname;
+						prefix = prefix.slice(1, -1);
+						console.log('  RET', '/@' + prefix + '/' + pathname);
+						return '/@' + prefix + '/' + pathname;
+					}
+
+					const param = !resolveExts.has(path.posix.extname(s)) ? (query ? query + '&module' : '?module') : '';
+
+					// Detect absolute urls
+					if (!/^(?:[./]|data:|https?:\/\/)/.test(s)) {
+						console.log('   ABS', s);
+						return s;
+					}
+					// Detect urls that look like a prefix
+					else if (/^@/.test(s)) {
+						console.log('   FAKE PREFIX', '/@id/' + s);
+						return '/@id/' + s;
+					} else if (/^\//.test(s)) {
+						// ^TODO: Check windows
+						// TODO: Resolve alias
+						const rootRelative = path.relative(root, s);
+						// Check if path is inside root
+						if (!rootRelative.startsWith('..')) {
+							const rel = path.relative(path.dirname(path.join(root, id)), s);
+							return './' + rel + param;
+						}
+						return '/@id' + s + param;
+					}
+
+					console.log('   default', s + param);
+					return s + param;
+				}
+			});
 			const transformTime = Date.now() - startTime;
 
 			// Detect `Content-Type`
-			const type = isModule ? 'application/javascript;charset=utf-8' : getMimeType(resolved) || 'text/plain';
+			const type = isModule ? 'application/javascript;charset=utf-8' : getMimeType(resolvedId) || 'text/plain';
 
 			log(`<-- ${kl.cyan(formatPath(id))} as ${kl.dim(type)}`);
 
@@ -321,16 +381,8 @@ export default function wmrMiddleware(options) {
 
 			WRITE_CACHE.set(cacheKey, result.code);
 
-			if (id.includes('.css')) {
-				console.log(isModule, id, resolved, cacheKey, result);
-				console.log(
-					Array.from(WRITE_CACHE.keys())
-						.filter(x => x.endsWith('.css'))
-						.map(x => WRITE_CACHE.get(x))
-				);
-			}
-
 			console.log(WRITE_CACHE);
+			console.log('CACHE', isModule ? cacheKey : cleanId, Array.from(WRITE_CACHE.keys()));
 			const out = WRITE_CACHE.get(isModule ? cacheKey : cleanId);
 
 			res.writeHead(200, {
