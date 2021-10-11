@@ -4,6 +4,23 @@ import os from 'os';
 export const PREFIX_REG = /^(\0[^/]+:)/;
 
 /**
+ * Serialize a prefixed path.
+ *   \0foo-bar:bob -> /@foo-bar/bob
+ * @param {string} id
+ */
+export function serializePrefix(id) {
+	const prefixMatch = id.match(PREFIX_REG);
+	if (!prefixMatch) return '';
+
+	let prefix = prefixMatch[1];
+	let pathname = id.slice(prefix.length);
+
+	pathname = /^\//.test(pathname) ? 'id:' + pathname : pathname;
+	prefix = prefix.slice(1, -1);
+	return '/@' + prefix + '/' + pathname;
+}
+
+/**
  * Check if a port is free
  * @param {number} port
  * @returns {Promise<boolean>}

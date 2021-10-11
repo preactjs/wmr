@@ -6,6 +6,7 @@ import { transformCss } from '../../../lib/transform-css.js';
 import { matchAlias } from '../../../lib/aliasing.js';
 import { modularizeCss } from './css-modules.js';
 import { wmrCodeFrame } from '../../../lib/output-utils.js';
+import { serializePrefix } from '../../../lib/net-utils.js';
 
 export const STYLE_REG = /\.(?:css|s[ac]ss|less)$/;
 
@@ -29,18 +30,23 @@ export default function wmrStylesPlugin({ root, hot, production, alias, sourcema
 	/** @type {Map<string, Set<string>>} */
 	const moduleMap = new Map();
 
-	const NPM_PREFIX = '\0npm:';
-
 	return {
 		name: 'wmr-styles',
 		async transform(source, id) {
 			if (!STYLE_REG.test(id)) return;
-			if (id[0] === '\0' && !id.startsWith(NPM_PREFIX)) return;
+			// console.log('STYLE', id, source, this.getModuleInfo(id));
 
-			console.log('Start', source);
+			const info = this.getModuleInfo(id);
+			if (info && info.meta.npmActualPath) {
+				source = await fs.readFile(info.meta.npmActualPath, 'utf-8');
+			}
+
+			let original = id;
+
 			let idRelative;
-			if (id.startsWith(NPM_PREFIX)) {
-				id = '@npm/' + id.slice(NPM_PREFIX.length);
+			const prefixed = serializePrefix(id);
+			if (prefixed) {
+				id = prefixed.slice(1);
 				idRelative = id;
 			} else {
 				let aliased = matchAlias(alias, id);
@@ -48,7 +54,9 @@ export default function wmrStylesPlugin({ root, hot, production, alias, sourcema
 			}
 
 			const mappings = [];
+			let isModule = false;
 			if (/\.module\.(css|s[ac]ss|less)$/.test(id)) {
+				isModule = true;
 				source = await modularizeCss(source, idRelative, mappings, id);
 			} else {
 				const match = source.match(/(composes:|:global|:local)/);
@@ -128,14 +136,13 @@ export default function wmrStylesPlugin({ root, hot, production, alias, sourcema
 			// assets are hashed
 			let fileName;
 			if (!production) {
-				fileName = id.startsWith('/@') ? `@id/${id}` : id;
+				fileName = id;
 			}
 
-			console.log('EMIT', fileName, source);
 			const ref = this.emitFile({
 				type: 'asset',
 				name: basename(id).replace(/\.(s[ac]ss|less)$/, '.css'),
-				fileName,
+				fileName: production ? fileName : original,
 				source
 			});
 
@@ -160,8 +167,7 @@ export default function wmrStylesPlugin({ root, hot, production, alias, sourcema
 			let code = `
 				import { style } from '\0wmr:client';
 				style(import.meta.ROLLUP_FILE_URL_${ref}, ${JSON.stringify(idRelative)});
-				const styles = {${mappings.join(',')}};
-				export default styles;
+				${isModule ? `const styles = {${mappings.join(',')}};\nexport default styles;\n` : ''}
 				${named ? `export const ${named};` : ''}
 			`;
 

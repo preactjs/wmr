@@ -8,7 +8,7 @@ import { debug, formatPath } from './lib/output-utils.js';
 import { getPlugins } from './lib/plugins.js';
 import { watch } from './lib/fs-watcher.js';
 import { matchAlias, resolveAlias } from './lib/aliasing.js';
-import { addTimestamp, PREFIX_REG } from './lib/net-utils.js';
+import { addTimestamp, PREFIX_REG, serializePrefix } from './lib/net-utils.js';
 import { mergeSourceMaps } from './lib/sourcemap.js';
 import { isFile } from './lib/fs-utils.js';
 import { STYLE_REG } from './plugins/wmr/styles/styles-plugin.js';
@@ -42,6 +42,7 @@ export default function wmrMiddleware(options) {
 		cwd: root,
 		sourcemap,
 		writeFile: (filename, source) => {
+			filename = path.normalize(filename);
 			// Remove .cache folder from filename if present. The cache
 			// works with relative keys only.
 			if (isAbsolute(filename)) {
@@ -50,7 +51,10 @@ export default function wmrMiddleware(options) {
 					filename = relativeFile;
 				}
 			}
-			writeCacheFile(filename, source);
+
+			// FIXME: Normalization
+			WRITE_CACHE.set(filename, source);
+			// writeCacheFile(filename, source);
 		},
 		output: {
 			// assetFileNames: '@asset/[name][extname]',
@@ -271,7 +275,6 @@ export default function wmrMiddleware(options) {
 			const resolvedId = resolvedObj.id;
 			const resolveTime = Date.now() - startTime;
 
-			console.log(resolvedId);
 			// Fall back to index html if nobody resolved the url
 			if (pathname === '/' || (!prefix && path.posix.extname(pathname) === '')) {
 				// TODO: Support 200.html
@@ -280,6 +283,8 @@ export default function wmrMiddleware(options) {
 			}
 
 			const ext = path.extname(resolvedId);
+
+			let needsModuleFlag = false;
 
 			// TODO: Should this be configurable?
 			check: if (!isModule) {
@@ -291,7 +296,13 @@ export default function wmrMiddleware(options) {
 						break check;
 					}
 
-					// TODO: Path extension?
+					const deepExt = path.extname(info.pathname);
+					if (!deepExt) {
+						needsModuleFlag = true;
+						isModule = true;
+					} else if (resolveExts.has(deepExt)) {
+						isModule = true;
+					}
 				}
 			}
 
@@ -303,7 +314,6 @@ export default function wmrMiddleware(options) {
 			startTime = Date.now();
 			result = await NonRollup.transform(result.code, resolvedId);
 
-			console.log('SERIALIZE', id, resolvedId, isModule);
 			// All plugins have processed the result and now we're
 			// essentially serializing paths for the browser if
 			// necessary.
@@ -312,41 +322,28 @@ export default function wmrMiddleware(options) {
 					return NonRollup.resolveImportMeta(property);
 				},
 				async resolveId(spec) {
-					let original = spec;
 					const resolved = await NonRollup.resolveId(spec, resolvedId);
 					spec = resolved.id;
 
-					console.log('HIHI', original, resolved);
 					const match = /(.*)(?:\?(.*))?/.exec(spec);
-
-					console.log('  --> RR', spec);
 					if (!match) return;
 
 					let [, s, query] = match;
 
+					const ext = path.posix.extname(s);
+					const param = ext && !resolveExts.has(ext) ? (query ? query + '&module' : '?module') : '';
+
 					// Return prefix if they have any
 					//   \0foo-bar:asdf -> /foo-bar:asdf
-					const prefixMatch = s.match(PREFIX_REG);
-					if (prefixMatch) {
-						let prefix = prefixMatch[1];
-						let pathname = s.slice(prefix.length);
-
-						pathname = pathname.startsWith('/') ? 'id:' + pathname : pathname;
-						prefix = prefix.slice(1, -1);
-						console.log('  RET', '/@' + prefix + '/' + pathname);
-						return '/@' + prefix + '/' + pathname;
-					}
-
-					const param = !resolveExts.has(path.posix.extname(s)) ? (query ? query + '&module' : '?module') : '';
+					const prefixed = serializePrefix(s);
+					if (prefixed) return prefixed + param;
 
 					// Detect absolute urls
 					if (!/^(?:[./]|data:|https?:\/\/)/.test(s)) {
-						console.log('   ABS', s);
 						return s;
 					}
 					// Detect urls that look like a prefix
 					else if (/^@/.test(s)) {
-						console.log('   FAKE PREFIX', '/@id/' + s);
 						return '/@id/' + s;
 					} else if (/^\//.test(s)) {
 						// ^TODO: Check windows
@@ -360,7 +357,6 @@ export default function wmrMiddleware(options) {
 						return '/@id' + s + param;
 					}
 
-					console.log('   default', s + param);
 					return s + param;
 				}
 			});
@@ -372,17 +368,16 @@ export default function wmrMiddleware(options) {
 			log(`<-- ${kl.cyan(formatPath(id))} as ${kl.dim(type)}`);
 
 			// Check if we're dealing with a proxy module
-			console.log('CACHE', id, isModule);
 			const cleanId = path.posix.normalize(id);
 			let cacheKey = cleanId;
 
-			let needsModuleFlag = ext !== '' && !resolveExts.has(ext);
+			if (!needsModuleFlag) {
+				needsModuleFlag = ext !== '' && !resolveExts.has(ext);
+			}
 			if (needsModuleFlag) cacheKey += '?module';
 
 			WRITE_CACHE.set(cacheKey, result.code);
 
-			console.log(WRITE_CACHE);
-			console.log('CACHE', isModule ? cacheKey : cleanId, Array.from(WRITE_CACHE.keys()));
 			const out = WRITE_CACHE.get(isModule ? cacheKey : cleanId);
 
 			res.writeHead(200, {

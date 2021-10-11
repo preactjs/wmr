@@ -371,7 +371,6 @@ export function createPluginContainer(plugins, opts) {
 				if (!plugin.load) continue;
 				const result = await plugin.load.call(ctx, id);
 				if (result) {
-					console.log(id, result);
 					logLoad(`${kl.dim(formatPath(id))} [${plugin.name}]`);
 					if (typeof result === 'string') {
 						return { code: result, map: null };

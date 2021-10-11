@@ -56,7 +56,6 @@ export function npmPlugin({ cwd, cacheDir, autoInstall, production, registryUrl,
 
 		log(kl.dim(`bundle: `) + kl.cyan(id));
 		let result = await npmBundle(id, { autoInstall, production, cacheDir, cwd, resolutionCache, registryUrl, alias });
-		console.log('RESULT', result);
 
 		await Promise.all(
 			result.output.map(async chunkOrAsset => {
@@ -125,23 +124,31 @@ export function npmPlugin({ cwd, cacheDir, autoInstall, production, registryUrl,
 				if (modDir) {
 					const resolved = path.join(modDir, pathname);
 					log(kl.dim(`asset found locally at `) + kl.cyan(resolved));
-					// return resolved;
+					return {
+						id: PREFIX + id,
+						meta: {
+							npmActualPath: resolved
+						}
+					};
 				}
 
 				// Check bundle cache in case the package was auto-installed
 				const cachePath = path.join(cacheDir, pathname);
 				if (await isFile(cachePath)) {
-					// return cachePath;
+					return {
+						id: PREFIX + id,
+						meta: {
+							npmActualPath: cachePath
+						}
+					};
 				}
 
 				// throw new Error(`Could not resolve asset ${id}`);
 			}
 
-			console.log('RESOLVE NPM', PREFIX + id);
 			return PREFIX + id;
 		},
 		async load(id) {
-			console.log('NPM LOAD', id);
 			if (!id.startsWith(PREFIX)) return;
 			id = id.slice(PREFIX.length);
 
@@ -174,8 +181,6 @@ export function npmPlugin({ cwd, cacheDir, autoInstall, production, registryUrl,
 			}
 
 			const chunk = await bundleNpmPackage(id, { packageName: meta.name, diskCacheDir, resolutionCache, alias });
-
-			console.log('CHUNK', chunk);
 
 			return {
 				code: chunk.code,
