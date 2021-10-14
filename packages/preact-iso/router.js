@@ -110,7 +110,7 @@ export function Router(props) {
 	didSuspend.current = false;
 	// current return value of onBeforeRoute() prop
 	const onBeforeRoute = useRef();
-	
+
 	cur.current = useMemo(() => {
 		// This hack prevents Preact from diffing when we swap `cur` to `prev`:
 		if (this.__v && this.__v.__k) this.__v.__k.reverse();
@@ -118,11 +118,16 @@ export function Router(props) {
 		count.current++;
 
 		prev.current = cur.current;
-		
+
 		let obr = props.onBeforeRoute && props.onBeforeRoute(url);
-		onBeforeRoute.current = obr && obr.then && obr.then(() => {
-			if (onBeforeRoute.current === obr) onBeforeRoute.current = null;
-		});
+		if (obr && obr.then) {
+			obr = obr.then(() => {
+				if (onBeforeRoute.current === obr) {
+					onBeforeRoute.current = null;
+				}
+			});
+		}
+		onBeforeRoute.current = obr;
 
 		let p, d, m;
 		toChildArray(props.children).some(vnode => {
