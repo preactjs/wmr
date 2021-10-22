@@ -191,6 +191,41 @@ export default defineConfig({
 	plugins: [myCoolPlugin(), myOtherCoolPlugin()]
 });
 ```
+## middleware
+- Type: `Plugin[]`
+- Default: `[]`
+
+This example injects a header to allow satisfy `blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present`
+```
+import { defineConfig } from "wmr";
+
+export default defineConfig({
+  middleware: [
+    (req, res, next) => {
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      next();
+    }
+  ]
+});
+```
+
+API requests can be redirected using `http-proxy-middleware` 
+
+```
+import { defineConfig } from "wmr";
+import { createProxyMiddleware } from  'http-proxy-middleware';
+
+export default defineConfig((options) => {
+  const proxy_events = createProxyMiddleware({
+    changeOrigin: true,
+    target: `http://www.example.org`,
+  });
+  options.middleware.push((req, res, next) => {
+    if (req.path.match(/^\/api(\/|$)/)) proxy_events(req, res, next);
+    else next();
+  });
+});
+```
 
 ## Public Path
 
