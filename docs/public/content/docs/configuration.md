@@ -192,7 +192,7 @@ export default defineConfig({
 });
 ```
 ## middleware
-- Type: `Plugin[]`
+- Type: `Middleware[]`
 - Default: `[]`
 
 This example injects a header to allow satisfy `blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present`
