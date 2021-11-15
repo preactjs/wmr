@@ -1,3 +1,3 @@
 export function prerender() {
-	return { html: '<h1>it works</h1>', links: ['/'], data: { hello: 'world' } };
+	return { html: '<h1>it works</h1><script type="isodata"></script>', links: ['/'], data: { hello: 'world' } };
 }
