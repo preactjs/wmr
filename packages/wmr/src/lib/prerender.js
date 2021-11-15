@@ -179,7 +179,10 @@ async function workerCode({ cwd, out, publicPath, customRoutes }) {
 			}
 
 			if (result.data && typeof result.data === 'object') {
-				body += `<script type="isodata">${JSON.stringify(result.data)}</script>`;
+				body = body.replace(
+					/<script type="isodata"><\/script>/,
+					`<script type="isodata">${JSON.stringify(result.data)}</script>`
+				);
 			} else if (result.data) {
 				console.warn('You passed in prerender-data in a non-object format: ', result.data);
 			}
