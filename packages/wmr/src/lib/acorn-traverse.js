@@ -890,8 +890,12 @@ const TYPES = {
 							// We can drop the whole matched string if it only contains
 							// whitespace characters, because that means we're at the
 							// beginning or at the end of the JSXText node
-							const replacement = /[^\s]/.test(value) ? ' ' : '';
-							value = value.replace(/\s*\n+\s*/g, replacement);
+							if (/[^\s]/.test(value)) {
+								value = value.replace(/(^\s*\n\s*|\s*\n\s*$)/g, '');
+								value = value.replace(/\s*\n+\s*/g, ' ');
+							} else {
+								value = value.replace(/\s*\n+\s*/g, '');
+							}
 						}
 						children.push(TYPES.stringLiteral(value));
 					}
