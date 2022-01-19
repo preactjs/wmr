@@ -5,9 +5,11 @@ function log(...args) {
 
 const strip = url => url.replace(/[?&]t=\d+/g, '');
 const addTimestamp = (url, time) => url + (/\?/.test(url) ? '&' : '?') + 't=' + time;
-
 const resolve = url => new URL(url, location.origin).href;
-let ws, visibilityCallback, connectTimer, connectDelay = 0;
+
+let ws,
+    connectTimer,
+    connectDelay = 0;
 
 /**
  * @param {boolean} [needsReload] Force page to reload once it's connected
@@ -21,18 +23,13 @@ function connect(needsReload) {
 
 	clearTimeout(connectTimer);
 	ws.addEventListener('open', () => {
-		connectDelay = 0;
 		log(`Connected to server.`);
-		if (visibilityCallback) {
-			window.removeEventListener('visibilitychange', visibilityCallback);
-			visibilityCallback = undefined;
-		}
-		if (connectTimer) {
-			clearTimeout(connectTimer);
-			connectTimer = undefined;
-		}
+		connectDelay = 0;
+		clearTimeout(connectTimer);
+		connectTimer = undefined;
+		removeEventListener('visibilitychange', connectIfVisible);
 		if (needsReload) {
-			window.location.reload();
+			location.reload();
 		} else {
 			queue.forEach(sendSocketMessage);
 			queue = [];
@@ -50,14 +47,13 @@ function reconnect() {
 		if (ws) ws.close();
 		connect(false);
 	}, connectDelay);
+	addEventListener('visibilitychange', connectIfVisible);
+}
 
-	if (!visibilityCallback) {
-		visibilityCallback = () => {
-			if (document.visibilityState === 'visible')
-				connect(false);
-		};
+function connectIfVisible() {
+	if (document.visibilityState === 'visible') {
+		connect(false);
 	}
-	window.addEventListener('visibilitychange', visibilityCallback)
 }
 
 connect();
@@ -71,7 +67,7 @@ function handleMessage(e) {
 	const data = JSON.parse(e.data);
 	switch (data.type) {
 		case 'reload':
-			window.location.reload();
+			location.reload();
 			break;
 		case 'update':
 			if (errorOverlay) {
