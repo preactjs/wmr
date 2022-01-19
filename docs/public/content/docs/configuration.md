@@ -218,7 +218,7 @@ import { createProxyMiddleware } from  'http-proxy-middleware';
 export default defineConfig((options) => {
   const proxy_events = createProxyMiddleware({
     changeOrigin: true,
-    target: `http://www.example.org`,
+    target: 'http://www.example.org'
   });
   options.middleware.push((req, res, next) => {
     if (req.path.match(/^\/api(\/|$)/)) proxy_events(req, res, next);
