@@ -67,7 +67,8 @@ const config = {
 	plugins: [
 		shebangPlugin(),
 		replace({
-			'process.env.VERSION': JSON.stringify(require('./package.json').version)
+			'process.env.VERSION': JSON.stringify(require('./package.json').version),
+			'process.env.BROWSERSLIST_IGNORE_OLD_DATA': true
 		}),
 		{
 			// This inlines some fs.promises.readFile() calls, while allowing them to run unbundled in Node.
@@ -116,7 +117,7 @@ const config = {
 		},
 		{
 			// This ensures the template files for rollup-plugin-visualizer are inlined
-			// rather than bundleds as fs.readFile()
+			// rather than bundled as fs.readFile()
 			name: 'fix-visualizer',
 			transform(code, id) {
 				if (/rollup-plugin-visualizer[/\\]dist[/\\]plugin[/\\]build-stats\.js$/.test(id)) {
