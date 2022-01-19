@@ -795,7 +795,7 @@ describe('production', () => {
 			expect(code).toBe(0);
 
 			const index = await fs.readFile(path.join(env.tmp.path, 'dist', 'index.html'), 'utf8');
-			expect(index).toMatch('<script type="isodata">{"hello":"world"}</script>');
+			expect(index).toMatch('<script type="wmrdata">{"hello":"world"}</script>');
 		});
 
 		it('should support prerendered HTML, title & meta tags', async () => {
