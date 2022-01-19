@@ -1331,6 +1331,7 @@ describe('acorn-traverse', () => {
 					<p>это
 
 						👩‍🚀</p>
+					, foo
 					</p>
 				);
 			`;
@@ -1343,6 +1344,7 @@ describe('acorn-traverse', () => {
 				<p>это
 
 					👩‍🚀</p>
+				, foo
 				</p>\`
 			);"
 		`);
@@ -1350,7 +1352,7 @@ describe('acorn-traverse', () => {
 			// Should remove the whitespaces between the HTM generated syntax
 			expect(doTransformWithCompact(expression)).toMatchInlineSnapshot(`
 			"(
-				html\`<p>hello world <p>это 👩‍🚀</p></p>\`
+				html\`<p>hello world<p>это 👩‍🚀</p>, foo</p>\`
 			);"
 			`);
 		});
