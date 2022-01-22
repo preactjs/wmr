@@ -60,36 +60,37 @@ describe('production', () => {
 	it('should allow overwriting url loader', async () => {
 		await loadFixture('overwrite-loader-url', env);
 		instance = await runWmr(env.tmp.path, 'build');
-		const code = await instance.done;
-		const output = instance.output.join('\n');
-		console.log(output);
 
-		expect(code).toEqual(0);
+		await withLog(instance.output, async () => {
+			const code = await instance.done;
+			expect(code).toEqual(0);
 
-		const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
-		cleanup.push(stop);
+			const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+			cleanup.push(stop);
 
-		await env.page.goto(address, {
-			waitUntil: ['networkidle0', 'load']
+			await env.page.goto(address, {
+				waitUntil: ['networkidle0', 'load']
+			});
+
+			const text = await env.page.content();
+			expect(text).toMatch(/my-url: \/assets\/foo\..*\.svg/);
+			expect(text).toMatch(/url: \/assets\/foo\..*\.svg/);
+			expect(text).toMatch(/fallback: \/assets\/foo\..*\.svg/);
 		});
-
-		const text = await env.page.content();
-		expect(text).toMatch(/my-url: \/assets\/foo\..*\.svg/);
-		expect(text).toMatch(/url: \/assets\/foo\..*\.svg/);
-		expect(text).toMatch(/fallback: \/assets\/foo\..*\.svg/);
 	});
 
 	it('should show all generated files in cli output', async () => {
 		await loadFixture('file-import', env);
 		instance = await runWmr(env.tmp.path, 'build');
 		const code = await instance.done;
-		const output = instance.output;
-		console.log(output);
 
-		expect(code).toEqual(0);
+		await withLog(instance.output, async () => {
+			const output = instance.output;
+			expect(code).toEqual(0);
 
-		const stats = output.slice(output.findIndex(line => /Wrote.*to disk/.test(line)));
-		expect(stats.join('\n')).toMatch(/img\..*\.jpg/);
+			const stats = output.slice(output.findIndex(line => /Wrote.*to disk/.test(line)));
+			expect(stats.join('\n')).toMatch(/img\..*\.jpg/);
+		});
 	});
 
 	it('should support base64 in HTML', async () => {
@@ -473,7 +474,7 @@ describe('production', () => {
 			for (const d of ['dist', 'node_modules', '.cache']) {
 				await fs.rmdir(path.join(env.tmp.path, d), { recursive: true });
 			}
-			instance = await runWmr(env.tmp.path, 'build', '--prerender');
+			instance = await runWmr(env.tmp.path, 'build', '--prerender', '--autoInstall');
 			const code = await instance.done;
 			const output = instance.output.join('\n');
 			console.log(output);
@@ -571,62 +572,64 @@ describe('production', () => {
 	describe('CSS Asset Graph Optimization', () => {
 		it('should hoist dynamically imported CSS into unconditionally loaded parent', async () => {
 			await loadFixture('css', env);
-			instance = await runWmr(env.tmp.path, 'build');
-			const code = await instance.done;
-			console.info(instance.output.join('\n'));
-			expect(code).toBe(0);
+			instance = await runWmr(env.tmp.path, 'build', '--autoInstall');
 
-			const readdir = async f => (await fs.readdir(path.join(env.tmp.path, f))).filter(f => f[0] !== '.');
-			const assets = await readdir('dist/assets');
-			const chunks = await readdir('dist/chunks');
+			await withLog(instance.output, async () => {
+				const code = await instance.done;
+				expect(code).toBe(0);
 
-			expect(assets).toEqual([expect.stringMatching(/^style\.\w+\.css$/)]);
-			expect(chunks).toEqual([expect.stringMatching(/^index\.\w+\.js$/), expect.stringMatching(/^index\.\w+\.js$/)]);
+				const readdir = async f => (await fs.readdir(path.join(env.tmp.path, f))).filter(f => f[0] !== '.');
+				const assets = await readdir('dist/assets');
+				const chunks = await readdir('dist/chunks');
 
-			const css = await fs.readFile(path.join(env.tmp.path, 'dist/assets', assets[0]), 'utf-8');
-			// ensure all the CSS got merged:
-			expect(css).toMatch(/body\s*,\s*html/);
-			expect(css).toMatch(/\.app_\w+/);
-			expect(css).toMatch(/\.home_\w+/);
-			expect(css).toMatch(/\.profile_\w+/);
+				expect(assets).toEqual([expect.stringMatching(/^style\.\w+\.css$/)]);
+				expect(chunks).toEqual([expect.stringMatching(/^index\.\w+\.js$/), expect.stringMatching(/^index\.\w+\.js$/)]);
 
-			const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
-			cleanup.push(stop);
+				const css = await fs.readFile(path.join(env.tmp.path, 'dist/assets', assets[0]), 'utf-8');
+				// ensure all the CSS got merged:
+				expect(css).toMatch(/body\s*,\s*html/);
+				expect(css).toMatch(/\.app_\w+/);
+				expect(css).toMatch(/\.home_\w+/);
+				expect(css).toMatch(/\.profile_\w+/);
 
-			const logs = [];
-			function log(type, text) {
-				logs.push(`${type}: ${text}`);
-				console.log(`  ${type}: ${text}`);
-			}
-			env.page.on('console', m => log(m.type(), m.text()));
-			env.page.on('error', err => log('error', err));
-			env.page.on('pageerror', err => log('page error', err));
+				const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+				cleanup.push(stop);
 
-			const requests = [];
-			await env.page.setCacheEnabled(false);
-			await env.page.setRequestInterception(true);
-			page.on('request', req => {
-				requests.push(req.url().replace(/^https?:\/\/[^/]+/, ''));
-				req.continue();
+				const logs = [];
+				function log(type, text) {
+					logs.push(`${type}: ${text}`);
+					console.log(`  ${type}: ${text}`);
+				}
+				env.page.on('console', m => log(m.type(), m.text()));
+				env.page.on('error', err => log('error', err));
+				env.page.on('pageerror', err => log('page error', err));
+
+				const requests = [];
+				await env.page.setCacheEnabled(false);
+				await env.page.setRequestInterception(true);
+				page.on('request', req => {
+					requests.push(req.url().replace(/^https?:\/\/[^/]+/, ''));
+					req.continue();
+				});
+
+				await env.page.goto(address, { waitUntil: ['domcontentloaded', 'networkidle2'] });
+				expect(await env.page.content()).toMatch(/This is the home page/);
+
+				expect(logs).toEqual([]);
+				expect(requests.filter(url => /\.css$/.test(url))).toEqual([
+					expect.stringMatching(/^\/assets\/style\.\w+\.css$/)
+				]);
+
+				logs.length = requests.length = 0;
+
+				await env.page.goto(address + '/profile/foo', { waitUntil: ['domcontentloaded', 'networkidle2'] });
+				expect(await env.page.content()).toMatch(/This is the profile page for foo/);
+
+				expect(logs).toEqual([]);
+				expect(requests.filter(url => /\.css$/.test(url))).toEqual([
+					expect.stringMatching(/^\/assets\/style\.\w+\.css$/)
+				]);
 			});
-
-			await env.page.goto(address, { waitUntil: ['domcontentloaded', 'networkidle2'] });
-			expect(await env.page.content()).toMatch(/This is the home page/);
-
-			expect(logs).toEqual([]);
-			expect(requests.filter(url => /\.css$/.test(url))).toEqual([
-				expect.stringMatching(/^\/assets\/style\.\w+\.css$/)
-			]);
-
-			logs.length = requests.length = 0;
-
-			await env.page.goto(address + '/profile/foo', { waitUntil: ['domcontentloaded', 'networkidle2'] });
-			expect(await env.page.content()).toMatch(/This is the profile page for foo/);
-
-			expect(logs).toEqual([]);
-			expect(requests.filter(url => /\.css$/.test(url))).toEqual([
-				expect.stringMatching(/^\/assets\/style\.\w+\.css$/)
-			]);
 		});
 
 		it('should merge duplicate CSS imports', async () => {
@@ -663,9 +666,9 @@ describe('production', () => {
 		it('should hoist entry CSS into HTML <link> tag', async () => {
 			await loadFixture('css-entry', env);
 			instance = await runWmr(env.tmp.path, 'build');
-			const code = await instance.done;
 
 			await withLog(instance.output, async () => {
+				const code = await instance.done;
 				expect(code).toBe(0);
 
 				const files = (await fs.readdir(path.join(env.tmp.path, 'dist', 'assets'))).filter(f => f[0] !== '.');
@@ -687,75 +690,84 @@ describe('production', () => {
 		it('should respect `config.publicPath` value', async () => {
 			await loadFixture('publicpath', env);
 			instance = await runWmr(env.tmp.path, 'build');
-			const code = await instance.done;
-			console.info(instance.output.join('\n'));
-			expect(code).toBe(0);
+			await withLog(instance.output, async () => {
+				const code = await instance.done;
+				expect(code).toBe(0);
 
-			const readdir = async f => (await fs.readdir(path.join(env.tmp.path, f))).filter(f => f[0] !== '.');
+				const readdir = async f => (await fs.readdir(path.join(env.tmp.path, f))).filter(f => f[0] !== '.');
 
-			const assets = await readdir('dist/assets');
-			const chunks = await readdir('dist/chunks');
-			const roots = await readdir('dist');
+				const assets = await readdir('dist/assets');
+				const chunks = await readdir('dist/chunks');
+				const roots = await readdir('dist');
 
-			expect(assets).toEqual([expect.stringMatching(/^index\.\w+\.css$/), expect.stringMatching(/^math\.\w+\.css$/)]);
+				expect(assets).toEqual([expect.stringMatching(/^index\.\w+\.css$/), expect.stringMatching(/^math\.\w+\.css$/)]);
 
-			expect(chunks).toEqual([expect.stringMatching(/^constants\.\w+\.js$/), expect.stringMatching(/^math\.\w+\.js$/)]);
+				expect(chunks).toEqual([
+					expect.stringMatching(/^constants\.\w+\.js$/),
+					expect.stringMatching(/^math\.\w+\.js$/)
+				]);
 
-			expect(roots).toEqual(['assets', 'chunks', expect.stringMatching(/^index\.\w+\.js$/), 'index.html']);
+				expect(roots).toEqual(['assets', 'chunks', expect.stringMatching(/^index\.\w+\.js$/), 'index.html']);
 
-			const html = await fs.readFile(path.join(env.tmp.path, 'dist', 'index.html'), 'utf8');
-			const math = await fs.readFile(path.join(env.tmp.path, 'dist', 'chunks', chunks[1]), 'utf8');
-			const main = await fs.readFile(path.join(env.tmp.path, 'dist', roots[2]), 'utf8');
+				const html = await fs.readFile(path.join(env.tmp.path, 'dist', 'index.html'), 'utf8');
+				const math = await fs.readFile(path.join(env.tmp.path, 'dist', 'chunks', chunks[1]), 'utf8');
+				const main = await fs.readFile(path.join(env.tmp.path, 'dist', roots[2]), 'utf8');
 
-			// https://cdn.example.com/assets/math.d41e7373.css
-			expect(math).toMatch(`("https://cdn.example.com/assets/${assets[1]}")`);
-			expect(math).toMatch(`import("./${chunks[0]}")`);
+				// https://cdn.example.com/assets/math.d41e7373.css
+				expect(math).toMatch(`("https://cdn.example.com/assets/${assets[1]}")`);
+				expect(math).toMatch(`import("./${chunks[0]}")`);
 
-			// (preload) https://cdn.example.com/assets/math.d41e7373.css
-			expect(main).toMatch(`$w_s$("https://cdn.example.com/assets/${assets[1]}")`);
+				// (preload) https://cdn.example.com/assets/math.d41e7373.css
+				expect(main).toMatch(`$w_s$("https://cdn.example.com/assets/${assets[1]}")`);
 
-			// HTML stylesheet: https://cdn.example.com/assets/index.0544f0a6.css
-			expect(html).toMatch(`href="https://cdn.example.com/assets/${assets[0]}"`);
+				// HTML stylesheet: https://cdn.example.com/assets/index.0544f0a6.css
+				expect(html).toMatch(`href="https://cdn.example.com/assets/${assets[0]}"`);
 
-			// HTML script: https://cdn.example.com/assets/index.0544f0a6.css
-			expect(html).toMatch(`src="https://cdn.example.com/${roots[2]}"`);
+				// HTML script: https://cdn.example.com/assets/index.0544f0a6.css
+				expect(html).toMatch(`src="https://cdn.example.com/${roots[2]}"`);
+			});
 		});
 
 		it('should respect `config.publicPath` value (ts)', async () => {
 			await loadFixture('publicpath-typescript', env);
 			instance = await runWmr(env.tmp.path, 'build');
-			const code = await instance.done;
-			console.info(instance.output.join('\n'));
-			expect(code).toBe(0);
 
-			const readdir = async f => (await fs.readdir(path.join(env.tmp.path, f))).filter(f => f[0] !== '.');
+			await withLog(instance.output, async () => {
+				const code = await instance.done;
+				expect(code).toBe(0);
 
-			const assets = await readdir('dist/assets');
-			const chunks = await readdir('dist/chunks');
-			const roots = await readdir('dist');
+				const readdir = async f => (await fs.readdir(path.join(env.tmp.path, f))).filter(f => f[0] !== '.');
 
-			expect(assets).toEqual([expect.stringMatching(/^index\.\w+\.css$/), expect.stringMatching(/^math\.\w+\.css$/)]);
+				const assets = await readdir('dist/assets');
+				const chunks = await readdir('dist/chunks');
+				const roots = await readdir('dist');
 
-			expect(chunks).toEqual([expect.stringMatching(/^constants\.\w+\.js$/), expect.stringMatching(/^math\.\w+\.js$/)]);
+				expect(assets).toEqual([expect.stringMatching(/^index\.\w+\.css$/), expect.stringMatching(/^math\.\w+\.css$/)]);
 
-			expect(roots).toEqual(['assets', 'chunks', expect.stringMatching(/^index\.\w+\.js$/), 'index.html']);
+				expect(chunks).toEqual([
+					expect.stringMatching(/^constants\.\w+\.js$/),
+					expect.stringMatching(/^math\.\w+\.js$/)
+				]);
 
-			const html = await fs.readFile(path.join(env.tmp.path, 'dist', 'index.html'), 'utf8');
-			const math = await fs.readFile(path.join(env.tmp.path, 'dist', 'chunks', chunks[1]), 'utf8');
-			const main = await fs.readFile(path.join(env.tmp.path, 'dist', roots[2]), 'utf8');
+				expect(roots).toEqual(['assets', 'chunks', expect.stringMatching(/^index\.\w+\.js$/), 'index.html']);
 
-			// https://cdn.example.com/assets/math.d41e7373.css
-			expect(math).toMatch(`("https://cdn.example.com/assets/${assets[1]}")`);
-			expect(math).toMatch(`import("./${chunks[0]}")`);
+				const html = await fs.readFile(path.join(env.tmp.path, 'dist', 'index.html'), 'utf8');
+				const math = await fs.readFile(path.join(env.tmp.path, 'dist', 'chunks', chunks[1]), 'utf8');
+				const main = await fs.readFile(path.join(env.tmp.path, 'dist', roots[2]), 'utf8');
 
-			// (preload) https://cdn.example.com/assets/math.d41e7373.css
-			expect(main).toMatch(`$w_s$("https://cdn.example.com/assets/${assets[1]}")`);
+				// https://cdn.example.com/assets/math.d41e7373.css
+				expect(math).toMatch(`("https://cdn.example.com/assets/${assets[1]}")`);
+				expect(math).toMatch(`import("./${chunks[0]}")`);
 
-			// HTML stylesheet: https://cdn.example.com/assets/index.0544f0a6.css
-			expect(html).toMatch(`href="https://cdn.example.com/assets/${assets[0]}"`);
+				// (preload) https://cdn.example.com/assets/math.d41e7373.css
+				expect(main).toMatch(`$w_s$("https://cdn.example.com/assets/${assets[1]}")`);
 
-			// HTML script: https://cdn.example.com/assets/index.0544f0a6.css
-			expect(html).toMatch(`src="https://cdn.example.com/${roots[2]}"`);
+				// HTML stylesheet: https://cdn.example.com/assets/index.0544f0a6.css
+				expect(html).toMatch(`href="https://cdn.example.com/assets/${assets[0]}"`);
+
+				// HTML script: https://cdn.example.com/assets/index.0544f0a6.css
+				expect(html).toMatch(`src="https://cdn.example.com/${roots[2]}"`);
+			});
 		});
 	});
 
@@ -826,35 +838,41 @@ describe('production', () => {
 		it('should support prerendering json', async () => {
 			await loadFixture('prod-prerender-json', env);
 			instance = await runWmr(env.tmp.path, 'build', '--prerender');
-			const code = await instance.done;
-			console.info(instance.output.join('\n'));
-			expect(code).toBe(0);
 
-			const indexHtml = path.join(env.tmp.path, 'dist', 'index.html');
-			const index = await fs.readFile(indexHtml, 'utf8');
-			expect(index).toMatch(/{"foo":42,"bar":"bar"}/);
+			await withLog(instance.output, async () => {
+				const code = await instance.done;
+				expect(code).toBe(0);
+
+				const indexHtml = path.join(env.tmp.path, 'dist', 'index.html');
+				const index = await fs.readFile(indexHtml, 'utf8');
+				expect(index).toMatch(/{"foo":42,"bar":"bar"}/);
+			});
 		});
 
 		it('should not crash during prerendering', async () => {
 			await loadFixture('prerender-crash', env);
 			instance = await runWmr(env.tmp.path, 'build', '--prerender');
-			const code = await instance.done;
-			console.info(instance.output.join('\n'));
-			expect(instance.output.join('\n')).toMatch(/Error: fail/);
-			// Check if stack trace is present
-			expect(instance.output.join('\n')).toMatch(/^\s+at\s\w+/gm);
-			expect(code).toBe(1);
+
+			await withLog(instance.output, async () => {
+				const code = await instance.done;
+				expect(instance.output.join('\n')).toMatch(/Error: fail/);
+				// Check if stack trace is present
+				expect(instance.output.join('\n')).toMatch(/^\s+at\s\w+/gm);
+				expect(code).toBe(1);
+			});
 		});
 
 		it('config should support supplying additional links to prerender', async () => {
 			await loadFixture('prerender-additional-links', env);
 			instance = await runWmr(env.tmp.path, 'build', '--prerender');
-			const code = await instance.done;
-			console.info(instance.output.join('\n'));
-			expect(instance.output.join('\n')).toMatch(/Prerendered 2 pages/i);
-			expect(code).toBe(0);
 
-			expect(await fs.access(path.join(env.tmp.path, 'dist', 'non-existent-link', 'index.html'))).toBeUndefined();
+			await withLog(instance.output, async () => {
+				const code = await instance.done;
+				expect(instance.output.join('\n')).toMatch(/Prerendered 2 pages/i);
+				expect(code).toBe(0);
+
+				expect(await fs.access(path.join(env.tmp.path, 'dist', 'non-existent-link', 'index.html'))).toBeUndefined();
+			});
 		});
 
 		it('config should throw if no prerender function is exported', async () => {
@@ -927,9 +945,12 @@ describe('production', () => {
 	describe('Prerender', () => {
 		it('should remove search params', async () => {
 			await loadFixture('prod-routes', env);
-			instance = await runWmr(env.tmp.path, 'build', '--prerender');
-			const code = await instance.done;
-			expect(code).toBe(0);
+
+			instance = await runWmr(env.tmp.path, 'build', '--prerender', '--autoInstall');
+			await withLog(instance.output, async () => {
+				const code = await instance.done;
+				expect(code).toBe(0);
+			});
 
 			const readdir = async f => (await fs.readdir(path.join(env.tmp.path, f))).filter(f => f[0] !== '.');
 

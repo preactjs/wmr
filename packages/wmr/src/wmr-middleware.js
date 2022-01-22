@@ -4,7 +4,6 @@ import * as kl from 'kolorist';
 import { getWmrClient } from './plugins/wmr/plugin.js';
 import { createPluginContainer } from './lib/rollup-plugin-container.js';
 import { transformImports } from './lib/transform-imports.js';
-import { normalizeSpecifier } from './plugins/npm-plugin/index.js';
 import { getMimeType } from './lib/mimetypes.js';
 import { debug, formatPath } from './lib/output-utils.js';
 import { getPlugins } from './lib/plugins.js';
@@ -78,7 +77,7 @@ export default function wmrMiddleware(options) {
 		cwd,
 		disableGlobbing: true,
 		ignoreInitial: true,
-		ignored: [/(^|[/\\])(node_modules|\.git|\.DS_Store)([/\\]|$)/, resolve(cwd, out), resolve(cwd, distDir)]
+		ignored: [/(^|[/\\])(node_modules|\.git|\.DS_Store|\.cache)([/\\]|$)/, resolve(cwd, out), resolve(cwd, distDir)]
 	});
 	const pendingChanges = new Set();
 
@@ -243,15 +242,11 @@ export default function wmrMiddleware(options) {
 
 		const queryParams = new URL(req.url, 'file://').searchParams;
 
-		if (path.startsWith('/@npm/')) {
-			return next();
-		}
-
 		let prefix = '';
 
 		// Workaround for transform forcing extensionless ids to be
 		// non-js
-		let hasIdPrefix = false;
+		let isVirtual = false;
 
 		let file = '';
 		let id = path;
@@ -262,7 +257,7 @@ export default function wmrMiddleware(options) {
 		// Path for virtual modules that refer to an unprefixed id.
 		if (path.startsWith('/@id/')) {
 			// Virtual paths have no exact file match, so we don't set `file`
-			hasIdPrefix = true;
+			isVirtual = true;
 			id = path.slice('/@id/'.length);
 
 			// Add back leading slash if it was part of the virtual id.
@@ -270,6 +265,10 @@ export default function wmrMiddleware(options) {
 			if (req.path.startsWith('/@id//')) {
 				id = '/' + id;
 			}
+		} else if (path.startsWith('/@npm/')) {
+			// Virtual paths have no exact file match, so we don't set `file`
+			id = path.slice('/@npm/'.length);
+			isVirtual = true;
 		} else if (path.startsWith('/@alias/')) {
 			id = posix.normalize(path.slice('/@alias/'.length));
 
@@ -284,7 +283,7 @@ export default function wmrMiddleware(options) {
 
 			if (path.startsWith('/@id/')) {
 				// Virtual paths have no exact file match, so we don't set `file`
-				hasIdPrefix = true;
+				isVirtual = true;
 				path = path.slice('/@id'.length);
 			}
 
@@ -301,7 +300,7 @@ export default function wmrMiddleware(options) {
 			// Normalize the cacheKey so it matches what will be in the WRITE_CACHE, where we store in native paths
 			cacheKey = cacheKey.split(posix.sep).join(sep);
 
-			if (!hasIdPrefix) {
+			if (!isVirtual) {
 				id = `./${id}`;
 			}
 
@@ -336,7 +335,7 @@ export default function wmrMiddleware(options) {
 			} else if (queryParams.has('asset')) {
 				cacheKey += '?asset';
 				transform = TRANSFORMS.asset;
-			} else if (prefix || hasIdPrefix || isModule || /\.([mc]js|[tj]sx?)$/.test(file) || STYLE_REG.test(file)) {
+			} else if (prefix || isVirtual || isModule || /\.([mc]js|[tj]sx?)$/.test(file) || STYLE_REG.test(file)) {
 				transform = TRANSFORMS.js;
 			} else if (file.startsWith(root + sep) && (await isFile(file))) {
 				// Ignore dotfiles
@@ -596,7 +595,7 @@ export const TRANSFORMS = {
 							spec = relative(root, spec).split(sep).join(posix.sep);
 						}
 						// Retain bare specifiers when serializing to url
-						else if (!/^\.?\.\//.test(spec)) {
+						else if (!/^\.?\.\//.test(spec) && prefix !== 'npm') {
 							spec = `@id/${spec}`;
 						}
 
@@ -619,29 +618,7 @@ export const TRANSFORMS = {
 						if (aliased) spec = aliased;
 
 						if (!spec.startsWith('/@alias/')) {
-							// Check if this is a virtual module path from a plugin. If
-							// no plugin loads the id, then we know that the bare specifier
-							// must refer to an npm plugin.
-							// TODO: Cache the result to avoid having to load an id twice.
-							const res = await NonRollup.load(spec);
-
-							if (res === null) {
-								// Bare specifiers are npm packages:
-								const meta = normalizeSpecifier(spec);
-
-								// // Option 1: resolve all package verions (note: adds non-trivial delay to imports)
-								// await resolvePackageVersion(meta);
-								// // Option 2: omit package versions that resolve to the root
-								// // if ((await resolvePackageVersion({ module: meta.module, version: '' })).version === meta.version) {
-								// // 	meta.version = '';
-								// // }
-								// spec = `/@npm/${meta.module}${meta.version ? '@' + meta.version : ''}${meta.path ? '/' + meta.path : ''}`;
-
-								// Option 3: omit root package versions
-								spec = `/@npm/${meta.module}${meta.path ? '/' + meta.path : ''}`;
-							} else {
-								spec = `/@id/${spec}`;
-							}
+							spec = `/@id/${spec}`;
 						}
 					}
 

@@ -834,6 +834,8 @@ const TYPES = {
 	importSpecifier: (local, imported) => ({ type: 'ImportSpecifier', local, imported }),
 	importDefaultSpecifier: local => ({ type: 'ImportDefaultSpecifier', local }),
 	importNamespaceSpecifier: local => ({ type: 'ImportNamespaceSpecifier', local }),
+	exportDefaultDeclaration: declaration => ({ type: 'ExportDefaultDeclaration', declaration }),
+	exportAllDeclaration: (source, exported = null) => ({ type: 'ExportAllDeclaration', source, exported }),
 	assignmentExpression: (operator, left, right) => ({ type: 'AssignmentExpression', operator, left, right }),
 	variableDeclaration: (kind, declarations) => ({ type: 'VariableDeclaration', kind, declarations }),
 	variableDeclarator: (id, init) => ({ type: 'VariableDeclarator', id, init }),

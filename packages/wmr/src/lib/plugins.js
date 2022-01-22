@@ -1,9 +1,9 @@
+import path from 'path';
 import htmPlugin from '../plugins/htm-plugin.js';
 import sucrasePlugin from '../plugins/sucrase-plugin.js';
 import wmrPlugin from '../plugins/wmr/plugin.js';
 import wmrStylesPlugin from '../plugins/wmr/styles/styles-plugin.js';
 import sassPlugin from '../plugins/sass-plugin.js';
-import npmPlugin from '../plugins/npm-plugin/index.js';
 import publicPathPlugin from '../plugins/public-path-plugin.js';
 import minifyCssPlugin from '../plugins/minify-css-plugin.js';
 import htmlEntriesPlugin from '../plugins/html-entries-plugin.js';
@@ -27,7 +27,9 @@ import { prefreshPlugin } from '../plugins/preact/prefresh.js';
 import { absolutePathPlugin } from '../plugins/absolute-path-plugin.js';
 import { lessPlugin } from '../plugins/less-plugin.js';
 import { workerPlugin } from '../plugins/worker-plugin.js';
+import { npmPlugin } from '../plugins/npm-plugin/index.js';
 import tsConfigPathsPlugin from '../plugins/tsconfig-paths-plugin.js';
+import { getNpmPlugins } from '../plugins/npm-plugin/npm-bundle.js';
 
 /**
  * @param {import("wmr").Options & { isIIFEWorker?: boolean}} options
@@ -38,6 +40,7 @@ export function getPlugins(options) {
 		plugins,
 		publicPath,
 		alias,
+		cwd,
 		root,
 		env,
 		minify,
@@ -45,8 +48,18 @@ export function getPlugins(options) {
 		isIIFEWorker = false,
 		sourcemap,
 		features,
-		visualize
+		visualize,
+		autoInstall,
+		registry
 	} = options;
+
+	const npmCacheDir = path.join(cwd, '.cache', '@npm');
+
+	/**
+	 * Map of package name to folder on disk
+	 * @type {Map<string, string>}
+	 */
+	const resolutionCache = new Map();
 
 	// Plugins are pre-sorted
 	let split = plugins.findIndex(p => p.enforce === 'post');
@@ -99,7 +112,20 @@ export function getPlugins(options) {
 			// Only transpile CommonJS in node_modules and explicit .cjs files:
 			include: /(^npm\/|[/\\]node_modules[/\\]|\.cjs$)/
 		}),
-		(production || isIIFEWorker) && npmPlugin({ external: false }),
+
+		...(production
+			? getNpmPlugins({
+					autoInstall,
+					production,
+					cacheDir: npmCacheDir,
+					cwd,
+					registryUrl: registry,
+					resolutionCache,
+					browserReplacement: new Map()
+			  })
+			: []),
+		!production &&
+			npmPlugin({ cwd, cacheDir: npmCacheDir, autoInstall, production, registryUrl: registry, resolutionCache, alias }),
 		resolveExtensionsPlugin({
 			extensions: ['.ts', '.tsx', '.js', '.cjs'],
 			index: true

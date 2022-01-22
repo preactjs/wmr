@@ -1,4 +1,5 @@
 import { promises as fs } from 'fs';
+import path from 'path';
 
 /**
  * Implementation of fs.rm() for Node 12+
@@ -46,4 +47,28 @@ export function hasCustomPrefix(id) {
  */
 export function pathToUrl(p) {
 	return p.replace(/\\/g, '/');
+}
+
+/**
+ * Read a file as JSON
+ * @param {string} file
+ */
+export async function readJson(file) {
+	const raw = await fs.readFile(file, 'utf-8');
+	return JSON.parse(raw);
+}
+
+/**
+ * Write file and create directories automatically if necessary
+ * @param {string} file
+ * @param {Buffer | string} data
+ * @param {BufferEncoding} [encoding]
+ */
+export async function writeFile(file, data, encoding) {
+	await fs.mkdir(path.dirname(file), { recursive: true });
+	if (encoding) {
+		await fs.writeFile(file, data, encoding);
+	} else {
+		await fs.writeFile(file, data);
+	}
 }
