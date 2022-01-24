@@ -76,7 +76,7 @@ async function workerCode({ cwd, out, publicPath, customRoutes }) {
 	const SCRIPT_TAG = /<script(?:\s[^>]*?)?\s+src=(['"]?)([^>]*?)\1(?:\s[^>]*?)?>/g;
 
 	let match;
-	while ((match = SCRIPT_TAG.exec(tpl))) {
+	while ((match = SCRIPT_TAG.exec(tpl)) && !script) {
 		// Ignore external urls
 		if (!match || /^(?:https?|file|data)/.test(match[2])) continue;
 
