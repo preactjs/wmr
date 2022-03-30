@@ -70,7 +70,7 @@ async function workerCode({ cwd, out, publicPath, customRoutes }) {
 	// Grab the generated HTML file, which we'll use as a template:
 	const tpl = await fs.readFile(path.resolve(cwd, out, 'index.html'), 'utf-8');
 
-	// The first script in the file that is not external is assumed to have a
+	// The last script in the file that is not external is assumed to have a
 	// `prerender` export
 	let script;
 	const SCRIPT_TAG = /<script(?:\s[^>]*?)?\s+src=(['"]?)([^>]*?)\1(?:\s[^>]*?)?>/g;
@@ -103,7 +103,7 @@ async function workerCode({ cwd, out, publicPath, customRoutes }) {
 	// const App = m.default || m[Object.keys(m)[0]];
 
 	if (typeof doPrerender !== 'function') {
-		throw Error(`No prerender() function was exported by the first <script src="..."> in your index.html.`);
+		throw Error(`No prerender() function was exported by the last non-external <script src="..."> in your index.html.`);
 	}
 
 	/**
