@@ -211,10 +211,10 @@ async function workerCode({ cwd, out, publicPath, customRoutes }) {
 			html = html.replace(/(<html(\s[^>]*?)?>)/, `<html lang="${enc(head.lang)}">`);
 		}
 
-		html = html.replace(/(<\/head>)/, headHtml + '$1');
+		html = html.replace(/(<\/head>)/, (_, groupMatched) => headHtml + groupMatched);
 
 		// Inject pre-rendered HTML into the start of <body>:
-		html = html.replace(/(<body(\s[^>]*?)?>)/, '$1' + body);
+		html = html.replace(/(<body(\s[^>]*?)?>)/, (_, groupMatched) => groupMatched + body);
 
 		// Write the generated HTML to disk:
 		await fs.mkdir(path.dirname(outFile), { recursive: true }).catch(Object);
