@@ -76,6 +76,10 @@ export async function loadFixture(name, env) {
 	// Copy fake wmr node_modules over
 	await fs.copyFile(path.join(__dirname, '..', 'index.js'), path.join(env.tmp.path, 'node_modules', 'wmr', 'index.js'));
 	await fs.copyFile(
+		path.join(__dirname, '..', 'index.cjs'),
+		path.join(env.tmp.path, 'node_modules', 'wmr', 'index.cjs')
+	);
+	await fs.copyFile(
 		path.join(__dirname, '..', 'package.json'),
 		path.join(env.tmp.path, 'node_modules', 'wmr', 'package.json')
 	);
