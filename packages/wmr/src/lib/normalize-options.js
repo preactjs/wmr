@@ -49,12 +49,6 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 	// Files in the output directory are served if no middleware overrides them:
 	options.overlayDir = options.out;
 
-	// Ensure the output directory exists so that writeFile() doesn't have to create it:
-	// Note: awaiting the promise later lets it run in parallel with the CWD check below.
-	const ensureOutDirPromise = fs.mkdir(options.out, { recursive: true }).catch(err => {
-		console.warn(`Warning: Failed to create output directory: ${err.message}`);
-	});
-
 	options.public = options.public || 'public';
 	options.publicPath = options.publicPath || '/';
 
@@ -81,7 +75,6 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 	}
 
 	let prevPublicFolder = options.public;
-	await ensureOutDirPromise;
 
 	const pkgFile = resolve(options.cwd, 'package.json');
 	let pkg;
@@ -191,6 +184,11 @@ export async function normalizeOptions(options, mode, configWatchFiles = []) {
 			applyConfigResult(res);
 		}
 	}
+
+	// Ensure the output directory exists so that writeFile() doesn't have to create it
+	await fs.mkdir(options.out, { recursive: true }).catch(err => {
+		console.warn(`Warning: Failed to create output directory: ${err.message}`);
+	});
 
 	if (options.aliases && Object.keys(options.aliases).length > 0) {
 		deprecated(
