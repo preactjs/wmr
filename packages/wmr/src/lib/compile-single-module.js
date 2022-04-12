@@ -73,8 +73,7 @@ export const compileSingleModule = withCache(
 		const result = await bundle.write({
 			...ROLLUP_FAST_OUTPUT,
 			dir: out,
-			assetFileNames: '[name].[ext]',
-			...(typeof filename !== 'undefined' && { entryFileNames: filename }),
+			entryFileNames: filename || '[name].[ext]',
 			paths: str => str,
 			format,
 			exports: 'auto'
