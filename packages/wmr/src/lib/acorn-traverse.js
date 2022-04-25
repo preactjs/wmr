@@ -1182,6 +1182,7 @@ function createContext({ code, out, parse, generatorOpts, filename }) {
 					}
 					return Array.prototype.push.call(this, comment);
 				};
+				opts.allowAwaitOutsideFunction = true;
 				isInitialParse = false;
 			}
 			return parse(code, opts);
