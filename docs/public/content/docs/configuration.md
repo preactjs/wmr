@@ -96,7 +96,7 @@ The mode WMR was started in.
 
 The path to where WMR was launched from. Used to look up `package.json`.
 
-### root
+### public
 
 - Type: `string`
 - Default: `process.cwd()/public`
