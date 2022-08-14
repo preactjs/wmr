@@ -2,22 +2,12 @@ import { h, options, cloneElement } from 'preact';
 import renderToString from 'preact-render-to-string';
 
 let vnodeHook;
-let initialized = false;
 
 const old = options.vnode;
 options.vnode = vnode => {
 	if (old) old(vnode);
 	if (vnodeHook) vnodeHook(vnode);
 };
-
-async function init() {
-	const fs = (await eval('u=>import(u)')('fs')).promises;
-	// eslint-disable-next-line no-undef
-	globalThis.fetch = async url => {
-		const text = () => fs.readFile('dist/' + String(url).replace(/^\//, ''), 'utf-8');
-		return { text, json: () => text().then(JSON.parse) };
-	};
-}
 
 /**
  * @param {ReturnType<h>} vnode The root JSX element to render (eg: `<App />`)
@@ -27,11 +17,6 @@ async function init() {
  */
 export default async function prerender(vnode, options) {
 	options = options || {};
-
-	if (!initialized) {
-		initialized = true;
-		await init();
-	}
 
 	const maxDepth = options.maxDepth || 10;
 	const props = options.props;
