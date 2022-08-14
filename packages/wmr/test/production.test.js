@@ -879,8 +879,8 @@ describe('production', () => {
 			});
 		});
 
-		it('should support prerendered HTML with markdown using globalThis.fetch', async () => {
-			await loadFixture('prerender-markdown-content', env);
+		it('should support fetching resources from disk during prerender', async () => {
+			await loadFixture('prerender-resource-fetch', env);
 			instance = await runWmr(env.tmp.path, 'build', '--prerender');
 			const code = await instance.done;
 			expect(code).toBe(0);
