@@ -96,6 +96,12 @@ async function workerCode({ cwd, out, publicPath, customRoutes }) {
 	let head = { lang: '', title: '', elements: new Set() };
 	globalThis.wmr = { ssr: { head } };
 
+	// @ts-ignore
+	globalThis.fetch = async url => {
+		const text = () => fs.readFile(`${out}/${String(url).replace(/^\//, '')}`, 'utf-8');
+		return { text, json: () => text().then(JSON.parse) };
+	};
+
 	// Prevent Rollup from transforming `import()` here.
 	const $import = new Function('s', 'return import(s)');
 	const m = await $import('file:///' + script);
