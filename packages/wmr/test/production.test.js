@@ -878,6 +878,17 @@ describe('production', () => {
 				expect(instance.output.join('\n')).toMatch(/The following error was thrown during prerendering/i);
 			});
 		});
+
+		it('should support fetching resources from disk during prerender', async () => {
+			await loadFixture('prerender-resource-fetch', env);
+			instance = await runWmr(env.tmp.path, 'build', '--prerender');
+			const code = await instance.done;
+			expect(code).toBe(0);
+
+			const indexHtml = path.join(env.tmp.path, 'dist', 'index.html');
+			const index = await fs.readFile(indexHtml, 'utf8');
+			expect(index).toMatch(/# hello world/);
+		});
 	});
 
 	describe('Code Splitting', () => {
