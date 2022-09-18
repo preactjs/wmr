@@ -96,7 +96,13 @@ async function workerCode({ cwd, out, publicPath, customRoutes }) {
 	let head = { lang: '', title: '', elements: new Set() };
 	globalThis.wmr = { ssr: { head } };
 
-	const _fetch = fetch;
+	let _fetch;
+	const nodeVersion = process.version;
+	const isNodeVersionOver18 = Number(nodeVersion.split('.')[0].slice(1)) >= 18;
+	// if Node.js version is under 18, fetch is undefined
+	if (isNodeVersionOver18) {
+		_fetch = fetch;
+	}
 	// @ts-ignore
 	delete globalThis.fetch;
 	// @ts-ignore
@@ -105,8 +111,6 @@ async function workerCode({ cwd, out, publicPath, customRoutes }) {
 		const pattern = /^https?:\/\/[\w/:%#\\$&\\?\\(\\)~\\.=\\+\\-]+/;
 		const isExternalUrl = pattern.test(String(url));
 		if (isExternalUrl) {
-			const nodeVersion = process.version;
-			const isNodeVersionOver18 = Number(nodeVersion.split('.')[0].slice(1)) >= 18;
 			if (isRequested) {
 				return;
 			}
