@@ -96,18 +96,24 @@ async function workerCode({ cwd, out, publicPath, customRoutes }) {
 	let head = { lang: '', title: '', elements: new Set() };
 	globalThis.wmr = { ssr: { head } };
 
+	const _fetch = fetch;
+	// @ts-ignore
+	delete globalThis.fetch;
 	// @ts-ignore
 	globalThis.fetch = async (url, options) => {
+		let isRequested = false;
 		const pattern = /^https?:\/\/[\w/:%#\\$&\\?\\(\\)~\\.=\\+\\-]+/;
 		const isExternalUrl = pattern.test(String(url));
 		if (isExternalUrl) {
 			const nodeVersion = process.version;
 			const isNodeVersionOver18 = Number(nodeVersion.split('.')[0].slice(1)) >= 18;
+			if (isRequested) {
+				return;
+			}
 			// Use native fetch if Node.js version over 18 when `prerender`
 			if (isNodeVersionOver18) {
-				// TODO: Solve "RangeError: Maximum call stack size exceeded"
-				// MEMO: fetch is called recursively...
-				return fetch(url, options).then(res => ({
+				isRequested = true;
+				return _fetch(url, options).then(res => ({
 					text: () => res.text(),
 					json: () => res.text().then(JSON.parse)
 				}));
