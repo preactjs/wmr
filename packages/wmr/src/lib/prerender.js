@@ -97,7 +97,26 @@ async function workerCode({ cwd, out, publicPath, customRoutes }) {
 	globalThis.wmr = { ssr: { head } };
 
 	// @ts-ignore
-	globalThis.fetch = async url => {
+	globalThis.fetch = async (url, options) => {
+		const pattern = /^https?:\/\/[\w/:%#\\$&\\?\\(\\)~\\.=\\+\\-]+/;
+		const isExternalUrl = pattern.test(String(url));
+		if (isExternalUrl) {
+			const nodeVersion = process.version;
+			const isNodeVersionOver18 = Number(nodeVersion.split('.')[0].slice(1)) >= 18;
+			// Use native fetch if Node.js version over 18 when `prerender`
+			if (isNodeVersionOver18) {
+				// TODO: Solve "RangeError: Maximum call stack size exceeded"
+				// MEMO: fetch is called recursively...
+				return fetch(url, options).then(res => ({
+					text: () => res.text(),
+					json: () => res.text().then(JSON.parse)
+				}));
+			}
+			throw new Error(
+				`External links are not supported in your current Node.js version ${nodeVersion} (try v18 or later).\n  ${url}`
+			);
+		}
+
 		const text = () => fs.readFile(`${out}/${String(url).replace(/^\//, '')}`, 'utf-8');
 		return { text, json: () => text().then(JSON.parse) };
 	};

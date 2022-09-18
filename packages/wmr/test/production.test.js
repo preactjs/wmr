@@ -889,6 +889,31 @@ describe('production', () => {
 			const index = await fs.readFile(indexHtml, 'utf8');
 			expect(index).toMatch(/# hello world/);
 		});
+
+		it('should not support fetching resources from external link prerender', async () => {
+			await loadFixture('prerender-external-resource-fetch', env);
+			instance = await runWmr(env.tmp.path, 'build', '--prerender');
+			const code = await instance.done;
+
+			const nodeVersion = process.version;
+			const isNodeVersionOver18 = Number(nodeVersion.split('.')[0].slice(1)) >= 18;
+			if (isNodeVersionOver18) {
+				// when workflow of wmr runtime uses Node.js 18
+				// Until then check locally.
+				expect(code).toBe(0);
+				const indexHtml = path.join(env.tmp.path, 'dist', 'index.html');
+				const index = await fs.readFile(indexHtml, 'utf8');
+				expect(index).toMatch(/Preact/);
+			} else {
+				// Throw error when Node.js version under 17
+				await withLog(instance.output, async () => {
+					expect(code).toBe(1);
+					expect(instance.output.join('\n')).toMatch(
+						/Error: External links are not supported in your current Node.js version/
+					);
+				});
+			}
+		});
 	});
 
 	describe('Code Splitting', () => {
