@@ -96,10 +96,11 @@ async function workerCode({ cwd, out, publicPath, customRoutes }) {
 	let head = { lang: '', title: '', elements: new Set() };
 	globalThis.wmr = { ssr: { head } };
 
+	// Define `_fetch` to avoid infinite loop in globalThis.fetch.
 	let _fetch;
 	const nodeVersion = process.version;
 	const isNodeVersionOver18 = Number(nodeVersion.split('.')[0].slice(1)) >= 18;
-	// if Node.js version is under 18, fetch is undefined
+	// Native fetch is only available in Node.js 18 later.
 	if (isNodeVersionOver18) {
 		_fetch = fetch;
 	}
@@ -107,16 +108,11 @@ async function workerCode({ cwd, out, publicPath, customRoutes }) {
 	delete globalThis.fetch;
 	// @ts-ignore
 	globalThis.fetch = async (url, options) => {
-		let isRequested = false;
 		const pattern = /^https?:\/\/[\w/:%#\\$&\\?\\(\\)~\\.=\\+\\-]+/;
 		const isExternalUrl = pattern.test(String(url));
 		if (isExternalUrl) {
-			if (isRequested) {
-				return;
-			}
-			// Use native fetch if Node.js version over 18 when `prerender`
+			// Use native fetch if Node.js version 18 later when `prerender`
 			if (isNodeVersionOver18) {
-				isRequested = true;
 				return _fetch(url, options).then(res => ({
 					text: () => res.text(),
 					json: () => res.text().then(JSON.parse)
