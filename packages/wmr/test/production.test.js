@@ -909,7 +909,7 @@ describe('production', () => {
 				await withLog(instance.output, async () => {
 					expect(code).toBe(1);
 					expect(instance.output.join('\n')).toMatch(
-						/Error: External links are not supported in your current Node.js version/
+						/fetch is not implemented in Node.js, please upgrade to Node.js 18 or above/
 					);
 				});
 			}

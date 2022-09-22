@@ -96,36 +96,19 @@ async function workerCode({ cwd, out, publicPath, customRoutes }) {
 	let head = { lang: '', title: '', elements: new Set() };
 	globalThis.wmr = { ssr: { head } };
 
-	// Define `_fetch` to avoid infinite loop in globalThis.fetch.
-	let _fetch;
-	const nodeVersion = process.version;
-	const isNodeVersionOver18 = Number(nodeVersion.split('.')[0].slice(1)) >= 18;
-	// Native fetch is only available in Node.js 18 later.
-	if (isNodeVersionOver18) {
-		_fetch = fetch;
-	}
-	// @ts-ignore
-	delete globalThis.fetch;
-	// @ts-ignore
-	globalThis.fetch = async (url, options) => {
-		const pattern = /^https?:\/\/[\w/:%#\\$&\\?\\(\\)~\\.=\\+\\-]+/;
-		const isExternalUrl = pattern.test(String(url));
-		if (isExternalUrl) {
-			// Use native fetch if Node.js version 18 later when `prerender`
-			if (isNodeVersionOver18) {
-				return _fetch(url, options).then(res => ({
-					text: () => res.text(),
-					json: () => res.text().then(JSON.parse)
-				}));
+	if (globalThis.fetch === undefined) {
+		// @ts-ignore
+		globalThis.fetch = async url => {
+			const pattern = /^\//;
+			const isLocalFile = pattern.test(String(url));
+			if (isLocalFile) {
+				const text = () => fs.readFile(`${out}/${String(url).replace(/^\//, '')}`, 'utf-8');
+				return { text, json: () => text().then(JSON.parse) };
 			}
-			throw new Error(
-				`External links are not supported in your current Node.js version ${nodeVersion} (try v18 or later).\n  ${url}`
-			);
-		}
 
-		const text = () => fs.readFile(`${out}/${String(url).replace(/^\//, '')}`, 'utf-8');
-		return { text, json: () => text().then(JSON.parse) };
-	};
+			console.warn(`fetch is not implemented in Node.js, please upgrade to Node.js 18 or above`);
+		};
+	}
 
 	// Prevent Rollup from transforming `import()` here.
 	const $import = new Function('s', 'return import(s)');
