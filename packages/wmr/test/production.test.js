@@ -890,30 +890,39 @@ describe('production', () => {
 			expect(index).toMatch(/# hello world/);
 		});
 
-		it('should not support fetching resources from external link prerender', async () => {
-			await loadFixture('prerender-external-resource-fetch', env);
-			instance = await runWmr(env.tmp.path, 'build', '--prerender');
-			const code = await instance.done;
+		// Whether or not to run the test to fetch external resources depends on whether or not a Node.js version 18 later
+		const isNodeVersionOver18 = Number(process.version.split('.')[0].slice(1)) >= 18;
+		// Even if you are using Node.js v18 or higher, you will get the error `globalThis.fetch is undefined` here, so get the version from process.version
+		// if (globalThis.fetch === undefined)
+		if (!isNodeVersionOver18) {
+			it.skip('skip should not support fetching resources from external link prerender when Node.js v18 later', () => {});
+			it('should not support fetching resources from external link prerender when Node.js befor v17', async () => {
+				await loadFixture('prerender-external-resource-fetch', env);
+				instance = await runWmr(env.tmp.path, 'build', '--prerender');
+				const code = await instance.done;
 
-			const nodeVersion = process.version;
-			const isNodeVersionOver18 = Number(nodeVersion.split('.')[0].slice(1)) >= 18;
-			if (isNodeVersionOver18) {
+				await withLog(instance.output, async () => {
+					expect(code).toBe(1);
+					expect(instance.output.join('\n')).toMatch(
+						/fetch is not defined in Node.js version under 17, please upgrade to Node.js version 18 later/
+					);
+				});
+			});
+		} else {
+			it.skip('skip should not support fetching resources from external link prerender when Node.js befor v17', () => {});
+			it('should not support fetching resources from external link prerender when Node.js v18 later', async () => {
+				await loadFixture('prerender-external-resource-fetch', env);
+				instance = await runWmr(env.tmp.path, 'build', '--prerender');
+				const code = await instance.done;
+
 				// when workflow of wmr runtime uses Node.js 18
 				// Until then check locally.
 				expect(code).toBe(0);
 				const indexHtml = path.join(env.tmp.path, 'dist', 'index.html');
 				const index = await fs.readFile(indexHtml, 'utf8');
 				expect(index).toMatch(/Preact/);
-			} else {
-				// Throw error when Node.js version under 17
-				await withLog(instance.output, async () => {
-					expect(code).toBe(1);
-					expect(instance.output.join('\n')).toMatch(
-						/fetch is not implemented in Node.js, please upgrade to Node.js 18 or above/
-					);
-				});
-			}
-		});
+			});
+		}
 	});
 
 	describe('Code Splitting', () => {
