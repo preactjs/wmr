@@ -891,12 +891,12 @@ describe('production', () => {
 		});
 
 		// Whether or not to run the test to fetch external resources depends on whether or not a Node.js version 18 later
-		const isNodeVersionOver18 = Number(process.version.split('.')[0].slice(1)) >= 18;
+		const isNodeVersionUnder18 = Number(process.version.split('.')[0].slice(1)) < 18;
 		// Even if you are using Node.js v18 or higher, you will get the error `globalThis.fetch is undefined` here, so get the version from process.version
 		// if (globalThis.fetch === undefined)
-		if (!isNodeVersionOver18) {
-			it.skip('skip should not support fetching resources from external link prerender when Node.js v18 later', () => {});
-			it('should not support fetching resources from external link prerender when Node.js befor v17', async () => {
+		if (isNodeVersionUnder18) {
+			it.skip('skip should support fetching resources from external links during prerender on Node.js v18 later', () => {});
+			it('should not support fetching resources from external links during prerender on Node.js < v18', async () => {
 				await loadFixture('prerender-external-resource-fetch', env);
 				instance = await runWmr(env.tmp.path, 'build', '--prerender');
 				const code = await instance.done;
@@ -909,8 +909,8 @@ describe('production', () => {
 				});
 			});
 		} else {
-			it.skip('skip should not support fetching resources from external link prerender when Node.js befor v17', () => {});
-			it('should not support fetching resources from external link prerender when Node.js v18 later', async () => {
+			it.skip('skip should not support fetching resources from external links during prerender on Node.js < v18', () => {});
+			it('should support fetching resources from external links during prerender on Node.js v18 later', async () => {
 				await loadFixture('prerender-external-resource-fetch', env);
 				instance = await runWmr(env.tmp.path, 'build', '--prerender');
 				const code = await instance.done;
