@@ -48,7 +48,7 @@ export function prerender({ cwd = '.', out = '.cache', publicPath, customRoutes 
 
 async function workerCode({ cwd, out, publicPath, customRoutes }) {
 	// eslint-disable-next-line no-console
-	console.log('Node.js version', process.version);
+	console.log('Node.js version, ', process.version);
 
 	/*global globalThis*/
 

@@ -470,29 +470,54 @@ describe('production', () => {
 	describe('demo app', () => {
 		it('should serve the demo app', async () => {
 			await loadFixture('../../../../examples/demo', env);
+			// In my local environment I often get errors here...
+			// Therefore, error handling is inserted here if the directory does not exist.
 			for (const d of ['dist', 'node_modules', '.cache']) {
-				await fs.rmdir(path.join(env.tmp.path, d), { recursive: true });
+				try {
+					await fs.rmdir(path.join(env.tmp.path, d), { recursive: true });
+				} catch (e) {
+					console.error(`skip rmdir. Because ${e.message}`);
+				}
 			}
 			instance = await runWmr(env.tmp.path, 'build', '--prerender');
 			const code = await instance.done;
 			const output = instance.output.join('\n');
-			console.log(output);
+
+			// comment out temporarily
+			// console.log(output);
 			if (code !== 0 || /error/i.test(output)) {
-				console.info(output);
+				// same as above, comment out temporarily
+				// console.info(output);
 			} else {
+				// same as above, comment out temporarily
 				console.info(output.match(/Wrote .+ to disk/) + '');
 			}
+
+			// This may seem slightly inconsistent with the if statement above, but I will assume it is not a problem.
 			expect(code).toBe(0);
 
+			// CI will probably fail due to the absence of dist in the next line.
+			// Therefore, I check here to see if the root of the demo app exists.
+			const dir = await fs.readdir(path.join(env.tmp.path, ''));
+			console.log('../dist', dir);
+
+			// ENOENT: no such file or directory, stat '/tmp/tmp-1905-2gjVLwy5FMFx/demo/dist'
 			const distFiles = await fs.readdir(path.join(env.tmp.path, 'dist'));
+			console.log('dist', distFiles);
 
 			expect(distFiles).toContain('index.html');
 			expect(distFiles).toContain('assets');
 			expect(distFiles).toContain('chunks');
 			expect(distFiles).toContainEqual(expect.stringMatching(/^index\.\w+\.js$/));
 
+			// I are not sure, but it is possible that we are falling short here.
+			// So I'll see if I can get here.
+			console.log('here is befor serveStatic');
 			const { address, stop } = serveStatic(path.join(env.tmp.path, 'dist'));
+			console.log('here is after serveStatic');
 			cleanup.push(stop);
+
+			console.log('If this test(demo app) have made it this far, you should not fail. Perhaps.');
 
 			const logs = [];
 			function log(type, text) {
