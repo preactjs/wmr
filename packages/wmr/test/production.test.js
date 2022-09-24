@@ -471,7 +471,9 @@ describe('production', () => {
 		it('should serve the demo app', async () => {
 			await loadFixture('../../../../examples/demo', env);
 			for (const d of ['dist', 'node_modules', '.cache']) {
-				await fs.rmdir(path.join(env.tmp.path, d), { recursive: true });
+				try {
+					await fs.rmdir(path.join(env.tmp.path, d), { recursive: true });
+				} catch {}
 			}
 			instance = await runWmr(env.tmp.path, 'build', '--prerender');
 			const code = await instance.done;
