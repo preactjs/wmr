@@ -106,10 +106,12 @@ export function mergeSourceMaps(sourceMaps) {
 			sourceRoot = map.sourceRoot;
 		}
 
-		for (let j = 0; j < map.sources.length; j++) {
-			const source = map.sources[j];
-			if (!sourcesCache.has(source)) {
-				sourcesCache.set(source, { index: sourcesCache.size, content: map.sourcesContent[j] || null });
+		if (map.sourcesContent) {
+			for (let j = 0; j < map.sources.length; j++) {
+				const source = map.sources[j];
+				if (!sourcesCache.has(source)) {
+					sourcesCache.set(source, { index: sourcesCache.size, content: map.sourcesContent[j] || null });
+				}
 			}
 		}
 
