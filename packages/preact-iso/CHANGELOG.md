@@ -1,5 +1,11 @@
 # preact-iso
 
+## 2.3.1
+
+### Patch Changes
+
+- [`2465fbb`](https://github.com/preactjs/wmr/commit/2465fbba9e0888d2191d0fbcf613b26e81b4640e) [#895](https://github.com/preactjs/wmr/pull/895) Thanks [@rschristian](https://github.com/rschristian)! - Fix lack of hydration when not returning prerender data
+
 ## 2.3.0
 
 ### Minor Changes
