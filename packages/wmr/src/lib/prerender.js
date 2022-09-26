@@ -96,11 +96,43 @@ async function workerCode({ cwd, out, publicPath, customRoutes }) {
 	let head = { lang: '', title: '', elements: new Set() };
 	globalThis.wmr = { ssr: { head } };
 
-	// @ts-ignore
-	globalThis.fetch = async url => {
+	async function localFetcher(url) {
 		const text = () => fs.readFile(`${out}/${String(url).replace(/^\//, '')}`, 'utf-8');
 		return { text, json: () => text().then(JSON.parse) };
-	};
+	}
+
+	const pattern = /^\//;
+	if (globalThis.fetch === undefined) {
+		// When Node.js version under 17, native fetch API undefined
+		// So it will give a warning when the syntax to retrieve the file and the url is passed
+		// @ts-ignore
+		globalThis.fetch = async url => {
+			if (pattern.test(String(url))) {
+				return localFetcher(url);
+			}
+
+			console.warn(`fetch is not defined in Node.js version under 17, please upgrade to Node.js version 18 later`);
+		};
+	} else {
+		// At that time, implement using reassignment to avoid entering an infinite loop.
+		const fetcher = fetch;
+		// @ts-ignore
+		delete globalThis.fetch;
+
+		// When Node.js version 18 later, native fetch API is defined
+		// Override with own implementation if you want to retrieve local files in Node.js 18 later
+		// ref https://github.com/preactjs/wmr/pull/935#discussion_r977168334
+		// @ts-ignore
+		globalThis.fetch = async (url, options) => {
+			if (pattern.test(String(url))) {
+				return localFetcher(url);
+			}
+
+			// When fetching an external resource, it returns the native fetch API
+			// though `fetcher` function is an alias created to avoid infinite loops
+			return fetcher(url, options);
+		};
+	}
 
 	// Prevent Rollup from transforming `import()` here.
 	const $import = new Function('s', 'return import(s)');

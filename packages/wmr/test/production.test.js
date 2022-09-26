@@ -891,6 +891,40 @@ describe('production', () => {
 			const index = await fs.readFile(indexHtml, 'utf8');
 			expect(index).toMatch(/# hello world/);
 		});
+
+		// Whether or not to run the test to fetch external resources depends on whether or not a Node.js version 18 later
+		const isNodeVersionUnder18 = Number(process.version.split('.')[0].slice(1)) < 18;
+		// Even if you are using Node.js v18 or higher, you will get the error `globalThis.fetch is undefined` here, so get the version from process.version
+		// if (globalThis.fetch === undefined)
+		if (isNodeVersionUnder18) {
+			it.skip('skip should support fetching resources from external links during prerender on Node.js v18 later', () => {});
+			it('should not support fetching resources from external links during prerender on Node.js < v18', async () => {
+				await loadFixture('prerender-external-resource-fetch', env);
+				instance = await runWmr(env.tmp.path, 'build', '--prerender');
+				const code = await instance.done;
+
+				await withLog(instance.output, async () => {
+					expect(code).toBe(1);
+					expect(instance.output.join('\n')).toMatch(
+						/fetch is not defined in Node.js version under 17, please upgrade to Node.js version 18 later/
+					);
+				});
+			});
+		} else {
+			it.skip('skip should not support fetching resources from external links during prerender on Node.js < v18', () => {});
+			it('should support fetching resources from external links during prerender on Node.js v18 later', async () => {
+				await loadFixture('prerender-external-resource-fetch', env);
+				instance = await runWmr(env.tmp.path, 'build', '--prerender');
+				const code = await instance.done;
+
+				// when workflow of wmr runtime uses Node.js 18
+				// Until then check locally.
+				expect(code).toBe(0);
+				const indexHtml = path.join(env.tmp.path, 'dist', 'index.html');
+				const index = await fs.readFile(indexHtml, 'utf8');
+				expect(index).toMatch(/Preact/);
+			});
+		}
 	});
 
 	describe('Code Splitting', () => {
