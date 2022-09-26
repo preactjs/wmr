@@ -30,7 +30,7 @@ let cache;
  * @param {import('rollup').ModuleFormat} [options.format]
  */
 export const compileSingleModule = withCache(
-	async (input, { out, hmr = true, rewriteNodeImports = true, format = 'es' }) => {
+	async (input, { out, filename, hmr = true, rewriteNodeImports = true, format = 'es' }) => {
 		// The TS config file should be the only one that passes through here
 		const isConfigFile = input.endsWith('wmr.config.ts');
 		input = input.replace(/\.css\.js$/, '.css');
@@ -73,7 +73,7 @@ export const compileSingleModule = withCache(
 		const result = await bundle.write({
 			...ROLLUP_FAST_OUTPUT,
 			dir: out,
-			assetFileNames: '[name].[ext]',
+			entryFileNames: filename || '[name].[ext]',
 			paths: str => str,
 			format,
 			exports: 'auto'
