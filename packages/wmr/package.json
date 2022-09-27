@@ -1,6 +1,6 @@
 {
 	"name": "wmr",
-	"version": "3.8.0",
+	"version": "3.7.2",
 	"bin": "wmr.cjs",
 	"type": "module",
 	"main": "index.js",
