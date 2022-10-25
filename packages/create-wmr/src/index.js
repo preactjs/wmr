@@ -63,12 +63,13 @@ sade('create-wmr [dir]', true)
 
 		if (opts.eslint) {
 			spinner.start('installing eslint configuration...');
-			await install(['eslint', 'eslint-config-preact'], { prefer: packageManager, cwd });
+			await install(['eslint', 'eslint-config-preact'], { prefer: packageManager, cwd, dev: true });
 			spinner.succeed('installed eslint.');
 		}
 
 		spinner.stop();
 		if (dir) {
+			// eslint-disable-next-line no-console
 			console.log(
 				`\n${bold('To get started:')}\n${dim('$')} ${cyan('cd ' + relative(origCwd, cwd).replace(/^\.[\\/]/, ''))}`
 			);
@@ -83,11 +84,13 @@ sade('create-wmr [dir]', true)
 			Serve the app in production mode:
 			${dim('$ PORT=8080')} ${cyan(`${packageManager === 'npm' ? 'npm run' : 'yarn'} serve`)}
 		`;
+		// eslint-disable-next-line no-console
 		console.log('\n' + result.trim().replace(/^\t\t\t/gm, '') + '\n');
 		if (!opts.eslint) {
+			// eslint-disable-next-line no-console
 			console.log(
 				`\n${bold('To enable ESLint:')} (optional)\n${dim('$')} ${cyan(
-					`${packageManager === 'npm' ? 'npm i' : 'yarn add'} eslint eslint-config-preact`
+					`${packageManager === 'npm' ? 'npm i' : 'yarn add'} -D eslint eslint-config-preact`
 				)}\n`
 			);
 		}
