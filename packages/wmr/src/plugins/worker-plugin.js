@@ -85,7 +85,8 @@ export function workerPlugin(options) {
 			}
 			// Check if a worker is referenced anywhere in the file
 			else if (/\.(?:[tj]sx?|mjs|cjs)$/.test(id)) {
-				const WORKER_REG = /new URL\(\s*['"]([\w.-/:~]+)['"],\s*import\.meta\.url\s*\)(,\s*{.*?["']module["'].*?})?/gm;
+				const WORKER_REG =
+					/new URL\(\s*['"]([\w.-/:~]+\.worker[\w.-/:~]+)['"],\s*import\.meta\.url\s*\)(,\s*{.*?["']module["'].*?})?/gm;
 
 				if (WORKER_REG.test(code)) {
 					const s = new MagicString(code, {
