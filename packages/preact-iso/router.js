@@ -108,6 +108,8 @@ export function Router(props) {
 	// was the most recent render successful (did not suspend):
 	const didSuspend = useRef();
 	didSuspend.current = false;
+	// current return value of onBeforeRoute() prop
+	const onBeforeRoute = useRef();
 
 	cur.current = useMemo(() => {
 		// This hack prevents Preact from diffing when we swap `cur` to `prev`:
@@ -116,6 +118,16 @@ export function Router(props) {
 		count.current++;
 
 		prev.current = cur.current;
+
+		let obr = props.onBeforeRoute && props.onBeforeRoute(url);
+		if (obr && obr.then) {
+			obr = obr.then(() => {
+				if (onBeforeRoute.current === obr) {
+					onBeforeRoute.current = null;
+				}
+			});
+		}
+		onBeforeRoute.current = obr;
 
 		let p, d, m;
 		toChildArray(props.children).some(vnode => {
@@ -188,11 +200,14 @@ export function Router(props) {
 	}, [path, wasPush, c]);
 
 	// Note: curChildren MUST render first in order to set didSuspend & prev.
-	return [h(RenderRef, { r: cur }), h(RenderRef, { r: prev })];
+	return [h(RenderRef, { p: onBeforeRoute.current, r: cur }), h(RenderRef, { r: prev })];
 }
 
 // Lazily render a ref's current value:
-const RenderRef = ({ r }) => r.current;
+const RenderRef = ({ p, r }) => {
+	if (p && p.then) throw p;
+	return r.current;
+};
 
 Router.Provider = LocationProvider;
 
