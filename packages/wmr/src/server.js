@@ -4,7 +4,7 @@ import { createServer } from 'http';
 import { createHttp2Server } from './lib/http2.js';
 import polka from 'polka';
 import sirv from 'sirv';
-import compression from './lib/polkompress.js';
+import compression from 'http-compression';
 import npmMiddleware from './lib/npm-middleware.js';
 import WebSocketServer from './lib/websocket-server.js';
 import * as kl from 'kolorist';
@@ -101,7 +101,7 @@ export default async function server({ cwd, root, overlayDir, middleware, http2,
 	if (compress) {
 		// @TODO: reconsider now that npm deps are compressed AOT
 		const threshold = compress === true ? 1024 : compress;
-		app.use(compression({ threshold, level: 4 }));
+		app.use(compression({ brotli: false, threshold, level: 4 }));
 	}
 
 	// Custom middlewares should always come first, similar to plugins

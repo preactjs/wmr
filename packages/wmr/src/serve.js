@@ -4,7 +4,7 @@ import { normalizeOptions } from './lib/normalize-options.js';
 import { getServerAddresses } from './lib/net-utils.js';
 import { createServer } from 'http';
 import { createHttp2Server } from './lib/http2.js';
-import compression from './lib/polkompress.js';
+import compression from 'http-compression';
 import sirv from 'sirv';
 import { formatBootMessage } from './lib/output-utils.js';
 
@@ -59,7 +59,7 @@ export default async function serve(options = {}) {
 
 	if (options.compress) {
 		const threshold = options.compress === true ? 1024 : options.compress;
-		app.use(compression({ threshold }));
+		app.use(compression({ brotli: false, threshold }));
 	}
 
 	if (options.middleware && options.middleware.length) {

@@ -4335,6 +4335,11 @@ http-cache-semantics@^4.0.0:
   resolved "https://registry.yarnpkg.com/http-cache-semantics/-/http-cache-semantics-4.1.0.tgz#49e91c5cbf36c9b94bcfcd71c23d5249ec74e390"
   integrity sha512-carPklcUh7ROWRK7Cv27RPtdhYhUsela/ue5/jKzjegVvXDqM2ILE9Q2BGn9JZJh1g87cp56su/FgQSzcWS8cQ==
 
+http-compression@^1.0.4:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/http-compression/-/http-compression-1.0.4.tgz#efa32f4751fa4deba010ba1a6a24e88b6b6a2434"
+  integrity sha512-LBOD+rkf1+y+jCeCzzGCpY/foA4nPz3NmX1VvjEDDYtFt1Prd1rQmGd4HQFFIcWM2PsXlVZvo/TvfAVAZP01eQ==
+
 http-errors@1.7.2:
   version "1.7.2"
   resolved "https://registry.yarnpkg.com/http-errors/-/http-errors-1.7.2.tgz#4f5029cf13239f31036e5b2e55292bcfbcc85c8f"
