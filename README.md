@@ -7,7 +7,7 @@
 [![OpenCollective Backers](https://opencollective.com/preact/backers/badge.svg)](#backers)
 [![OpenCollective Sponsors](https://opencollective.com/preact/sponsors/badge.svg)](#sponsors)
 
-**The tiny all-in-one development tool for modern web apps**, in a single 2mb file with no dependencies.
+**The tiny all-in-one development tool for modern web apps**, in a single 3mb file with no dependencies.
 
 All the features you'd expect and more, from development to production:
 
