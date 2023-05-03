@@ -48,11 +48,11 @@ export default async function prerender(vnode, options) {
 
 	try {
 		let html = await render();
-		if (typeof html !== "string") {
+		if (typeof html !== 'string') {
 			if (options.throwOnFailure) {
 				throw new Error(`Pre-rendering failed! render() evaluated to: ${html}`);
 			} else {
-				html = "";
+				html = '';
 			}
 		}
 		html += `<script type="isodata"></script>`;
