@@ -2,4 +2,4 @@
 'preact-iso': minor
 ---
 
-introduce throwOnFailure option
+introduce throwOnFailure option for prerender
