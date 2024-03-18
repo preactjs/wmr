@@ -1,5 +1,8 @@
 # WMR
 
+> [!WARNING]
+> WMR is unfortunately no longer maintained. In its place, we'd recommend [Vite](https://vitejs.dev) with [`@preactjs/preset-vite`](https://github.com/preactjs/preset-vite). It offers many of the same features (like the prerendering API) but is much more robust and up to date. Thanks to all contributors and users over the years!
+
 <img src="./docs/public/assets/wmr.svg" alt="wmr logo" width="400">
 
 [![npm](https://img.shields.io/npm/v/wmr.svg)](http://npm.im/wmr)
