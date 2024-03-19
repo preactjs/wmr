@@ -25,7 +25,6 @@ export const useRoute: () => {
 
 interface RoutableProps {
 	path?: string;
-	default?: boolean;
 }
 
 export interface RouteProps<Props> extends RoutableProps {
