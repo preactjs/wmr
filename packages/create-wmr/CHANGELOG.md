@@ -1,5 +1,11 @@
 # create-wmr
 
+## 0.3.9
+
+### Patch Changes
+
+- [`ab4b512`](https://github.com/preactjs/wmr/commit/ab4b512875ae63273cfbd9c4c5972aadd3218bac) [#940](https://github.com/preactjs/wmr/pull/940) Thanks [@joebeachjoebeach](https://github.com/joebeachjoebeach)! - Install eslint and eslint-config-preact as dev dependencies
+
 ## 0.3.8
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # wmr
 
+## 3.8.1
+
+### Patch Changes
+
+- [`3c5672e`](https://github.com/preactjs/wmr/commit/3c5672ecd2f958c8eaf372d33c084dc69228ae3f) [#948](https://github.com/preactjs/wmr/pull/948) Thanks [@rschristian](https://github.com/rschristian)! - Corrects worker regex pattern to avoid false positives
+
 ## 3.8.0
 
 ### Minor Changes
