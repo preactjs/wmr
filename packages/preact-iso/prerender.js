@@ -14,6 +14,7 @@ options.vnode = vnode => {
  * @param {object} [options]
  * @param {number} [options.maxDepth = 10] The maximum number of nested asynchronous operations to wait for before flushing
  * @param {object} [options.props] Additional props to merge into the root JSX element
+ * @param {boolean} [options.throwOnFailure] Controls if an exception should be thrown in case rendering fails
  */
 export default async function prerender(vnode, options) {
 	options = options || {};
@@ -47,6 +48,13 @@ export default async function prerender(vnode, options) {
 
 	try {
 		let html = await render();
+		if (typeof html !== 'string') {
+			if (options.throwOnFailure) {
+				throw new Error(`Pre-rendering failed! render() evaluated to: ${html}`);
+			} else {
+				html = '';
+			}
+		}
 		html += `<script type="isodata"></script>`;
 		return { html, links };
 	} finally {

@@ -3,6 +3,7 @@ import { VNode } from 'preact';
 export interface PrerenderOptions {
 	maxDepth?: number;
 	props?: Record<string, unknown>;
+	throwOnFailure?: boolean;
 }
 
 export interface PrerenderResult {
